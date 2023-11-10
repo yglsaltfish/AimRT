@@ -1,0 +1,147 @@
+#include "core/plugin/plugin_manager.h"
+#include "core/global.h"
+
+namespace YAML {
+template <>
+struct convert<aimrt::runtime::core::plugin::PluginManager::Options> {
+  using Options = aimrt::runtime::core::plugin::PluginManager::Options;
+
+  static Node encode(const Options& rhs) {
+    Node node;
+
+    node["plugins"] = YAML::Node();
+    for (const auto& plugin_options : rhs.plugins_options) {
+      Node plugin_options_node;
+      plugin_options_node["name"] = plugin_options.name;
+      plugin_options_node["path"] = plugin_options.path;
+      plugin_options_node["options"] = plugin_options.options;
+      node["backends"].push_back(plugin_options_node);
+    }
+
+    return node;
+  }
+
+  static bool decode(const Node& node, Options& rhs) {
+    if (!node.IsMap()) return false;
+
+    if (node["plugins"] && node["plugins"].IsSequence()) {
+      for (auto& plugin_options_node : node["plugins"]) {
+        auto plugin_options = Options::PluginOptions{
+            .name = plugin_options_node["name"].as<std::string>(),
+            .path = plugin_options_node["path"].as<std::string>()};
+
+        if (plugin_options_node["options"])
+          plugin_options.options = plugin_options_node["options"];
+
+        rhs.plugins_options.emplace_back(std::move(plugin_options));
+      }
+    }
+    return true;
+  }
+};
+}  // namespace YAML
+
+namespace aimrt::runtime::core::plugin {
+
+void PluginManager::Initialize(YAML::Node options_node) {
+  AIMRT_CHECK_ERROR_THROW(
+      plugin_init_func_,
+      "Plugin init func is not set before PluginManager initialize.");
+
+  AIMRT_CHECK_ERROR_THROW(
+      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      "Plugin manager can only be initialized once.");
+
+  if (options_node && !options_node.IsNull())
+    options_ = options_node.as<Options>();
+
+  // 加载并初始化所有插件
+  for (const auto& plugin_options : options_.plugins_options) {
+    // 检查重复动态库
+    auto finditr = std::find_if(
+        options_.plugins_options.begin(), options_.plugins_options.end(),
+        [&plugin_options](const auto& op) {
+          if (&plugin_options == &op) return false;
+          return op.path == plugin_options.path;
+        });
+    AIMRT_CHECK_ERROR_THROW(finditr == options_.plugins_options.end(),
+                            "Duplicate load plugin lib {}", plugin_options.path);
+
+    // 检查重复插件名称
+    finditr = std::find_if(
+        options_.plugins_options.begin(), options_.plugins_options.end(),
+        [&plugin_options](const auto& op) {
+          if (&plugin_options == &op) return false;
+          return op.name == plugin_options.name;
+        });
+    AIMRT_CHECK_ERROR_THROW(finditr == options_.plugins_options.end(),
+                            "Duplicate plugin name {}", plugin_options.name);
+
+    // 加载插件
+    auto plugin_loader_ptr = std::make_unique<PluginLoader>();
+    plugin_loader_ptr->LoadPlugin(plugin_options.path);
+
+    auto plugin_ptr = plugin_loader_ptr->GetPlugin();
+    auto plugin_name = plugin_ptr->Name();
+
+    // 检查插件名称
+    AIMRT_CHECK_ERROR_THROW(
+        plugin_name == plugin_options.name,
+        "Require plugin name '{}', but get plugin name '{}' in lib {}.",
+        plugin_options.name, plugin_name, plugin_options.path);
+
+    // 初始化插件
+    plugin_init_func_(plugin_ptr);
+
+    plugin_loader_vec_.emplace_back(std::move(plugin_loader_ptr));
+    AIMRT_INFO("Load plugin '{}' succeeded.", plugin_options.path);
+  }
+
+  options_node = options_;
+}
+
+void PluginManager::Start() {
+  AIMRT_CHECK_ERROR_THROW(
+      std::atomic_exchange(&status_, Status::Start) == Status::Init,
+      "Function can only be called when status is 'Init'.");
+}
+
+void PluginManager::Shutdown() {
+  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+    return;
+
+  // 按照反顺序执行Shutdown
+  for (auto itr = plugin_loader_vec_.rbegin(); itr != plugin_loader_vec_.rend(); ++itr) {
+    (*itr)->GetPlugin()->Shutdown();
+  }
+
+  // plugin_loader_vec_ 不能清理掉，有很多回调是从其他dll中注册过来的
+
+  plugin_init_func_ = PluginInitFunc();
+}
+
+void PluginManager::RegisterPluginInitFunc(PluginInitFunc&& plugin_init_func) {
+  AIMRT_CHECK_ERROR_THROW(
+      status_.load() == Status::PreInit,
+      "Function can only be called when status is 'PreInit'.");
+
+  plugin_init_func_ = std::move(plugin_init_func);
+}
+
+YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) const {
+  AIMRT_CHECK_ERROR_THROW(
+      status_.load() == Status::Init,
+      "Function can only be called when status is 'Init'.");
+
+  auto finditr = std::find_if(
+      options_.plugins_options.begin(),
+      options_.plugins_options.end(),
+      [&plugin_name](const auto& op) { return plugin_name == op.name; });
+
+  if (finditr != options_.plugins_options.end())
+    return finditr->options;
+
+  return YAML::Node();
+}
+
+}  // namespace aimrt::runtime::core::plugin

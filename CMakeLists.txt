@@ -1,0 +1,198 @@
+cmake_minimum_required(VERSION 3.25)
+
+project(AimRT LANGUAGES C CXX)
+
+# Set cmake path
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+# Some option
+option(AIMRT_BUILD_TESTS "AimRT build tests." OFF)
+option(AIMRT_BUILD_EXAMPLES "AimRT build examples." OFF)
+option(AIMRT_BUILD_DOCUMENT "AimRT build document." OFF)
+option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
+option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
+
+option(AIMRT_USE_EXECUTOR "AimRT use executor." ON)
+set(AIMRT_USE_EXECUTOR_TYPE
+    "libunifex"
+    CACHE STRING "Choose the type of executor, option: libunifex/stdexec/std")
+
+option(AIMRT_USE_FMT_LIB "AimRT use fmt library." OFF)
+
+option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
+option(AIMRT_USE_LOCAL_PROTOC_COMPILER "AimRT use local protoc compiler." OFF)
+option(AIMRT_USE_PROTOC_PYTHON_PLUGIN "AimRT use protoc python plugin." OFF)
+
+option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
+
+option(AIMRT_BUILD_NET_PLUGIN "AimRT build net plugin." OFF)
+option(AIMRT_BUILD_SM_PLUGIN "AimRT build sm plugin." OFF)
+option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF)
+option(AIMRT_BUILD_LCM_PLUGIN "AimRT build lcm plugin." OFF)
+option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF)
+
+# Some necessary settings
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(INSTALL_CONFIG_NAME ${PROJECT_NAME}-config)
+
+# Master project configuration
+if(NOT DEFINED AIMRT_MASTER_PROJECT)
+  set(AIMRT_MASTER_PROJECT OFF)
+  if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(AIMRT_MASTER_PROJECT ON)
+  endif()
+endif()
+
+if(AIMRT_MASTER_PROJECT)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+  set(CMAKE_CXX_VISIBLITY_INLINES_HIDDEN ON)
+  set(BUILD_SHARED_LIBS OFF)
+
+  if(UNIX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+
+    if(AIMRT_BUILD_TESTS)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
+    endif()
+  endif()
+
+  if(MSVC)
+    add_compile_options(/utf-8 /wd4819)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
+  endif()
+
+  if(WIN32)
+    add_compile_definitions(NOMINMAX)
+  endif()
+
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
+# Build document
+if(AIMRT_BUILD_DOCUMENT)
+  message(STATUS "gen document ...")
+  set(AIMRT_DOC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/document/doxygen)
+  if(WIN32)
+    execute_process(COMMAND ${AIMRT_DOC_DIR}/build_document.bat ${AIMRT_DOC_DIR} WORKING_DIRECTORY ${AIMRT_DOC_DIR})
+  elseif(UNIX)
+    execute_process(COMMAND ${AIMRT_DOC_DIR}/build_document.sh ${AIMRT_DOC_DIR} WORKING_DIRECTORY ${AIMRT_DOC_DIR})
+  endif()
+endif()
+
+# Include cmake module
+include(NamespaceTool)
+
+if(AIMRT_BUILD_TESTS)
+  include(GetGTest)
+  enable_testing()
+endif()
+
+if(AIMRT_USE_EXECUTOR)
+  if(AIMRT_USE_EXECUTOR_TYPE STREQUAL "libunifex")
+    message(STATUS "Use libunifex as executor impl.")
+    include(GetLibUnifex)
+  elseif(AIMRT_USE_EXECUTOR_TYPE STREQUAL "stdexec")
+    message(ERROR "Currently not support stdexec as executor impl.")
+  elseif(AIMRT_USE_EXECUTOR_TYPE STREQUAL "std")
+    message(ERROR "Currently not support std as executor impl.")
+  else()
+    message(ERROR "Unsupport executor impl: ${AIMRT_USE_EXECUTOR_TYPE}.")
+  endif()
+endif()
+
+if(AIMRT_USE_FMT_LIB)
+  include(GetFmt)
+endif()
+
+if(AIMRT_BUILD_CLI_TOOLS)
+  find_package(Python3 REQUIRED)
+
+  execute_process(
+    COMMAND pip3 show pyinstaller
+    RESULT_VARIABLE PYINSTALLER_RESULT
+    OUTPUT_QUIET ERROR_QUIET)
+  if(NOT ${PYINSTALLER_RESULT} EQUAL 0)
+    set(AIMRT_BUILD_CLI_TOOLS OFF)
+    message(WARNING "Can not find pyinstaller in your python environment, will not compile aimrt_cli!")
+  endif()
+
+  execute_process(
+    COMMAND pip3 show jinja2
+    RESULT_VARIABLE JINJA_RESULT
+    OUTPUT_QUIET ERROR_QUIET)
+  if(NOT ${JINJA_RESULT} EQUAL 0)
+    set(AIMRT_BUILD_CLI_TOOLS OFF)
+    message(WARNING "Can not find jinja2 in your python environment, will not compile aimrt_cli!")
+  endif()
+
+  execute_process(
+    COMMAND pip3 show pyyaml
+    RESULT_VARIABLE PYYAML_RESULT
+    OUTPUT_QUIET ERROR_QUIET)
+  if(NOT ${PYYAML_RESULT} EQUAL 0)
+    set(AIMRT_BUILD_CLI_TOOLS OFF)
+    message(WARNING "Can not find pyyaml in your python environment, will not compile aimrt_cli!")
+  endif()
+endif()
+
+if(AIMRT_BUILD_WITH_PROTOBUF)
+  include(GetProtobuf)
+  include(ProtobufGenCode)
+
+  if(AIMRT_USE_LOCAL_PROTOC_COMPILER)
+    set(Protobuf_PROTOC_EXECUTABLE
+        "protoc"
+        CACHE STRING "Path to protoc compiler.")
+    add_executable(aimrt::protoc IMPORTED GLOBAL)
+    set_target_properties(aimrt::protoc PROPERTIES IMPORTED_LOCATION ${Protobuf_PROTOC_EXECUTABLE})
+    set_property(GLOBAL PROPERTY PROTOC_NAMESPACE_PROPERTY "aimrt")
+  endif()
+
+  if(AIMRT_USE_PROTOC_PYTHON_PLUGIN)
+    find_package(Python3 REQUIRED)
+  endif()
+endif()
+
+if(AIMRT_BUILD_WITH_ROS2)
+  set(BUILD_TESTING
+      OFF
+      CACHE BOOL "")
+  include(GetJsonCpp)
+  find_package(rclcpp REQUIRED)
+  find_package(Python3 REQUIRED)
+endif()
+
+if(AIMRT_BUILD_RUNTIME)
+  include(GetGFlags)
+  include(GetYamlCpp)
+  include(GetBoost)
+
+  if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
+    include(GetSqlite)
+  endif()
+
+  if(AIMRT_BUILD_LCM_PLUGIN)
+    include(GetLcm)
+  endif()
+endif()
+
+# Add subdirectory
+add_subdirectory(src)
+
+# Install
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+  DESTINATION ./
+  FILES_MATCHING
+  PATTERN "*.cmake")
+
+install(EXPORT ${INSTALL_CONFIG_NAME} DESTINATION lib/cmake/${PROJECT_NAME})

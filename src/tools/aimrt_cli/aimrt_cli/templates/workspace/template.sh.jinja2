@@ -1,0 +1,32 @@
+{# This is the template file, do not Edit it! -#}
+#!/bin/bash
+# cmake
+cmake -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=./build/install \
+{%- for definition in workspace.definitions %}
+    -D{{ definition.name }}={{ definition.status }} \
+{%- endfor %}
+    $@
+
+if [ $? -ne 0 ]; then
+    echo "cmake failed"
+    exit 1
+fi
+
+# make
+cd build
+make -j$(nproc)
+
+if [ $? -ne 0 ]; then
+    echo "make failed"
+    exit 1
+fi
+
+# install
+if [ -d install ]; then
+    rm -rf install
+fi
+
+make install
+{# blank line #}

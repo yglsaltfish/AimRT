@@ -1,0 +1,265 @@
+#include "net_plugin/net_plugin.h"
+
+#include "core/aimrt_core.h"
+#include "net_plugin/global.h"
+#include "net_plugin/http/http_channel_backend.h"
+#include "net_plugin/http/http_rpc_backend.h"
+#include "net_plugin/tcp/tcp_channel_backend.h"
+#include "net_plugin/udp/udp_channel_backend.h"
+
+namespace YAML {
+template <>
+struct convert<aimrt::plugins::net_plugin::NetPlugin::Options> {
+  using Options = aimrt::plugins::net_plugin::NetPlugin::Options;
+
+  static Node encode(const Options& rhs) {
+    Node node;
+
+    node["thread_num"] = rhs.thread_num;
+
+    if (rhs.http_options) {
+      node["http_options"] = Node();
+      node["http_options"]["listen_ip"] = rhs.http_options->listen_ip;
+      node["http_options"]["listen_port"] = rhs.http_options->listen_port;
+    }
+
+    if (rhs.tcp_options) {
+      node["tcp_options"] = Node();
+      node["tcp_options"]["listen_ip"] = rhs.tcp_options->listen_ip;
+      node["tcp_options"]["listen_port"] = rhs.tcp_options->listen_port;
+    }
+
+    if (rhs.udp_options) {
+      node["udp_options"] = Node();
+      node["udp_options"]["listen_ip"] = rhs.udp_options->listen_ip;
+      node["udp_options"]["listen_port"] = rhs.udp_options->listen_port;
+      node["udp_options"]["max_pkg_size"] = rhs.udp_options->max_pkg_size;
+    }
+
+    return node;
+  }
+
+  static bool decode(const Node& node, Options& rhs) {
+    if (!node.IsMap()) return false;
+
+    rhs.thread_num = node["thread_num"].as<uint32_t>();
+
+    if (node["http_options"]) {
+      rhs.http_options = Options::HttpOptions{
+          .listen_ip = node["http_options"]["listen_ip"].as<std::string>(),
+          .listen_port = node["http_options"]["listen_port"].as<uint16_t>(),
+      };
+    }
+
+    if (node["tcp_options"]) {
+      rhs.tcp_options = Options::TcpOptions{
+          .listen_ip = node["tcp_options"]["listen_ip"].as<std::string>(),
+          .listen_port = node["tcp_options"]["listen_port"].as<uint16_t>(),
+      };
+    }
+
+    if (node["udp_options"]) {
+      rhs.udp_options = Options::UdpOptions{
+          .listen_ip = node["udp_options"]["listen_ip"].as<std::string>(),
+          .listen_port = node["udp_options"]["listen_port"].as<uint16_t>(),
+      };
+      if (node["udp_options"]["max_pkg_size"]) {
+        rhs.udp_options->max_pkg_size = node["udp_options"]["max_pkg_size"].as<uint32_t>();
+      }
+    }
+
+    return true;
+  }
+};
+}  // namespace YAML
+
+namespace aimrt::plugins::net_plugin {
+
+bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
+  try {
+    using namespace aimrt::common::net;
+
+    core_ptr_ = core_ptr;
+
+    YAML::Node plugin_options_node = core_ptr_->GetPluginManager().GetPluginOptionsNode(Name());
+
+    if (!plugin_options_node || plugin_options_node.IsNull())
+      return true;
+
+    options_ = plugin_options_node.as<Options>();
+
+    init_flag_ = true;
+
+    asio_executor_ptr_ = std::make_shared<AsioExecutor>(options_.thread_num);
+
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::HookPoint::PostInitLog,
+                                [this] { SetPluginLogger(); });
+
+    // http
+    if (options_.http_options) {
+      http_cli_pool_ptr_ = std::make_shared<AsioHttpClientPool>(asio_executor_ptr_->IO());
+      http_svr_ptr_ = std::make_shared<AsioHttpServer>(asio_executor_ptr_->IO());
+
+      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::HookPoint::PreInitRpc,
+                                  [this] { RegisterHttpRpcBackend(); });
+
+      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::HookPoint::PreInitChannel,
+                                  [this] { RegisterHttpChannelBackend(); });
+
+      core_ptr_->RegisterHookFunc(
+          runtime::core::AimRTCore::HookPoint::PreStart,
+          [this] {
+            http_cli_pool_ptr_->SetLogger(GetLogger());
+            http_cli_pool_ptr_->Initialize(AsioHttpClientPool::Options{});
+            http_cli_pool_ptr_->Start();
+
+            http_svr_ptr_->SetLogger(GetLogger());
+            http_svr_ptr_->Initialize(AsioHttpServer::Options{
+                .ep = {boost::asio::ip::make_address_v4(options_.http_options->listen_ip),
+                       options_.http_options->listen_port}});
+            http_svr_ptr_->Start();
+          });
+
+      core_ptr_->RegisterHookFunc(
+          runtime::core::AimRTCore::HookPoint::PostShutdown,
+          [this] {
+            http_cli_pool_ptr_->Shutdown();
+            http_svr_ptr_->Shutdown();
+          });
+    }
+
+    // tcp
+    if (options_.tcp_options) {
+      tcp_cli_pool_ptr_ = std::make_shared<AsioTcpClientPool>(asio_executor_ptr_->IO());
+      tcp_msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry<boost::asio::ip::tcp::endpoint>>();
+      tcp_svr_ptr_ = std::make_shared<AsioTcpServer>(asio_executor_ptr_->IO());
+
+      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::HookPoint::PreInitChannel,
+                                  [this] { RegisterTcpChannelBackend(); });
+
+      core_ptr_->RegisterHookFunc(
+          runtime::core::AimRTCore::HookPoint::PreStart,
+          [this] {
+            tcp_cli_pool_ptr_->SetLogger(GetLogger());
+            tcp_cli_pool_ptr_->Initialize(AsioTcpClientPool::Options{});
+            tcp_cli_pool_ptr_->Start();
+
+            tcp_svr_ptr_->SetLogger(GetLogger());
+            tcp_svr_ptr_->RegisterMsgHandle(tcp_msg_handle_registry_ptr_->GetMsgHandleFunc());
+            tcp_svr_ptr_->Initialize(AsioTcpServer::Options{
+                .ep = {boost::asio::ip::make_address_v4(options_.tcp_options->listen_ip),
+                       options_.tcp_options->listen_port}});
+            tcp_svr_ptr_->Start();
+          });
+
+      core_ptr_->RegisterHookFunc(
+          runtime::core::AimRTCore::HookPoint::PostShutdown,
+          [this] {
+            tcp_cli_pool_ptr_->Shutdown();
+            tcp_svr_ptr_->Shutdown();
+          });
+    }
+
+    // udp
+    if (options_.udp_options) {
+      udp_cli_pool_ptr_ = std::make_shared<AsioUdpClientPool>(asio_executor_ptr_->IO());
+      udp_msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry<boost::asio::ip::udp::endpoint>>();
+      udp_svr_ptr_ = std::make_shared<AsioUdpServer>(asio_executor_ptr_->IO());
+
+      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::HookPoint::PreInitChannel,
+                                  [this] { RegisterUdpChannelBackend(); });
+
+      core_ptr_->RegisterHookFunc(
+          runtime::core::AimRTCore::HookPoint::PreStart,
+          [this] {
+            udp_cli_pool_ptr_->SetLogger(GetLogger());
+            udp_cli_pool_ptr_->Initialize(AsioUdpClientPool::Options{});
+            udp_cli_pool_ptr_->Start();
+
+            udp_svr_ptr_->SetLogger(GetLogger());
+            udp_svr_ptr_->RegisterMsgHandle(udp_msg_handle_registry_ptr_->GetMsgHandleFunc());
+            udp_svr_ptr_->Initialize(AsioUdpServer::Options{
+                .ep = {boost::asio::ip::make_address_v4(options_.udp_options->listen_ip),
+                       options_.udp_options->listen_port},
+                .max_package_size = options_.udp_options->max_pkg_size});
+            udp_svr_ptr_->Start();
+          });
+
+      core_ptr_->RegisterHookFunc(
+          runtime::core::AimRTCore::HookPoint::PostShutdown,
+          [this] {
+            udp_cli_pool_ptr_->Shutdown();
+            udp_svr_ptr_->Shutdown();
+          });
+    }
+
+    asio_executor_ptr_->Start();
+
+    core_ptr_->RegisterHookFunc(
+        runtime::core::AimRTCore::HookPoint::PostShutdown,
+        [this] {
+          asio_executor_ptr_->Shutdown();
+          asio_executor_ptr_->Join();
+        });
+
+    plugin_options_node = options_;
+    return true;
+  } catch (const std::exception& e) {
+    fprintf(stderr, "Initialize failed, %s\n", e.what());
+  }
+
+  return false;
+}
+
+void NetPlugin::Shutdown() noexcept {
+  try {
+    if (!init_flag_) return;
+
+  } catch (const std::exception& e) {
+    fprintf(stderr, "Shutdown failed, %s\n", e.what());
+  }
+}
+
+void NetPlugin::SetPluginLogger() {
+  SetLogger(LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(Name()).NativeHandle()));
+}
+
+void NetPlugin::RegisterHttpRpcBackend() {
+  std::unique_ptr<runtime::core::rpc::RpcBackendBase> http_rpc_backend_ptr =
+      std::make_unique<HttpRpcBackend>(asio_executor_ptr_->IO(),
+                                       http_cli_pool_ptr_,
+                                       http_svr_ptr_);
+
+  core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(http_rpc_backend_ptr));
+}
+
+void NetPlugin::RegisterHttpChannelBackend() {
+  std::unique_ptr<runtime::core::channel::ChannelBackendBase> http_channel_backend_ptr =
+      std::make_unique<HttpChannelBackend>(asio_executor_ptr_->IO(),
+                                           http_cli_pool_ptr_,
+                                           http_svr_ptr_);
+
+  core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(http_channel_backend_ptr));
+}
+
+void NetPlugin::RegisterTcpChannelBackend() {
+  std::unique_ptr<runtime::core::channel::ChannelBackendBase> tcp_channel_backend_ptr =
+      std::make_unique<TcpChannelBackend>(asio_executor_ptr_->IO(),
+                                          tcp_cli_pool_ptr_,
+                                          tcp_svr_ptr_,
+                                          tcp_msg_handle_registry_ptr_);
+
+  core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(tcp_channel_backend_ptr));
+}
+
+void NetPlugin::RegisterUdpChannelBackend() {
+  std::unique_ptr<runtime::core::channel::ChannelBackendBase> udp_channel_backend_ptr =
+      std::make_unique<UdpChannelBackend>(asio_executor_ptr_->IO(),
+                                          udp_cli_pool_ptr_,
+                                          udp_svr_ptr_,
+                                          udp_msg_handle_registry_ptr_);
+
+  core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(udp_channel_backend_ptr));
+}
+
+}  // namespace aimrt::plugins::net_plugin

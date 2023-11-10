@@ -1,0 +1,164 @@
+#pragma once
+
+#include "aimrt_module_c_interface/channel/channel_context_base.h"
+#include "aimrt_module_c_interface/util/function_base.h"
+#include "aimrt_module_c_interface/util/string.h"
+#include "aimrt_module_c_interface/util/type_support_base.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Context_manager interface
+ *
+ */
+typedef struct {
+  /**
+   * @brief Function to new context
+   *
+   */
+  const aimrt_channel_context_base_t* (*new_context)(void* impl);
+
+  /**
+   * @brief Function to delete context
+   *
+   */
+  void (*delete_context)(void* impl, const aimrt_channel_context_base_t* ctx);
+
+  /// Implement pointer
+  void* impl;
+} aimrt_channel_context_manager_base_t;
+
+/**
+ * @brief Operate struct for subscriber release callback
+ * @note
+ * Signature form: void(*)()
+ */
+typedef struct {
+  void (*invoker)(void* object);
+  void (*relocator)(void* from, void* to);
+  void (*destroyer)(void* object);
+} aimrt_function_subscriber_release_callback_ops_t;
+
+/**
+ * @brief Operate struct for subscriber callback
+ * @note
+ * Signature form:
+ * void (*)(
+ *     const aimrt_channel_context_base_t* ctx_ptr,
+ *     const void* msg,
+ *     aimrt_function_base_t* release_callback)
+ * Input 1: Const pointer to channel context
+ * Input 2: Const pointer to msg
+ * Input 3: Release callback, which ops type is
+ *   aimrt_function_subscriber_release_callback_ops_t
+ */
+typedef struct {
+  void (*invoker)(
+      void* object,
+      const aimrt_channel_context_base_t* ctx_ptr,
+      const void* msg,
+      aimrt_function_base_t* release_callback);
+  void (*relocator)(void* from, void* to);
+  void (*destroyer)(void* object);
+} aimrt_function_subscriber_callback_ops_t;
+
+/**
+ * @brief Publisher interface
+ *
+ */
+typedef struct {
+  /**
+   * @brief Function to register publish type
+   * @note
+   * Input 1: Implement pointer to publisher handle
+   * Input 2: Msg type support
+   */
+  bool (*register_publish_type)(
+      void* impl, const aimrt_type_support_base_t* msg_type_support);
+
+  /**
+   * @brief Function to publish msg
+   * @note
+   * Input 1: Implement pointer to publisher handle
+   * Input 2: Msg type name
+   * Input 3: Const pointer to channel context
+   * Input 4: Const pointer to msg
+   */
+  void (*publish)(
+      void* impl,
+      aimrt_string_view_t msg_type,
+      const aimrt_channel_context_base_t* ctx_ptr,
+      const void* msg);
+
+  /**
+   * @brief Function to get context manager
+   * @note
+   * Input 1: Implement pointer to publisher handle
+   */
+  const aimrt_channel_context_manager_base_t* (*get_context_manager)(void* impl);
+
+  /// Implement pointer
+  void* impl;
+} aimrt_channel_publisher_base_t;
+
+/**
+ * @brief Subscriber interface
+ *
+ */
+typedef struct {
+  /**
+   * @brief Function to subscribe msg
+   * @note
+   * Input 1: Implement pointer to subscriber handle
+   * Input 2: Msg type support
+   * Input 3: Msg callback, which ops type is
+   *   aimrt_function_subscriber_callback_ops_t
+   */
+  bool (*subscribe)(
+      void* impl,
+      const aimrt_type_support_base_t* msg_type_support,
+      aimrt_function_base_t* callback);
+
+  /// Implement pointer
+  void* impl;
+} aimrt_channel_subscriber_base_t;
+
+/**
+ * @brief Channel manager interface
+ *
+ */
+typedef struct {
+  /**
+   * @brief Function to get publisher for a topic
+   * Input 1: Implement pointer to channel manager
+   * Input 2: Topic name
+   * Output: Publisher handle
+   */
+  const aimrt_channel_publisher_base_t* (*get_publisher)(
+      void* impl, aimrt_string_view_t topic);
+
+  /**
+   * @brief Function to get subscriber for a topic
+   * Input 1: Implement pointer to channel manager
+   * Input 2: Topic name
+   * Output: Subscriber handle
+   */
+  const aimrt_channel_subscriber_base_t* (*get_subscriber)(
+      void* impl, aimrt_string_view_t topic);
+
+  /**
+   * @brief Function to get context manager
+   * @note
+   * Input 1: Implement pointer to publisher handle
+   */
+  const aimrt_channel_context_manager_base_t* (*get_context_manager)(void* impl);
+
+  /// Implement pointer
+  void* impl;
+} aimrt_channel_handle_base_t;
+
+#ifdef __cplusplus
+}
+#endif

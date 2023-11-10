@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# cmake
+cmake -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=./build/install \
+    -DAIMRT_BUILD_TESTS=ON \
+    -DAIMRT_BUILD_EXAMPLES=ON \
+    -DAIMRT_BUILD_DOCUMENT=ON \
+    -DAIMRT_BUILD_RUNTIME=ON \
+    -DAIMRT_BUILD_CLI_TOOLS=ON \
+    -DAIMRT_USE_FMT_LIB=ON \
+    -DAIMRT_BUILD_WITH_PROTOBUF=ON \
+    -DAIMRT_USE_LOCAL_PROTOC_COMPILER=OFF \
+    -DAIMRT_USE_PROTOC_PYTHON_PLUGIN=OFF \
+    -DAIMRT_BUILD_WITH_ROS2=ON \
+    -DAIMRT_BUILD_NET_PLUGIN=ON \
+    -DAIMRT_BUILD_SM_PLUGIN=ON \
+    -DAIMRT_BUILD_LCM_PLUGIN=ON \
+    -DAIMRT_BUILD_ROS2_PLUGIN=ON \
+    -DAIMRT_BUILD_RECORD_PLAYBACK_PLUGIN=OFF \
+    $@
+
+if [ $? -ne 0 ]; then
+    echo "cmake failed"
+    exit 1
+fi
+
+# make
+cd build
+make -j$(nproc)
+
+if [ $? -ne 0 ]; then
+    echo "make failed"
+    exit 1
+fi
+
+# test
+ctest

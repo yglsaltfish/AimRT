@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./aimrt_main --cfg_file_path=./cfg/example_benchmark_sm_channel_publisher_cfg.yaml

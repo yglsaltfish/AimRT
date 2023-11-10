@@ -1,0 +1,10 @@
+#pragma once
+
+#include "aimrt_module_cpp_interface/logger/logger.h"
+
+namespace aimrt::examples::example_ros2_rpc::ros2_rpc_server_module {
+
+void SetLogger(LoggerRef);
+LoggerRef GetLogger();
+
+}  // namespace aimrt::examples::example_ros2_rpc::ros2_rpc_server_module

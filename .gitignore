@@ -1,0 +1,13 @@
+.vscode/
+.cache/
+
+build/
+
+document/doxygen/html
+document/doxygen/doxygen.log
+
+.idea/
+cmake-build*/
+
+src/tools/aimrt_cli/dist
+src/tools/aimrt_cli/build

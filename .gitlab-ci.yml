@@ -1,0 +1,151 @@
+# see: https://agirobot.feishu.cn/wiki/wikcnBt7vy5H1zUvcwYhFZJ5zEg
+
+stages:
+  - check
+  - test
+  - build
+  - deploy
+  - release
+
+variables:
+  # -------------------------------------------------------------
+  DEFAULT_BUILD_TEST:
+    value: "True"
+    options:
+      - "True"
+      - "False"
+    description: "If want to build this project with default build and test."
+
+  DEFAULT_BUILD_TEST_PLATFORM:
+    value: "x86_64_jammy"
+    options:
+      - "x86_64_bionic"
+      - "x86_64_focal"
+      - "x86_64_jammy"
+      - "aarch64_bionic"
+      - "aarch64_focal"
+      - "aarch64_jammy"
+      - ""
+    description: "The default build and test platform."
+
+  X86_64_BIONIC:
+    value: "False"
+    options:
+      - "True"
+      - "False"
+    description: "If want to build this project with x86_64-bionic."
+
+  X86_64_FOCAL:
+    value: "False"
+    options:
+      - "True"
+      - "False"
+    description: "If want to build this project with x86_64-focal."
+
+  X86_64_JAMMY:
+    value: "True"
+    options:
+      - "True"
+      - "False"
+    description: "If want to build this project with x86_64-jammy."
+
+  AARCH64_BIONIC:
+    value: "False"
+    options:
+      - "True"
+      - "False"
+    description: "If want to build this project with aarch64-bionic."
+
+  AARCH64_FOCAL:
+    value: "False"
+    options:
+      - "True"
+      - "False"
+    description: "If want to build this project with aarch64-focal."
+
+  AARCH64_JAMMY:
+    value: "False"
+    options:
+      - "True"
+      - "False"
+    description: "If want to build this project with aarch64-jammy."
+
+  PORTABILITY_SEVERITY_MAX:
+    value: "1000"
+    description: "The max portability severity of cppcheck."
+
+  STYLE_SEVERITY_MAX:
+    value: "1000"
+    description: "The max style severity of cppcheck."
+
+  WARNING_SEVERITY_MAX:
+    value: "500"
+    description: "The max warning severity of cppcheck."
+
+  ERROR_SEVERITY_MAX:
+    value: "1"
+    description: "The max error severity of cppcheck."
+
+  TEST_COVERAGE_THRESHOLD:
+    value: "1"
+    description: "The threshold of test coverage."
+
+  CHECK_CMD:
+    value: ""
+    description: "The check command of this project."
+
+  BUILD_CMD:
+    value: |
+      source /opt/ros/humble/setup.bash && 
+      pip install pyinstaller &&
+      pip install jinja2 &&
+      pip install setuptools &&
+      pip install pyyaml &&
+      ./build.sh \
+      -Dboost_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/boost-1.82.0.tar.xz \
+      -Dfmt_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/fmt-9.1.0.tar.gz \
+      -Dlcm_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/lcm-1.5.0.tar.gz \
+      -Dgflags_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/gflags-2.2.2.tar.gz \
+      -Dgoogletest_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/googletest-1.13.0.tar.gz \
+      -Dprotobuf_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/protobuf-3.21.12.tar.gz \
+      -Djsoncpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/jsoncpp-1.9.5.tar.gz \
+      -Dyaml-cpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/yaml-cpp-0.8.0.tar.gz \
+      -Dsqlite_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/sqlite-amalgamation-3420000.zip \
+      -Dlibunifex_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz
+      
+    description: "The build command of this project."
+
+  TEST_CMD:
+    value: |
+      source /opt/ros/humble/setup.bash && 
+      pip install pyinstaller &&
+      pip install jinja2 &&
+      pip install setuptools &&
+      pip install pyyaml &&
+      ./test.sh \
+      -Dboost_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/boost-1.82.0.tar.xz \
+      -Dfmt_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/fmt-9.1.0.tar.gz \
+      -Dlcm_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/lcm-1.5.0.tar.gz \
+      -Dgflags_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/gflags-2.2.2.tar.gz \
+      -Dgoogletest_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/googletest-1.13.0.tar.gz \
+      -Dprotobuf_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/protobuf-3.21.12.tar.gz \
+      -Dyaml-cpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/yaml-cpp-0.8.0.tar.gz \
+      -Djsoncpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/jsoncpp-1.9.5.tar.gz \
+      -Dsqlite_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/sqlite-amalgamation-3420000.zip \
+      -Dlibunifex_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz
+    
+    description: "The test command of this project."
+
+  DOCKER_IMAGE: "192.168.22.31:8082/zy/agi-dev"
+  GITLAB_CI_IMAGE: "192.168.22.31:8082/zy/gitlab-ci"
+
+  CPPCHECK_REPORT_URL: "http://192.168.22.31:8083/cppcheck-report"
+  CPPCHECK_REPORT_POST_URL: "http://192.168.22.31:8084/cppcheck-report"
+
+  TEST_COVERAGE_REPORT_URL: "http://192.168.22.31:8083/test-coverage"
+  TEST_COVERAGE_REPORT_POST_URL: "http://192.168.22.31:8084/test-coverage"
+  # -------------------------------------------------------------
+
+include:
+  - project: "agi-ep/ci-template"
+    file: ".ci/main.gitlab-ci.yml"

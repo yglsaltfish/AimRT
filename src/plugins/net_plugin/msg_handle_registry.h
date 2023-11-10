@@ -1,0 +1,69 @@
+#pragma once
+
+#include <map>
+#include <string>
+
+#include <boost/asio.hpp>
+
+#include "net_plugin/global.h"
+
+namespace aimrt::plugins::net_plugin {
+
+template <typename EndPointType>
+class MsgHandleRegistry {
+ public:
+  using MsgHandleFunc =
+      std::function<void(const std::shared_ptr<boost::asio::streambuf>&)>;
+  using ServerMsgHandleFunc =
+      std::function<void(const EndPointType&, const std::shared_ptr<boost::asio::streambuf>&)>;
+
+  MsgHandleRegistry() = default;
+  ~MsgHandleRegistry() = default;
+
+  MsgHandleRegistry(const MsgHandleRegistry&) = delete;
+  MsgHandleRegistry& operator=(const MsgHandleRegistry&) = delete;
+
+  ServerMsgHandleFunc GetMsgHandleFunc() const {
+    return [this](auto ep, auto buf) { HandleServerMsg(ep, buf); };
+  }
+
+  template <typename... Args>
+    requires std::constructible_from<MsgHandleFunc, Args...>
+  void RegisterMsgHandle(std::string_view uri, Args&&... args) {
+    msg_handle_map_.emplace(uri, std::forward<Args>(args)...);
+  }
+
+ private:
+  void HandleServerMsg(const EndPointType& ep,
+                       const std::shared_ptr<boost::asio::streambuf>& buf) const {
+    // 1 byte uri len : n byte uri : buf.len-1-n byte data
+    try {
+      const void* buf_data = buf->data().data();
+      size_t buf_size = buf->size();
+
+      AIMRT_CHECK_ERROR_THROW(buf_size > 1, "Invalid msg, buf size: {}", buf_size);
+
+      uint8_t uri_size = static_cast<const uint8_t*>(buf_data)[0];
+      AIMRT_CHECK_ERROR_THROW(buf_size > uri_size + 1,
+                              "Invalid msg, buf size: {}, uri size",
+                              buf_size, uri_size);
+
+      std::string uri = std::string(static_cast<const char*>(buf_data) + 1, uri_size);
+      auto finditr = msg_handle_map_.find(uri);
+      if (finditr == msg_handle_map_.end()) {
+        AIMRT_WARN("Unregisted uri: {}", uri);
+        return;
+      }
+
+      finditr->second(buf);
+
+    } catch (const std::exception& e) {
+      AIMRT_ERROR("Handle msg failed, {}", e.what());
+      return;
+    }
+  }
+
+  std::map<std::string, MsgHandleFunc> msg_handle_map_;
+};
+
+}  // namespace aimrt::plugins::net_plugin
