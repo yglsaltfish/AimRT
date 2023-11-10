@@ -338,9 +338,9 @@ if __name__ == '__main__':
     request: CodeGeneratorRequest = CodeGeneratorRequest.FromString(
         sys.stdin.buffer.read())
 
-    agi_ros_code_generator: AimRTCodeGenerator = AimRTCodeGenerator()
+    aimrt_code_generator: AimRTCodeGenerator = AimRTCodeGenerator()
 
-    response: CodeGeneratorResponse = agi_ros_code_generator.generate(request)
+    response: CodeGeneratorResponse = aimrt_code_generator.generate(request)
 
     # Serialize response and write to stdout
     sys.stdout.buffer.write(response.SerializeToString())

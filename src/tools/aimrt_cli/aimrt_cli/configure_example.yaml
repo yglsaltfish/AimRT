@@ -1,30 +1,33 @@
-
 # 基础信息
 base_info:
   project_name: test_prj
   build_mode_tags: ["EXAMPLE", "SIMULATION", "TEST_CAMERA"] # 构建模式标签
-  aimrt_import_options: # 引入aimrt时的一些选型
-    AIMRT_BUILD_RUNTIME: 'ON'
-    AIMRT_USE_FMT_LIB: 'ON'
-    AIMRT_BUILD_WITH_PROTOBUF: 'ON' # 注意引号是必须的，否则pyyaml会将其解析为True
-    AIMRT_USE_LOCAL_PROTOC_COMPILER: 'OFF'
-    AIMRT_USE_PROTOC_PYTHON_PLUGIN: 'OFF'
-    AIMRT_BUILD_WITH_ROS2: 'ON'
+  aimrt_import_options: # 引入aimrt时的一些选项。所有选项详见AimRT的CMakeLists.txt
+    AIMRT_BUILD_TESTS: "OFF" # 注意"ON"/"OFF"的引号是必须的，否则pyyaml会将其解析为True
+    AIMRT_BUILD_EXAMPLES: "OFF"
+    AIMRT_BUILD_DOCUMENT: "OFF"
+    AIMRT_BUILD_RUNTIME: "ON"
+    AIMRT_BUILD_CLI_TOOLS: "OFF"
+    AIMRT_BUILD_WITH_PROTOBUF: "ON"
+    AIMRT_USE_LOCAL_PROTOC_COMPILER: "OFF"
+    AIMRT_USE_PROTOC_PYTHON_PLUGIN: "OFF"
+    AIMRT_BUILD_WITH_ROS2: "OFF"
+    AIMRT_BUILD_NET_PLUGIN: "OFF"
+    AIMRT_BUILD_SM_PLUGIN: "OFF"
+    AIMRT_BUILD_ROS2_PLUGIN: "OFF"
+    AIMRT_BUILD_LCM_PLUGIN: "OFF"
     # ...
 
-# 依赖的标准模块
+# 依赖的AimRT模块
 depends_std_modules:
-  - name: ep-example-aimrt-module
-    git_repository: http://code.agibot.com/agi-ep/ep-example-aimrt-module.git
-    git_tag: v0.1.5
-    import_options:
-      XXX: 'ON'
-  - name: ep-example-aimrt-protocols
-    git_repository: http://code.agibot.com/agi-ep/ep-example-aimrt-proto.git
-    git_tag: v0.1.11
-  # - name: xxx
-  #   git_repository: http://xxx/xxx.git
-  #   git_tag: v1.x.x
+  # - name: aimrt-xxx-module
+  #   git_repository: https://github.com/xxxx/aimrt-xxx-module.git
+  #   git_tag: v0.1.5
+  #   import_options:
+  #     XXX: "ON"
+  # - name: aimrt-xxx-proto
+  #   git_repository: https://github.com/xxxx/aimrt-xxx-proto.git
+  #   git_tag: v0.1.11
 
 # 协议
 protocols:
@@ -64,8 +67,8 @@ pkgs:
     modules:
       - name: exmaple_module
         namespace: local
-      - name: ep_example_bar_module
-        namespace: ep_example_aimrt_module
+      # - name: third_party_module
+      #   namespace: third_party_module
     build_mode_tag: ["EXAMPLE"]
     options:
       sss: sss
