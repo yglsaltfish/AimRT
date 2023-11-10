@@ -12,7 +12,7 @@
 **aimrt_cli**工具有以下三种安装方式。请选择任意一种您喜欢的进行安装
 
 ### 2.1 从Release中下载可执行文件
-您可在[Release下载地址](https://code.agibot.com/agi-ros/aimrt/-/releases)中找到所需的发布版本，
+您可在[Release下载地址](https://code.agibot.com/agibot-tech/aimrt/-/releases)中找到所需的发布版本，
 将其下载后解压，并将其加入到系统的环境变量中，请执行以下流程：
 ```
 vim ~/.bashrc
@@ -214,6 +214,6 @@ deploy_modes:
 
 ## 问题及需求
 您在使用此工具中的有价值需求可以在aimrt代码仓中给我们提issue，
-遇到问题也可以在此进行查找或者提问[issue链接](https://code.agibot.com/agi-ros/aimrt/-/issues)
+遇到问题也可以在此进行查找或者提问[issue链接](https://code.agibot.com/agibot-tech/aimrt/-/issues)
 
 请在提相关issue时，将标签关联到tools上并且关联人选择@yuxi，我们将尽快解决您的需求。

@@ -249,6 +249,7 @@ class WorkspaceGenerator(GeneratorBase):
                 for name in split_names:
                     std_depend_name += name.capitalize()
 
+                # TODO: 该逻辑仅内部使用，开源后删掉这个逻辑
                 git_split_names = depends_std_module['git_repository'].split('/')
                 if 'code.agibot.com' not in git_split_names:
                     git_repository_name = depends_std_module['git_repository']

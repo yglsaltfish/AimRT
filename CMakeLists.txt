@@ -17,7 +17,7 @@ set(AIMRT_USE_EXECUTOR_TYPE
     "libunifex"
     CACHE STRING "Choose the type of executor, option: libunifex/stdexec/std")
 
-option(AIMRT_USE_FMT_LIB "AimRT use fmt library." OFF)
+option(AIMRT_USE_FMT_LIB "AimRT use fmt library." ON)
 
 option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
 option(AIMRT_USE_LOCAL_PROTOC_COMPILER "AimRT use local protoc compiler." OFF)
