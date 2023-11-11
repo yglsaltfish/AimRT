@@ -18,7 +18,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
   std::string_view Name() const override { return "console"; }
 
   void Initialize(YAML::Node options_node) override;
-  void Shutdown() override {}
+  void Shutdown() override { run_flag_.store(false); }
 
   void SetLogExecutor(ExecutorRef log_executor) {
     log_executor_ = log_executor;
@@ -30,6 +30,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
  private:
   Options options_;
   ExecutorRef log_executor_;
+  std::atomic_bool run_flag_ = false;
 };
 
 }  // namespace aimrt::runtime::core::logger

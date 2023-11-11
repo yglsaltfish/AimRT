@@ -27,16 +27,14 @@ const aimrt_runtime_base_t* AimRTDynlibCreateRuntimeHandle() {
         }
         return false;
       },
-      .shutdown =
-          [](void* impl) {
-            try {
-              static_cast<aimrt::runtime::core::AimRTCore*>(impl)->Shutdown();
-            } catch (const std::exception& e) {
-              fprintf(stderr, "aimrt core shutdown failed, %s\n", e.what());
-            }
-          },
-      .register_module = [](void* impl,
-                            const aimrt_module_base_t* module) -> bool {
+      .shutdown = [](void* impl) {
+        try {
+          static_cast<aimrt::runtime::core::AimRTCore*>(impl)->Shutdown();
+        } catch (const std::exception& e) {
+          fprintf(stderr, "aimrt core shutdown failed, %s\n", e.what());
+        }  //
+      },
+      .register_module = [](void* impl, const aimrt_module_base_t* module) -> bool {
         try {
           static_cast<aimrt::runtime::core::AimRTCore*>(impl)
               ->GetModuleManager()

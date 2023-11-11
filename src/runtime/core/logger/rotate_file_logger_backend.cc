@@ -61,11 +61,16 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
   }
 
   options_node = options_;
+
+  run_flag_.store(true);
 }
 
 void RotateFileLoggerBackend::Log(
     const LogDataWrapper& log_data_wrapper,
     const std::shared_ptr<std::string>& format_log_str_ptr) {
+  if (!run_flag_.load()) [[unlikely]]
+    return;
+
   if (format_log_str_ptr->empty()) {
     uint64_t time_stamp_us =
         std::chrono::duration_cast<std::chrono::microseconds>(

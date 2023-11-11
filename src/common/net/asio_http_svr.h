@@ -229,7 +229,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
               acceptor_.close();
               ++stop_step;
             case 5:
-              acceptor_.release();
+              // acceptor_.release(); // 使用动态库形式加载时此处会崩，待排查
               ++stop_step;
             default:
               stop_step = 0;

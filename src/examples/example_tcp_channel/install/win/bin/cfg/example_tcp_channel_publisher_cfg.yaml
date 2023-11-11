@@ -4,7 +4,7 @@ aimrt:
   plugin:
     plugins:
       - name: net_plugin
-        path: ./libaimrt_net_plugin.so
+        path: ./libnet_plugin.so
         options:
           thread_num: 4
           tcp_options:

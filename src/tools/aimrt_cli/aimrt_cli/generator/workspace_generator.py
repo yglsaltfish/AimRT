@@ -44,6 +44,12 @@ class WorkspaceExpandInfo:
 
 
 aimrt_core_options = [
+    'AIMRT_BUILD_TESTS',
+    'AIMRT_BUILD_EXAMPLES',
+    'AIMRT_BUILD_DOCUMENT',
+    'AIMRT_BUILD_RUNTIME',
+    'AIMRT_BUILD_CLI_TOOLS',
+    'AIMRT_USE_EXECUTOR',
     'AIMRT_USE_FMT_LIB',
     'AIMRT_BUILD_WITH_PROTOBUF',
     'AIMRT_USE_LOCAL_PROTOC_COMPILER',
@@ -54,10 +60,6 @@ aimrt_core_options = [
     'AIMRT_BUILD_ROS2_PLUGIN',
     'AIMRT_BUILD_LCM_PLUGIN',
     'AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN',
-    'AIMRT_BUILD_RUNTIME',
-    'AIMRT_BUILD_TESTS',
-    'AIMRT_BUILD_EXAMPLES',
-    'AIMRT_BUILD_DOCUMENT',
 ]
 
 workspace_template_infos = [
