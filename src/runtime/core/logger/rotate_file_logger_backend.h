@@ -23,7 +23,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   std::string_view Name() const override { return "rotate_file"; }
 
   void Initialize(YAML::Node options_node) override;
-  void Shutdown() override {}
+  void Shutdown() override { run_flag_.store(false); }
 
   void SetLogExecutor(ExecutorRef log_executor) {
     log_executor_ = log_executor;
@@ -43,6 +43,8 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
 
   std::string base_file_name_;  // 基础文件路径
   std::ofstream ofs_;
+
+  std::atomic_bool run_flag_ = false;
 };
 
 }  // namespace aimrt::runtime::core::logger

@@ -105,7 +105,8 @@ void LoggerManager::Shutdown() {
   // 配置全局logger
   SetLogger(LoggerRef());
 
-  logger_proxy_map_.clear();
+  // logger_proxy_map_不能清，有些插件还会打日志
+  // logger_proxy_map_.clear();
 
   for (auto& backend : used_logger_backend_ptr_vec_) {
     backend->Shutdown();

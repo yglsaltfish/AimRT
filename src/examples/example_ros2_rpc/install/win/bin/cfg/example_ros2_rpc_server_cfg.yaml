@@ -4,7 +4,7 @@ aimrt:
   plugin:
     plugins:
       - name: ros2_plugin
-        path: ./libaimrt_ros2_plugin.so
+        path: ./libros2_plugin.so
         options:
           node_name: example_ros2_channel_publisher_node
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
@@ -23,11 +23,6 @@ aimrt:
           max_file_size_m: 16 # 日志文件最大尺寸，单位m
           max_file_num: 10 # 最大日志文件数量，0代表无限
   executor: # 执行器配置
-    executors: # 当前先支持thread型，未来可根据加载的网络模块提供更多类型
-      - name: work_thread_pool # 线程池
-        type: thread # 类型为线程型
-        options:
-          thread_num: 4 # 参数，4线程，不指定则默认单线程
   rpc: # rpc相关配置
     backends: # rpc后端配置
       - type: ros2 # ros2 rpc后端
