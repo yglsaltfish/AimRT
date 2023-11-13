@@ -26,13 +26,11 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
 
     // Get executor handle
     executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
-    AIMRT_CHECK_ERROR_THROW(executor_,
-                            "Get executor 'work_thread_pool' failed.");
+    AIMRT_CHECK_ERROR_THROW(executor_, "Get executor 'work_thread_pool' failed.");
 
     // Register publish type
     publisher_ = core_.GetChannel().GetPublisher(topic_name_);
-    AIMRT_CHECK_ERROR_THROW(publisher_, "Get publisher for topic '{}' failed.",
-                            topic_name_);
+    AIMRT_CHECK_ERROR_THROW(publisher_, "Get publisher for topic '{}' failed.", topic_name_);
 
     bool ret = aimrt::channel::RegisterPublishType<
         aimrt::protocols::example::ExampleEventMsg>(publisher_);
@@ -85,8 +83,7 @@ aimrt::co::Task<void> NormalPublisherModule::MainLoop() {
     while (run_flag_) {
       co_await aimrt::co::ScheduleAfter(
           work_thread_pool_scheduler,
-          std::chrono::microseconds(
-              static_cast<uint32_t>(1000000 / channel_frq_)));
+          std::chrono::microseconds(static_cast<uint32_t>(1000000 / channel_frq_)));
       count++;
       AIMRT_INFO("Loop count : {} -------------------------", count);
 
