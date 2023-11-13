@@ -23,10 +23,8 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
     AIMRT_CHECK_ERROR_THROW(
         subscriber_, "Get subscriber for topic '{}' failed.", topic_name_);
 
-    bool ret = aimrt::channel::SubscribeCo<
-        aimrt::protocols::example::ExampleEventMsg>(
-        subscriber_, std::bind(&NormalSubscriberModule::EventHandle, this,
-                               std::placeholders::_1));
+    bool ret = aimrt::channel::SubscribeCo<aimrt::protocols::example::ExampleEventMsg>(
+        subscriber_, std::bind(&NormalSubscriberModule::EventHandle, this, std::placeholders::_1));
     AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed.");
 
   } catch (const std::exception& e) {

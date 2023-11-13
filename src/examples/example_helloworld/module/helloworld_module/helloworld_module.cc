@@ -79,8 +79,7 @@ aimrt::co::Task<void> HelloWorldModule::MainLoop() {
     while (run_flag_) {
       // Sleep for some time
       co_await aimrt::co::ScheduleAfter(
-          work_thread_pool_scheduler,
-          std::chrono::milliseconds(static_cast<uint32_t>(1000)));
+          work_thread_pool_scheduler, std::chrono::milliseconds(1000));
 
       count++;
       AIMRT_HL_INFO(core_.GetLogger(),
@@ -104,8 +103,7 @@ aimrt::co::Task<void> HelloWorldModule::TestTask(uint32_t count) {
 
   // Sleep for some time
   co_await aimrt::co::ScheduleAfter(
-      aimrt::co::AimRTScheduler(executor_),
-      std::chrono::milliseconds(2000));
+      aimrt::co::AimRTScheduler(executor_), std::chrono::milliseconds(2000));
 
   AIMRT_HL_INFO(core_.GetLogger(), "Exit TestTask {}.", count);
 
