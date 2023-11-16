@@ -26,7 +26,7 @@ target_include_directories(
 target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES ${head_files})
 
 # Set link libraries of target
-# target_link_libraries(${CUR_TARGET_NAME} xxx)
+# target_link_libraries(${CUR_TARGET_NAME} INTERFACE xxx)
 
 # Set installation of target
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
