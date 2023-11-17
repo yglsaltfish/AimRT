@@ -14,7 +14,7 @@ add_subdirectory(pkg/ros2_rpc_alpha_pkg)
 add_subdirectory(pkg/ros2_rpc_beta_pkg)
 add_subdirectory(pkg/ros2_rpc_omega_pkg)
 
-# misc
+# assistant
 add_subdirectory(assistant/native_ros2_rpc_client)
 add_subdirectory(assistant/native_ros2_rpc_perf_client)
 add_subdirectory(assistant/native_ros2_rpc_server)
