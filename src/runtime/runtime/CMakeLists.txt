@@ -34,5 +34,5 @@ install(
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)
 
-# misc
+# Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_runtime")

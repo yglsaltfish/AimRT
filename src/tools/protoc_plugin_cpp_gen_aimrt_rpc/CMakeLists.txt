@@ -37,7 +37,7 @@ install(
   EXPORT ${INSTALL_CONFIG_NAME}
   RUNTIME DESTINATION bin)
 
-# misc
+# Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})
 
 if(NOT AIMRT_USE_PROTOC_PYTHON_PLUGIN)

@@ -12,7 +12,7 @@ add_subdirectory(module/ros2_subscriber_module)
 add_subdirectory(pkg/ros2_channel_alpha_pkg)
 add_subdirectory(pkg/ros2_channel_beta_pkg)
 
-# misc
+# assistant
 add_subdirectory(assistant/native_ros2_channel_publisher)
 add_subdirectory(assistant/native_ros2_channel_subscriber)
 
