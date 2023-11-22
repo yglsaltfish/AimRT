@@ -4,12 +4,10 @@
 
   #include <unifex/async_manual_reset_event.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 using AsyncEvent = unifex::async_manual_reset_event;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

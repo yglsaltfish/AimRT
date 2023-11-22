@@ -40,11 +40,11 @@ class MainThreadExecutor {
     return std::this_thread::get_id() == thread_id_;
   }
 
-  void Execute(Function<aimrt_function_executor_task_ops_t>&& task);
+  void Execute(aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task);
   void ExecuteAfterNs(uint64_t dt,
-                      Function<aimrt_function_executor_task_ops_t>&& task);
+                      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task);
   void ExecuteAtNs(uint64_t tp,
-                   Function<aimrt_function_executor_task_ops_t>&& task);
+                   aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task);
 
   const aimrt_executor_base_t* NativeHandle() const { return &base_; }
 
@@ -52,11 +52,11 @@ class MainThreadExecutor {
   static aimrt_executor_base_t GenBase(void* impl) {
     return aimrt_executor_base_t{
         .type = [](void* impl) -> aimrt_string_view_t {
-          return aimrt::ToAimRTStringView(
+          return aimrt::util::ToAimRTStringView(
               static_cast<MainThreadExecutor*>(impl)->Type());
         },
         .name = [](void* impl) -> aimrt_string_view_t {
-          return aimrt::ToAimRTStringView(
+          return aimrt::util::ToAimRTStringView(
               static_cast<MainThreadExecutor*>(impl)->Name());
         },
         .is_thread_safe = [](void* impl) -> bool {
@@ -67,15 +67,15 @@ class MainThreadExecutor {
         },
         .execute = [](void* impl, aimrt_function_base_t* task) {
           static_cast<MainThreadExecutor*>(impl)->Execute(
-              Function<aimrt_function_executor_task_ops_t>(task));  //
+              aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
         },
         .execute_after_ns = [](void* impl, uint64_t dt, aimrt_function_base_t* task) {
           static_cast<MainThreadExecutor*>(impl)->ExecuteAfterNs(
-              dt, Function<aimrt_function_executor_task_ops_t>(task));  //
+              dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
         },
         .execute_at_ns = [](void* impl, uint64_t tp, aimrt_function_base_t* task) {
           static_cast<MainThreadExecutor*>(impl)->ExecuteAtNs(
-              tp, Function<aimrt_function_executor_task_ops_t>(task));  //
+              tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
         },
         .impl = impl};
   }

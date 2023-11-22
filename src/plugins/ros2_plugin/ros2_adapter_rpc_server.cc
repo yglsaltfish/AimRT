@@ -91,7 +91,7 @@ void Ros2AdapterServer::handle_request(
         service_func_wrapper_ptr->rsp_type_support->destory(ptr);
       });
 
-  Function<aimrt_function_service_callback_ops_t> service_callback(
+  aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
       [this, service_rsp_ptr, ctx_ptr, request, request_header](uint32_t code) {
         AIMRT_TRACE("Handle ros2 req completed, func name '{}', seq num '{}'",
                     service_func_wrapper_.func_name,

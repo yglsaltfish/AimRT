@@ -24,7 +24,7 @@ struct SubscribeWrapper {
   std::string_view module_name;
   std::string_view topic_name;
   const aimrt_type_support_base_t* msg_type_support = nullptr;
-  Function<aimrt_function_subscriber_callback_ops_t> callback;
+  aimrt::util::Function<aimrt_function_subscriber_callback_ops_t> callback;
 };
 
 class ChannelRegistry {

@@ -8,8 +8,7 @@
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
-namespace aimrt {
-namespace channel {
+namespace aimrt::channel {
 
 class ContextManagerRef {
  public:
@@ -76,7 +75,7 @@ class PublisherRef {
                aimrt::channel::ContextRef ctx_ref,
                const void* msg_ptr) {
     assert(base_ptr_);
-    base_ptr_->publish(base_ptr_->impl, ToAimRTStringView(msg_type), ctx_ref.NativeHandle(), msg_ptr);
+    base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx_ref.NativeHandle(), msg_ptr);
   }
 
   ContextManagerRef GetContextManager() {
@@ -110,7 +109,7 @@ class SubscriberRef {
    */
   bool Subscribe(
       const aimrt_type_support_base_t* msg_type_support,
-      Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
+      aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
     assert(base_ptr_);
     return base_ptr_->subscribe(base_ptr_->impl, msg_type_support, callback.NativeHandle());
   }
@@ -133,13 +132,13 @@ class ChannelHandleRef {
   PublisherRef GetPublisher(std::string_view topic) {
     assert(base_ptr_);
     return PublisherRef(
-        base_ptr_->get_publisher(base_ptr_->impl, ToAimRTStringView(topic)));
+        base_ptr_->get_publisher(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
   }
 
   SubscriberRef GetSubscriber(std::string_view topic) {
     assert(base_ptr_);
     return SubscriberRef(
-        base_ptr_->get_subscriber(base_ptr_->impl, ToAimRTStringView(topic)));
+        base_ptr_->get_subscriber(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
   }
 
   ContextManagerRef GetContextManager() {
@@ -151,5 +150,4 @@ class ChannelHandleRef {
   const aimrt_channel_handle_base_t* base_ptr_ = nullptr;
 };
 
-}  // namespace channel
-}  // namespace aimrt
+}  // namespace aimrt::channel

@@ -7,8 +7,7 @@
   #include "aimrt_module_cpp_interface/executor/executor_manager.h"
   #include "aimrt_module_cpp_interface/util/function.h"
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 // Scheduler
 class AimRTScheduler {
@@ -18,7 +17,7 @@ class AimRTScheduler {
   struct OperationState final {
     template <typename Receiver2>
       requires std::constructible_from<Receiver, Receiver2>
-    explicit OperationState(ExecutorRef executor_ref, Receiver2&& r) noexcept(
+    explicit OperationState(executor::ExecutorRef executor_ref, Receiver2&& r) noexcept(
         std::is_nothrow_constructible_v<Receiver, Receiver2>)
         : executor_ref_(executor_ref), receiver_((Receiver2 &&) r) {}
 
@@ -32,7 +31,7 @@ class AimRTScheduler {
       });
     }
 
-    ExecutorRef executor_ref_;
+    executor::ExecutorRef executor_ref_;
     Receiver receiver_;
   };
 
@@ -48,7 +47,7 @@ class AimRTScheduler {
 
     static constexpr bool sends_done = false;
 
-    explicit Task(ExecutorRef executor_ref) noexcept
+    explicit Task(executor::ExecutorRef executor_ref) noexcept
         : executor_ref_(executor_ref) {}
 
     template <typename Receiver>
@@ -58,7 +57,7 @@ class AimRTScheduler {
     }
 
    private:
-    ExecutorRef executor_ref_;
+    executor::ExecutorRef executor_ref_;
   };
 
   // OperationState
@@ -67,7 +66,7 @@ class AimRTScheduler {
     template <typename Receiver2>
       requires std::constructible_from<Receiver, Receiver2>
     explicit SchedulerAfterOperationState(
-        ExecutorRef executor_ref,
+        executor::ExecutorRef executor_ref,
         const std::chrono::steady_clock::duration& dt,
         Receiver2&& r)  //
         noexcept(std::is_nothrow_constructible_v<Receiver, Receiver2>)
@@ -84,7 +83,7 @@ class AimRTScheduler {
     }
 
    private:
-    ExecutorRef executor_ref_;
+    executor::ExecutorRef executor_ref_;
     std::chrono::steady_clock::duration dt_;
     Receiver receiver_;
   };
@@ -102,7 +101,7 @@ class AimRTScheduler {
     static constexpr bool sends_done = false;
 
     explicit SchedulerAfterTask(
-        ExecutorRef executor_ref,
+        executor::ExecutorRef executor_ref,
         const std::chrono::steady_clock::duration& dt) noexcept
         : executor_ref_(executor_ref), dt_(dt) {}
 
@@ -113,7 +112,7 @@ class AimRTScheduler {
     }
 
    private:
-    ExecutorRef executor_ref_;
+    executor::ExecutorRef executor_ref_;
     std::chrono::steady_clock::duration dt_;
   };
 
@@ -123,7 +122,7 @@ class AimRTScheduler {
     template <typename Receiver2>
       requires std::constructible_from<Receiver, Receiver2>
     explicit SchedulerAtOperationState(
-        ExecutorRef executor_ref,
+        executor::ExecutorRef executor_ref,
         const std::chrono::steady_clock::time_point& tp,
         Receiver2&& r)  //
         noexcept(std::is_nothrow_constructible_v<Receiver, Receiver2>)
@@ -140,7 +139,7 @@ class AimRTScheduler {
     }
 
    private:
-    ExecutorRef executor_ref_;
+    executor::ExecutorRef executor_ref_;
     std::chrono::steady_clock::time_point tp_;
     Receiver receiver_;
   };
@@ -158,7 +157,7 @@ class AimRTScheduler {
     static constexpr bool sends_done = false;
 
     explicit SchedulerAtTask(
-        ExecutorRef executor_ref,
+        executor::ExecutorRef executor_ref,
         const std::chrono::steady_clock::time_point& tp) noexcept
         : executor_ref_(executor_ref), tp_(tp) {}
 
@@ -169,12 +168,12 @@ class AimRTScheduler {
     }
 
    private:
-    ExecutorRef executor_ref_;
+    executor::ExecutorRef executor_ref_;
     std::chrono::steady_clock::time_point tp_;
   };
 
  public:
-  explicit AimRTScheduler(ExecutorRef executor_ref) noexcept
+  explicit AimRTScheduler(executor::ExecutorRef executor_ref) noexcept
       : executor_ref_(executor_ref) {}
 
   Task schedule() const noexcept { return Task(executor_ref_); }
@@ -198,13 +197,13 @@ class AimRTScheduler {
   }
 
  private:
-  ExecutorRef executor_ref_;
+  executor::ExecutorRef executor_ref_;
 };
 
 // Context
 class AimRTContext {
  public:
-  explicit AimRTContext(ExecutorManagerRef executor_manager_ref) noexcept
+  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref) noexcept
       : executor_manager_ref_(executor_manager_ref) {}
 
   AimRTScheduler GetScheduler(std::string_view executor_name) {
@@ -212,10 +211,9 @@ class AimRTContext {
   }
 
  private:
-  ExecutorManagerRef executor_manager_ref_;
+  executor::ExecutorManagerRef executor_manager_ref_;
 };
 
-}  // namespace co
-}  // namespace aimrt
+}  // namespace aimrt::co
 
 #endif

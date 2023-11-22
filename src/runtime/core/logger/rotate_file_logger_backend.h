@@ -25,7 +25,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   void Initialize(YAML::Node options_node) override;
   void Shutdown() override { run_flag_.store(false); }
 
-  void SetLogExecutor(ExecutorRef log_executor) {
+  void SetLogExecutor(executor::ExecutorRef log_executor) {
     log_executor_ = log_executor;
   }
 
@@ -39,7 +39,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
 
  private:
   Options options_;
-  ExecutorRef log_executor_;
+  executor::ExecutorRef log_executor_;
 
   std::string base_file_name_;  // 基础文件路径
   std::ofstream ofs_;

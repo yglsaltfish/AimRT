@@ -4,12 +4,10 @@
 
   #include <unifex/on.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 inline constexpr auto& On = unifex::on;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

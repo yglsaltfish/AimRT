@@ -27,15 +27,15 @@ class ExecutorProxy {
     return executor_ptr_->IsInCurrentExecutor();
   };
 
-  void Execute(Function<aimrt_function_executor_task_ops_t>&& task) {
+  void Execute(aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
     executor_ptr_->Execute(std::move(task));
   }
   void ExecuteAfterNs(uint64_t dt,
-                      Function<aimrt_function_executor_task_ops_t>&& task) {
+                      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
     executor_ptr_->ExecuteAfterNs(dt, std::move(task));
   }
   void ExecuteAtNs(uint64_t tp,
-                   Function<aimrt_function_executor_task_ops_t>&& task) {
+                   aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
     executor_ptr_->ExecuteAtNs(tp, std::move(task));
   }
 
@@ -45,11 +45,11 @@ class ExecutorProxy {
   static aimrt_executor_base_t GenBase(void* impl) {
     return aimrt_executor_base_t{
         .type = [](void* impl) -> aimrt_string_view_t {
-          return aimrt::ToAimRTStringView(
+          return aimrt::util::ToAimRTStringView(
               static_cast<ExecutorProxy*>(impl)->Type());
         },
         .name = [](void* impl) -> aimrt_string_view_t {
-          return aimrt::ToAimRTStringView(
+          return aimrt::util::ToAimRTStringView(
               static_cast<ExecutorProxy*>(impl)->Name());
         },
         .is_thread_safe = [](void* impl) -> bool {
@@ -60,15 +60,15 @@ class ExecutorProxy {
         },
         .execute = [](void* impl, aimrt_function_base_t* task) {
           static_cast<ExecutorProxy*>(impl)->Execute(
-              Function<aimrt_function_executor_task_ops_t>(task));  //
+              aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
         },
         .execute_after_ns = [](void* impl, uint64_t dt, aimrt_function_base_t* task) {
           static_cast<ExecutorProxy*>(impl)->ExecuteAfterNs(
-              dt, Function<aimrt_function_executor_task_ops_t>(task));  //
+              dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
         },
         .execute_at_ns = [](void* impl, uint64_t tp, aimrt_function_base_t* task) {
           static_cast<ExecutorProxy*>(impl)->ExecuteAtNs(
-              tp, Function<aimrt_function_executor_task_ops_t>(task));  //
+              tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
         },
         .impl = impl};
   }
@@ -111,7 +111,7 @@ class ExecutorManagerProxy {
         .get_executor = [](void* impl, aimrt_string_view_t executor_name)
             -> const aimrt_executor_base_t* {
           auto ptr = static_cast<ExecutorManagerProxy*>(impl)->GetExecutor(
-              aimrt::ToStdStringView(executor_name));
+              aimrt::util::ToStdStringView(executor_name));
           return (ptr != nullptr) ? ptr->NativeHandle() : nullptr;
         },
         .impl = impl};

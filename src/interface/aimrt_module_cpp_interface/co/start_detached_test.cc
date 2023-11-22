@@ -5,8 +5,7 @@
   #include "aimrt_module_cpp_interface/co/start_detached.h"
   #include "aimrt_module_cpp_interface/co/task.h"
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 TEST(StartDetached, base) {
   int n = 0;
@@ -17,7 +16,6 @@ TEST(StartDetached, base) {
   EXPECT_EQ(n, 42);
 }
 
-}  // namespace co
-}  // namespace aimrt
+}  // namespace aimrt::co
 
 #endif

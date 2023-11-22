@@ -6,7 +6,7 @@
 #include "aimrt_module_c_interface/configurator/configurator_base.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
-namespace aimrt {
+namespace aimrt::configurator {
 
 class ConfiguratorRef {
  public:
@@ -26,11 +26,11 @@ class ConfiguratorRef {
    */
   std::string_view GetConfigFilePath() const {
     assert(base_ptr_);
-    return ToStdStringView(base_ptr_->config_file_path(base_ptr_->impl));
+    return aimrt::util::ToStdStringView(base_ptr_->config_file_path(base_ptr_->impl));
   }
 
  private:
   const aimrt_configurator_base_t* base_ptr_ = nullptr;
 };
 
-}  // namespace aimrt
+}  // namespace aimrt::configurator

@@ -111,7 +111,7 @@ void Ros2Plugin::Shutdown() noexcept {
 }
 
 void Ros2Plugin::SetPluginLogger() {
-  SetLogger(LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(Name()).NativeHandle()));
+  SetLogger(aimrt::logger::LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(Name()).NativeHandle()));
 }
 
 void Ros2Plugin::RegisterRos2RpcBackend() {

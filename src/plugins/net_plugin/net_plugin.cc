@@ -221,7 +221,7 @@ void NetPlugin::Shutdown() noexcept {
 }
 
 void NetPlugin::SetPluginLogger() {
-  SetLogger(LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(Name()).NativeHandle()));
+  SetLogger(aimrt::logger::LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(Name()).NativeHandle()));
 }
 
 void NetPlugin::RegisterHttpRpcBackend() {

@@ -4,13 +4,11 @@
 
   #include <unifex/task.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 template <typename T>
 using Task = typename unifex::task<T>;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

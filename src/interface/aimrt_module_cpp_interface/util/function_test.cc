@@ -28,7 +28,7 @@ extern "C" typedef struct {
   void (*destroyer)(void* object);
 } test_function_ops_4_t;
 
-namespace aimrt {
+namespace aimrt::util {
 
 uint32_t TestPlainFunc(bool, double, uint64_t) { return 42; }
 
@@ -312,4 +312,4 @@ TEST(FUNCTION_TEST, NativeHandle) {
   }
 }
 
-}  // namespace aimrt
+}  // namespace aimrt::util

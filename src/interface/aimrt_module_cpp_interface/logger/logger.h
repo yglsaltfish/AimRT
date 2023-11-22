@@ -3,7 +3,7 @@
 #include "aimrt_module_c_interface/logger/logger_base.h"
 #include "util/log_util.h"
 
-namespace aimrt {
+namespace aimrt::logger {
 
 class LoggerRef {
  public:
@@ -41,4 +41,4 @@ class LoggerRef {
   const aimrt_logger_base_t* base_ptr_ = nullptr;
 };
 
-}  // namespace aimrt
+}  // namespace aimrt::logger

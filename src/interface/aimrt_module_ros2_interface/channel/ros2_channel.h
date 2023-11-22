@@ -11,8 +11,7 @@
   #include "aimrt_module_cpp_interface/co/task.h"
 #endif
 
-namespace aimrt {
-namespace channel {
+namespace aimrt::channel {
 
 template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
@@ -50,15 +49,15 @@ template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
 inline bool Subscribe(
     SubscriberRef subscriber,
-    Function<void(aimrt::channel::ContextRef ctx_ref,
-                  const std::shared_ptr<const MsgType>&)>&& callback) {
+    aimrt::util::Function<void(aimrt::channel::ContextRef ctx_ref,
+                               const std::shared_ptr<const MsgType>&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
           const aimrt_channel_context_base_t* ctx_ptr,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
-        Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(release_callback_base);
+        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(release_callback_base);
         std::shared_ptr<const MsgType> msg_shared_ptr =
             std::shared_ptr<const MsgType>(
                 static_cast<const MsgType*>(msg_ptr),
@@ -71,14 +70,14 @@ template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
 inline bool Subscribe(
     SubscriberRef subscriber,
-    Function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
+    aimrt::util::Function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
           const aimrt_channel_context_base_t* ctx_ptr,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
-        Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(release_callback_base);
+        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(release_callback_base);
         std::shared_ptr<const MsgType> msg_shared_ptr =
             std::shared_ptr<const MsgType>(
                 static_cast<const MsgType*>(msg_ptr),
@@ -93,7 +92,7 @@ template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
 inline bool SubscribeCo(
     SubscriberRef subscriber,
-    Function<co::Task<void>(aimrt::channel::ContextRef ctx_ref, const MsgType&)>&& callback) {
+    aimrt::util::Function<co::Task<void>(aimrt::channel::ContextRef ctx_ref, const MsgType&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -102,14 +101,14 @@ inline bool SubscribeCo(
           aimrt_function_base_t* release_callback_base) {
         co::StartDetached(
             callback(aimrt::channel::ContextRef(ctx_ptr), *(static_cast<const MsgType*>(msg_ptr))),
-            Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base));
+            aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base));
       });
 }
 
 template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
 inline bool SubscribeCo(SubscriberRef subscriber,
-                        Function<co::Task<void>(const MsgType&)>&& callback) {
+                        aimrt::util::Function<co::Task<void>(const MsgType&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -118,11 +117,10 @@ inline bool SubscribeCo(SubscriberRef subscriber,
           aimrt_function_base_t* release_callback_base) {
         co::StartDetached(
             callback(*(static_cast<const MsgType*>(msg_ptr))),
-            Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base));
+            aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base));
       });
 }
 
 #endif
 
-}  // namespace channel
-}  // namespace aimrt
+}  // namespace aimrt::channel

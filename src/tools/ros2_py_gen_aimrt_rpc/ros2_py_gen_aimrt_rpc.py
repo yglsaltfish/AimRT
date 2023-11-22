@@ -96,7 +96,7 @@ namespace srv {
 
 {{srv_filename}}Service::{{srv_filename}}Service() {
   {
-    aimrt::Function<aimrt_function_service_func_ops_t> callback(
+    aimrt::util::Function<aimrt_function_service_func_ops_t> callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* callback) {
           static const aimrt::rpc::RpcHandle h =
               [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
@@ -110,7 +110,7 @@ namespace srv {
           aimrt::co::StartDetached(
               filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp),
               [callback](aimrt::rpc::Status status) {
-                (aimrt::Function<aimrt_function_service_callback_ops_t>(callback))(status.Code());
+                (aimrt::util::Function<aimrt_function_service_callback_ops_t>(callback))(status.Code());
               });
         });
     RegisterServiceFunc(
@@ -149,7 +149,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}Proxy::{{srv_filename}}(
       -> aimrt::co::Task<aimrt::rpc::Status> {
     co_return co_await aimrt::co::AsyncWrapper<aimrt::rpc::Status>(
         [rpc_handle_ref, ctx_ref, req_ptr, rsp_ptr](
-            aimrt::Function<void(aimrt::rpc::Status)>&& call_back) {
+            aimrt::util::Function<void(aimrt::rpc::Status)>&& call_back) {
           rpc_handle_ref.Invoke(
               "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
               ctx_ref, req_ptr, rsp_ptr,

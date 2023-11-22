@@ -20,7 +20,7 @@ struct ClientInvokeWrapper {
   aimrt::rpc::ContextRef ctx_ref;
   const void* req_ptr;
   void* rsp_ptr;
-  Function<aimrt_function_client_callback_ops_t> callback;
+  aimrt::util::Function<aimrt_function_client_callback_ops_t> callback;
 };
 
 class RpcBackendBase {

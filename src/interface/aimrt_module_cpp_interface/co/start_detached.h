@@ -6,8 +6,7 @@
   #include <unifex/sync_wait.hpp>
   #include <unifex/then.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 /**
  * @brief Detach executes a coroutine. Use a global async_scope
@@ -44,7 +43,6 @@ inline void StartDetached(Sender&& sender, CallBack&& callback) {
   StartDetached(((Sender &&) sender) | unifex::then((CallBack &&) callback));
 }
 
-}  // namespace co
-}  // namespace aimrt
+}  // namespace aimrt::co
 
 #endif

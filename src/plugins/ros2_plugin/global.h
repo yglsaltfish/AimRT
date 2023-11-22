@@ -5,7 +5,7 @@
 
 namespace aimrt::plugins::ros2_plugin {
 
-void SetLogger(LoggerRef);
-LoggerRef GetLogger();
+void SetLogger(aimrt::logger::LoggerRef);
+aimrt::logger::LoggerRef GetLogger();
 
 }  // namespace aimrt::plugins::ros2_plugin

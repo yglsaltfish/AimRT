@@ -100,13 +100,13 @@ void MainThreadExecutor::RegisterSignalHandle(const std::set<int>& signals,
 }
 
 void MainThreadExecutor::Execute(
-    Function<aimrt_function_executor_task_ops_t>&& task) {
+    aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
   assert(status_ == Status::Init || status_ == Status::Start);
   boost::asio::post(*io_ptr_, std::move(task));
 }
 
 void MainThreadExecutor::ExecuteAfterNs(
-    uint64_t dt, Function<aimrt_function_executor_task_ops_t>&& task) {
+    uint64_t dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
   assert(status_ == Status::Init || status_ == Status::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
   timer_ptr_->expires_after(std::chrono::nanoseconds(dt));
@@ -123,7 +123,7 @@ void MainThreadExecutor::ExecuteAfterNs(
 }
 
 void MainThreadExecutor::ExecuteAtNs(
-    uint64_t tp, Function<aimrt_function_executor_task_ops_t>&& task) {
+    uint64_t tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
   assert(status_ == Status::Init || status_ == Status::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
   timer_ptr_->expires_at(

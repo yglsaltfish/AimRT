@@ -8,10 +8,9 @@
   #include "aimrt_module_cpp_interface/co/sync_wait.h"
   #include "aimrt_module_cpp_interface/co/task.h"
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
-void AsyncSendRecv(uint32_t in, Function<void(uint32_t)>&& callback) {
+void AsyncSendRecv(uint32_t in, aimrt::util::Function<void(uint32_t)>&& callback) {
   std::thread t([in, callback{std::move(callback)}]() mutable {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     callback(in + 1);
@@ -22,7 +21,7 @@ void AsyncSendRecv(uint32_t in, Function<void(uint32_t)>&& callback) {
 TEST(AsyncWrapper, SingleRet) {
   auto work = []() -> Task<int> {
     int ret1 = co_await AsyncWrapper<uint32_t>(
-        [](Function<void(uint32_t)>&& callback) {
+        [](aimrt::util::Function<void(uint32_t)>&& callback) {
           AsyncSendRecv(100, std::move(callback));
         });
 
@@ -37,7 +36,7 @@ TEST(AsyncWrapper, SingleRet) {
 
 void AsyncSendRecv2(
     uint32_t in,
-    Function<void(uint32_t, std::string&&, const std::string&)>&& callback) {
+    aimrt::util::Function<void(uint32_t, std::string&&, const std::string&)>&& callback) {
   std::thread t([in, callback{std::move(callback)}]() mutable {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     static const std::string const_str = "xyz";
@@ -58,7 +57,6 @@ TEST(AsyncWrapper, MultipleRet) {
   EXPECT_TRUE(*ret);
 }
 
-}  // namespace co
-}  // namespace aimrt
+}  // namespace aimrt::co
 
 #endif

@@ -40,7 +40,7 @@ class RpcManager {
   void RegisterRpcBackend(std::unique_ptr<RpcBackendBase>&& rpc_backend_ptr);
 
   void RegisterGetExecutorFunc(
-      const std::function<ExecutorRef(std::string_view)>& get_executor_func);
+      const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
   RpcHandleProxy& GetRpcHandleProxy(const util::ModuleDetailInfo& module_info);
 
@@ -62,7 +62,7 @@ class RpcManager {
   Options options_;
   std::atomic<Status> status_ = Status::PreInit;
 
-  std::function<ExecutorRef(std::string_view)> get_executor_func_;
+  std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 
   std::unique_ptr<RpcRegistry> rpc_registry_ptr_;
 

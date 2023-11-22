@@ -8,7 +8,7 @@
 
 #include "aimrt_module_c_interface/util/function_base.h"
 
-namespace aimrt {
+namespace aimrt::util {
 
 template <typename>
 class Function;
@@ -359,4 +359,4 @@ bool operator!=(std::nullptr_t, const Function<T>& f) {
   return !(f == nullptr);
 }
 
-}  // namespace aimrt
+}  // namespace aimrt::util

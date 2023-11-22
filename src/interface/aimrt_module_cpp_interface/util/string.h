@@ -5,7 +5,7 @@
 
 #include "aimrt_module_c_interface/util/string.h"
 
-namespace aimrt {
+namespace aimrt::util {
 
 inline aimrt_string_view_t ToAimRTStringView(const std::string& s) {
   return aimrt_string_view_t{s.c_str(), s.size()};
@@ -27,4 +27,4 @@ inline std::string ToStdString(aimrt_string_view_t s) {
   return std::string(s.str, s.len);
 }
 
-}  // namespace aimrt
+}  // namespace aimrt::util

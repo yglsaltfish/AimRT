@@ -11,7 +11,7 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
 
   try {
     // Read cfg
-    const aimrt::ConfiguratorRef configurator = core_.GetConfigurator();
+    const auto configurator = core_.GetConfigurator();
     if (configurator) {
       YAML::Node cfg_node =
           YAML::LoadFile(std::string(configurator.GetConfigFilePath()));

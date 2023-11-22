@@ -26,13 +26,13 @@ class BenchmarkPublisherModule : public aimrt::ModuleBase {
   void Shutdown() noexcept override;
 
  private:
-  aimrt::LoggerRef GetLogger() { return core_.GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
   aimrt::co::Task<void> MainLoop();
 
  private:
   aimrt::CoreRef core_;
-  aimrt::ExecutorRef executor_;
+  aimrt::executor::ExecutorRef executor_;
 
   aimrt::co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;

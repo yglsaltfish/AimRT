@@ -39,7 +39,7 @@ void AimRTCore::Initialize(const Options& options) {
   // init log
   ExecuteHook(HookPoint::PreInitLog);
   logger_manager_.SetLogExecutor(
-      ExecutorRef(main_thread_executor_.NativeHandle()));
+      aimrt::executor::ExecutorRef(main_thread_executor_.NativeHandle()));
   logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
   AIMRT_INFO("Logger init complete.");
   ExecuteHook(HookPoint::PostInitLog);

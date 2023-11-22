@@ -60,7 +60,7 @@ void SmPlugin::Shutdown() noexcept {
 }
 
 void SmPlugin::SetPluginLogger() {
-  SetLogger(LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(Name()).NativeHandle()));
+  SetLogger(aimrt::logger::LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(Name()).NativeHandle()));
 }
 
 void SmPlugin::RegisterSmRpcBackend() {
@@ -78,9 +78,9 @@ void SmPlugin::RegisterSmChannelBackend() {
   std::unique_ptr<runtime::core::channel::ChannelBackendBase> sm_channel_backend_ptr =
       std::make_unique<SmChannelBackend>();
 
-  auto get_executor_func = [this](const std::string_view& executor_name) -> aimrt::ExecutorRef {
+  auto get_executor_func = [this](const std::string_view& executor_name) -> aimrt::executor::ExecutorRef {
     auto ptr = core_ptr_->GetExecutorManager().GetExecutorManagerProxy(runtime::core::util::ModuleDetailInfo{}).GetExecutor(executor_name);
-    return ptr ? ExecutorRef(ptr->NativeHandle()) : ExecutorRef();
+    return ptr ? executor::ExecutorRef(ptr->NativeHandle()) : executor::ExecutorRef();
   };
 
   static_cast<SmChannelBackend*>(sm_channel_backend_ptr.get())

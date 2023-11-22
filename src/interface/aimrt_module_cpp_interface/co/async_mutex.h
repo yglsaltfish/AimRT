@@ -4,12 +4,10 @@
 
   #include <unifex/async_mutex.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 using AsyncMutex = unifex::async_mutex;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

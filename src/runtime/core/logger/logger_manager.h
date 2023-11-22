@@ -39,7 +39,7 @@ class LoggerManager {
   void Start();
   void Shutdown();
 
-  void SetLogExecutor(ExecutorRef log_executor);
+  void SetLogExecutor(aimrt::executor::ExecutorRef log_executor);
 
   void RegisterLoggerBackend(
       std::unique_ptr<LoggerBackendBase>&& logger_backend_ptr);
@@ -62,7 +62,7 @@ class LoggerManager {
   Options options_;
   std::atomic<Status> status_ = Status::PreInit;
 
-  ExecutorRef log_executor_;
+  aimrt::executor::ExecutorRef log_executor_;
 
   std::vector<std::unique_ptr<LoggerBackendBase> > logger_backend_ptr_vec_;
   std::vector<LoggerBackendBase*> used_logger_backend_ptr_vec_;

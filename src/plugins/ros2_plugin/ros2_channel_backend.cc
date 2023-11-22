@@ -83,7 +83,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
   }
 
   // 只管前缀是ros2类型的消息
-  if (!CheckRosMsg(aimrt::ToStdStringView(
+  if (!CheckRosMsg(aimrt::util::ToStdStringView(
           publish_type_wrapper.msg_type_support->type_name)))
     return true;
 
@@ -162,7 +162,7 @@ bool Ros2ChannelBackend::Subscribe(
   }
 
   // 只管前缀是ros2类型的消息
-  if (!CheckRosMsg(aimrt::ToStdStringView(
+  if (!CheckRosMsg(aimrt::util::ToStdStringView(
           subscribe_wrapper.msg_type_support->type_name)))
     return true;
 

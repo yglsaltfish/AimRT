@@ -4,12 +4,10 @@
 
   #include <unifex/async_scope.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 using AsyncScope = unifex::async_scope;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

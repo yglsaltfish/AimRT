@@ -6,8 +6,7 @@
 
   #include "aimrt_module_cpp_interface/util/function.h"
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 /**
  * @brief Convert an async callback function into a sender. For detailed usage,
@@ -18,8 +17,8 @@ namespace co {
 template <typename... Results>
 class AsyncWrapper {
  public:
-  using CallBack = Function<void(Results &&...)>;
-  using AsyncFunc = Function<void(CallBack)>;
+  using CallBack = aimrt::util::Function<void(Results &&...)>;
+  using AsyncFunc = aimrt::util::Function<void(CallBack)>;
 
   template <typename Receiver>
     requires unifex::receiver<Receiver>
@@ -73,7 +72,6 @@ class AsyncWrapper {
   AsyncFunc async_func_;
 };
 
-}  // namespace co
-}  // namespace aimrt
+}  // namespace aimrt::co
 
 #endif

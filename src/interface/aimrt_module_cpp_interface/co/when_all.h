@@ -4,12 +4,10 @@
 
   #include <unifex/when_all.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 inline constexpr auto& WhenAll = unifex::when_all;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

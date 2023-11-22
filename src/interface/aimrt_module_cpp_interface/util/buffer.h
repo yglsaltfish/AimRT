@@ -4,7 +4,7 @@
 
 #include "aimrt_module_c_interface/util/buffer_base.h"
 
-namespace aimrt {
+namespace aimrt::util {
 
 class BufferArrayAllocatorRef {
  public:
@@ -89,4 +89,4 @@ class BufferArray {
   aimrt_buffer_array_t base_;
 };
 
-}  // namespace aimrt
+}  // namespace aimrt::util

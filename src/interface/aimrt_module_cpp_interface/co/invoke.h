@@ -4,12 +4,10 @@
 
   #include <unifex/invoke.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 inline constexpr auto& CoInvoke = unifex::co_invoke;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

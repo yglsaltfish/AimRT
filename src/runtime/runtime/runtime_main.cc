@@ -9,7 +9,7 @@ const aimrt_runtime_base_t* AimRTDynlibCreateRuntimeHandle() {
         try {
           static_cast<aimrt::runtime::core::AimRTCore*>(impl)->Initialize(
               aimrt::runtime::core::AimRTCore::Options{
-                  .cfg_file_path = aimrt::ToStdString(cfg_file_path)});
+                  .cfg_file_path = aimrt::util::ToStdString(cfg_file_path)});
           return true;
         } catch (const std::exception& e) {
           fprintf(stderr, "aimrt core initialize failed, %s\n", e.what());

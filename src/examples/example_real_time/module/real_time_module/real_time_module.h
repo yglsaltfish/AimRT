@@ -24,9 +24,9 @@ class RealTimeModule : public aimrt::ModuleBase {
   void Shutdown() noexcept override;
 
  private:
-  aimrt::LoggerRef GetLogger() { return core_.GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
-  aimrt::co::Task<void> WorkLoop(aimrt::ExecutorRef executor_ptr);
+  aimrt::co::Task<void> WorkLoop(aimrt::executor::ExecutorRef executor_ptr);
 
  private:
   aimrt::CoreRef core_;

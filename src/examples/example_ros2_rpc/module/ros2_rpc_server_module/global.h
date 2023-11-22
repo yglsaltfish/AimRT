@@ -4,7 +4,7 @@
 
 namespace aimrt::examples::example_ros2_rpc::ros2_rpc_server_module {
 
-void SetLogger(LoggerRef);
-LoggerRef GetLogger();
+void SetLogger(aimrt::logger::LoggerRef);
+aimrt::logger::LoggerRef GetLogger();
 
 }  // namespace aimrt::examples::example_ros2_rpc::ros2_rpc_server_module

@@ -13,7 +13,7 @@ bool RealTimeModule::Initialize(aimrt::CoreRef core) noexcept {
 
   try {
     // Read cfg
-    const aimrt::ConfiguratorRef configurator = core_.GetConfigurator();
+    const auto configurator = core_.GetConfigurator();
     if (configurator) {
       std::string file_path = std::string(configurator.GetConfigFilePath());
       if (!file_path.empty()) {
@@ -87,7 +87,7 @@ void RealTimeModule::Shutdown() noexcept {
   AIMRT_INFO("Shutdown succeeded.");
 }
 
-aimrt::co::Task<void> RealTimeModule::WorkLoop(aimrt::ExecutorRef executor) {
+aimrt::co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
   try {
     AIMRT_INFO("Start WorkLoop in {}.", executor.Name());
 

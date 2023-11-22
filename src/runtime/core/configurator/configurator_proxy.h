@@ -25,7 +25,7 @@ class ConfiguratorProxy {
   static aimrt_configurator_base_t GenBase(void* impl) {
     return aimrt_configurator_base_t{
         .config_file_path = [](void* impl) -> aimrt_string_view_t {
-          return ToAimRTStringView(static_cast<ConfiguratorProxy*>(impl)->GetConfigFilePath());
+          return aimrt::util::ToAimRTStringView(static_cast<ConfiguratorProxy*>(impl)->GetConfigFilePath());
         },
         .impl = impl};
   }

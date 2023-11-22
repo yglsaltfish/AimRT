@@ -40,13 +40,13 @@ class ThreadExecutor : public ExecutorBase {
   bool ThreadSafe() const override { return (options_.thread_num == 1); }
   bool IsInCurrentExecutor() const override;
 
-  void Execute(Function<aimrt_function_executor_task_ops_t>&& task) override;
+  void Execute(aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) override;
   void ExecuteAfterNs(
       uint64_t dt,
-      Function<aimrt_function_executor_task_ops_t>&& task) override;
+      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) override;
   void ExecuteAtNs(
       uint64_t tp,
-      Function<aimrt_function_executor_task_ops_t>&& task) override;
+      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) override;
 
  private:
   enum class Status : uint32_t {

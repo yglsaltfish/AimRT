@@ -24,7 +24,7 @@ struct PublishWrapper {
 
   // cache
   mutable const aimrt_type_support_base_t* msg_type_support = nullptr;
-  mutable std::map<std::string_view, std::shared_ptr<BufferArray> > serialization_cache;
+  mutable std::map<std::string_view, std::shared_ptr<aimrt::util::BufferArray> > serialization_cache;
 };
 
 class ChannelBackendBase {

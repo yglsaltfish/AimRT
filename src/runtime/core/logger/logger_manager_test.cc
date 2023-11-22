@@ -36,7 +36,7 @@ class LoggerManagerTest : public ::testing::Test {
         .name = "logger_test",
     };
     logger_manager_.SetLogExecutor(
-        ExecutorRef{executor_manager_.GetExecutorManagerProxy(detail_info).GetExecutor("work_thread_pool")->NativeHandle()});
+        aimrt::executor::ExecutorRef{executor_manager_.GetExecutorManagerProxy(detail_info).GetExecutor("work_thread_pool")->NativeHandle()});
 
     // register the mocked backend, register can only in PreInit status.
     std::unique_ptr<LoggerBackendBase> mocked_backend_ptr = std::make_unique<LoggerBackendMock>();
