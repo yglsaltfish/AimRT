@@ -73,13 +73,13 @@ class ModuleBase {
         .info = [](void* impl) -> aimrt_module_info_t {
           auto module_info = static_cast<ModuleBase*>(impl)->Info();
           return aimrt_module_info_t{
-              .name = ToAimRTStringView(module_info.name),
+              .name = aimrt::util::ToAimRTStringView(module_info.name),
               .major_version = module_info.major_version,
               .minor_version = module_info.minor_version,
               .patch_version = module_info.patch_version,
               .build_version = module_info.build_version,
-              .author = ToAimRTStringView(module_info.author),
-              .description = ToAimRTStringView(module_info.description)};
+              .author = aimrt::util::ToAimRTStringView(module_info.author),
+              .description = aimrt::util::ToAimRTStringView(module_info.description)};
         },
         .initialize = [](void* impl, const aimrt_core_base_t* core) -> bool {
           return static_cast<ModuleBase*>(impl)->Initialize(CoreRef(core));

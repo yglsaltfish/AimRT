@@ -21,7 +21,7 @@ void Ros2AdapterSubscription::handle_message(
 
   const rmw_gid_t& gid = message_info.get_rmw_message_info().publisher_gid;
   if (!check_local_publisher_func_(gid)) {
-    Function<aimrt_function_subscriber_release_callback_ops_t>
+    aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>
         release_callback([message]() {});
     // TODO: context
     subscribe_wrapper_.callback(nullptr, message.get(), release_callback.NativeHandle());

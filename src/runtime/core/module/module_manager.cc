@@ -122,7 +122,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
   for (const auto& module_ptr : registered_module_vec_) {
     assert(module_ptr != nullptr);
     auto info = module_ptr->info(module_ptr->impl);
-    const std::string& module_name = aimrt::ToStdString(info.name);
+    const std::string& module_name = aimrt::util::ToStdString(info.name);
 
     // 检查重复模块
     auto finditr = module_wrapper_map_.find(module_name);
@@ -140,8 +140,8 @@ void ModuleManager::Initialize(YAML::Node options_node) {
                 .minor_version = info.minor_version,
                 .patch_version = info.patch_version,
                 .build_version = info.build_version,
-                .author = aimrt::ToStdString(info.author),
-                .description = aimrt::ToStdString(info.description)},
+                .author = aimrt::util::ToStdString(info.author),
+                .description = aimrt::util::ToStdString(info.description)},
             .loader_ptr = nullptr,
             .module_ptr = module_ptr,
             .core_proxy_ptr = std::make_unique<CoreProxy>()});
@@ -181,8 +181,8 @@ void ModuleManager::Initialize(YAML::Node options_node) {
                   .minor_version = info.minor_version,
                   .patch_version = info.patch_version,
                   .build_version = info.build_version,
-                  .author = aimrt::ToStdString(info.author),
-                  .description = aimrt::ToStdString(info.description)},
+                  .author = aimrt::util::ToStdString(info.author),
+                  .description = aimrt::util::ToStdString(info.description)},
               .loader_ptr = module_loader_itr.second.get(),
               .module_ptr = module_ptr,
               .core_proxy_ptr = std::make_unique<CoreProxy>()});

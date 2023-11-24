@@ -15,7 +15,7 @@ class Ros2AdapterSubscription : public rclcpp::SubscriptionBase {
       const std::string& topic_name,
       const rcl_subscription_options_t& subscription_options,
       const runtime::core::channel::SubscribeWrapper& subscribe_wrapper,
-      Function<bool(const rmw_gid_t&)>&& check_local_publisher_func)
+      aimrt::util::Function<bool(const rmw_gid_t&)>&& check_local_publisher_func)
       : rclcpp::SubscriptionBase(node_base, type_support_handle, topic_name,
                                  subscription_options),
         subscribe_wrapper_(subscribe_wrapper),
@@ -49,7 +49,7 @@ class Ros2AdapterSubscription : public rclcpp::SubscriptionBase {
  private:
   std::atomic_bool run_flag = false;
   const runtime::core::channel::SubscribeWrapper& subscribe_wrapper_;
-  Function<bool(const rmw_gid_t&)> check_local_publisher_func_;
+  aimrt::util::Function<bool(const rmw_gid_t&)> check_local_publisher_func_;
 };
 
 }  // namespace aimrt::plugins::ros2_plugin

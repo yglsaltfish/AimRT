@@ -5,6 +5,7 @@
 #include <numeric>
 
 #include "aimrt_module_cpp_interface/co/aimrt_context.h"
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
 #include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/schedule.h"
 #include "aimrt_module_cpp_interface/co/sync_wait.h"
@@ -65,7 +66,7 @@ bool Ros2RpcPerfClientModule::Initialize(aimrt::CoreRef core) noexcept {
 
   try {
     // Read cfg
-    const aimrt::ConfiguratorRef configurator = core_.GetConfigurator();
+    const auto configurator = core_.GetConfigurator();
     if (configurator) {
       std::string file_path = std::string(configurator.GetConfigFilePath());
       if (!file_path.empty()) {
@@ -107,9 +108,9 @@ bool Ros2RpcPerfClientModule::Initialize(aimrt::CoreRef core) noexcept {
 bool Ros2RpcPerfClientModule::Start() noexcept {
   try {
     if (options_.perf_mod == Options::PerfMod::FixedFreq) {
-      scope_.spawn(FixedFreqStatisticsLoop());
+      scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), FixedFreqStatisticsLoop()));
     } else {
-      scope_.spawn(BenchStatisticsLoop());
+      scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), BenchStatisticsLoop()));
     }
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
@@ -123,7 +124,7 @@ bool Ros2RpcPerfClientModule::Start() noexcept {
 void Ros2RpcPerfClientModule::Shutdown() noexcept {
   try {
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    aimrt::co::SyncWait(scope_.on_empty());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -156,7 +157,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
 
     // 开启几个bench协程
     for (uint32_t ii = 0; ii < real_parallel; ii++) {
-      bench_scope.spawn(BenchLoop(ii, bench_run_flag));
+      bench_scope.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), BenchLoop(ii, bench_run_flag)));
     }
 
     // sleep几秒
@@ -168,7 +169,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
     bench_run_flag = false;
     co_await aimrt::co::On(
         client_statistics_thread_pool_scheduler,
-        bench_scope.complete());
+        bench_scope.on_empty());
 
     auto end_time = std::chrono::steady_clock::now();  // 获取当前系统时间
     double total_time = std::chrono::duration<double>(end_time - start_time).count() * 1e3;
@@ -232,7 +233,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
 
     auto start_time = std::chrono::steady_clock::now();  // 获取当前系统时间
 
-    fixedfreq_scope.spawn(FixedFreqLoop(freq, fixedfreq_run_flag));
+    fixedfreq_scope.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), FixedFreqLoop(freq, fixedfreq_run_flag)));
 
     // sleep几秒
     co_await aimrt::co::ScheduleAfter(
@@ -243,7 +244,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
     fixedfreq_run_flag = false;
     co_await aimrt::co::On(
         client_statistics_thread_pool_scheduler,
-        fixedfreq_scope.complete());
+        fixedfreq_scope.on_empty());
 
     auto end_time = std::chrono::steady_clock::now();  // 获取当前系统时间
     double total_time = std::chrono::duration<double>(end_time - start_time).count() * 1e3;

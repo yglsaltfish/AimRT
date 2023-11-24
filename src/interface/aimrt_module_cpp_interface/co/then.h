@@ -6,7 +6,7 @@
 
 namespace aimrt::co {
 
-inline constexpr auto& On = stdexec::on;
+inline constexpr auto& Then = stdexec::then;
 
 }
 

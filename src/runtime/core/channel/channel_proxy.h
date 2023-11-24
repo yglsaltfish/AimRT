@@ -62,7 +62,7 @@ class PublisherProxy {
 
   bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) {
     return channel_backend_manager_.RegisterPublishType(PublishTypeWrapper{
-        .msg_type = aimrt::ToStdStringView(msg_type_support->type_name),
+        .msg_type = aimrt::util::ToStdStringView(msg_type_support->type_name),
         .pkg_path = pkg_path_,
         .module_name = module_name_,
         .topic_name = topic_name_,
@@ -94,7 +94,7 @@ class PublisherProxy {
                       const aimrt_channel_context_base_t* ctx_ptr,
                       const void* msg) {
           static_cast<PublisherProxy*>(impl)->Publish(
-              aimrt::ToStdStringView(msg_type),
+              aimrt::util::ToStdStringView(msg_type),
               aimrt::channel::ContextRef(ctx_ptr),
               msg);  //
         },
@@ -131,9 +131,9 @@ class SubscriberProxy {
   SubscriberProxy& operator=(const SubscriberProxy&) = delete;
 
   bool Subscribe(const aimrt_type_support_base_t* msg_type_support,
-                 Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
+                 aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
     return channel_backend_manager_.Subscribe(SubscribeWrapper{
-        .msg_type = aimrt::ToStdStringView(msg_type_support->type_name),
+        .msg_type = aimrt::util::ToStdStringView(msg_type_support->type_name),
         .pkg_path = pkg_path_,
         .module_name = module_name_,
         .topic_name = topic_name_,
@@ -151,7 +151,7 @@ class SubscriberProxy {
                         aimrt_function_base_t* callback) -> bool {
           return static_cast<SubscriberProxy*>(impl)->Subscribe(
               msg_type_support,
-              Function<aimrt_function_subscriber_callback_ops_t>(callback));
+              aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>(callback));
         },
         .impl = impl};
   }
@@ -224,13 +224,13 @@ class ChannelProxy {
         .get_publisher = [](void* impl, aimrt_string_view_t topic)
             -> const aimrt_channel_publisher_base_t* {
           return static_cast<ChannelProxy*>(impl)
-              ->GetPublisher(aimrt::ToStdStringView(topic))
+              ->GetPublisher(aimrt::util::ToStdStringView(topic))
               .NativeHandle();
         },
         .get_subscriber = [](void* impl, aimrt_string_view_t topic)
             -> const aimrt_channel_subscriber_base_t* {
           return static_cast<ChannelProxy*>(impl)
-              ->GetSubscriber(aimrt::ToStdStringView(topic))
+              ->GetSubscriber(aimrt::util::ToStdStringView(topic))
               .NativeHandle();
         },
         .get_context_manager = [](void* impl) -> const aimrt_channel_context_manager_base_t* {

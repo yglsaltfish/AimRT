@@ -3,8 +3,7 @@
 #include <cinttypes>
 #include <string>
 
-namespace aimrt {
-namespace rpc {
+namespace aimrt::rpc {
 
 class Status {
  public:
@@ -56,5 +55,4 @@ class Status {
   uint32_t code_ = static_cast<uint32_t>(Status::RetCode::OK);
 };
 
-}  // namespace rpc
-}  // namespace aimrt
+}  // namespace aimrt::rpc

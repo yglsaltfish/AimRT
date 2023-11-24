@@ -52,7 +52,7 @@ class LcmChannelBackend : public runtime::core::channel::ChannelBackendBase {
     std::string lcm_url;                                      // lcm url
     std::string topic_name;                                   // subscriber topic name
     std::string msg_type;                                     // subscriber message type
-    ExecutorRef executor;                                     // subscriber callback executor ref
+    executor::ExecutorRef executor;                           // subscriber callback executor ref
     int32_t priority = std::numeric_limits<int32_t>::min();   // priority, number is bigger, priority is lower
     std::list<std::shared_ptr<ModuleInfo>> module_info_list;  // subscriber module info list
   };
@@ -76,7 +76,7 @@ class LcmChannelBackend : public runtime::core::channel::ChannelBackendBase {
   bool Subscribe(const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept override;
   void Publish(const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept override;
 
-  void RegisterGetExecutorFunc(const std::function<ExecutorRef(std::string_view)>& get_executor_func);
+  void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
  private:
   enum class Status : uint32_t {
@@ -89,12 +89,12 @@ class LcmChannelBackend : public runtime::core::channel::ChannelBackendBase {
   Options options_;
   std::atomic<Status> status_ = Status::PreInit;
 
-  ExecutorRef sub_default_executor_ref_;                            // default executor
-  std::function<ExecutorRef(std::string_view)> get_executor_func_;  // can get executor by name
+  executor::ExecutorRef sub_default_executor_ref_;                            // default executor
+  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;  // can get executor by name
 
   std::unordered_map<uint64_t, LcmPtr> publisher_map_;
   std::unordered_map<uint64_t, SubscriberInfoPtr> subscriber_info_map_;
-  std::unordered_map<uint64_t, std::pair<ExecutorRef, LcmDispatcherPtr>> dispatcher_map_;
+  std::unordered_map<uint64_t, std::pair<executor::ExecutorRef, LcmDispatcherPtr>> dispatcher_map_;
 };
 
 }  // namespace aimrt::plugins::lcm_plugin

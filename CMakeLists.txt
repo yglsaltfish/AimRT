@@ -13,9 +13,6 @@ option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
 
 option(AIMRT_USE_EXECUTOR "AimRT use executor." ON)
-set(AIMRT_USE_EXECUTOR_TYPE
-    "libunifex"
-    CACHE STRING "Choose the type of executor, option: libunifex/stdexec/std")
 
 option(AIMRT_USE_FMT_LIB "AimRT use fmt library." ON)
 
@@ -97,16 +94,7 @@ if(AIMRT_BUILD_TESTS)
 endif()
 
 if(AIMRT_USE_EXECUTOR)
-  if(AIMRT_USE_EXECUTOR_TYPE STREQUAL "libunifex")
-    message(STATUS "Use libunifex as executor impl.")
-    include(GetLibUnifex)
-  elseif(AIMRT_USE_EXECUTOR_TYPE STREQUAL "stdexec")
-    message(ERROR "Currently not support stdexec as executor impl.")
-  elseif(AIMRT_USE_EXECUTOR_TYPE STREQUAL "std")
-    message(ERROR "Currently not support std as executor impl.")
-  else()
-    message(ERROR "Unsupport executor impl: ${AIMRT_USE_EXECUTOR_TYPE}.")
-  endif()
+  include(GetStdexec)
 endif()
 
 if(AIMRT_USE_FMT_LIB)

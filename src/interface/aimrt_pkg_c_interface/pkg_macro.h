@@ -21,7 +21,7 @@
     static const aimrt_string_view_t* module_name_list = []() {                                 \
       static aimrt_string_view_t module_name_array[__aimrt_module_register_array_size__];       \
       for (size_t idx = 0; idx < __aimrt_module_register_array_size__; ++idx) {                 \
-        module_name_array[idx] = aimrt::ToAimRTStringView(                                      \
+        module_name_array[idx] = aimrt::util::ToAimRTStringView(                                \
             std::get<0>(__aimrt_module_register_array__[idx]));                                 \
       }                                                                                         \
       return module_name_array;                                                                 \
@@ -30,7 +30,7 @@
   }                                                                                             \
                                                                                                 \
   const aimrt_module_base_t* AimRTDynlibCreateModule(aimrt_string_view_t module_name) {         \
-    std::string_view module_name_str = aimrt::ToStdStringView(module_name);                     \
+    std::string_view module_name_str = aimrt::util::ToStdStringView(module_name);               \
     for (size_t idx = 0; idx < __aimrt_module_register_array_size__; ++idx) {                   \
       std::string_view cur_module_name_str = std::get<0>(__aimrt_module_register_array__[idx]); \
       if (module_name_str == cur_module_name_str) {                                             \

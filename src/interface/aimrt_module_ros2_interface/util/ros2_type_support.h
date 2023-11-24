@@ -18,13 +18,13 @@ template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
 const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
   static const aimrt_string_view_t kChannelRos2SerializationTypesSupportedList[] = {
-      ToAimRTStringView("ros2"), ToAimRTStringView("json")};
+      aimrt::util::ToAimRTStringView("ros2"), aimrt::util::ToAimRTStringView("json")};
 
   static const std::string msg_type_name =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
 
   static const aimrt_type_support_base_t ts{
-      .type_name = ToAimRTStringView(msg_type_name),
+      .type_name = aimrt::util::ToAimRTStringView(msg_type_name),
       .create = []() -> void* { return new MsgType(); },
       .destory = [](void* msg) { delete static_cast<MsgType*>(msg); },
       .copy = [](const void* from, void* to) {
@@ -38,11 +38,11 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
           static const rosidl_message_type_support_t* ts_ptr =
               rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>();
 
-          if (aimrt::ToStdStringView(serialization_type) == "ros2") {
+          if (aimrt::util::ToStdStringView(serialization_type) == "ros2") {
             Ros2RclSerializedMessageAdapter serialized_msg_adapter(buffer_array);
             rcl_ret_t ret = rmw_serialize(msg, ts_ptr, serialized_msg_adapter.GetRclSerializedMessage());
             return (ret == RMW_RET_OK);
-          } else if (aimrt::ToStdStringView(serialization_type) == "json") {
+          } else if (aimrt::util::ToStdStringView(serialization_type) == "json") {
             std::string msg_data;
             bool ret = common::ros2_util::MessageToJson(msg, ts_ptr, msg_data);
             if (!ret) return false;
@@ -61,7 +61,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
           static const rosidl_message_type_support_t* ts_ptr =
               rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>();
 
-          if (aimrt::ToStdStringView(serialization_type) == "ros2") {
+          if (aimrt::util::ToStdStringView(serialization_type) == "ros2") {
             if (buffer_array_view.len == 1) {
               rcl_serialized_message_t serialized_msg = rmw_get_zero_initialized_serialized_message();
               serialized_msg.buffer = const_cast<uint8_t*>(static_cast<const uint8_t*>(buffer_array_view.data[0].data)),
@@ -93,7 +93,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
               rcl_ret_t ret = rmw_deserialize(&serialized_msg, ts_ptr, msg);
               return (ret == RMW_RET_OK);
             }
-          } else if (aimrt::ToStdStringView(serialization_type) == "json") {
+          } else if (aimrt::util::ToStdStringView(serialization_type) == "json") {
             std::string json_data;
             for (size_t ii = 0; ii < buffer_array_view.len; ++ii) {
               json_data.append((char*)buffer_array_view.data[ii].data, buffer_array_view.data[ii].len);

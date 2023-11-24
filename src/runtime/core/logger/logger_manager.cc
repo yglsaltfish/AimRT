@@ -87,7 +87,7 @@ void LoggerManager::Initialize(YAML::Node options_node) {
   }
 
   // 配置全局logger
-  SetLogger(LoggerRef(GetLoggerProxy("core").NativeHandle()));
+  SetLogger(aimrt::logger::LoggerRef(GetLoggerProxy("core").NativeHandle()));
 
   options_node = options_;
 }
@@ -103,7 +103,7 @@ void LoggerManager::Shutdown() {
     return;
 
   // 配置全局logger
-  SetLogger(LoggerRef());
+  SetLogger(aimrt::logger::LoggerRef());
 
   // logger_proxy_map_不能清，有些插件还会打日志
   // logger_proxy_map_.clear();
@@ -115,7 +115,7 @@ void LoggerManager::Shutdown() {
   // logger_backend不能清，可能会有未完成的日志任务
 }
 
-void LoggerManager::SetLogExecutor(ExecutorRef log_executor) {
+void LoggerManager::SetLogExecutor(executor::ExecutorRef log_executor) {
   AIMRT_CHECK_ERROR_THROW(
       status_.load() == Status::PreInit,
       "Function can only be called when status is 'PreInit'.");

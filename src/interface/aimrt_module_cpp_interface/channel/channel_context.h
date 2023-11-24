@@ -9,8 +9,7 @@
 #include "aimrt_module_c_interface/channel/channel_context_base.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
-namespace aimrt {
-namespace channel {
+namespace aimrt::channel {
 
 using ContextSharedPtr = std::shared_ptr<const aimrt_channel_context_base_t>;
 
@@ -50,12 +49,12 @@ class ContextRef {
   // Some frame fields
   std::string_view GetMetaValue(std::string_view key) const {
     assert(base_ptr_ && base_ptr_->ops);
-    return ToStdStringView(base_ptr_->ops->get_meta_val(base_ptr_->impl, ToAimRTStringView(key)));
+    return aimrt::util::ToStdStringView(base_ptr_->ops->get_meta_val(base_ptr_->impl, aimrt::util::ToAimRTStringView(key)));
   }
 
   void SetMetaValue(std::string_view key, std::string_view val) {
     assert(base_ptr_ && base_ptr_->ops);
-    base_ptr_->ops->set_meta_val(base_ptr_->impl, ToAimRTStringView(key), ToAimRTStringView(val));
+    base_ptr_->ops->set_meta_val(base_ptr_->impl, aimrt::util::ToAimRTStringView(key), aimrt::util::ToAimRTStringView(val));
   }
 
   std::string_view GetFromAddr() const {
@@ -73,5 +72,4 @@ class ContextRef {
   const aimrt_channel_context_base_t* base_ptr_;
 };
 
-}  // namespace channel
-}  // namespace aimrt
+}  // namespace aimrt::channel

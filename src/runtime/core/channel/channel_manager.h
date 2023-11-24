@@ -38,7 +38,7 @@ class ChannelManager {
       std::unique_ptr<ChannelBackendBase>&& channel_backend_ptr);
 
   void RegisterGetExecutorFunc(
-      const std::function<ExecutorRef(std::string_view)>& get_executor_func);
+      const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
   ChannelProxy& GetChannelProxy(const util::ModuleDetailInfo& module_info);
 
@@ -60,7 +60,7 @@ class ChannelManager {
   Options options_;
   std::atomic<Status> status_ = Status::PreInit;
 
-  std::function<ExecutorRef(std::string_view)> get_executor_func_;
+  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
 
   std::unique_ptr<ChannelRegistry> channel_registry_ptr_;
 

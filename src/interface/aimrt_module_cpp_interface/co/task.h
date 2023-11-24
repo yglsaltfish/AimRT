@@ -2,15 +2,13 @@
 
 #ifdef AIMRT_USE_EXECUTOR
 
-  #include <unifex/task.hpp>
+  #include <exec/task.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
 template <typename T>
-using Task = typename unifex::task<T>;
+using Task = typename exec::task<T>;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

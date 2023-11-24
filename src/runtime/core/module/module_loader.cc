@@ -53,7 +53,7 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
   // 检查模块列表
   module_name_vec_.reserve(module_num);
   for (size_t ii = 0; ii < module_num; ++ii) {
-    auto module_name = aimrt::ToStdStringView(module_name_array[ii]);
+    auto module_name = aimrt::util::ToStdStringView(module_name_array[ii]);
     AIMRT_CHECK_ERROR_THROW(!module_name.empty(),
                             "Module name index [{}] is empty in lib {}.",
                             ii, pkg_path_);
@@ -74,14 +74,14 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
     if (finditr != disable_modules.end()) continue;
 
     const aimrt_module_base_t* module_ptr =
-        ((DynlibCreateModuleFunc)create_func)(aimrt::ToAimRTStringView(module_name));
+        ((DynlibCreateModuleFunc)create_func)(aimrt::util::ToAimRTStringView(module_name));
 
     AIMRT_CHECK_ERROR_THROW(module_ptr != nullptr,
                             "Cannot create module '{}' in lib {}.",
                             module_name, pkg_path_);
 
     auto module_info = module_ptr->info(module_ptr->impl);
-    auto real_module_name = aimrt::ToStdStringView(module_info.name);
+    auto real_module_name = aimrt::util::ToStdStringView(module_info.name);
     AIMRT_CHECK_ERROR_THROW(
         real_module_name == module_name,
         "Require module name '{}', but get module name '{}' in lib {}.",

@@ -1,5 +1,6 @@
 #include "real_time_module/real_time_module.h"
 #include "aimrt_module_cpp_interface/co/aimrt_context.h"
+#include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/schedule.h"
 #include "aimrt_module_cpp_interface/co/sync_wait.h"
 
@@ -13,7 +14,7 @@ bool RealTimeModule::Initialize(aimrt::CoreRef core) noexcept {
 
   try {
     // Read cfg
-    const aimrt::ConfiguratorRef configurator = core_.GetConfigurator();
+    const auto configurator = core_.GetConfigurator();
     if (configurator) {
       std::string file_path = std::string(configurator.GetConfigFilePath());
       if (!file_path.empty()) {
@@ -43,27 +44,30 @@ bool RealTimeModule::Start() noexcept {
         core_.GetExecutorManager().GetExecutor("sched_fifo_thread");
     AIMRT_CHECK_ERROR_THROW(sched_fifo_thread_executor,
                             "Get executor 'sched_fifo_thread' failed.");
-    scope_.spawn_on(
-        aimrt::co::AimRTScheduler(sched_fifo_thread_executor),
-        WorkLoop(sched_fifo_thread_executor));
+    scope_.spawn(
+        aimrt::co::On(
+            aimrt::co::AimRTScheduler(sched_fifo_thread_executor),
+            WorkLoop(sched_fifo_thread_executor)));
 
     // sched_other_thread
     auto sched_other_thread_executor =
         core_.GetExecutorManager().GetExecutor("sched_other_thread");
     AIMRT_CHECK_ERROR_THROW(sched_other_thread_executor,
                             "Get executor 'sched_other_thread' failed.");
-    scope_.spawn_on(
-        aimrt::co::AimRTScheduler(sched_other_thread_executor),
-        WorkLoop(sched_other_thread_executor));
+    scope_.spawn(
+        aimrt::co::On(
+            aimrt::co::AimRTScheduler(sched_other_thread_executor),
+            WorkLoop(sched_other_thread_executor)));
 
     // sched_rr_thread
     auto sched_rr_thread_executor =
         core_.GetExecutorManager().GetExecutor("sched_rr_thread");
     AIMRT_CHECK_ERROR_THROW(sched_rr_thread_executor,
                             "Get executor 'sched_rr_thread' failed.");
-    scope_.spawn_on(
-        aimrt::co::AimRTScheduler(sched_rr_thread_executor),
-        WorkLoop(sched_rr_thread_executor));
+    scope_.spawn(
+        aimrt::co::On(
+            aimrt::co::AimRTScheduler(sched_rr_thread_executor),
+            WorkLoop(sched_rr_thread_executor)));
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
@@ -78,7 +82,7 @@ void RealTimeModule::Shutdown() noexcept {
   try {
     // Wait all coroutine complete
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    aimrt::co::SyncWait(scope_.on_empty());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -87,7 +91,7 @@ void RealTimeModule::Shutdown() noexcept {
   AIMRT_INFO("Shutdown succeeded.");
 }
 
-aimrt::co::Task<void> RealTimeModule::WorkLoop(aimrt::ExecutorRef executor) {
+aimrt::co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
   try {
     AIMRT_INFO("Start WorkLoop in {}.", executor.Name());
 

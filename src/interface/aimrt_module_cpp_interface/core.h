@@ -29,19 +29,19 @@ class CoreRef {
    *
    * @return ConfiguratorRef
    */
-  ConfiguratorRef GetConfigurator() const {
+  configurator::ConfiguratorRef GetConfigurator() const {
     assert(base_ptr_);
-    return ConfiguratorRef(base_ptr_->configurator(base_ptr_->impl));
+    return configurator::ConfiguratorRef(base_ptr_->configurator(base_ptr_->impl));
   }
 
   /**
    * @brief Get logger handle
    *
-   * @return LoggerRef
+   * @return aimrt::logger::LoggerRef
    */
-  LoggerRef GetLogger() const {
+  aimrt::logger::LoggerRef GetLogger() const {
     assert(base_ptr_);
-    return LoggerRef(base_ptr_->logger(base_ptr_->impl));
+    return aimrt::logger::LoggerRef(base_ptr_->logger(base_ptr_->impl));
   }
 
   /**
@@ -49,9 +49,9 @@ class CoreRef {
    *
    * @return ExecutorManagerRef
    */
-  ExecutorManagerRef GetExecutorManager() const {
+  executor::ExecutorManagerRef GetExecutorManager() const {
     assert(base_ptr_);
-    return ExecutorManagerRef(base_ptr_->executor_manager(base_ptr_->impl));
+    return executor::ExecutorManagerRef(base_ptr_->executor_manager(base_ptr_->impl));
   }
 
   /**

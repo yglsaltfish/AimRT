@@ -11,13 +11,13 @@ static constexpr aimrt_rpc_context_base_ops_t rpc_context_base_ops{
       static_cast<ContextImpl*>(impl)->SetDeadlineNs(ddl);
     },
     .get_meta_val = [](void* impl, aimrt_string_view_t key) -> aimrt_string_view_t {
-      return aimrt::ToAimRTStringView(
+      return aimrt::util::ToAimRTStringView(
           static_cast<ContextImpl*>(impl)->GetMetaValue(
-              aimrt::ToStdStringView(key)));
+              aimrt::util::ToStdStringView(key)));
     },
     .set_meta_val = [](void* impl, aimrt_string_view_t key, aimrt_string_view_t val) {  //
       static_cast<ContextImpl*>(impl)->SetMetaValue(
-          aimrt::ToStdStringView(key), aimrt::ToStdStringView(val));
+          aimrt::util::ToStdStringView(key), aimrt::util::ToStdStringView(val));
     }};
 
 ContextImpl::ContextImpl()

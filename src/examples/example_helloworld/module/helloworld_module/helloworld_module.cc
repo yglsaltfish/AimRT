@@ -1,5 +1,7 @@
 #include "helloworld_module/helloworld_module.h"
 #include "aimrt_module_cpp_interface/co/aimrt_context.h"
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+#include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/schedule.h"
 #include "aimrt_module_cpp_interface/co/sync_wait.h"
 
@@ -13,7 +15,7 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
 
   try {
     // Read cfg
-    aimrt::ConfiguratorRef configurator = core_.GetConfigurator();
+    auto configurator = core_.GetConfigurator();
     if (configurator) {
       std::string file_path = std::string(configurator.GetConfigFilePath());
       if (!file_path.empty()) {
@@ -44,7 +46,7 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
 bool HelloWorldModule::Start() noexcept {
   try {
     // Start main loop
-    scope_.spawn(MainLoop());
+    scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
     AIMRT_HL_ERROR(core_.GetLogger(), "Start failed, {}", e.what());
     return false;
@@ -58,7 +60,7 @@ void HelloWorldModule::Shutdown() noexcept {
   try {
     // Wait all coroutine complete
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    aimrt::co::SyncWait(scope_.on_empty());
   } catch (const std::exception& e) {
     AIMRT_HL_ERROR(core_.GetLogger(), "Shutdown failed, {}", e.what());
     return;
@@ -86,7 +88,7 @@ aimrt::co::Task<void> HelloWorldModule::MainLoop() {
                     "Loop count : {} -------------------------", count);
 
       // Start a new task coroutine
-      scope_.spawn_on(work_thread_pool_scheduler, TestTask(count));
+      scope_.spawn(aimrt::co::On(work_thread_pool_scheduler, TestTask(count)));
     }
 
     AIMRT_HL_INFO(core_.GetLogger(), "Exit MainLoop.");

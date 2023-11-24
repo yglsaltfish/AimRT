@@ -11,7 +11,7 @@ bool CheckBufferEqual(const aimrt_buffer_t& lhs, const aimrt_buffer_t& rhs) {
 
 TEST(BUFFER_TEST, Base) {
   // init
-  BufferArray buffer_array(BufferArrayAllocator::NativeHandle());
+  aimrt::util::BufferArray buffer_array(BufferArrayAllocator::NativeHandle());
   EXPECT_EQ(buffer_array.Data(), nullptr);
   EXPECT_EQ(buffer_array.Size(), 0);
   EXPECT_EQ(buffer_array.Capacity(), 0);

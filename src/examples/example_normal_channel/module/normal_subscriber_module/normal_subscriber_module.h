@@ -23,7 +23,7 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
   void Shutdown() noexcept override;
 
  private:
-  aimrt::LoggerRef GetLogger() { return core_.GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
   aimrt::co::Task<void> EventHandle(
       const aimrt::protocols::example::ExampleEventMsg& data);

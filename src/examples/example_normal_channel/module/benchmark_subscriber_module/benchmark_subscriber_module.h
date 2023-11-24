@@ -24,7 +24,7 @@ class BenchmarkSubscriberModule : public aimrt::ModuleBase {
   void Shutdown() noexcept override;
 
  private:
-  aimrt::LoggerRef GetLogger() { return core_.GetLogger(); }
+  aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
   aimrt::co::Task<void> BenchmarkSignalHandle(const aimrt::protocols::example::BenchmarkSignal& data);
   aimrt::co::Task<void> BenchmarkMessageHandle(const aimrt::protocols::example::BenchmarkMessage& data);

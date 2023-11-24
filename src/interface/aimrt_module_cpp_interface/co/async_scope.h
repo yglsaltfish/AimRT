@@ -2,14 +2,12 @@
 
 #ifdef AIMRT_USE_EXECUTOR
 
-  #include <unifex/async_scope.hpp>
+  #include <exec/async_scope.hpp>
 
-namespace aimrt {
-namespace co {
+namespace aimrt::co {
 
-using AsyncScope = unifex::async_scope;
+using AsyncScope = exec::async_scope;
 
-}  // namespace co
-}  // namespace aimrt
+}
 
 #endif

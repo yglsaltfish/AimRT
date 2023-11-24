@@ -27,11 +27,11 @@ class ExecutorBase {
   virtual bool IsInCurrentExecutor() const = 0;
 
   virtual void Execute(
-      Function<aimrt_function_executor_task_ops_t>&& task) = 0;
+      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) = 0;
   virtual void ExecuteAfterNs(
-      uint64_t dt, Function<aimrt_function_executor_task_ops_t>&& task) = 0;
+      uint64_t dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) = 0;
   virtual void ExecuteAtNs(
-      uint64_t tp, Function<aimrt_function_executor_task_ops_t>&& task) = 0;
+      uint64_t tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) = 0;
 };
 
 }  // namespace aimrt::runtime::core::executor

@@ -316,7 +316,7 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
 
           auto get_serialization_type_func = [](const runtime::core::channel::SubscribeWrapper& wrapper) -> std::string_view {
             if (wrapper.msg_type_support->serialization_types_supported_num) {
-              return aimrt::ToStdStringView(wrapper.msg_type_support->serialization_types_supported_list[0]);
+              return aimrt::util::ToStdStringView(wrapper.msg_type_support->serialization_types_supported_list[0]);
             }
             return "";
           };
@@ -337,7 +337,7 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
               [destory_func](void* ptr) { destory_func(ptr); });
 
           bool deserialize_ret = wrapper.msg_type_support->deserialize(
-              aimrt::ToAimRTStringView(serialization_type),
+              aimrt::util::ToAimRTStringView(serialization_type),
               buffer_array_view,
               msg_ptr.get());
 
@@ -348,14 +348,14 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
 
           if (subscriber_info->executor.ThreadSafe()) {
             // 直接执行
-            Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
+            aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
             wrapper.callback(nullptr,
                              msg_ptr.get(),
                              release_callback.NativeHandle());
           } else {
             // 放入线程池执行
             subscriber_info->executor.Execute([&wrapper, msg_ptr]() {
-              Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
+              aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
               wrapper.callback(nullptr,
                                msg_ptr.get(),
                                release_callback.NativeHandle());
@@ -380,11 +380,11 @@ void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pub
   auto& transmitter_ptr = publisher_map_[msg_hash];
 
   // publisher序列化
-  std::shared_ptr<BufferArray> buffer_array;
+  std::shared_ptr<aimrt::util::BufferArray> buffer_array;
 
   auto get_serialization_type_func = [&publish_wrapper]() -> std::string_view {
     if (publish_wrapper.msg_type_support->serialization_types_supported_num) {
-      return aimrt::ToStdStringView(publish_wrapper.msg_type_support->serialization_types_supported_list[0]);
+      return aimrt::util::ToStdStringView(publish_wrapper.msg_type_support->serialization_types_supported_list[0]);
     }
     return "";
   };
@@ -397,9 +397,9 @@ void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pub
     buffer_array = find_serialization_cache_itr->second;  // 有缓存
   } else {
     // 没有缓存，序列化一次后放入缓存中
-    buffer_array = std::make_shared<BufferArray>(runtime::core::GetDefaultBufferArrayAllocator());
+    buffer_array = std::make_shared<aimrt::util::BufferArray>(runtime::core::GetDefaultBufferArrayAllocator());
     bool serialize_ret = publish_wrapper.msg_type_support->serialize(
-        aimrt::ToAimRTStringView(serialization_type),
+        aimrt::util::ToAimRTStringView(serialization_type),
         publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
     if (!serialize_ret) {
@@ -420,7 +420,8 @@ void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pub
   transmitter_ptr->Transmit(data.c_str(), data.size());
 }
 
-void SmChannelBackend::RegisterGetExecutorFunc(const std::function<ExecutorRef(std::string_view)>& get_executor_func) {
+void SmChannelBackend::RegisterGetExecutorFunc(
+    const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
       status_.load() == Status::PreInit,
       "Function can only be called when status is 'PreInit'.");

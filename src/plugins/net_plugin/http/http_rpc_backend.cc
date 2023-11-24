@@ -148,7 +148,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
     bool deserialize_ret =
         service_func_wrapper.req_type_support->deserialize(
-            aimrt::ToAimRTStringView(serialization_type),
+            aimrt::util::ToAimRTStringView(serialization_type),
             buffer_array_view,
             service_req_ptr.get());
 
@@ -168,7 +168,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
     auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*strand_ptr, timeout);
     bool handle_flag = false;
 
-    Function<aimrt_function_service_callback_ops_t> service_callback(
+    aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
         [&service_func_wrapper,
          ctx_ptr,
          &req,
@@ -179,12 +179,12 @@ bool HttpRpcBackend::RegisterServiceFunc(
          sig_timer_ptr,
          &handle_flag,
          strand_ptr](uint32_t code) {
-          BufferArray buffer_array(GetDefaultBufferArrayAllocator());
+          aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
 
           // service rsp序列化
           bool serialize_ret =
               service_func_wrapper.rsp_type_support->serialize(
-                  aimrt::ToAimRTStringView(serialization_type),
+                  aimrt::util::ToAimRTStringView(serialization_type),
                   service_rsp_ptr.get(), buffer_array.NativeHandle());
 
           // 序列化失败一般很少见，此处暂时不做处理
@@ -379,11 +379,11 @@ bool HttpRpcBackend::TryInvoke(
             co_return;
           }
 
-          BufferArray buffer_array(GetDefaultBufferArrayAllocator());
+          aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
 
           // client req序列化
           bool serialize_ret = client_func_wrapper_ptr->req_type_support->serialize(
-              aimrt::ToAimRTStringView(serialization_type),
+              aimrt::util::ToAimRTStringView(serialization_type),
               client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
 
           // 序列化失败一般很少见，此处暂时不做处理
@@ -443,7 +443,7 @@ bool HttpRpcBackend::TryInvoke(
 
           bool deserialize_ret =
               client_func_wrapper_ptr->rsp_type_support->deserialize(
-                  aimrt::ToAimRTStringView(serialization_type),
+                  aimrt::util::ToAimRTStringView(serialization_type),
                   buffer_array_view,
                   client_invoke_wrapper_ptr->rsp_ptr);
 

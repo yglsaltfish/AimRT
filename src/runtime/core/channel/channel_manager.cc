@@ -108,7 +108,7 @@ void ChannelManager::Shutdown() {
 
   channel_registry_ptr_.reset();
 
-  get_executor_func_ = std::function<ExecutorRef(std::string_view)>();
+  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
 
 void ChannelManager::RegisterChannelBackend(
@@ -121,7 +121,7 @@ void ChannelManager::RegisterChannelBackend(
 }
 
 void ChannelManager::RegisterGetExecutorFunc(
-    const std::function<ExecutorRef(std::string_view)>& get_executor_func) {
+    const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
       status_.load() == Status::PreInit,
       "Function can only be called when status is 'PreInit'.");

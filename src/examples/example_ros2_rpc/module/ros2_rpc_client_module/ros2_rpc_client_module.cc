@@ -1,5 +1,7 @@
 #include "ros2_rpc_client_module/ros2_rpc_client_module.h"
 #include "aimrt_module_cpp_interface/co/aimrt_context.h"
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+#include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/schedule.h"
 #include "aimrt_module_cpp_interface/co/sync_wait.h"
 
@@ -12,7 +14,7 @@ bool Ros2RpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
 
   try {
     // Read cfg
-    const aimrt::ConfiguratorRef configurator = core_.GetConfigurator();
+    const auto configurator = core_.GetConfigurator();
     if (configurator) {
       std::string file_path = std::string(configurator.GetConfigFilePath());
       if (!file_path.empty()) {
@@ -66,7 +68,7 @@ bool Ros2RpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
 
 bool Ros2RpcClientModule::Start() noexcept {
   try {
-    scope_.spawn(MainLoop());
+    scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
     return false;
@@ -79,7 +81,7 @@ bool Ros2RpcClientModule::Start() noexcept {
 void Ros2RpcClientModule::Shutdown() noexcept {
   try {
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    aimrt::co::SyncWait(scope_.on_empty());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;

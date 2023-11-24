@@ -11,11 +11,10 @@
   #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
   #include "aimrt_module_cpp_interface/util/function.h"
 
-namespace aimrt {
-namespace rpc {
+namespace aimrt::rpc {
 
-using RpcHandle = Function<co::Task<Status>(ContextRef, const void*, void*)>;
-using RpcFilter = Function<co::Task<Status>(ContextRef, const void*, void*, const RpcHandle&)>;
+using RpcHandle = aimrt::util::Function<co::Task<Status>(ContextRef, const void*, void*)>;
+using RpcFilter = aimrt::util::Function<co::Task<Status>(ContextRef, const void*, void*, const RpcHandle&)>;
 
 class FilterManager {
  public:
@@ -48,7 +47,6 @@ class FilterManager {
   RpcFilter final_filter_;
 };
 
-}  // namespace rpc
-}  // namespace aimrt
+}  // namespace aimrt::rpc
 
 #endif

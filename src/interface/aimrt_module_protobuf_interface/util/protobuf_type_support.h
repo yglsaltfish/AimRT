@@ -17,13 +17,13 @@ namespace aimrt {
 template <std::derived_from<::google::protobuf::Message> MsgType>
 const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
   static const aimrt_string_view_t kChannelProtobufSerializationTypesSupportedList[] = {
-      ToAimRTStringView("pb"),
-      ToAimRTStringView("json")};
+      aimrt::util::ToAimRTStringView("pb"),
+      aimrt::util::ToAimRTStringView("json")};
 
   static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
 
   static const aimrt_type_support_base_t ts{
-      .type_name = ToAimRTStringView(msg_type_name),
+      .type_name = aimrt::util::ToAimRTStringView(msg_type_name),
       .create = []() -> void* { return new MsgType(); },
       .destory = [](void* msg) { delete static_cast<MsgType*>(msg); },
       .copy = [](const void* from, void* to) {
@@ -36,14 +36,14 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
         try {
           const MsgType& msg_ref = *static_cast<const MsgType*>(msg);
 
-          if (aimrt::ToStdStringView(serialization_type) == "pb") {
+          if (aimrt::util::ToStdStringView(serialization_type) == "pb") {
             BufferArrayZeroCopyOutputStream os(buffer_array);
             if (!msg_ref.SerializeToZeroCopyStream(&os)) return false;
             os.CommitLastBuf();
             return true;
           }
 
-          if (aimrt::ToStdStringView(serialization_type) == "json") {
+          if (aimrt::util::ToStdStringView(serialization_type) == "json") {
             // todo：使用zerocopy
             ::google::protobuf::util::JsonPrintOptions op;
             op.always_print_primitive_fields = true;
@@ -65,14 +65,14 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
       },
       .deserialize = [](aimrt_string_view_t serialization_type, aimrt_buffer_array_view_t buffer_array_view, void* msg) -> bool {
         try {
-          if (aimrt::ToStdStringView(serialization_type) == "pb") {
+          if (aimrt::util::ToStdStringView(serialization_type) == "pb") {
             BufferArrayZeroCopyInputStream is(buffer_array_view);
             if (!static_cast<MsgType*>(msg)->ParseFromZeroCopyStream(&is))
               return false;
             return true;
           }
 
-          if (aimrt::ToStdStringView(serialization_type) == "json") {
+          if (aimrt::util::ToStdStringView(serialization_type) == "json") {
             // todo：使用zerocopy
             if (buffer_array_view.len == 1) {
               auto status = ::google::protobuf::util::JsonStringToMessage(

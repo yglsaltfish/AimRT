@@ -109,7 +109,7 @@ class {{service_name}}Proxy : public aimrt::rpc::ProxyBase {
 
   constexpr static std::string_view t_ccfile_one_service_register_func = R"str(
   {
-    aimrt::Function<aimrt_function_service_func_ops_t> callback(
+    aimrt::util::Function<aimrt_function_service_func_ops_t> callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* callback) {
           static const aimrt::rpc::RpcHandle h =
               [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
@@ -121,10 +121,13 @@ class {{service_name}}Proxy : public aimrt::rpc::ProxyBase {
           };
 
           aimrt::co::StartDetached(
-              filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp),
-              [callback](aimrt::rpc::Status status) {
-                (aimrt::Function<aimrt_function_service_callback_ops_t>(callback))(status.Code());
-              });
+              aimrt::co::On(
+                  aimrt::co::InlineScheduler(),
+                  filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp)) |
+              aimrt::co::Then(
+                  [callback](aimrt::rpc::Status status) {
+                    (aimrt::util::Function<aimrt_function_service_callback_ops_t>(callback))(status.Code());
+                  }));
         });
     RegisterServiceFunc(
         "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
@@ -167,7 +170,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}Proxy::{{rpc_func_name}}(
       -> aimrt::co::Task<aimrt::rpc::Status> {
     co_return co_await aimrt::co::AsyncWrapper<aimrt::rpc::Status>(
         [rpc_handle_ref, ctx_ref, req_ptr, rsp_ptr](
-            aimrt::Function<void(aimrt::rpc::Status)>&& call_back) {
+            aimrt::util::Function<void(aimrt::rpc::Status)>&& call_back) {
           rpc_handle_ref.Invoke(
               "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
               ctx_ref, req_ptr, rsp_ptr,
@@ -204,7 +207,10 @@ bool {{service_name}}Proxy::RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_hand
 #include "{{file_name}}.aimrt_rpc.pb.h"
 
 #include "aimrt_module_cpp_interface/co/async_wrapper.h"
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+#include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/start_detached.h"
+#include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
 
 #include <google/protobuf/stubs/stringpiece.h>

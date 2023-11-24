@@ -7,7 +7,7 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
-namespace aimrt {
+namespace aimrt::executor {
 
 class ExecutorManagerRef {
  public:
@@ -25,11 +25,11 @@ class ExecutorManagerRef {
   ExecutorRef GetExecutor(std::string_view executor_name) {
     assert(base_ptr_);
     return ExecutorRef(base_ptr_->get_executor(
-        base_ptr_->impl, ToAimRTStringView(executor_name)));
+        base_ptr_->impl, aimrt::util::ToAimRTStringView(executor_name)));
   }
 
  private:
   const aimrt_executor_manager_base_t* base_ptr_ = nullptr;
 };
 
-}  // namespace aimrt
+}  // namespace aimrt::executor

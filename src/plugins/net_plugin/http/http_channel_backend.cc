@@ -161,7 +161,7 @@ bool HttpChannelBackend::Subscribe(
       // 消息反序列化
       bool deserialize_ret =
           subscribe_wrapper_ptr->msg_type_support->deserialize(
-              aimrt::ToAimRTStringView(serialization_type),
+              aimrt::util::ToAimRTStringView(serialization_type),
               buffer_array_view,
               msg_ptr.get());
 
@@ -175,7 +175,7 @@ bool HttpChannelBackend::Subscribe(
     for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
       auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
       std::shared_ptr<void> msg_ptr = finditr->second;
-      Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
+      aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
       subscribe_wrapper_ptr->callback(nullptr, msg_ptr.get(), release_callback.NativeHandle());
     }
 
@@ -235,7 +235,7 @@ void HttpChannelBackend::Publish(
   if (serialization_type.empty() &&
       publish_wrapper.msg_type_support->serialization_types_supported_num > 0) {
     serialization_type =
-        aimrt::ToStdString(publish_wrapper.msg_type_support->serialization_types_supported_list[0]);
+        aimrt::util::ToStdString(publish_wrapper.msg_type_support->serialization_types_supported_list[0]);
   }
 
   if (serialization_type == "json") {
@@ -250,14 +250,14 @@ void HttpChannelBackend::Publish(
   }
 
   // msg序列化
-  std::shared_ptr<BufferArray> buffer_array;
+  std::shared_ptr<aimrt::util::BufferArray> buffer_array;
 
   auto find_serialization_cache_itr = publish_wrapper.serialization_cache.find(serialization_type);
   if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
     // 没有缓存，序列化一次后放入缓存中
-    buffer_array = std::make_shared<BufferArray>(GetDefaultBufferArrayAllocator());
+    buffer_array = std::make_shared<aimrt::util::BufferArray>(GetDefaultBufferArrayAllocator());
     bool serialize_ret = publish_wrapper.msg_type_support->serialize(
-        aimrt::ToAimRTStringView(serialization_type),
+        aimrt::util::ToAimRTStringView(serialization_type),
         publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
     if (!serialize_ret) {

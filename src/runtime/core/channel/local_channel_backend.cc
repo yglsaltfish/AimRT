@@ -75,7 +75,7 @@ void LocalChannelBackend::Shutdown() {
   if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
     return;
 
-  get_executor_func_ = std::function<ExecutorRef(std::string_view)>();
+  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
   subscribe_index_map_.clear();
 }
 
@@ -158,14 +158,14 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       assert(subscribe_wrapper_ptr != nullptr && !serialization_type.empty());
 
       // msg序列化
-      std::shared_ptr<BufferArray> buffer_array;
+      std::shared_ptr<aimrt::util::BufferArray> buffer_array;
 
       auto find_serialization_cache_itr = publish_wrapper.serialization_cache.find(serialization_type);
       if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
         // 没有缓存，序列化一次后放入缓存中
-        buffer_array = std::make_shared<BufferArray>(GetDefaultBufferArrayAllocator());
+        buffer_array = std::make_shared<aimrt::util::BufferArray>(GetDefaultBufferArrayAllocator());
         bool serialize_ret = publish_wrapper.msg_type_support->serialize(
-            aimrt::ToAimRTStringView(serialization_type),
+            aimrt::util::ToAimRTStringView(serialization_type),
             publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
         if (!serialize_ret) {
@@ -184,7 +184,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       // subscribe反序列化
       bool deserialize_ret =
           subscribe_wrapper_ptr->msg_type_support->deserialize(
-              aimrt::ToAimRTStringView(serialization_type),
+              aimrt::util::ToAimRTStringView(serialization_type),
               *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array->NativeHandle()),
               msg_ptr.get());
       if (!deserialize_ret) {
@@ -221,11 +221,11 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       if (subscribe_executor_ref_) {
         subscribe_executor_ref_.Execute(
             [subscribe_wrapper_ptr, msg_ptr]() {
-              Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
+              aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
               subscribe_wrapper_ptr->callback(nullptr, msg_ptr.get(), release_callback.NativeHandle());
             });
       } else {
-        Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
+        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
         subscribe_wrapper_ptr->callback(nullptr, msg_ptr.get(), release_callback.NativeHandle());
       }
     }
@@ -233,7 +233,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
 }
 
 void LocalChannelBackend::RegisterGetExecutorFunc(
-    const std::function<ExecutorRef(std::string_view)>& get_executor_func) {
+    const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
       status_.load() == Status::PreInit,
       "Function can only be called when status is 'PreInit'.");
@@ -287,13 +287,13 @@ LocalChannelBackend::GetSubscribeSerializationType(
          ii < cur_subscribe_msg_type_support_ptr->serialization_types_supported_num;
          ++ii) {
       std::string_view cur_subscribe_msg_serialization_type =
-          aimrt::ToStdStringView(cur_subscribe_msg_type_support_ptr->serialization_types_supported_list[ii]);
+          aimrt::util::ToStdStringView(cur_subscribe_msg_type_support_ptr->serialization_types_supported_list[ii]);
 
       for (uint32_t jj = 0;
            jj < publish_msg_type_support_ptr->serialization_types_supported_num;
            ++jj) {
         std::string_view cur_publish_msg_serialization_type =
-            aimrt::ToStdStringView(publish_msg_type_support_ptr->serialization_types_supported_list[jj]);
+            aimrt::util::ToStdStringView(publish_msg_type_support_ptr->serialization_types_supported_list[jj]);
 
         if (cur_subscribe_msg_serialization_type == cur_publish_msg_serialization_type) {
           return {cur_subscribe_wrapper_ptr, cur_publish_msg_serialization_type};

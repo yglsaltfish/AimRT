@@ -25,11 +25,11 @@ class RpcHandleProxy {
                                     const aimrt_type_support_base_t* rsp_type_support,
                                     aimrt_function_base_t* service_func) -> bool {
           return static_cast<RpcHandleProxy*>(impl)->RegisterServiceFunc(
-              aimrt::ToStdStringView(func_name),
+              aimrt::util::ToStdStringView(func_name),
               custom_type_support_ptr,
               req_type_support,
               rsp_type_support,
-              Function<aimrt_function_service_func_ops_t>(service_func));
+              aimrt::util::Function<aimrt_function_service_func_ops_t>(service_func));
         },
         .register_client_func = [](void* impl,
                                    aimrt_string_view_t func_name,
@@ -37,7 +37,7 @@ class RpcHandleProxy {
                                    const aimrt_type_support_base_t* req_type_support,
                                    const aimrt_type_support_base_t* rsp_type_support) -> bool {
           return static_cast<RpcHandleProxy*>(impl)->RegisterClientFunc(
-              aimrt::ToStdStringView(func_name),
+              aimrt::util::ToStdStringView(func_name),
               custom_type_support_ptr,
               req_type_support,
               rsp_type_support);
@@ -49,11 +49,11 @@ class RpcHandleProxy {
                      void* rsp_ptr,
                      aimrt_function_base_t* callback) {  //
           static_cast<RpcHandleProxy*>(impl)->Invoke(
-              aimrt::ToStdStringView(func_name),
+              aimrt::util::ToStdStringView(func_name),
               aimrt::rpc::ContextRef(ctx_ptr),
               req_ptr,
               rsp_ptr,
-              Function<aimrt_function_client_callback_ops_t>(callback));
+              aimrt::util::Function<aimrt_function_client_callback_ops_t>(callback));
         },
         .new_context = [](void* impl) -> const aimrt_rpc_context_base_t* {
           return static_cast<RpcHandleProxy*>(impl)->NewContextBase()->NativeHandle();
@@ -74,7 +74,7 @@ class RpcHandleProxy {
       const void* custom_type_support_ptr,
       const aimrt_type_support_base_t* req_type_support,
       const aimrt_type_support_base_t* rsp_type_support,
-      Function<aimrt_function_service_func_ops_t>&& service_func) noexcept {
+      aimrt::util::Function<aimrt_function_service_func_ops_t>&& service_func) noexcept {
     return rpc_backend_manager_.RegisterServiceFunc(
         ServiceFuncWrapper{
             .func_name = func_name,
@@ -106,7 +106,7 @@ class RpcHandleProxy {
       aimrt::rpc::ContextRef ctx_ref,
       const void* req_ptr,
       void* rsp_ptr,
-      Function<aimrt_function_client_callback_ops_t>&& callback) noexcept {
+      aimrt::util::Function<aimrt_function_client_callback_ops_t>&& callback) noexcept {
     rpc_backend_manager_.Invoke(
         ClientInvokeWrapper{
             .func_name = func_name,

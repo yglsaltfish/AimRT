@@ -9,8 +9,7 @@
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
-namespace aimrt {
-namespace rpc {
+namespace aimrt::rpc {
 
 class ServiceBase {
   friend class RpcHandleRef;
@@ -27,7 +26,7 @@ class ServiceBase {
     const void* custom_type_support_ptr;
     const aimrt_type_support_base_t* req_type_support;
     const aimrt_type_support_base_t* rsp_type_support;
-    Function<aimrt_function_service_func_ops_t> service_func;
+    aimrt::util::Function<aimrt_function_service_func_ops_t> service_func;
   };
 
  protected:
@@ -42,7 +41,7 @@ class ServiceBase {
       const void* custom_type_support_ptr,
       const aimrt_type_support_base_t* req_type_support,
       const aimrt_type_support_base_t* rsp_type_support,
-      Function<aimrt_function_service_func_ops_t>&& service_func) {
+      aimrt::util::Function<aimrt_function_service_func_ops_t>&& service_func) {
     service_func_wrapper_map_.emplace(
         func_name,
         ServiceFuncWrapper{
@@ -82,7 +81,7 @@ class RpcHandleRef {
     for (auto& itr : service_ptr->service_func_wrapper_map_) {
       if (!base_ptr_->register_service_func(
               base_ptr_->impl,
-              ToAimRTStringView(itr.first),
+              aimrt::util::ToAimRTStringView(itr.first),
               itr.second.custom_type_support_ptr,
               itr.second.req_type_support,
               itr.second.rsp_type_support,
@@ -110,7 +109,7 @@ class RpcHandleRef {
     assert(base_ptr_);
     return base_ptr_->register_client_func(
         base_ptr_->impl,
-        ToAimRTStringView(func_name),
+        aimrt::util::ToAimRTStringView(func_name),
         custom_type_support_ptr,
         req_type_support,
         rsp_type_support);
@@ -130,11 +129,11 @@ class RpcHandleRef {
       ContextRef ctx_ref,
       const void* req_ptr,
       void* rsp_ptr,
-      Function<aimrt_function_client_callback_ops_t>&& callback) const {
+      aimrt::util::Function<aimrt_function_client_callback_ops_t>&& callback) const {
     assert(base_ptr_);
     base_ptr_->invoke(
         base_ptr_->impl,
-        ToAimRTStringView(func_name),
+        aimrt::util::ToAimRTStringView(func_name),
         ctx_ref.NativeHandle(),
         req_ptr,
         rsp_ptr,
@@ -186,5 +185,4 @@ bool RegisterClientFunc(RpcHandleRef rpc_handle_ref) {
   return ProxyType::RegisterClientFunc(rpc_handle_ref);
 }
 
-}  // namespace rpc
-}  // namespace aimrt
+}  // namespace aimrt::rpc

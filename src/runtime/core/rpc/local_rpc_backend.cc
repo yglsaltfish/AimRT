@@ -218,11 +218,11 @@ bool LocalRpcBackend::TryInvoke(
   };
   const auto* client_func_wrapper_ptr = get_client_func_wrapper_ptr_func();
 
-  BufferArray buffer_array(GetDefaultBufferArrayAllocator());
+  aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
 
   // client req序列化
   bool serialize_ret = client_func_wrapper_ptr->req_type_support->serialize(
-      aimrt::ToAimRTStringView(serialization_type),
+      aimrt::util::ToAimRTStringView(serialization_type),
       client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
 
   if (!serialize_ret) {
@@ -247,7 +247,7 @@ bool LocalRpcBackend::TryInvoke(
 
   bool deserialize_ret =
       service_func_wrapper_ptr->req_type_support->deserialize(
-          aimrt::ToAimRTStringView(serialization_type),
+          aimrt::util::ToAimRTStringView(serialization_type),
           *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.NativeHandle()),
           service_req_ptr.get());
 
@@ -272,17 +272,17 @@ bool LocalRpcBackend::TryInvoke(
       });
 
   // service rpc调用
-  Function<aimrt_function_service_callback_ops_t> service_callback(
+  aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
       [service_func_wrapper_ptr, client_func_wrapper_ptr,
        client_invoke_wrapper_ptr, service_req_ptr, service_rsp_ptr,
        serialization_type{std::move(serialization_type)}](
           uint32_t code) {
-        BufferArray buffer_array(GetDefaultBufferArrayAllocator());
+        aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
 
         // service rsp 序列化
         bool serialize_ret =
             service_func_wrapper_ptr->rsp_type_support->serialize(
-                aimrt::ToAimRTStringView(serialization_type),
+                aimrt::util::ToAimRTStringView(serialization_type),
                 service_rsp_ptr.get(), buffer_array.NativeHandle());
 
         if (!serialize_ret) {
@@ -303,7 +303,7 @@ bool LocalRpcBackend::TryInvoke(
         // client rsp 反序列化
         bool deserialize_ret =
             client_func_wrapper_ptr->rsp_type_support->deserialize(
-                aimrt::ToAimRTStringView(serialization_type),
+                aimrt::util::ToAimRTStringView(serialization_type),
                 *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.NativeHandle()),
                 client_invoke_wrapper_ptr->rsp_ptr);
 

@@ -111,8 +111,8 @@ variables:
       -Djsoncpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/jsoncpp-1.9.5.tar.gz \
       -Dyaml-cpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/yaml-cpp-0.8.0.tar.gz \
       -Dsqlite_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/sqlite-amalgamation-3420000.zip \
-      -Dlibunifex_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz
-      
+      -Dstdexec_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/stdexec-nvhpc-23.09.rc4.tar.gz
+
     description: "The build command of this project."
 
   TEST_CMD:
@@ -132,8 +132,8 @@ variables:
       -Dyaml-cpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/yaml-cpp-0.8.0.tar.gz \
       -Djsoncpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/jsoncpp-1.9.5.tar.gz \
       -Dsqlite_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/sqlite-amalgamation-3420000.zip \
-      -Dlibunifex_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz
-    
+      -Dstdexec_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/stdexec-nvhpc-23.09.rc4.tar.gz
+
     description: "The test command of this project."
 
   DOCKER_IMAGE: "192.168.22.31:8082/zy/agi-dev"

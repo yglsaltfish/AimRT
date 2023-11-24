@@ -8,11 +8,11 @@
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
-namespace aimrt {
+namespace aimrt::executor {
 
 class ExecutorRef {
  public:
-  using Task = Function<aimrt_function_executor_task_ops_t>;
+  using Task = aimrt::util::Function<aimrt_function_executor_task_ops_t>;
 
   ExecutorRef() = default;
   explicit ExecutorRef(const aimrt_executor_base_t* base_ptr)
@@ -25,12 +25,12 @@ class ExecutorRef {
 
   std::string_view Type() const {
     assert(base_ptr_);
-    return ToStdStringView(base_ptr_->type(base_ptr_->impl));
+    return aimrt::util::ToStdStringView(base_ptr_->type(base_ptr_->impl));
   }
 
   std::string_view Name() const {
     assert(base_ptr_);
-    return ToStdStringView(base_ptr_->name(base_ptr_->impl));
+    return aimrt::util::ToStdStringView(base_ptr_->name(base_ptr_->impl));
   }
 
   bool ThreadSafe() const {
@@ -72,4 +72,4 @@ class ExecutorRef {
   const aimrt_executor_base_t* base_ptr_ = nullptr;
 };
 
-}  // namespace aimrt
+}  // namespace aimrt::executor

@@ -34,7 +34,7 @@ class LocalChannelBackend : public ChannelBackendBase {
   void Publish(const PublishWrapper& publish_wrapper) noexcept override;
 
   void RegisterGetExecutorFunc(
-      const std::function<ExecutorRef(std::string_view)>& get_executor_func);
+      const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
  private:
   const SubscribeWrapper* GetTplSubscribeWrapper(
@@ -70,8 +70,8 @@ class LocalChannelBackend : public ChannelBackendBase {
                         std::set<std::string_view> > > >;  // module_name
   SubscribeIndexMap subscribe_index_map_;
 
-  std::function<ExecutorRef(std::string_view)> get_executor_func_;
-  ExecutorRef subscribe_executor_ref_;
+  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
+  executor::ExecutorRef subscribe_executor_ref_;
 };
 
 }  // namespace aimrt::runtime::core::channel

@@ -5,9 +5,9 @@
 
 namespace aimrt::plugins::net_plugin {
 
-void SetLogger(LoggerRef);
-LoggerRef GetLogger();
+void SetLogger(aimrt::logger::LoggerRef);
+aimrt::logger::LoggerRef GetLogger();
 
-BufferArrayAllocatorRef GetDefaultBufferArrayAllocator();
+aimrt::util::BufferArrayAllocatorRef GetDefaultBufferArrayAllocator();
 
 }  // namespace aimrt::plugins::net_plugin
