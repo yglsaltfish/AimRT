@@ -2,47 +2,12 @@
 
 #ifdef AIMRT_USE_EXECUTOR
 
-  #include <unifex/async_scope.hpp>
-  #include <unifex/sync_wait.hpp>
-  #include <unifex/then.hpp>
+  #include <stdexec/execution.hpp>
 
 namespace aimrt::co {
 
-/**
- * @brief Detach executes a coroutine. Use a global async_scope
- *
- * @tparam Sender
- * @param sender
- */
-template <typename Sender>
-  requires unifex::sender<Sender>
-inline void StartDetached(Sender&& sender) {
-  struct AsyncScopeDeleter {
-    void operator()(unifex::async_scope* p) {
-      unifex::sync_wait(p->cleanup());
-      delete p;
-    }
-  };
-  static std::unique_ptr<unifex::async_scope, AsyncScopeDeleter> scope_ptr{
-      new unifex::async_scope()};
-  scope_ptr->spawn((Sender &&) sender);
-}
+inline constexpr auto& StartDetached = stdexec::start_detached;
 
-/**
- * @brief Detach executes a coroutine and calls the callback at the end of the
- * coroutine
- *
- * @tparam Sender
- * @tparam CallBack
- * @param sender
- * @param callback
- */
-template <typename Sender, typename CallBack>
-  requires unifex::sender<Sender>
-inline void StartDetached(Sender&& sender, CallBack&& callback) {
-  StartDetached(((Sender &&) sender) | unifex::then((CallBack &&) callback));
 }
-
-}  // namespace aimrt::co
 
 #endif

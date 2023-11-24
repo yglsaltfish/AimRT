@@ -1,5 +1,7 @@
 #include "normal_publisher_module/normal_publisher_module.h"
 #include "aimrt_module_cpp_interface/co/aimrt_context.h"
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+#include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/schedule.h"
 #include "aimrt_module_cpp_interface/co/sync_wait.h"
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"
@@ -48,7 +50,7 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
 
 bool NormalPublisherModule::Start() noexcept {
   try {
-    scope_.spawn(MainLoop());
+    scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
     return false;
@@ -61,7 +63,7 @@ bool NormalPublisherModule::Start() noexcept {
 void NormalPublisherModule::Shutdown() noexcept {
   try {
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    aimrt::co::SyncWait(scope_.on_empty());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;

@@ -2,11 +2,11 @@
 
 #ifdef AIMRT_USE_EXECUTOR
 
-  #include <unifex/sync_wait.hpp>
+  #include <stdexec/execution.hpp>
 
 namespace aimrt::co {
 
-inline constexpr auto& SyncWait = unifex::sync_wait;
+inline constexpr auto& SyncWait = stdexec::sync_wait;
 
 }
 

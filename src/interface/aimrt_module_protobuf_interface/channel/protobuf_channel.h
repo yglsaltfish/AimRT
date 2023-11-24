@@ -7,8 +7,11 @@
 #include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
 
 #ifdef AIMRT_USE_EXECUTOR
+  #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+  #include "aimrt_module_cpp_interface/co/on.h"
   #include "aimrt_module_cpp_interface/co/start_detached.h"
   #include "aimrt_module_cpp_interface/co/task.h"
+  #include "aimrt_module_cpp_interface/co/then.h"
 #endif
 
 namespace aimrt::channel {
@@ -92,8 +95,11 @@ inline bool SubscribeCo(
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
         co::StartDetached(
-            callback(aimrt::channel::ContextRef(ctx_ptr), *(static_cast<const MsgType*>(msg_ptr))),
-            aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base));
+            co::On(
+                co::InlineScheduler(),
+                callback(aimrt::channel::ContextRef(ctx_ptr), *(static_cast<const MsgType*>(msg_ptr)))) |
+            aimrt::co::Then(
+                aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base)));
       });
 }
 
@@ -107,8 +113,11 @@ inline bool SubscribeCo(SubscriberRef subscriber,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
         co::StartDetached(
-            callback(*(static_cast<const MsgType*>(msg_ptr))),
-            aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base));
+            co::On(
+                co::InlineScheduler(),
+                callback(*(static_cast<const MsgType*>(msg_ptr)))) |
+            co::Then(
+                aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base)));
       });
 }
 

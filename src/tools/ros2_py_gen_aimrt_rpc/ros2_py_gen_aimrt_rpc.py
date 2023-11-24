@@ -85,7 +85,10 @@ def gen_cc_file(pkg_name, srv_filename):
 #include "{{srv_filename}}.aimrt_rpc.srv.h"
 
 #include "aimrt_module_cpp_interface/co/async_wrapper.h"
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+#include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/start_detached.h"
+#include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_ros2_interface/util/ros2_type_support.h"
 
 #include "rclcpp/rclcpp.hpp"
@@ -108,10 +111,13 @@ namespace srv {
           };
 
           aimrt::co::StartDetached(
-              filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp),
-              [callback](aimrt::rpc::Status status) {
-                (aimrt::util::Function<aimrt_function_service_callback_ops_t>(callback))(status.Code());
-              });
+              aimrt::co::On(
+                  aimrt::co::InlineScheduler(),
+                  filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp)) |
+              aimrt::co::Then(
+                  [callback](aimrt::rpc::Status status) {
+                    (aimrt::util::Function<aimrt_function_service_callback_ops_t>(callback))(status.Code());
+                  }));
         });
     RegisterServiceFunc(
         "ros2:/{{pkg_name}}/srv/{{srv_filename}}",

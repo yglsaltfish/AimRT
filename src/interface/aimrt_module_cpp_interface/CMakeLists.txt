@@ -34,17 +34,8 @@ target_link_libraries(
 
 # Executor
 if(AIMRT_USE_EXECUTOR)
-  if(AIMRT_USE_EXECUTOR_TYPE STREQUAL "libunifex")
-    target_link_libraries(${CUR_TARGET_NAME} INTERFACE unifex::unifex)
-  elseif(AIMRT_USE_EXECUTOR_TYPE STREQUAL "stdexec")
-    message(ERROR "Currently not support stdexec as executor impl.")
-  elseif(AIMRT_USE_EXECUTOR_TYPE STREQUAL "std")
-    message(ERROR "Currently not support std as executor impl.")
-  else()
-    message(ERROR "Unsupport executor impl: ${AIMRT_USE_EXECUTOR_TYPE}.")
-  endif()
-
-  target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_USE_EXECUTOR AIMRT_USE_EXECUTOR_TYPE=${AIMRT_USE_EXECUTOR_TYPE})
+  target_link_libraries(${CUR_TARGET_NAME} INTERFACE STDEXEC::stdexec)
+  target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_USE_EXECUTOR)
 endif()
 
 # Fmt lib
