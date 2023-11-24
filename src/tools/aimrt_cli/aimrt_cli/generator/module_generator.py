@@ -47,7 +47,11 @@ class ModuleGenerator(GeneratorBase):
         customize_modules = []
         for module_info in self.module_infos_:
             module_name = module_info['name']
-            customize_modules.append(module_name)
+            if module_name not in customize_modules:
+                customize_modules.append(module_name)
+            else:
+                raise Exception(module_name + " is duplicated in Module cfg, Please fix it!!!")
+
             if 'build_mode_tag' in module_info.keys() and module_info['build_mode_tag'] is not None:
                 module_compile_tags[module_name] = module_info['build_mode_tag']
             else:

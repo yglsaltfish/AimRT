@@ -60,9 +60,13 @@ class PkgGenerator(GeneratorBase):
 
             local_modules = []
             remote_modules = []
+            used_modules = []
             for pkg_module in pkg_modules:
                 module_name = pkg_module['name']
-                module_namespace = pkg_module['namespace']
+                if 'namespace' in pkg_module.keys():
+                    module_namespace = pkg_module['namespace']
+                else:
+                    module_namespace = "local"
                 if module_name not in configured_modules:
                     print_warnings("Module name: " + module_name + " is not configured in configuration file, Please "
                                                                    "make sure it has already installed.", UserWarning)
@@ -71,6 +75,11 @@ class PkgGenerator(GeneratorBase):
                 class_name = ''
                 for name in split_names:
                     class_name += name.capitalize()
+
+                if module_name not in used_modules:
+                    used_modules.append(module_name)
+                else:
+                    raise Exception(module_name + " is duplicated in pkg modules. Please Check it!!!")
 
                 if module_namespace == 'local':
                     local_modules.append(PkgRelatedModule(module_name, class_name))

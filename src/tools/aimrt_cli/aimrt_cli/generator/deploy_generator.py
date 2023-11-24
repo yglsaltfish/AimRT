@@ -83,6 +83,11 @@ class DeployGenerator(GeneratorBase):
 
                 deploy_name = deploy_mode_name + '_' + deploy_ins_name
                 deploy_pkgs = []
+                already_used_modules = []
+                pkg_names = []
+                for pkg_cfg in pkg_cfgs:
+                    pkg_names.append(pkg_cfg.pkg_name)
+
                 for pkg in deploy_ins['pkgs']:
                     pkg_name = pkg['name']
                     relate_modules = []
@@ -90,17 +95,24 @@ class DeployGenerator(GeneratorBase):
                     if 'options' in pkg.keys() and 'disable_module' in pkg['options'].keys():
                         pkg_disable_module = pkg['options']['disable_module']
 
-                    for pkg_cfg in pkg_cfgs:
-                        if pkg_cfg.pkg_name == pkg_name:
-                            check_pkg_build_mode(pkg_cfg, deploy_build_modes, pkg_build_modes)
-                            pkg_modules = pkg_cfg.local_modules + pkg_cfg.remote_modules
-                            for related_module in pkg_modules:
-                                if pkg_disable_module or related_module.class_name not in pkg_disable_module:
-                                    relate_modules.append(related_module.class_name)
-                        else:
-                            print_warnings("Pkg name: " + pkg_cfg.pkg_name +
-                                           " is not the customized pkg in configuration file, Please make sure it has "
-                                           "been already fetched!")
+                    if pkg_name not in pkg_names:
+                        print_warnings("Pkg name: " + pkg_name +
+                                       " is not the customized pkg in configuration file, Please make sure it has "
+                                       "been already fetched!")
+                    else:
+                        for pkg_cfg in pkg_cfgs:
+                            if pkg_name == pkg_cfg.pkg_name:
+                                check_pkg_build_mode(pkg_cfg, deploy_build_modes, pkg_build_modes)
+                                pkg_modules = pkg_cfg.local_modules + pkg_cfg.remote_modules
+                                for related_module in pkg_modules:
+                                    if related_module.class_name not in pkg_disable_module:
+                                        if related_module.name not in already_used_modules:
+                                            relate_modules.append(related_module.class_name)
+                                            already_used_modules.append(related_module.name)
+                                        else:
+                                            raise Exception(related_module.name + "is duplicated in more than one "
+                                                                                  "pkgs, Please disable it necessary.")
+                                break
 
                     deploy_pkgs.append(DeployedPackages(name=pkg_name, deployed_modules=relate_modules,
                                                         disable_modules=pkg_disable_module))
