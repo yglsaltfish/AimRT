@@ -73,7 +73,6 @@ void TBBThreadExecutor::Initialize(std::string_view name,
       }
 
       Task task;
-
       while (true) {
         try {
           while (qu_.try_pop(task)) task();

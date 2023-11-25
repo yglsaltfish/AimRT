@@ -40,23 +40,6 @@ void MainThreadExecutor::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
-  io_ptr_ = std::make_unique<boost::asio::io_context>(1);
-  sig_ptr_ = std::make_unique<boost::asio::signal_set>(*io_ptr_);
-
-  std::set<int> signals;
-
-  for (auto& itr : signal_handle_vec_)
-    signals.insert(itr.first.begin(), itr.first.end());
-
-  for (auto sig : signals) sig_ptr_->add(sig);
-
-  sig_ptr_->async_wait([signal_handle_vec{std::move(signal_handle_vec_)}](
-                           boost::system::error_code err, int sig) {
-    for (auto& itr : signal_handle_vec) {
-      if (itr.first.find(sig) != itr.first.end()) itr.second(err, sig);
-    }
-  });
-
   try {
     util::SetNameForCurrentThread(Name());
     util::BindCpuForCurrentThread(options_.thread_bind_cpu);
@@ -74,34 +57,36 @@ void MainThreadExecutor::Start() {
       std::atomic_exchange(&status_, Status::Start) == Status::Init,
       "Main thread executor can only run when status is 'Init'.");
 
-  io_ptr_->run();
+  Task task;
+  while (true) {
+    try {
+      while (qu_.try_pop(task)) task();
+    } catch (const std::exception& e) {
+      AIMRT_FATAL("Tbb thread executor '{}' run loop get exception, {}",
+                  Name(), e.what());
+    }
+
+    if (status_.load() == Status::Shutdown) break;
+
+    sig_flag_.wait(false);
+  }
 }
 
 void MainThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
     return;
 
-  if (sig_ptr_) {
-    sig_ptr_->cancel();
-    sig_ptr_->clear();
-  }
+  sig_flag_.store(true);
+  sig_flag_.notify_all();
 
-  // 并不是真正的shutdown，io_ctx还要跑，不能全清了
-  signal_handle_vec_.clear();
-}
-
-void MainThreadExecutor::RegisterSignalHandle(const std::set<int>& signals,
-                                              SignalHandle&& signal_handle) {
-  AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
-
-  signal_handle_vec_.emplace_back(signals, std::move(signal_handle));
+  // 并不是真正的shutdown，任务队列还要跑，不能全清了
 }
 
 void MainThreadExecutor::Execute(Task&& task) {
   assert(status_ == Status::Init || status_ == Status::Start);
-  boost::asio::post(*io_ptr_, std::move(task));
+  qu_.emplace(std::move(task));
+  sig_flag_.store(true);
+  sig_flag_.notify_one();
 }
 
 }  // namespace aimrt::runtime::core::executor

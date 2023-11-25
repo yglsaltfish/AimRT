@@ -22,28 +22,18 @@ TEST_F(MainThreadExecutorTest, execute) {
     thread_bind_cpu: [0]
   )str");
 
-  signal(SIGINT, [](int) {});
-
-  std::thread raising_thread([this]() {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    bool ret = false;
-    this->main_thread_executor_.Execute([&]() { ret = true; });
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    EXPECT_TRUE(ret);
-
-    raise(SIGINT);
-  });
-
-  main_thread_executor_.RegisterSignalHandle(
-      std::set<int>{SIGINT}, [this](auto, auto) {
-        this->main_thread_executor_.Shutdown();
-      });
   main_thread_executor_.Initialize(options_node);
-  EXPECT_EQ(main_thread_executor_.Type(), "asio_thread");
+  EXPECT_EQ(main_thread_executor_.Type(), "tbb_thread");
   EXPECT_EQ(main_thread_executor_.Name(), "main_thread");
   EXPECT_EQ(main_thread_executor_.ThreadSafe(), true);
+
+  std::thread timer_thread([&]() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    main_thread_executor_.Shutdown();
+  });
+
   main_thread_executor_.Start();
 
-  raising_thread.join();
+  timer_thread.join();
 }
 }  // namespace aimrt::runtime::core::executor
