@@ -28,7 +28,8 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
 
     // Get executor handle
     executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
-    AIMRT_CHECK_ERROR_THROW(executor_, "Get executor 'work_thread_pool' failed.");
+    AIMRT_CHECK_ERROR_THROW(executor_ && executor_.SupportTimerSchedule(),
+                            "Get executor 'work_thread_pool' failed.");
 
     // Register publish type
     publisher_ = core_.GetChannel().GetPublisher(topic_name_);

@@ -1,12 +1,12 @@
-#include "core/executor/thread_executor.h"
+#include "core/executor/asio_thread_executor.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "core/global.h"
 #include "core/util/thread_tools.h"
 
 namespace YAML {
 template <>
-struct convert<aimrt::runtime::core::executor::ThreadExecutor::Options> {
-  using Options = aimrt::runtime::core::executor::ThreadExecutor::Options;
+struct convert<aimrt::runtime::core::executor::AsioThreadExecutor::Options> {
+  using Options = aimrt::runtime::core::executor::AsioThreadExecutor::Options;
 
   static Node encode(const Options& rhs) {
     Node node;
@@ -38,11 +38,11 @@ struct convert<aimrt::runtime::core::executor::ThreadExecutor::Options> {
 
 namespace aimrt::runtime::core::executor {
 
-void ThreadExecutor::Initialize(std::string_view name,
-                                YAML::Node options_node) {
+void AsioThreadExecutor::Initialize(std::string_view name,
+                                    YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
-      "ThreadExecutor can only be initialized once.");
+      "AsioThreadExecutor can only be initialized once.");
 
   name_ = std::string(name);
   if (options_node && !options_node.IsNull())
@@ -50,7 +50,7 @@ void ThreadExecutor::Initialize(std::string_view name,
 
   AIMRT_CHECK_ERROR_THROW(
       options_.thread_num > 0,
-      "Invalide thread executor options, thread num is zero.");
+      "Invalide asio thread executor options, thread num is zero.");
 
   io_ptr_ = std::make_unique<boost::asio::io_context>(options_.thread_num);
   work_guard_ptr_ = std::make_unique<
@@ -72,16 +72,16 @@ void ThreadExecutor::Initialize(std::string_view name,
         util::BindCpuForCurrentThread(options_.thread_bind_cpu);
         util::SetCpuSchedForCurrentThread(options_.thread_sched_policy);
       } catch (const std::exception& e) {
-        AIMRT_WARN("Set thread policy for executor '{}' get exception, {}",
-                   threadname, e.what());
+        AIMRT_WARN("Set thread policy for asio thread executor '{}' get exception, {}",
+                   Name(), e.what());
       }
 
       while (status_.load() != Status::Shutdown) {
         try {
           io_ptr_->run();
         } catch (const std::exception& e) {
-          AIMRT_FATAL("Thread executor '{}' run asio loop get exception, {}",
-                      threadname, e.what());
+          AIMRT_FATAL("Asio thread executor '{}' run loop get exception, {}",
+                      Name(), e.what());
         }
       }
 
@@ -92,13 +92,13 @@ void ThreadExecutor::Initialize(std::string_view name,
   options_node = options_;
 }
 
-void ThreadExecutor::Start() {
+void AsioThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&status_, Status::Start) == Status::Init,
       "Function can only be called when status is 'Init'.");
 }
 
-void ThreadExecutor::Shutdown() {
+void AsioThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
     return;
 
@@ -110,27 +110,25 @@ void ThreadExecutor::Shutdown() {
   }
 }
 
-bool ThreadExecutor::IsInCurrentExecutor() const {
+bool AsioThreadExecutor::IsInCurrentExecutor() const {
   assert(status_ == Status::Start);
   return (std::find(thread_id_vec_.begin(), thread_id_vec_.end(),
                     std::this_thread::get_id()) != thread_id_vec_.end());
 }
 
-void ThreadExecutor::Execute(
-    aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
+void AsioThreadExecutor::Execute(Task&& task) {
   assert(status_ == Status::Start);
   boost::asio::post(*io_ptr_, std::move(task));
 }
 
-void ThreadExecutor::ExecuteAfterNs(
-    uint64_t dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
+void AsioThreadExecutor::ExecuteAfterNs(uint64_t dt, Task&& task) {
   assert(status_ == Status::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
   timer_ptr_->expires_after(std::chrono::nanoseconds(dt));
   timer_ptr_->async_wait([this, timer_ptr_,
                           task{std::move(task)}](boost::system::error_code ec) {
     if (ec) [[unlikely]] {
-      AIMRT_ERROR("Thread executor '{}' timer get err, code '{}', msg: {}",
+      AIMRT_ERROR("Asio thread executor '{}' timer get err, code '{}', msg: {}",
                   Name(), ec.value(), ec.message());
       return;
     }
@@ -141,34 +139,7 @@ void ThreadExecutor::ExecuteAfterNs(
 
     AIMRT_CHECK_WARN(
         dif_time <= options_.timeout_alarm_threshold_us,
-        "Thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
-        "Perhaps the CPU load is too high",
-        Name(), std::chrono::duration_cast<std::chrono::microseconds>(dif_time),
-        options_.timeout_alarm_threshold_us);
-  });
-}
-
-void ThreadExecutor::ExecuteAtNs(
-    uint64_t tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
-  assert(status_ == Status::Start);
-  auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
-  timer_ptr_->expires_at(
-      std::chrono::steady_clock::time_point(std::chrono::nanoseconds(tp)));
-  timer_ptr_->async_wait([this, timer_ptr_,
-                          task{std::move(task)}](boost::system::error_code ec) {
-    if (ec) [[unlikely]] {
-      AIMRT_ERROR("Thread executor '{}' timer get err, code '{}', msg: {}",
-                  Name(), ec.value(), ec.message());
-      return;
-    }
-
-    auto dif_time = std::chrono::steady_clock::now() - timer_ptr_->expiry();
-
-    task();
-
-    AIMRT_CHECK_WARN(
-        dif_time <= options_.timeout_alarm_threshold_us,
-        "Thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
+        "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
         "Perhaps the CPU load is too high",
         Name(), std::chrono::duration_cast<std::chrono::microseconds>(dif_time),
         options_.timeout_alarm_threshold_us);

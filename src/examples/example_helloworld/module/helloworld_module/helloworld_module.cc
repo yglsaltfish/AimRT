@@ -29,9 +29,15 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
     }
 
     // Get executor handle
-    executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
-    AIMRT_HL_CHECK_ERROR_THROW(core_.GetLogger(), executor_,
-                               "Get executor 'work_thread_pool' failed.");
+    work_thread_pool_1_ = core_.GetExecutorManager().GetExecutor("work_thread_pool_1");
+    AIMRT_HL_CHECK_ERROR_THROW(core_.GetLogger(),
+                               work_thread_pool_1_ && work_thread_pool_1_.SupportTimerSchedule(),
+                               "Get executor 'work_thread_pool_1' failed.");
+
+    work_thread_pool_2_ = core_.GetExecutorManager().GetExecutor("work_thread_pool_2");
+    AIMRT_HL_CHECK_ERROR_THROW(core_.GetLogger(),
+                               work_thread_pool_2_,
+                               "Get executor 'work_thread_pool_2' failed.");
 
   } catch (const std::exception& e) {
     AIMRT_HL_ERROR(core_.GetLogger(), "Init failed, {}", e.what());
@@ -73,22 +79,22 @@ aimrt::co::Task<void> HelloWorldModule::MainLoop() {
   try {
     AIMRT_HL_INFO(core_.GetLogger(), "Start MainLoop.");
 
-    aimrt::co::AimRTScheduler work_thread_pool_scheduler(executor_);
+    aimrt::co::AimRTScheduler work_thread_pool_1_scheduler(work_thread_pool_1_);
+    aimrt::co::AimRTScheduler work_thread_pool_2_scheduler(work_thread_pool_2_);
 
-    co_await aimrt::co::Schedule(work_thread_pool_scheduler);
+    co_await aimrt::co::Schedule(work_thread_pool_1_scheduler);
 
     uint32_t count = 0;
     while (run_flag_) {
-      // Sleep for some time
       co_await aimrt::co::ScheduleAfter(
-          work_thread_pool_scheduler, std::chrono::milliseconds(1000));
+          work_thread_pool_1_scheduler, std::chrono::milliseconds(1000));
 
       count++;
       AIMRT_HL_INFO(core_.GetLogger(),
                     "Loop count : {} -------------------------", count);
 
       // Start a new task coroutine
-      scope_.spawn(aimrt::co::On(work_thread_pool_scheduler, TestTask(count)));
+      scope_.spawn(aimrt::co::On(work_thread_pool_2_scheduler, TestTask(count)));
     }
 
     AIMRT_HL_INFO(core_.GetLogger(), "Exit MainLoop.");
@@ -103,9 +109,9 @@ aimrt::co::Task<void> HelloWorldModule::MainLoop() {
 aimrt::co::Task<void> HelloWorldModule::TestTask(uint32_t count) {
   AIMRT_HL_INFO(core_.GetLogger(), "Start TestTask {}.", count);
 
-  // Sleep for some time
   co_await aimrt::co::ScheduleAfter(
-      aimrt::co::AimRTScheduler(executor_), std::chrono::milliseconds(2000));
+      aimrt::co::AimRTScheduler(work_thread_pool_1_),
+      std::chrono::milliseconds(2000));
 
   AIMRT_HL_INFO(core_.GetLogger(), "Exit TestTask {}.", count);
 

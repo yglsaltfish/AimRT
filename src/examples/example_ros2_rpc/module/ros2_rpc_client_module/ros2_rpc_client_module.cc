@@ -25,7 +25,7 @@ bool Ros2RpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
 
     // Get executor handle
     executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
-    AIMRT_CHECK_ERROR_THROW(executor_,
+    AIMRT_CHECK_ERROR_THROW(executor_ && executor_.SupportTimerSchedule(),
                             "Get executor 'work_thread_pool' failed.");
 
     // Get rpc handle

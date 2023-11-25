@@ -17,21 +17,21 @@ aimrt:
   executor: # 执行器配置
     executors: # 当前先支持thread型/strand型，未来可根据加载的网络模块提供更多类型
       - name: sched_fifo_thread
-        type: thread
+        type: asio_thread
         options:
           thread_num: 1
           thread_sched_policy: SCHED_FIFO:80 # SCHED_OTHER | SCHED_FIFO:xx | SCHED_RR:xx
           thread_bind_cpu: [0, 1] # cpu index
           timeout_alarm_threshold_us: 100 # 调度超时告警阈值
       - name: sched_other_thread
-        type: thread
+        type: asio_thread
         options:
           thread_num: 1
           thread_sched_policy: SCHED_OTHER # SCHED_OTHER | SCHED_FIFO:xx | SCHED_RR:xx
           thread_bind_cpu: [2, 3] # cpu index
           timeout_alarm_threshold_us: 100 # 调度超时告警阈值
       - name: sched_rr_thread
-        type: thread
+        type: asio_thread
         options:
           thread_num: 1
           thread_sched_policy: SCHED_RR:80 # SCHED_OTHER | SCHED_FIFO:xx | SCHED_RR:xx

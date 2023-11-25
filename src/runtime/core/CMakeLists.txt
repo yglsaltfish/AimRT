@@ -36,6 +36,7 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PUBLIC Boost::asio
          yaml-cpp::yaml-cpp
+         TBB::tbb
          aimrt::interface::aimrt_module_cpp_interface
          aimrt::interface::aimrt_core_plugin_interface
          aimrt::common::util)

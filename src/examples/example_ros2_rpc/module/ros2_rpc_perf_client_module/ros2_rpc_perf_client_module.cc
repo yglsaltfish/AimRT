@@ -136,8 +136,13 @@ void Ros2RpcPerfClientModule::Shutdown() noexcept {
 aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
   AIMRT_DEBUG("Start BenchStatisticsLoop.");
 
-  aimrt::co::AimRTScheduler client_statistics_thread_pool_scheduler(
-      core_.GetExecutorManager().GetExecutor("client_statistics_thread_pool"));
+  auto client_statistics_thread_pool = core_.GetExecutorManager().GetExecutor("client_statistics_thread_pool");
+  AIMRT_CHECK_ERROR_THROW(
+      client_statistics_thread_pool && client_statistics_thread_pool.SupportTimerSchedule(),
+      "Get executor 'client_statistics_thread_pool' failed.");
+
+  aimrt::co::AimRTScheduler client_statistics_thread_pool_scheduler(client_statistics_thread_pool);
+
   co_await aimrt::co::Schedule(client_statistics_thread_pool_scheduler);
 
   co_await WaitForServiceServer();
@@ -218,8 +223,13 @@ p999_time(us): {})str",
 aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
   AIMRT_DEBUG("Start FixedFreqStatisticsLoop.");
 
-  aimrt::co::AimRTScheduler client_statistics_thread_pool_scheduler(
-      core_.GetExecutorManager().GetExecutor("client_statistics_thread_pool"));
+  auto client_statistics_thread_pool = core_.GetExecutorManager().GetExecutor("client_statistics_thread_pool");
+  AIMRT_CHECK_ERROR_THROW(
+      client_statistics_thread_pool && client_statistics_thread_pool.SupportTimerSchedule(),
+      "Get executor 'client_statistics_thread_pool' failed.");
+
+  aimrt::co::AimRTScheduler client_statistics_thread_pool_scheduler(client_statistics_thread_pool);
+
   co_await aimrt::co::Schedule(client_statistics_thread_pool_scheduler);
 
   co_await WaitForServiceServer();
@@ -295,8 +305,10 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchLoop(
   AIMRT_DEBUG("Start BenchLoop {}", seq);
 
   std::string executor_name = "client_thread_pool_" + std::to_string(seq);
-  aimrt::co::AimRTScheduler client_thread_pool_scheduler(
-      core_.GetExecutorManager().GetExecutor(executor_name));
+  auto client_thread_pool = core_.GetExecutorManager().GetExecutor(executor_name);
+  AIMRT_CHECK_ERROR_THROW(client_thread_pool, "Get executor '{}' failed.", executor_name);
+
+  aimrt::co::AimRTScheduler client_thread_pool_scheduler(client_thread_pool);
   co_await aimrt::co::Schedule(client_thread_pool_scheduler);
 
   example_ros2::srv::RosTestRpc_Request req;
@@ -340,8 +352,11 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
   AIMRT_DEBUG("start FixedFreqLoop");
 
   std::string executor_name = "client_thread_pool_0";
-  aimrt::co::AimRTScheduler client_thread_pool_scheduler(
-      core_.GetExecutorManager().GetExecutor(executor_name));
+  auto client_thread_pool = core_.GetExecutorManager().GetExecutor(executor_name);
+  AIMRT_CHECK_ERROR_THROW(client_thread_pool && client_thread_pool.SupportTimerSchedule(),
+                          "Get executor '{}' failed.", executor_name);
+
+  aimrt::co::AimRTScheduler client_thread_pool_scheduler(client_thread_pool);
   co_await aimrt::co::Schedule(client_thread_pool_scheduler);
 
   example_ros2::srv::RosTestRpc_Request req;
@@ -386,8 +401,11 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::WaitForServiceServer() {
   AIMRT_DEBUG("wait for service server...");
 
   std::string executor_name = "client_statistics_thread_pool";
-  aimrt::co::AimRTScheduler client_scheduler(
-      core_.GetExecutorManager().GetExecutor(executor_name));
+  auto client_thread_pool = core_.GetExecutorManager().GetExecutor(executor_name);
+  AIMRT_CHECK_ERROR_THROW(client_thread_pool && client_thread_pool.SupportTimerSchedule(),
+                          "Get executor '{}' failed.", executor_name);
+
+  aimrt::co::AimRTScheduler client_scheduler(client_thread_pool);
   co_await aimrt::co::Schedule(client_scheduler);
 
   example_ros2::srv::RosTestRpc_Request req;

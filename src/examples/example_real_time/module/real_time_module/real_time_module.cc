@@ -42,8 +42,9 @@ bool RealTimeModule::Start() noexcept {
     // sched_fifo_thread
     auto sched_fifo_thread_executor =
         core_.GetExecutorManager().GetExecutor("sched_fifo_thread");
-    AIMRT_CHECK_ERROR_THROW(sched_fifo_thread_executor,
-                            "Get executor 'sched_fifo_thread' failed.");
+    AIMRT_CHECK_ERROR_THROW(
+        sched_fifo_thread_executor && sched_fifo_thread_executor.SupportTimerSchedule(),
+        "Get executor 'sched_fifo_thread' failed.");
     scope_.spawn(
         aimrt::co::On(
             aimrt::co::AimRTScheduler(sched_fifo_thread_executor),
@@ -52,8 +53,9 @@ bool RealTimeModule::Start() noexcept {
     // sched_other_thread
     auto sched_other_thread_executor =
         core_.GetExecutorManager().GetExecutor("sched_other_thread");
-    AIMRT_CHECK_ERROR_THROW(sched_other_thread_executor,
-                            "Get executor 'sched_other_thread' failed.");
+    AIMRT_CHECK_ERROR_THROW(
+        sched_other_thread_executor && sched_other_thread_executor.SupportTimerSchedule(),
+        "Get executor 'sched_other_thread' failed.");
     scope_.spawn(
         aimrt::co::On(
             aimrt::co::AimRTScheduler(sched_other_thread_executor),
@@ -62,8 +64,9 @@ bool RealTimeModule::Start() noexcept {
     // sched_rr_thread
     auto sched_rr_thread_executor =
         core_.GetExecutorManager().GetExecutor("sched_rr_thread");
-    AIMRT_CHECK_ERROR_THROW(sched_rr_thread_executor,
-                            "Get executor 'sched_rr_thread' failed.");
+    AIMRT_CHECK_ERROR_THROW(
+        sched_rr_thread_executor && sched_rr_thread_executor.SupportTimerSchedule(),
+        "Get executor 'sched_rr_thread' failed.");
     scope_.spawn(
         aimrt::co::On(
             aimrt::co::AimRTScheduler(sched_rr_thread_executor),

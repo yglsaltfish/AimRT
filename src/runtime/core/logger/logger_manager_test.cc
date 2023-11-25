@@ -25,7 +25,7 @@ class LoggerManagerTest : public ::testing::Test {
     YAML::Node thread_options_node = YAML::Load(R"str(
       executors:
       - name: work_thread_pool
-        type: thread
+        type: asio_thread
         options:
           thread_num: 1
     )str");

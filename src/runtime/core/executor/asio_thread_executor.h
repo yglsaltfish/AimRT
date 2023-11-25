@@ -16,7 +16,7 @@
 
 namespace aimrt::runtime::core::executor {
 
-class ThreadExecutor : public ExecutorBase {
+class AsioThreadExecutor : public ExecutorBase {
  public:
   struct Options {
     uint32_t thread_num = 1;
@@ -27,26 +27,22 @@ class ThreadExecutor : public ExecutorBase {
   };
 
  public:
-  ThreadExecutor() = default;
-  ~ThreadExecutor() override = default;
+  AsioThreadExecutor() = default;
+  ~AsioThreadExecutor() override = default;
 
   void Initialize(std::string_view name, YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
 
-  std::string_view Type() const override { return "thread"; }
+  std::string_view Type() const override { return "asio_thread"; }
   std::string_view Name() const override { return name_; }
 
   bool ThreadSafe() const override { return (options_.thread_num == 1); }
   bool IsInCurrentExecutor() const override;
+  bool SupportTimerSchedule() const override { return true; }
 
-  void Execute(aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) override;
-  void ExecuteAfterNs(
-      uint64_t dt,
-      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) override;
-  void ExecuteAtNs(
-      uint64_t tp,
-      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) override;
+  void Execute(Task&& task) override;
+  void ExecuteAfterNs(uint64_t dt, Task&& task) override;
 
  private:
   enum class Status : uint32_t {

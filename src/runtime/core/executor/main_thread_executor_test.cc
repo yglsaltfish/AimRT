@@ -31,18 +31,6 @@ TEST_F(MainThreadExecutorTest, execute) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_TRUE(ret);
 
-    ret = false;
-    this->main_thread_executor_.ExecuteAfterNs(1000 * 1000 * 5, [&]() { ret = true; });
-    EXPECT_FALSE(ret);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    EXPECT_TRUE(ret);
-
-    ret = false;
-    this->main_thread_executor_.ExecuteAtNs(1000 * 1000 * 5, [&]() { ret = true; });
-    EXPECT_FALSE(ret);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    EXPECT_TRUE(ret);
-
     raise(SIGINT);
   });
 
@@ -51,7 +39,7 @@ TEST_F(MainThreadExecutorTest, execute) {
         this->main_thread_executor_.Shutdown();
       });
   main_thread_executor_.Initialize(options_node);
-  EXPECT_EQ(main_thread_executor_.Type(), "thread");
+  EXPECT_EQ(main_thread_executor_.Type(), "asio_thread");
   EXPECT_EQ(main_thread_executor_.Name(), "main_thread");
   EXPECT_EQ(main_thread_executor_.ThreadSafe(), true);
   main_thread_executor_.Start();

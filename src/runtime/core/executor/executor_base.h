@@ -10,6 +10,9 @@ namespace aimrt::runtime::core::executor {
 
 class ExecutorBase {
  public:
+  using Task = aimrt::util::Function<aimrt_function_executor_task_ops_t>;
+
+ public:
   ExecutorBase() = default;
   virtual ~ExecutorBase() = default;
 
@@ -25,13 +28,10 @@ class ExecutorBase {
 
   virtual bool ThreadSafe() const = 0;
   virtual bool IsInCurrentExecutor() const = 0;
+  virtual bool SupportTimerSchedule() const = 0;
 
-  virtual void Execute(
-      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) = 0;
-  virtual void ExecuteAfterNs(
-      uint64_t dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) = 0;
-  virtual void ExecuteAtNs(
-      uint64_t tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) = 0;
+  virtual void Execute(Task&& task) = 0;
+  virtual void ExecuteAfterNs(uint64_t dt, Task&& task) = 0;
 };
 
 }  // namespace aimrt::runtime::core::executor

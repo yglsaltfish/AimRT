@@ -25,12 +25,12 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
  private:
   aimrt::co::Task<void> MainLoop();
-
   aimrt::co::Task<void> TestTask(uint32_t count);
 
  private:
   aimrt::CoreRef core_;
-  aimrt::executor::ExecutorRef executor_;
+  aimrt::executor::ExecutorRef work_thread_pool_1_;
+  aimrt::executor::ExecutorRef work_thread_pool_2_;
 
   aimrt::co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;

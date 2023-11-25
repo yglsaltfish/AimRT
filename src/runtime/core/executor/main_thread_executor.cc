@@ -99,45 +99,9 @@ void MainThreadExecutor::RegisterSignalHandle(const std::set<int>& signals,
   signal_handle_vec_.emplace_back(signals, std::move(signal_handle));
 }
 
-void MainThreadExecutor::Execute(
-    aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
+void MainThreadExecutor::Execute(Task&& task) {
   assert(status_ == Status::Init || status_ == Status::Start);
   boost::asio::post(*io_ptr_, std::move(task));
-}
-
-void MainThreadExecutor::ExecuteAfterNs(
-    uint64_t dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
-  assert(status_ == Status::Init || status_ == Status::Start);
-  auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
-  timer_ptr_->expires_after(std::chrono::nanoseconds(dt));
-  timer_ptr_->async_wait(
-      [this, timer_ptr_, task{std::move(task)}](boost::system::error_code ec) {
-        if (ec) [[unlikely]] {
-          AIMRT_ERROR("Thread executor '{}' timer get err, code '{}', msg: {}",
-                      Name(), ec.value(), ec.message());
-          return;
-        }
-
-        task();
-      });
-}
-
-void MainThreadExecutor::ExecuteAtNs(
-    uint64_t tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
-  assert(status_ == Status::Init || status_ == Status::Start);
-  auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
-  timer_ptr_->expires_at(
-      std::chrono::steady_clock::time_point(std::chrono::nanoseconds(tp)));
-  timer_ptr_->async_wait(
-      [this, timer_ptr_, task{std::move(task)}](boost::system::error_code ec) {
-        if (ec) [[unlikely]] {
-          AIMRT_ERROR("Thread executor '{}' timer get err, code '{}', msg: {}",
-                      Name(), ec.value(), ec.message());
-          return;
-        }
-
-        task();
-      });
 }
 
 }  // namespace aimrt::runtime::core::executor
