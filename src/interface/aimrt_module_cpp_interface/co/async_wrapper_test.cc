@@ -1,10 +1,8 @@
 #include "gtest/gtest.h"
 
-#ifdef AIMRT_USE_EXECUTOR
-
-  #include "aimrt_module_cpp_interface/co/async_wrapper.h"
-  #include "aimrt_module_cpp_interface/co/sync_wait.h"
-  #include "aimrt_module_cpp_interface/co/task.h"
+#include "aimrt_module_cpp_interface/co/async_wrapper.h"
+#include "aimrt_module_cpp_interface/co/sync_wait.h"
+#include "aimrt_module_cpp_interface/co/task.h"
 
 namespace aimrt::co {
 
@@ -74,5 +72,3 @@ TEST(AsyncWrapper, VoidRet) {
 }
 
 }  // namespace aimrt::co
-
-#endif

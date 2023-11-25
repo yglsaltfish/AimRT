@@ -12,8 +12,6 @@ option(AIMRT_BUILD_DOCUMENT "AimRT build document." OFF)
 option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
 
-option(AIMRT_USE_EXECUTOR "AimRT use executor." ON)
-
 option(AIMRT_USE_FMT_LIB "AimRT use fmt library." ON)
 
 option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
@@ -53,7 +51,8 @@ if(AIMRT_MASTER_PROJECT)
   set(BUILD_SHARED_LIBS OFF)
 
   if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+    # TODO: build tbb in gcc13, need '-Wno-error=stringop-overflow'
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wno-error=stringop-overflow")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 
     if(AIMRT_BUILD_TESTS)
@@ -93,9 +92,7 @@ if(AIMRT_BUILD_TESTS)
   enable_testing()
 endif()
 
-if(AIMRT_USE_EXECUTOR)
-  include(GetStdexec)
-endif()
+include(GetStdexec)
 
 if(AIMRT_USE_FMT_LIB)
   include(GetFmt)
@@ -160,9 +157,10 @@ if(AIMRT_BUILD_WITH_ROS2)
 endif()
 
 if(AIMRT_BUILD_RUNTIME)
+  include(GetBoost)
   include(GetGFlags)
   include(GetYamlCpp)
-  include(GetBoost)
+  include(GetTBB)
 
   if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
     include(GetSqlite)

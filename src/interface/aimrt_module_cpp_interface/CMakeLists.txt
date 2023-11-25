@@ -30,13 +30,8 @@ target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_C
 target_link_libraries(
   ${CUR_TARGET_NAME}
   INTERFACE aimrt::common::util
-            aimrt::interface::aimrt_module_c_interface)
-
-# Executor
-if(AIMRT_USE_EXECUTOR)
-  target_link_libraries(${CUR_TARGET_NAME} INTERFACE STDEXEC::stdexec)
-  target_compile_definitions(${CUR_TARGET_NAME} INTERFACE AIMRT_USE_EXECUTOR)
-endif()
+            aimrt::interface::aimrt_module_c_interface
+            STDEXEC::stdexec)
 
 # Fmt lib
 if(AIMRT_USE_FMT_LIB)

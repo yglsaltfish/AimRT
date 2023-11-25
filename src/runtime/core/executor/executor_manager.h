@@ -44,7 +44,8 @@ class ExecutorManager {
   ExecutorManagerProxy& GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info);
 
  private:
-  void RegisterThreadExecutorGenFunc();
+  void RegisterAsioThreadExecutorGenFunc();
+  void RegisterTBBThreadExecutorGenFunc();
 
  private:
   enum class Status : uint32_t {

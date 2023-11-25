@@ -29,7 +29,7 @@ TEST_F(ExecutorManagerTest, initialize2) {
   YAML::Node options_node = YAML::Load(R"str(
     executors:
     - name: work_thread_pool
-      type: thread
+      type: asio_thread
       options:
         thread_num: 2
   )str");
@@ -42,7 +42,7 @@ TEST_F(ExecutorManagerTest, initialize2) {
 
   auto executor_ptr = executor_manager_.GetExecutorManagerProxy(detail_info).GetExecutor("work_thread_pool");
   ASSERT_NE(executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle(), nullptr);
-  EXPECT_EQ(executor_ptr->Type(), "thread");
+  EXPECT_EQ(executor_ptr->Type(), "asio_thread");
   EXPECT_EQ(executor_ptr->Name(), "work_thread_pool");
 }
 

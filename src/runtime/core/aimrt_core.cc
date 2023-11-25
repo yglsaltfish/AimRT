@@ -30,8 +30,6 @@ void AimRTCore::Initialize(const Options& options) {
 
   // init main thread executor
   ExecuteHook(HookPoint::PreInitMainThread);
-  main_thread_executor_.RegisterSignalHandle(
-      std::set<int>{SIGINT, SIGTERM}, [this](auto, auto) { Shutdown(); });
   main_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("main_thread"));
   AIMRT_INFO("Main thread executor init complete.");
   ExecuteHook(HookPoint::PostInitMainThread);
@@ -106,6 +104,9 @@ void AimRTCore::Start() {
   AIMRT_INFO("All modules start complete.");
   ExecuteHook(HookPoint::PostStart);
 
+  RegisterSignalHandle(
+      std::set<int>{SIGINT, SIGTERM}, [this](auto) { Shutdown(); });
+
   main_thread_executor_.Start();
 }
 
@@ -128,10 +129,10 @@ void AimRTCore::Shutdown() {
     ExecuteHook(HookPoint::PostShutdown);
   };
 
-  if (main_thread_executor_.IsInCurrentExecutor()) {
-    stop_work();
-  } else {
+  if (main_thread_executor_.IsStart()) {
     main_thread_executor_.Execute(std::move(stop_work));
+  } else {
+    stop_work();
   }
 }
 

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <stdexcept>
 #include <string_view>
 
 #include "aimrt_module_c_interface/executor/executor_base.h"
@@ -43,6 +44,11 @@ class ExecutorRef {
     return base_ptr_->is_in_current_executor(base_ptr_->impl);
   }
 
+  bool SupportTimerSchedule() const {
+    assert(base_ptr_);
+    return base_ptr_->is_support_timer_schedule(base_ptr_->impl);
+  }
+
   void Execute(Task&& task) {
     assert(base_ptr_);
     base_ptr_->execute(base_ptr_->impl, task.NativeHandle());
@@ -50,22 +56,18 @@ class ExecutorRef {
 
   void ExecuteAfter(const std::chrono::steady_clock::duration& dt, Task&& task) {
     assert(base_ptr_);
+
+    if (!SupportTimerSchedule()) [[unlikely]]
+      throw std::runtime_error("Current executor does not support timer scheduling.");
+
     base_ptr_->execute_after_ns(
         base_ptr_->impl,
-        static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(dt).count()),
+        static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(dt).count()),
         task.NativeHandle());
   }
 
   void ExecuteAt(const std::chrono::steady_clock::time_point& tp, Task&& task) {
-    assert(base_ptr_);
-    base_ptr_->execute_at_ns(
-        base_ptr_->impl,
-        static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                tp.time_since_epoch())
-                .count()),
-        task.NativeHandle());
+    ExecuteAfter(tp - std::chrono::steady_clock::now(), std::move(task));
   }
 
  private:

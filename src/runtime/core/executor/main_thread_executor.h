@@ -6,7 +6,7 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include <boost/asio.hpp>
+#include "tbb/concurrent_queue.h"
 
 namespace aimrt::runtime::core::executor {
 
@@ -17,7 +17,7 @@ class MainThreadExecutor {
     std::vector<uint32_t> thread_bind_cpu;
   };
 
-  using SignalHandle = std::function<void(boost::system::error_code, int)>;
+  using Task = aimrt::util::Function<aimrt_function_executor_task_ops_t>;
 
  public:
   MainThreadExecutor()
@@ -29,22 +29,18 @@ class MainThreadExecutor {
   void Start();
   void Shutdown();
 
-  void RegisterSignalHandle(const std::set<int>& signals,
-                            SignalHandle&& signal_handle);
-
-  std::string_view Type() const { return "thread"; }
+  std::string_view Type() const { return "tbb_thread"; }
   std::string_view Name() const { return "main_thread"; }
 
   bool ThreadSafe() const { return true; }
   bool IsInCurrentExecutor() const {
     return std::this_thread::get_id() == thread_id_;
   }
+  bool SupportTimerSchedule() const { return false; }
 
-  void Execute(aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task);
-  void ExecuteAfterNs(uint64_t dt,
-                      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task);
-  void ExecuteAtNs(uint64_t tp,
-                   aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task);
+  void Execute(Task&& task);
+
+  bool IsStart() const { return status_.load() == Status::Start; }
 
   const aimrt_executor_base_t* NativeHandle() const { return &base_; }
 
@@ -65,18 +61,13 @@ class MainThreadExecutor {
         .is_in_current_executor = [](void* impl) -> bool {
           return static_cast<MainThreadExecutor*>(impl)->IsInCurrentExecutor();
         },
+        .is_support_timer_schedule = [](void* impl) -> bool {
+          return static_cast<MainThreadExecutor*>(impl)->SupportTimerSchedule();
+        },
         .execute = [](void* impl, aimrt_function_base_t* task) {
-          static_cast<MainThreadExecutor*>(impl)->Execute(
-              aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
+          static_cast<MainThreadExecutor*>(impl)->Execute(Task(task));  //
         },
-        .execute_after_ns = [](void* impl, uint64_t dt, aimrt_function_base_t* task) {
-          static_cast<MainThreadExecutor*>(impl)->ExecuteAfterNs(
-              dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
-        },
-        .execute_at_ns = [](void* impl, uint64_t tp, aimrt_function_base_t* task) {
-          static_cast<MainThreadExecutor*>(impl)->ExecuteAtNs(
-              tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
-        },
+        .execute_after_ns = nullptr,
         .impl = impl};
   }
 
@@ -93,10 +84,8 @@ class MainThreadExecutor {
 
   const std::thread::id thread_id_;
 
-  std::unique_ptr<boost::asio::io_context> io_ptr_;
-
-  std::unique_ptr<boost::asio::signal_set> sig_ptr_;
-  std::vector<std::pair<std::set<int>, SignalHandle> > signal_handle_vec_;
+  tbb::concurrent_queue<Task> qu_;
+  std::atomic_bool sig_flag_ = false;
 
   const aimrt_executor_base_t base_;
 };

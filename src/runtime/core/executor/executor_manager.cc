@@ -1,6 +1,7 @@
 #include "core/executor/executor_manager.h"
 #include "aimrt_module_cpp_interface/util/string.h"
-#include "core/executor/thread_executor.h"
+#include "core/executor/asio_thread_executor.h"
+#include "core/executor/tbb_thread_executor.h"
 #include "core/global.h"
 #include "util/string_util.h"
 
@@ -48,7 +49,8 @@ struct convert<aimrt::runtime::core::executor::ExecutorManager::Options> {
 namespace aimrt::runtime::core::executor {
 
 void ExecutorManager::Initialize(YAML::Node options_node) {
-  RegisterThreadExecutorGenFunc();
+  RegisterAsioThreadExecutorGenFunc();
+  RegisterTBBThreadExecutorGenFunc();
 
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
@@ -59,15 +61,19 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 
   // 生成executor
   for (auto& executor_options : options_.executors_options) {
+    AIMRT_CHECK_ERROR_THROW(
+        executor_proxy_map_.find(executor_options.name) == executor_proxy_map_.end(),
+        "Duplicate executor name '{}'.", executor_options.name);
+
     auto finditr = executor_gen_func_map_.find(executor_options.type);
     AIMRT_CHECK_ERROR_THROW(finditr != executor_gen_func_map_.end(),
-                            "Invalid executor type '{}'",
+                            "Invalid executor type '{}'.",
                             executor_options.type);
 
     auto executor_ptr = finditr->second();
     AIMRT_CHECK_ERROR_THROW(
         executor_ptr,
-        "Gen executor failed, executor name '{}', executor type '{}'",
+        "Gen executor failed, executor name '{}', executor type '{}'.",
         executor_options.name, executor_options.type);
 
     executor_ptr->Initialize(executor_options.name, executor_options.options);
@@ -132,9 +138,16 @@ ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(
   return *(emplace_ret.first->second);
 }
 
-void ExecutorManager::RegisterThreadExecutorGenFunc() {
-  RegisterExecutorGenFunc("thread", []() -> std::unique_ptr<ExecutorBase> {
-    return std::make_unique<ThreadExecutor>();
+void ExecutorManager::RegisterAsioThreadExecutorGenFunc() {
+  RegisterExecutorGenFunc("asio_thread", []() -> std::unique_ptr<ExecutorBase> {
+    return std::make_unique<AsioThreadExecutor>();
   });
 }
+
+void ExecutorManager::RegisterTBBThreadExecutorGenFunc() {
+  RegisterExecutorGenFunc("tbb_thread", []() -> std::unique_ptr<ExecutorBase> {
+    return std::make_unique<TBBThreadExecutor>();
+  });
+}
+
 }  // namespace aimrt::runtime::core::executor

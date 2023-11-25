@@ -1,0 +1,132 @@
+#include "core/executor/tbb_thread_executor.h"
+#include "aimrt_module_cpp_interface/util/string.h"
+#include "core/global.h"
+#include "core/util/thread_tools.h"
+
+namespace YAML {
+template <>
+struct convert<aimrt::runtime::core::executor::TBBThreadExecutor::Options> {
+  using Options = aimrt::runtime::core::executor::TBBThreadExecutor::Options;
+
+  static Node encode(const Options& rhs) {
+    Node node;
+
+    node["thread_num"] = rhs.thread_num;
+    node["thread_sched_policy"] = rhs.thread_sched_policy;
+    node["thread_bind_cpu"] = rhs.thread_bind_cpu;
+    node["timeout_alarm_threshold_us"] = rhs.timeout_alarm_threshold_us.count();
+
+    return node;
+  }
+
+  static bool decode(const Node& node, Options& rhs) {
+    if (!node.IsMap()) return false;
+
+    if (node["thread_num"]) rhs.thread_num = node["thread_num"].as<uint32_t>();
+    if (node["thread_sched_policy"])
+      rhs.thread_sched_policy = node["thread_sched_policy"].as<std::string>();
+    if (node["thread_bind_cpu"])
+      rhs.thread_bind_cpu = node["thread_bind_cpu"].as<std::vector<uint32_t>>();
+    if (node["timeout_alarm_threshold_us"])
+      rhs.timeout_alarm_threshold_us = std::chrono::microseconds(
+          node["timeout_alarm_threshold_us"].as<uint32_t>());
+
+    return true;
+  }
+};
+
+}  // namespace YAML
+
+namespace aimrt::runtime::core::executor {
+
+void TBBThreadExecutor::Initialize(std::string_view name,
+                                   YAML::Node options_node) {
+  AIMRT_CHECK_ERROR_THROW(
+      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      "TBBThreadExecutor can only be initialized once.");
+
+  name_ = std::string(name);
+  if (options_node && !options_node.IsNull())
+    options_ = options_node.as<Options>();
+
+  AIMRT_CHECK_ERROR_THROW(
+      options_.thread_num > 0,
+      "Invalide tbb thread executor options, thread num is zero.");
+
+  thread_id_vec_.resize(options_.thread_num);
+
+  for (uint32_t ii = 0; ii < options_.thread_num; ++ii) {
+    threads_.emplace(threads_.end(), [this, ii] {
+      thread_id_vec_[ii] = std::this_thread::get_id();
+
+      std::string threadname = name_;
+      if (options_.thread_num > 1)
+        threadname = threadname + "." + std::to_string(ii);
+
+      try {
+        util::SetNameForCurrentThread(threadname);
+        util::BindCpuForCurrentThread(options_.thread_bind_cpu);
+        util::SetCpuSchedForCurrentThread(options_.thread_sched_policy);
+      } catch (const std::exception& e) {
+        AIMRT_WARN("Set thread policy for tbb thread executor '{}' get exception, {}",
+                   Name(), e.what());
+      }
+
+      Task task;
+      while (true) {
+        try {
+          while (qu_.try_pop(task)) task();
+        } catch (const std::exception& e) {
+          AIMRT_FATAL("Tbb thread executor '{}' run loop get exception, {}",
+                      Name(), e.what());
+        }
+
+        if (status_.load() == Status::Shutdown) break;
+
+        sig_flag_.wait(false);
+      }
+
+      thread_id_vec_[ii] = std::thread::id();
+    });
+  }
+
+  options_node = options_;
+}
+
+void TBBThreadExecutor::Start() {
+  AIMRT_CHECK_ERROR_THROW(
+      std::atomic_exchange(&status_, Status::Start) == Status::Init,
+      "Function can only be called when status is 'Init'.");
+}
+
+void TBBThreadExecutor::Shutdown() {
+  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+    return;
+
+  sig_flag_.store(true);
+  sig_flag_.notify_all();
+
+  for (auto itr = threads_.begin(); itr != threads_.end();) {
+    if (itr->joinable()) itr->join();
+    threads_.erase(itr++);
+  }
+}
+
+bool TBBThreadExecutor::IsInCurrentExecutor() const {
+  assert(status_ == Status::Start);
+  return (std::find(thread_id_vec_.begin(), thread_id_vec_.end(),
+                    std::this_thread::get_id()) != thread_id_vec_.end());
+}
+
+void TBBThreadExecutor::Execute(Task&& task) {
+  assert(status_ == Status::Start);
+  qu_.emplace(std::move(task));
+  sig_flag_.store(true);
+  sig_flag_.notify_one();
+}
+
+void TBBThreadExecutor::ExecuteAfterNs(uint64_t dt, Task&& task) {
+  AIMRT_ERROR_THROW("Tbb thread executor '{}' does not support timer schedule.", Name());
+}
+
+}  // namespace aimrt::runtime::core::executor

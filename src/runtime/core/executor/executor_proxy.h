@@ -23,20 +23,14 @@ class ExecutorProxy {
   std::string_view Name() const { return executor_ptr_->Name(); }
 
   bool ThreadSafe() const { return executor_ptr_->ThreadSafe(); };
-  bool IsInCurrentExecutor() const {
-    return executor_ptr_->IsInCurrentExecutor();
-  };
+  bool IsInCurrentExecutor() const { return executor_ptr_->IsInCurrentExecutor(); };
+  bool SupportTimerSchedule() const { return executor_ptr_->SupportTimerSchedule(); }
 
-  void Execute(aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
+  void Execute(ExecutorBase::Task&& task) {
     executor_ptr_->Execute(std::move(task));
   }
-  void ExecuteAfterNs(uint64_t dt,
-                      aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
+  void ExecuteAfterNs(uint64_t dt, ExecutorBase::Task&& task) {
     executor_ptr_->ExecuteAfterNs(dt, std::move(task));
-  }
-  void ExecuteAtNs(uint64_t tp,
-                   aimrt::util::Function<aimrt_function_executor_task_ops_t>&& task) {
-    executor_ptr_->ExecuteAtNs(tp, std::move(task));
   }
 
   const aimrt_executor_base_t* NativeHandle() const { return &base_; }
@@ -58,17 +52,14 @@ class ExecutorProxy {
         .is_in_current_executor = [](void* impl) -> bool {
           return static_cast<ExecutorProxy*>(impl)->IsInCurrentExecutor();
         },
+        .is_support_timer_schedule = [](void* impl) -> bool {
+          return static_cast<ExecutorProxy*>(impl)->SupportTimerSchedule();
+        },
         .execute = [](void* impl, aimrt_function_base_t* task) {
-          static_cast<ExecutorProxy*>(impl)->Execute(
-              aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
+          static_cast<ExecutorProxy*>(impl)->Execute(ExecutorBase::Task(task));  //
         },
         .execute_after_ns = [](void* impl, uint64_t dt, aimrt_function_base_t* task) {
-          static_cast<ExecutorProxy*>(impl)->ExecuteAfterNs(
-              dt, aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
-        },
-        .execute_at_ns = [](void* impl, uint64_t tp, aimrt_function_base_t* task) {
-          static_cast<ExecutorProxy*>(impl)->ExecuteAtNs(
-              tp, aimrt::util::Function<aimrt_function_executor_task_ops_t>(task));  //
+          static_cast<ExecutorProxy*>(impl)->ExecuteAfterNs(dt, ExecutorBase::Task(task));  //
         },
         .impl = impl};
   }

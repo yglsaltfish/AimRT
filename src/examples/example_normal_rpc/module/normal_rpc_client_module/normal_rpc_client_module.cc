@@ -26,7 +26,8 @@ bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
 
     // Get executor handle
     executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
-    AIMRT_CHECK_ERROR_THROW(executor_, "Get executor 'work_thread_pool' failed.");
+    AIMRT_CHECK_ERROR_THROW(executor_ && executor_.SupportTimerSchedule(),
+                            "Get executor 'work_thread_pool' failed.");
 
     // Get rpc handle
     auto rpc_handle = core_.GetRpcHandle();

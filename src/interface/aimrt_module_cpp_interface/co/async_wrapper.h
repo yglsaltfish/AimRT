@@ -1,10 +1,8 @@
 #pragma once
 
-#ifdef AIMRT_USE_EXECUTOR
+#include <stdexec/execution.hpp>
 
-  #include <stdexec/execution.hpp>
-
-  #include "aimrt_module_cpp_interface/util/function.h"
+#include "aimrt_module_cpp_interface/util/function.h"
 
 namespace aimrt::co {
 
@@ -98,5 +96,3 @@ class AsyncWrapper {
 };
 
 }  // namespace aimrt::co
-
-#endif
