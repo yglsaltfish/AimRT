@@ -44,7 +44,7 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   void Publish(const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept override;
 
  private:
-  enum class Status : uint32_t {
+  enum class State : uint32_t {
     PreInit,
     Init,
     Start,
@@ -52,7 +52,7 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   };
 
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 

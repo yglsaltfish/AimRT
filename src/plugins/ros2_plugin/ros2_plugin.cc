@@ -43,6 +43,8 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
   try {
     core_ptr_ = core_ptr;
 
+    core_ptr_->SetGlobal();
+
     YAML::Node plugin_options_node = core_ptr_->GetPluginManager().GetPluginOptionsNode(Name());
 
     if (!plugin_options_node || plugin_options_node.IsNull())
@@ -78,13 +80,13 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     ros2_thread_ptr_ = std::make_unique<std::thread>(
         [this]() { ros2_node_executor_ptr_->spin(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::HookPoint::PostInitLog,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
                                 [this] { SetPluginLogger(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::HookPoint::PreInitRpc,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
                                 [this] { RegisterRos2RpcBackend(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::HookPoint::PreInitChannel,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitChannel,
                                 [this] { RegisterRos2ChannelBackend(); });
 
     plugin_options_node = options_;
@@ -97,6 +99,8 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 }
 
 void Ros2Plugin::Shutdown() noexcept {
+  if (core_ptr_) core_ptr_->UnSetGlobal();
+
   try {
     if (!init_flag_) return;
 

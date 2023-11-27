@@ -64,7 +64,7 @@ void LoggerManager::Initialize(YAML::Node options_node) {
   RegisterRotateFileLoggerBackend();
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Logger manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -86,24 +86,18 @@ void LoggerManager::Initialize(YAML::Node options_node) {
     used_logger_backend_ptr_vec_.emplace_back(finditr->get());
   }
 
-  // 配置全局logger
-  SetLogger(aimrt::logger::LoggerRef(GetLoggerProxy("core").NativeHandle()));
-
   options_node = options_;
 }
 
 void LoggerManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void LoggerManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
-
-  // 配置全局logger
-  SetLogger(aimrt::logger::LoggerRef());
 
   // logger_proxy_map_不能清，有些插件还会打日志
   // logger_proxy_map_.clear();
@@ -117,8 +111,8 @@ void LoggerManager::Shutdown() {
 
 void LoggerManager::SetLogExecutor(executor::ExecutorRef log_executor) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   log_executor_ = log_executor;
 }
@@ -126,8 +120,8 @@ void LoggerManager::SetLogExecutor(executor::ExecutorRef log_executor) {
 void LoggerManager::RegisterLoggerBackend(
     std::unique_ptr<LoggerBackendBase>&& logger_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   logger_backend_ptr_vec_.emplace_back(std::move(logger_backend_ptr));
 }
@@ -135,8 +129,8 @@ void LoggerManager::RegisterLoggerBackend(
 LoggerProxy& LoggerManager::GetLoggerProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   // module_name为空等效于aimrt节点
   const std::string& real_module_name =
@@ -161,8 +155,8 @@ LoggerProxy& LoggerManager::GetLoggerProxy(
 
 LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   // logger_name为空等效于aimrt节点
   const std::string& real_logger_name =

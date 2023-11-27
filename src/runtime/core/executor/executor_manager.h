@@ -25,6 +25,13 @@ class ExecutorManager {
     std::vector<ExecutorOptions> executors_options;
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
   using ExecutorGenFunc = std::function<std::unique_ptr<ExecutorBase>()>;
 
  public:
@@ -43,20 +50,15 @@ class ExecutorManager {
 
   ExecutorManagerProxy& GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info);
 
+  State GetState() const { return state_.load(); }
+
  private:
   void RegisterAsioThreadExecutorGenFunc();
   void RegisterTBBThreadExecutorGenFunc();
 
  private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
-
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   std::map<std::string, ExecutorGenFunc> executor_gen_func_map_;
 

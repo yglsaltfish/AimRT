@@ -29,7 +29,7 @@ void Ros2ChannelBackend::Initialize(
     const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
     runtime::core::channel::ContextManager* context_manager_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Ros2 channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -42,8 +42,8 @@ void Ros2ChannelBackend::Initialize(
 
 void Ros2ChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   for (auto& itr : subscribe_wrapper_map_) {
     static_cast<Ros2AdapterSubscription*>(itr.second.get())->Start();
@@ -51,7 +51,7 @@ void Ros2ChannelBackend::Start() {
 }
 
 void Ros2ChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   for (auto& itr : publish_type_wrapper_map_) {
@@ -77,8 +77,8 @@ void Ros2ChannelBackend::Shutdown() {
 
 bool Ros2ChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Publish type can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -156,8 +156,8 @@ bool Ros2ChannelBackend::RegisterPublishType(
 
 bool Ros2ChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Msg can only be subscribed when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
     return false;
   }
 
@@ -225,7 +225,7 @@ bool Ros2ChannelBackend::Subscribe(
 
 void Ros2ChannelBackend::Publish(
     const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
-  assert(status_.load() == Status::Start);
+  assert(state_.load() == State::Start);
 
   // 只管前缀是ros2类型的消息
   if (!CheckRosMsg(publish_wrapper.msg_type)) return;

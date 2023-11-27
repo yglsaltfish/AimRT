@@ -31,7 +31,7 @@ namespace aimrt::runtime::core::configurator {
 void ConfiguratorManager::Initialize(
     const std::filesystem::path& cfg_file_path) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Configurator manager can only be initialized once.");
 
   cfg_file_path_ = cfg_file_path;
@@ -59,12 +59,12 @@ void ConfiguratorManager::Initialize(
 
 void ConfiguratorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void ConfiguratorManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   cfg_proxy_map_.clear();
@@ -72,16 +72,16 @@ void ConfiguratorManager::Shutdown() {
 
 YAML::Node ConfiguratorManager::GetOriRootOptionsNode() const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return ori_root_options_node_;
 }
 
 YAML::Node ConfiguratorManager::DumpRootOptionsNode() const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return root_options_node_;
 }
@@ -89,8 +89,8 @@ YAML::Node ConfiguratorManager::DumpRootOptionsNode() const {
 const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   auto itr = cfg_proxy_map_.find(module_info.name);
   if (itr != cfg_proxy_map_.end()) return *(itr->second);
@@ -131,8 +131,8 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
 
 YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return root_options_node_["aimrt"][key] =
              ori_root_options_node_["aimrt"][key];

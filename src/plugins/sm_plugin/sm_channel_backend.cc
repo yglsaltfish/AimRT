@@ -93,7 +93,7 @@ void SmChannelBackend::Initialize(
     const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
     runtime::core::channel::ContextManager* context_manager_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "share memory channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -124,8 +124,8 @@ void SmChannelBackend::Initialize(
 
 void SmChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   for (auto& [id, pair] : dispatcher_map_) {
     (void)id;
@@ -137,7 +137,7 @@ void SmChannelBackend::Start() {
 }
 
 void SmChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   for (auto& [id, transmitter] : publisher_map_) {
@@ -162,8 +162,8 @@ void SmChannelBackend::Shutdown() {
 }
 
 bool SmChannelBackend::RegisterPublishType(const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Publish type can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -220,8 +220,8 @@ bool SmChannelBackend::RegisterPublishType(const runtime::core::channel::Publish
 }
 
 bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Subscribe can only be called when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Subscribe can only be called when state is 'Init'.");
     return false;
   }
 
@@ -423,8 +423,8 @@ void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pub
 void SmChannelBackend::RegisterGetExecutorFunc(
     const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
   get_executor_func_ = get_executor_func;
 }
 

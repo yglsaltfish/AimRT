@@ -6,7 +6,7 @@ namespace aimrt::runtime::core::channel {
 
 void ChannelBackendManager::Initialize(ChannelRegistry* channel_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Channel backend manager can only be initialized once.");
 
   channel_registry_ptr_ = channel_registry_ptr;
@@ -14,8 +14,8 @@ void ChannelBackendManager::Initialize(ChannelRegistry* channel_registry_ptr) {
 
 void ChannelBackendManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   for (auto& backend : channel_backend_index_vec_) {
     AIMRT_TRACE("Start channel backend '{}'.", backend->Name());
@@ -24,7 +24,7 @@ void ChannelBackendManager::Start() {
 }
 
 void ChannelBackendManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   for (auto& backend : channel_backend_index_vec_) {
@@ -38,16 +38,16 @@ void ChannelBackendManager::Shutdown() {
 void ChannelBackendManager::RegisterChannelBackend(
     ChannelBackendBase* channel_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   channel_backend_index_vec_.emplace_back(channel_backend_ptr);
 }
 
 bool ChannelBackendManager::RegisterPublishType(
     PublishTypeWrapper&& publish_type_wrapper) {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Publish type can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -67,8 +67,8 @@ bool ChannelBackendManager::RegisterPublishType(
 }
 
 bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Msg can only be subscribed when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
     return false;
   }
 
@@ -87,7 +87,7 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
 }
 
 void ChannelBackendManager::Publish(const PublishWrapper& publish_wrapper) {
-  assert(status_.load() == Status::Start);
+  assert(state_.load() == State::Start);
 
   const auto* publish_type_wrapper_ptr =
       channel_registry_ptr_->GetPublishTypeWrapper(

@@ -17,6 +17,13 @@ class MainThreadExecutor {
     std::vector<uint32_t> thread_bind_cpu;
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
   using Task = aimrt::util::Function<aimrt_function_executor_task_ops_t>;
 
  public:
@@ -40,7 +47,7 @@ class MainThreadExecutor {
 
   void Execute(Task&& task);
 
-  bool IsStart() const { return status_.load() == Status::Start; }
+  State GetState() const { return state_.load(); }
 
   const aimrt_executor_base_t* NativeHandle() const { return &base_; }
 
@@ -72,15 +79,8 @@ class MainThreadExecutor {
   }
 
  private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
-
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   const std::thread::id thread_id_;
 

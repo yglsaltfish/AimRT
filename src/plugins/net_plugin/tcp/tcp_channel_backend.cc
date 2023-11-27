@@ -48,7 +48,7 @@ void TcpChannelBackend::Initialize(
     const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
     runtime::core::channel::ContextManager* context_manager_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Tcp channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -61,12 +61,12 @@ void TcpChannelBackend::Initialize(
 
 void TcpChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void TcpChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 }
 
@@ -89,8 +89,8 @@ bool TcpChannelBackend::RegisterPublishType(
 
 bool TcpChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Msg can only be subscribed when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
     return false;
   }
 
@@ -184,7 +184,7 @@ bool TcpChannelBackend::Subscribe(
 
 void TcpChannelBackend::Publish(
     const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
-  assert(status_.load() == Status::Start);
+  assert(state_.load() == State::Start);
 
   namespace net = aimrt::common::net;
 

@@ -16,6 +16,13 @@ class LocalChannelBackend : public ChannelBackendBase {
     std::string subscriber_executor;
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
  public:
   LocalChannelBackend() = default;
   ~LocalChannelBackend() override = default;
@@ -36,6 +43,8 @@ class LocalChannelBackend : public ChannelBackendBase {
   void RegisterGetExecutorFunc(
       const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
+  State GetState() const { return state_.load(); }
+
  private:
   const SubscribeWrapper* GetTplSubscribeWrapper(
       std::string_view subscribe_pkg_path,
@@ -49,15 +58,8 @@ class LocalChannelBackend : public ChannelBackendBase {
       std::string_view msg_type) const;
 
  private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
-
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   const ChannelRegistry* channel_registry_ptr_ = nullptr;
   ContextManager* context_manager_ptr_ = nullptr;

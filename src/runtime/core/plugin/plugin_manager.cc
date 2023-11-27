@@ -49,7 +49,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
       "Plugin init func is not set before PluginManager initialize.");
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Plugin manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -102,12 +102,12 @@ void PluginManager::Initialize(YAML::Node options_node) {
 
 void PluginManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void PluginManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   // 按照反顺序执行Shutdown
@@ -122,16 +122,16 @@ void PluginManager::Shutdown() {
 
 void PluginManager::RegisterPluginInitFunc(PluginInitFunc&& plugin_init_func) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   plugin_init_func_ = std::move(plugin_init_func);
 }
 
 YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   auto finditr = std::find_if(
       options_.plugins_options.begin(),

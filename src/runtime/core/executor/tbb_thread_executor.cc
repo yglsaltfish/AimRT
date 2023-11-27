@@ -42,7 +42,7 @@ namespace aimrt::runtime::core::executor {
 void TBBThreadExecutor::Initialize(std::string_view name,
                                    YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "TBBThreadExecutor can only be initialized once.");
 
   name_ = std::string(name);
@@ -81,7 +81,7 @@ void TBBThreadExecutor::Initialize(std::string_view name,
                       Name(), e.what());
         }
 
-        if (status_.load() == Status::Shutdown) break;
+        if (state_.load() == State::Shutdown) break;
 
         sig_flag_.wait(false);
       }
@@ -95,12 +95,12 @@ void TBBThreadExecutor::Initialize(std::string_view name,
 
 void TBBThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void TBBThreadExecutor::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   sig_flag_.store(true);
@@ -113,13 +113,13 @@ void TBBThreadExecutor::Shutdown() {
 }
 
 bool TBBThreadExecutor::IsInCurrentExecutor() const {
-  assert(status_ == Status::Start);
+  assert(state_ == State::Start);
   return (std::find(thread_id_vec_.begin(), thread_id_vec_.end(),
                     std::this_thread::get_id()) != thread_id_vec_.end());
 }
 
 void TBBThreadExecutor::Execute(Task&& task) {
-  assert(status_ == Status::Start);
+  assert(state_ == State::Start);
   qu_.emplace(std::move(task));
   sig_flag_.store(true);
   sig_flag_.notify_one();

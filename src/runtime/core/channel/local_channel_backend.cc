@@ -38,7 +38,7 @@ void LocalChannelBackend::Initialize(
     const ChannelRegistry* channel_registry_ptr,
     ContextManager* context_manager_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Local channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -67,12 +67,12 @@ void LocalChannelBackend::Initialize(
 
 void LocalChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void LocalChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
@@ -81,8 +81,8 @@ void LocalChannelBackend::Shutdown() {
 
 bool LocalChannelBackend::RegisterPublishType(
     const PublishTypeWrapper& publish_type_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Publish type can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -90,8 +90,8 @@ bool LocalChannelBackend::RegisterPublishType(
 }
 
 bool LocalChannelBackend::Subscribe(const SubscribeWrapper& subscribe_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Msg can only be subscribed when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
     return false;
   }
 
@@ -106,7 +106,7 @@ bool LocalChannelBackend::Subscribe(const SubscribeWrapper& subscribe_wrapper) n
 }
 
 void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcept {
-  assert(status_.load() == Status::Start);
+  assert(state_.load() == State::Start);
 
   std::string_view msg_type = publish_wrapper.msg_type;
   std::string_view pkg_path = publish_wrapper.pkg_path;
@@ -235,8 +235,8 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
 void LocalChannelBackend::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
 }

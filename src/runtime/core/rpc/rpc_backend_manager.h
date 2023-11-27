@@ -8,6 +8,14 @@ namespace aimrt::runtime::core::rpc {
 
 class RpcBackendManager {
  public:
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
+ public:
   RpcBackendManager() = default;
   ~RpcBackendManager() = default;
 
@@ -24,15 +32,10 @@ class RpcBackendManager {
   bool RegisterClientFunc(ClientFuncWrapper&& client_func_wrapper);
   void Invoke(ClientInvokeWrapper&& client_invoke_wrapper);
 
- private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
+  State GetState() const { return state_.load(); }
 
-  std::atomic<Status> status_ = Status::PreInit;
+ private:
+  std::atomic<State> state_ = State::PreInit;
 
   RpcRegistry* rpc_registry_ptr_ = nullptr;
 

@@ -28,7 +28,7 @@ class SmRpcBackend : public runtime::core::rpc::RpcBackendBase {
       const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
 
  private:
-  enum class Status : uint32_t {
+  enum class State : uint32_t {
     PreInit,
     Init,
     Start,
@@ -36,7 +36,7 @@ class SmRpcBackend : public runtime::core::rpc::RpcBackendBase {
   };
 
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 };
 
 }  // namespace aimrt::plugins::sm_plugin

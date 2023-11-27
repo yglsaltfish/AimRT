@@ -24,7 +24,7 @@ void Ros2RpcBackend::Initialize(YAML::Node options_node,
                                 const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
                                 runtime::core::rpc::ContextManager* context_manager_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Ros2 Rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -38,8 +38,8 @@ void Ros2RpcBackend::Initialize(YAML::Node options_node,
 
 void Ros2RpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   for (auto& itr : ros2_adapter_client_map_)
     itr.second->Start();
@@ -49,7 +49,7 @@ void Ros2RpcBackend::Start() {
 }
 
 void Ros2RpcBackend::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   for (auto& itr : ros2_adapter_client_map_)
@@ -66,8 +66,8 @@ void Ros2RpcBackend::Shutdown() {
 
 bool Ros2RpcBackend::RegisterServiceFunc(
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Service func can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -100,8 +100,8 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 
 bool Ros2RpcBackend::RegisterClientFunc(
     const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Client func can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -134,7 +134,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
 bool Ros2RpcBackend::TryInvoke(
     const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
-  assert(status_.load() == Status::Start);
+  assert(state_.load() == State::Start);
 
   // 只管前缀是ros2类型的消息
   if (!CheckRosFunc(client_invoke_wrapper_ptr->func_name)) return false;

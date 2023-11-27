@@ -7,7 +7,7 @@ namespace aimrt::runtime::core::rpc {
 
 void RpcBackendManager::Initialize(RpcRegistry* rpc_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Rpc backend manager can only be initialized once.");
 
   rpc_registry_ptr_ = rpc_registry_ptr;
@@ -15,8 +15,8 @@ void RpcBackendManager::Initialize(RpcRegistry* rpc_registry_ptr) {
 
 void RpcBackendManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   for (auto& backend : rpc_backend_index_vec_) {
     AIMRT_TRACE("Start rpc backend '{}'.", backend->Name());
@@ -25,7 +25,7 @@ void RpcBackendManager::Start() {
 }
 
 void RpcBackendManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   for (auto& backend : rpc_backend_index_vec_) {
@@ -39,8 +39,8 @@ void RpcBackendManager::Shutdown() {
 
 void RpcBackendManager::RegisterRpcBackend(RpcBackendBase* rpc_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   rpc_backend_index_vec_.emplace_back(rpc_backend_ptr);
   rpc_backend_index_map_.emplace(rpc_backend_ptr->Name(), rpc_backend_ptr);
@@ -48,8 +48,8 @@ void RpcBackendManager::RegisterRpcBackend(RpcBackendBase* rpc_backend_ptr) {
 
 bool RpcBackendManager::RegisterServiceFunc(
     ServiceFuncWrapper&& service_func_wrapper) {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Service func can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -68,8 +68,8 @@ bool RpcBackendManager::RegisterServiceFunc(
 }
 
 bool RpcBackendManager::RegisterClientFunc(ClientFuncWrapper&& client_func_wrapper) {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Client func can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -88,7 +88,7 @@ bool RpcBackendManager::RegisterClientFunc(ClientFuncWrapper&& client_func_wrapp
 }
 
 void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
-  assert(status_.load() == Status::Start);
+  assert(state_.load() == State::Start);
 
   auto client_invoke_wrapper_ptr =
       std::make_shared<ClientInvokeWrapper>(std::move(client_invoke_wrapper));

@@ -37,6 +37,13 @@ class ModuleManager {
     std::vector<ModuleOptions> modules_options;
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
   using CoreProxyConfigurator = std::function<void(const util::ModuleDetailInfo&, CoreProxy&)>;
 
  public:
@@ -58,6 +65,8 @@ class ModuleManager {
   const std::vector<std::string>& GetModuleNameList() const;
   const std::vector<const util::ModuleDetailInfo*>& GetModuleDetailInfoList() const;
 
+  State GetState() const { return state_.load(); }
+
  private:
   struct ModuleWrapper {
     util::ModuleDetailInfo info;                // 模块配置
@@ -69,15 +78,8 @@ class ModuleManager {
   void InitModule(ModuleWrapper* module_wrapper_ptr);
 
  private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
-
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   CoreProxyConfigurator module_proxy_configurator_;
 

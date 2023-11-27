@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <filesystem>
 #include <fstream>
+#include <source_location>
 #include <thread>
 
 #include "core/executor/executor_manager.h"
@@ -38,7 +39,7 @@ class LoggerManagerTest : public ::testing::Test {
     logger_manager_.SetLogExecutor(
         aimrt::executor::ExecutorRef{executor_manager_.GetExecutorManagerProxy(detail_info).GetExecutor("work_thread_pool")->NativeHandle()});
 
-    // register the mocked backend, register can only in PreInit status.
+    // register the mocked backend, register can only in PreInit state.
     std::unique_ptr<LoggerBackendBase> mocked_backend_ptr = std::make_unique<LoggerBackendMock>();
     EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Name)
         .WillRepeatedly(testing::Return("mocked_backend"));

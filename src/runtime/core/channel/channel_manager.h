@@ -23,6 +23,13 @@ class ChannelManager {
     std::vector<BackendOptions> backends_options;
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
  public:
   ChannelManager() = default;
   ~ChannelManager() = default;
@@ -46,19 +53,14 @@ class ChannelManager {
   const ChannelRegistry* GetChannelRegistry() const;
   const std::vector<std::string>& GetChannelBackendNameList() const;
 
+  State GetState() const { return state_.load(); }
+
  private:
   void RegisterLocalChannelBackend();
 
  private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
-
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
 

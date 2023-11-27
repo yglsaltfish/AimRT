@@ -28,6 +28,13 @@ class LoggerManager {
     std::vector<BackendOptions> backends_options;
   };
 
+  enum class State : uint32_t {
+    PreInit = 0,
+    Init,
+    Start,
+    Shutdown,
+  };
+
  public:
   LoggerManager() = default;
   ~LoggerManager() = default;
@@ -47,20 +54,15 @@ class LoggerManager {
   LoggerProxy& GetLoggerProxy(const util::ModuleDetailInfo& module_info);
   LoggerProxy& GetLoggerProxy(std::string_view logger_name);
 
+  State GetState() const { return state_.load(); }
+
  private:
   void RegisterConsoleLoggerBackend();
   void RegisterRotateFileLoggerBackend();
 
  private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
-
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   aimrt::executor::ExecutorRef log_executor_;
 

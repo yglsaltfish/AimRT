@@ -89,7 +89,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
       "Module proxy configurator is not set before initialize.");
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Module manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -200,8 +200,8 @@ void ModuleManager::Initialize(YAML::Node options_node) {
 
 void ModuleManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   for (const auto& module_name : module_init_order_) {
     auto module_wrapper_map_itr = module_wrapper_map_.find(module_name);
@@ -217,7 +217,7 @@ void ModuleManager::Start() {
 }
 
 void ModuleManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   // 按照反顺序执行Shutdown
@@ -244,8 +244,8 @@ void ModuleManager::Shutdown() {
 
 void ModuleManager::RegisterModule(const aimrt_module_base_t* module) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   AIMRT_CHECK_ERROR_THROW(module != nullptr, "Register invalid module");
 
@@ -255,24 +255,24 @@ void ModuleManager::RegisterModule(const aimrt_module_base_t* module) {
 void ModuleManager::RegisterCoreProxyConfigurator(
     CoreProxyConfigurator&& module_proxy_configurator) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   module_proxy_configurator_ = std::move(module_proxy_configurator);
 }
 
 const std::vector<std::string>& ModuleManager::GetModuleNameList() const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return module_init_order_;
 }
 
 const std::vector<const util::ModuleDetailInfo*>& ModuleManager::GetModuleDetailInfoList() const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return module_detail_info_vec_;
 }

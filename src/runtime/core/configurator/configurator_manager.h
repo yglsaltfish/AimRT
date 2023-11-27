@@ -19,6 +19,13 @@ class ConfiguratorManager {
     std::filesystem::path temp_cfg_path = "./cfg/tmp";
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
  public:
   ConfiguratorManager() = default;
   ~ConfiguratorManager() = default;
@@ -38,17 +45,12 @@ class ConfiguratorManager {
 
   YAML::Node GetAimRTOptionsNode(std::string_view key);
 
- private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
+  State GetState() const { return state_.load(); }
 
+ private:
   std::filesystem::path cfg_file_path_;
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   YAML::Node ori_root_options_node_;
   YAML::Node root_options_node_;

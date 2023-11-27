@@ -12,6 +12,14 @@ namespace aimrt::runtime::core::channel {
 
 class ChannelBackendManager {
  public:
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
+ public:
   ChannelBackendManager() = default;
   ~ChannelBackendManager() = default;
 
@@ -28,15 +36,10 @@ class ChannelBackendManager {
   bool Subscribe(SubscribeWrapper&& subscribe_wrapper);
   void Publish(const PublishWrapper& publish_wrapper);
 
- private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
+  State GetState() const { return state_.load(); }
 
-  std::atomic<Status> status_ = Status::PreInit;
+ private:
+  std::atomic<State> state_ = State::PreInit;
 
   ChannelRegistry* channel_registry_ptr_;
 

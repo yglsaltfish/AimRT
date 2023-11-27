@@ -95,16 +95,16 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   template <typename... Args>
   void SetLogger(Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
-        status_.load() == Status::PreInit,
-        "Function can only be called when status is 'PreInit'.");
+        state_.load() == State::PreInit,
+        "Function can only be called when state is 'PreInit'.");
 
     logger_ptr_ = std::make_shared<util::LoggerWrapper>(std::forward<Args>(args)...);
   }
 
   void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        status_.load() == Status::PreInit,
-        "Function can only be called when status is 'PreInit'.");
+        state_.load() == State::PreInit,
+        "Function can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
   }
@@ -113,8 +113,8 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   void RegisterHttpHandleFunc(std::string_view pattern,
                               HttpHandle<RspBodyType>&& handle) {
     AIMRT_CHECK_ERROR_THROW(
-        status_.load() == Status::PreInit,
-        "Function can only be called when status is 'PreInit'.");
+        state_.load() == State::PreInit,
+        "Function can only be called when state is 'PreInit'.");
 
     http_dispatcher_ptr_->RegisterHttpHandle(
         pattern, Session::GenHttpDispatcherHandle(std::move(handle)));
@@ -122,7 +122,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+        std::atomic_exchange(&state_, State::Init) == State::PreInit,
         "AsioHttpClientPool can only be initialized once.");
 
     options_ = Options::Verify(options);
@@ -131,8 +131,8 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&status_, Status::Start) == Status::Init,
-        "Function can only be called when status is 'Init'.");
+        std::atomic_exchange(&state_, State::Start) == State::Init,
+        "Function can only be called when state is 'Init'.");
 
     auto self = this->shared_from_this();
     boost::asio::co_spawn(
@@ -143,7 +143,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
           acceptor_.bind(options_.ep);
           acceptor_.listen();
 
-          while (status_.load() == Status::Start) {
+          while (state_.load() == State::Start) {
             try {
               // 如果链接数达到上限，则等待一段时间再试
               if (session_ptr_list_.size() >= options_.max_session_num) {
@@ -181,7 +181,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     boost::asio::co_spawn(
         mgr_strand_,
         [this, self]() -> boost::asio::awaitable<void> {
-          while (status_.load() == Status::Start) {
+          while (state_.load() == State::Start) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
               co_await mgr_timer_.async_wait(boost::asio::use_awaitable);
@@ -207,7 +207,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
       return;
 
     auto self = this->shared_from_this();
@@ -284,7 +284,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&status_, SessionStatus::Init) == SessionStatus::PreInit,
+          std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
           "Session can only be initialized once.");
 
       session_options_ptr_ = session_options_ptr;
@@ -292,8 +292,8 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&status_, SessionStatus::Start) == SessionStatus::Init,
-          "Function can only be called when status is 'Init'.");
+          std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
+          "Function can only be called when state is 'Init'.");
 
       remote_addr_ = util::SSToString(stream_.socket().remote_endpoint());
 
@@ -308,7 +308,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
               boost::beast::flat_buffer buffer;
 
-              while (status_.load() == SessionStatus::Start && !close_connect_flag_) {
+              while (state_.load() == SessionState::Start && !close_connect_flag_) {
                 http::request_parser<ReqBodyType> req_parser;
                 req_parser.eager(true);
                 req_parser.body_limit(1024 * 1024 * 16);
@@ -465,7 +465,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
           session_mgr_strand_,
           [this, self]() -> boost::asio::awaitable<void> {
             try {
-              while (status_.load() == SessionStatus::Start) {
+              while (state_.load() == SessionState::Start) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
                 co_await timer_.async_wait(boost::asio::use_awaitable);
 
@@ -495,7 +495,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     }
 
     void Shutdown() {
-      if (std::atomic_exchange(&status_, SessionStatus::Shutdown) == SessionStatus::Shutdown)
+      if (std::atomic_exchange(&state_, SessionState::Shutdown) == SessionState::Shutdown)
         return;
 
       auto self = this->shared_from_this();
@@ -567,7 +567,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
     std::string_view RemoteAddr() const { return remote_addr_; }
 
-    bool IsRunning() const { return status_.load() == SessionStatus::Start; }
+    bool IsRunning() const { return state_.load() == SessionState::Start; }
 
     template <typename RspBodyType = boost::beast::http::string_body>
     static Dispatcher::HttpHandle GenHttpDispatcherHandle(HttpHandle<RspBodyType>&& handle) {
@@ -743,7 +743,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     }
 
    private:
-    enum class SessionStatus : uint32_t {
+    enum class SessionState : uint32_t {
       PreInit,
       Init,
       Start,
@@ -767,7 +767,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
     // 状态
-    std::atomic<SessionStatus> status_ = SessionStatus::PreInit;
+    std::atomic<SessionState> state_ = SessionState::PreInit;
 
     // misc
     std::string remote_addr_;
@@ -776,7 +776,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   };
 
  private:
-  enum class Status : uint32_t {
+  enum class State : uint32_t {
     PreInit,
     Init,
     Start,
@@ -800,7 +800,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   Options options_;
 
   // 状态
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
