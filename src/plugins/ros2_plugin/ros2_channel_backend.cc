@@ -87,9 +87,11 @@ bool Ros2ChannelBackend::RegisterPublishType(
           publish_type_wrapper.msg_type_support->type_name)))
     return true;
 
-  ChannelTypeKey type_key(
-      publish_type_wrapper.pkg_path, publish_type_wrapper.module_name,
-      publish_type_wrapper.topic_name, publish_type_wrapper.msg_type);
+  ChannelTypeKey type_key{
+      publish_type_wrapper.pkg_path,
+      publish_type_wrapper.module_name,
+      publish_type_wrapper.topic_name,
+      publish_type_wrapper.msg_type};
 
   auto emplace_ret = publish_type_wrapper_map_.emplace(
       type_key, std::make_unique<Ros2PublishWrapper>(Ros2PublishWrapper{
@@ -166,9 +168,11 @@ bool Ros2ChannelBackend::Subscribe(
           subscribe_wrapper.msg_type_support->type_name)))
     return true;
 
-  ChannelTypeKey type_key(
-      subscribe_wrapper.pkg_path, subscribe_wrapper.module_name,
-      subscribe_wrapper.topic_name, subscribe_wrapper.msg_type);
+  ChannelTypeKey type_key{
+      subscribe_wrapper.pkg_path,
+      subscribe_wrapper.module_name,
+      subscribe_wrapper.topic_name,
+      subscribe_wrapper.msg_type};
 
   if (subscribe_wrapper_map_.find(type_key) != subscribe_wrapper_map_.end()) {
     // 重复注册
@@ -194,8 +198,8 @@ bool Ros2ChannelBackend::Subscribe(
           const std::string& topic_name,
           const rclcpp::QoS& qos) -> rclcpp::SubscriptionBase::SharedPtr {
         const rclcpp::SubscriptionOptionsWithAllocator<
-            std::allocator<void> >& options =
-            rclcpp::SubscriptionOptionsWithAllocator<std::allocator<void> >();
+            std::allocator<void>>& options =
+            rclcpp::SubscriptionOptionsWithAllocator<std::allocator<void>>();
 
         std::shared_ptr<Ros2AdapterSubscription> subscriber =
             std::make_shared<Ros2AdapterSubscription>(
@@ -230,8 +234,11 @@ void Ros2ChannelBackend::Publish(
   // 只管前缀是ros2类型的消息
   if (!CheckRosMsg(publish_wrapper.msg_type)) return;
 
-  ChannelTypeKey type_key(publish_wrapper.pkg_path, publish_wrapper.module_name,
-                          publish_wrapper.topic_name, publish_wrapper.msg_type);
+  ChannelTypeKey type_key{
+      publish_wrapper.pkg_path,
+      publish_wrapper.module_name,
+      publish_wrapper.topic_name,
+      publish_wrapper.msg_type};
 
   auto finditr = publish_type_wrapper_map_.find(type_key);
   if (finditr == publish_type_wrapper_map_.end()) {

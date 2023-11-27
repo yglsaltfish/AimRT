@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <string_view>
 
 #include "aimrt_module_cpp_interface/module_base.h"

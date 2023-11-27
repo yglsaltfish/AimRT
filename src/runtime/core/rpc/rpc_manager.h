@@ -2,9 +2,9 @@
 
 #include <atomic>
 #include <functional>
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
@@ -70,11 +70,11 @@ class RpcManager {
 
   std::unique_ptr<ContextManager> context_manager_ptr_;
 
-  std::vector<std::unique_ptr<RpcBackendBase> > rpc_backend_vec_;
+  std::vector<std::unique_ptr<RpcBackendBase>> rpc_backend_vec_;
 
   RpcBackendManager rpc_backend_manager_;
 
-  std::map<std::string, std::unique_ptr<RpcHandleProxy> > rpc_handle_proxy_map_;
+  std::unordered_map<std::string, std::unique_ptr<RpcHandleProxy>> rpc_handle_proxy_map_;
 
   // 信息查询类变量
   std::vector<std::string> rpc_backend_name_vec_;

@@ -53,6 +53,6 @@ class PluginManager {
 
   PluginInitFunc plugin_init_func_;
 
-  std::vector<std::unique_ptr<PluginLoader> > plugin_loader_vec_;
+  std::vector<std::unique_ptr<PluginLoader>> plugin_loader_vec_;
 };
 }  // namespace aimrt::runtime::core::plugin

@@ -61,8 +61,8 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::shared_ptr<rclcpp::Node> ros2_node_ptr_;
 
-  std::map<std::string_view, std::shared_ptr<Ros2AdapterServer> > ros2_adapter_server_map_;
-  std::map<std::string_view, std::shared_ptr<Ros2AdapterClient> > ros2_adapter_client_map_;
+  std::unordered_map<std::string_view, std::shared_ptr<Ros2AdapterServer>> ros2_adapter_server_map_;
+  std::unordered_map<std::string_view, std::shared_ptr<Ros2AdapterClient>> ros2_adapter_client_map_;
 };
 
 }  // namespace aimrt::plugins::ros2_plugin

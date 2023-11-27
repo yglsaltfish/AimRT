@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <list>
-#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -60,7 +59,7 @@ class AsioThreadExecutor : public ExecutorBase {
 
   std::unique_ptr<boost::asio::io_context> io_ptr_;
   std::unique_ptr<
-      boost::asio::executor_work_guard<boost::asio::io_context::executor_type> >
+      boost::asio::executor_work_guard<boost::asio::io_context::executor_type>>
       work_guard_ptr_;
 
   std::vector<std::thread::id> thread_id_vec_;

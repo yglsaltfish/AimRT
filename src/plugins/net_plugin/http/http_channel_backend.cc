@@ -146,7 +146,7 @@ bool HttpChannelBackend::Subscribe(
         .len = buffer_view_vec.size()};
 
     // 每个lib统一一次性发布。lib_name:msg_ptr
-    std::map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
+    std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
     for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
       if (msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path) != msg_ptr_map.end())
         continue;

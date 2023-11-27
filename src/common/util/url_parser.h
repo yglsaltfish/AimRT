@@ -32,7 +32,7 @@ struct Url {
  * @return std::optional<UrlView> url结构，nullopt则代表解析失败
  */
 template <class StringType = std::string_view>
-std::optional<Url<StringType> > ParseUrl(std::string_view url_str) {
+std::optional<Url<StringType>> ParseUrl(std::string_view url_str) {
   std::regex url_regex(
       R"(^(([^:\/?#]+)://)?(([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)",
       std::regex::ECMAScript);
@@ -62,7 +62,7 @@ std::optional<Url<StringType> > ParseUrl(std::string_view url_str) {
   if (url_match_result[9].matched)
     url.fragment = StringType(url_match_result[9].first, url_match_result[9].second);
 
-  return std::optional<Url<StringType> >{url};
+  return std::optional<Url<StringType>>{url};
 }
 
 /**

@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <iostream>
-#include <map>
 
 #include "core/logger/log_level_tool.h"
 #include "util/format.h"

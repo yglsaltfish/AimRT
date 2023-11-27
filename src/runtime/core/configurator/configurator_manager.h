@@ -2,9 +2,9 @@
 
 #include <atomic>
 #include <filesystem>
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "yaml-cpp/yaml.h"
 
@@ -55,7 +55,7 @@ class ConfiguratorManager {
   YAML::Node ori_root_options_node_;
   YAML::Node root_options_node_;
 
-  std::map<std::string, std::unique_ptr<ConfiguratorProxy> > cfg_proxy_map_;
+  std::unordered_map<std::string, std::unique_ptr<ConfiguratorProxy>> cfg_proxy_map_;
 };
 
 }  // namespace aimrt::runtime::core::configurator

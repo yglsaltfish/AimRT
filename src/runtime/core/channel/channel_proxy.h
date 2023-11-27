@@ -1,16 +1,17 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <string>
+#include <unordered_map>
 
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "core/channel/channel_backend_manager.h"
 #include "core/channel/context_manager.h"
+#include "util/string_util.h"
 
 namespace aimrt::runtime::core::channel {
 
@@ -247,10 +248,20 @@ class ChannelProxy {
   ChannelContextManagerProxy context_manager_proxy_;
 
   std::shared_mutex publisher_proxy_map_mutex_;
-  std::map<std::string, std::unique_ptr<PublisherProxy>, std::less<> > publisher_proxy_map_;
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<PublisherProxy>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      publisher_proxy_map_;
 
   std::shared_mutex subscriber_proxy_map_mutex_;
-  std::map<std::string, std::unique_ptr<SubscriberProxy>, std::less<> > subscriber_proxy_map_;
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<SubscriberProxy>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      subscriber_proxy_map_;
 
   const aimrt_channel_handle_base_t base_;
 };

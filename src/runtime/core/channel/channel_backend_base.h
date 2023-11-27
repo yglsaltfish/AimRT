@@ -1,8 +1,8 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string_view>
+#include <unordered_map>
 
 #include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
@@ -24,7 +24,7 @@ struct PublishWrapper {
 
   // cache
   mutable const aimrt_type_support_base_t* msg_type_support = nullptr;
-  mutable std::map<std::string_view, std::shared_ptr<aimrt::util::BufferArray> > serialization_cache;
+  mutable std::unordered_map<std::string_view, std::shared_ptr<aimrt::util::BufferArray>> serialization_cache;
 };
 
 class ChannelBackendBase {

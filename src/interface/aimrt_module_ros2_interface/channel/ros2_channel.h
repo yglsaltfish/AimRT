@@ -15,13 +15,13 @@
 namespace aimrt::channel {
 
 template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline bool RegisterPublishType(PublisherRef publisher) {
   return publisher.RegisterPublishType(GetRos2MessageTypeSupport<MsgType>());
 }
 
 template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline void Publish(PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const MsgType& msg) {
   static const std::string msg_type_name =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
@@ -39,7 +39,7 @@ inline void Publish(PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, 
 }
 
 template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline void Publish(PublisherRef publisher, const MsgType& msg) {
   static const std::string msg_type_name =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
@@ -47,7 +47,7 @@ inline void Publish(PublisherRef publisher, const MsgType& msg) {
 }
 
 template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline bool Subscribe(
     SubscriberRef subscriber,
     aimrt::util::Function<void(aimrt::channel::ContextRef ctx_ref,
@@ -68,7 +68,7 @@ inline bool Subscribe(
 }
 
 template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline bool Subscribe(
     SubscriberRef subscriber,
     aimrt::util::Function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
@@ -88,7 +88,7 @@ inline bool Subscribe(
 }
 
 template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline bool SubscribeCo(
     SubscriberRef subscriber,
     aimrt::util::Function<co::Task<void>(aimrt::channel::ContextRef ctx_ref, const MsgType&)>&& callback) {
@@ -108,7 +108,7 @@ inline bool SubscribeCo(
 }
 
 template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline bool SubscribeCo(SubscriberRef subscriber,
                         aimrt::util::Function<co::Task<void>(const MsgType&)>&& callback) {
   return subscriber.Subscribe(

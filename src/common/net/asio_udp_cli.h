@@ -3,8 +3,8 @@
 #include <atomic>
 #include <chrono>
 #include <list>
-#include <map>
 #include <memory>
+#include <unordered_map>
 
 #include <boost/asio.hpp>
 
@@ -489,7 +489,7 @@ class AsioUdpClientPool
   std::atomic<State> state_ = State::PreInit;
 
   // client管理
-  std::map<size_t, std::shared_ptr<AsioUdpClient>> client_map_;
+  std::unordered_map<size_t, std::shared_ptr<AsioUdpClient>> client_map_;
 };
 
 }  // namespace aimrt::common::net

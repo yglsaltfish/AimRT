@@ -1,9 +1,10 @@
 #pragma once
 
-#include <map>
 #include <string>
+#include <unordered_map>
 
 #include "aimrt_module_c_interface/rpc/rpc_context_base.h"
+#include "util/string_util.h"
 
 namespace aimrt::runtime::core::rpc {
 
@@ -22,7 +23,12 @@ class ContextImpl {
 
  private:
   uint64_t ddl_ = 0;
-  std::map<std::string, std::string, std::less<> > meta_data_map_;
+  std::unordered_map<
+      std::string,
+      std::string,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      meta_data_map_;
   const aimrt_rpc_context_base_t base_;
 };
 

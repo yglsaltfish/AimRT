@@ -1,8 +1,8 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_filter.h"
@@ -52,7 +52,7 @@ class ServiceBase {
   }
 
  protected:
-  std::map<std::string_view, ServiceFuncWrapper> service_func_wrapper_map_;
+  std::unordered_map<std::string_view, ServiceFuncWrapper> service_func_wrapper_map_;
   FilterManager filter_mgr_;
 };
 
@@ -156,7 +156,7 @@ class RpcHandleRef {
 
  private:
   const aimrt_rpc_handle_base_t* base_ptr_ = nullptr;
-  std::vector<std::shared_ptr<ServiceBase> > service_vec_;
+  std::vector<std::shared_ptr<ServiceBase>> service_vec_;
 };
 
 class ProxyBase {

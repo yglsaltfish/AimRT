@@ -2,13 +2,14 @@
 
 #include <atomic>
 #include <functional>
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "core/executor/executor_proxy.h"
 #include "core/util/module_detail_info.h"
+#include "util/string_util.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -60,13 +61,21 @@ class ExecutorManager {
   Options options_;
   std::atomic<State> state_ = State::PreInit;
 
-  std::map<std::string, ExecutorGenFunc> executor_gen_func_map_;
+  std::unordered_map<std::string, ExecutorGenFunc> executor_gen_func_map_;
 
-  std::vector<std::unique_ptr<ExecutorBase> > executor_vec_;
+  std::vector<std::unique_ptr<ExecutorBase>> executor_vec_;
 
-  std::map<std::string, std::unique_ptr<ExecutorProxy>, std::less<> > executor_proxy_map_;
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<ExecutorProxy>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      executor_proxy_map_;
 
-  std::map<std::string, std::unique_ptr<ExecutorManagerProxy> > executor_manager_proxy_map_;
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<ExecutorManagerProxy>>
+      executor_manager_proxy_map_;
 };
 
 }  // namespace aimrt::runtime::core::executor

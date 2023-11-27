@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string_view>
+#include <unordered_map>
 
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
@@ -53,17 +53,17 @@ class ChannelRegistry {
 
  private:
   // 发布类型注册表: pkg_path:module_name:topic:msg_type:wrapper
-  using PublishTypeMsgTypeMap = std::map<std::string_view, std::unique_ptr<PublishTypeWrapper>>;
-  using PublishTypeTopicMap = std::map<std::string_view, PublishTypeMsgTypeMap>;
-  using PublishTypeModuleMap = std::map<std::string_view, PublishTypeTopicMap>;
-  using PublishTypePkgMap = std::map<std::string_view, PublishTypeModuleMap>;
+  using PublishTypeMsgTypeMap = std::unordered_map<std::string_view, std::unique_ptr<PublishTypeWrapper>>;
+  using PublishTypeTopicMap = std::unordered_map<std::string_view, PublishTypeMsgTypeMap>;
+  using PublishTypeModuleMap = std::unordered_map<std::string_view, PublishTypeTopicMap>;
+  using PublishTypePkgMap = std::unordered_map<std::string_view, PublishTypeModuleMap>;
   PublishTypePkgMap publish_type_wrapper_map_;
 
   // 订阅回调注册表: pkg_path:module_name:topic:msg_type:wrapper
-  using SubscribeMsgTypeMap = std::map<std::string_view, std::unique_ptr<SubscribeWrapper>>;
-  using SubscribeTopicMap = std::map<std::string_view, SubscribeMsgTypeMap>;
-  using SubscribeModuleMap = std::map<std::string_view, SubscribeTopicMap>;
-  using SubscribePkgMap = std::map<std::string_view, SubscribeModuleMap>;
+  using SubscribeMsgTypeMap = std::unordered_map<std::string_view, std::unique_ptr<SubscribeWrapper>>;
+  using SubscribeTopicMap = std::unordered_map<std::string_view, SubscribeMsgTypeMap>;
+  using SubscribeModuleMap = std::unordered_map<std::string_view, SubscribeTopicMap>;
+  using SubscribePkgMap = std::unordered_map<std::string_view, SubscribeModuleMap>;
   SubscribePkgMap subscribe_wrapper_map_;
 };
 
