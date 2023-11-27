@@ -48,7 +48,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
   RegisterLocalChannelBackend();
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Channel manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -88,14 +88,14 @@ void ChannelManager::Initialize(YAML::Node options_node) {
 
 void ChannelManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   channel_backend_manager_.Start();
 }
 
 void ChannelManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   channel_proxy_map_.clear();
@@ -114,8 +114,8 @@ void ChannelManager::Shutdown() {
 void ChannelManager::RegisterChannelBackend(
     std::unique_ptr<ChannelBackendBase>&& channel_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   channel_backend_vec_.emplace_back(std::move(channel_backend_ptr));
 }
@@ -123,8 +123,8 @@ void ChannelManager::RegisterChannelBackend(
 void ChannelManager::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
 }
@@ -132,8 +132,8 @@ void ChannelManager::RegisterGetExecutorFunc(
 ChannelProxy& ChannelManager::GetChannelProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   auto itr = channel_proxy_map_.find(module_info.name);
   if (itr != channel_proxy_map_.end()) return *(itr->second);
@@ -148,16 +148,16 @@ ChannelProxy& ChannelManager::GetChannelProxy(
 
 const ChannelRegistry* ChannelManager::GetChannelRegistry() const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return channel_registry_ptr_.get();
 }
 
 const std::vector<std::string>& ChannelManager::GetChannelBackendNameList() const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return channel_backend_name_vec_;
 }

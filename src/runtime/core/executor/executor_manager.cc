@@ -53,7 +53,7 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
   RegisterTBBThreadExecutorGenFunc();
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Executor manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -90,8 +90,8 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 
 void ExecutorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   for (auto& itr : executor_vec_) {
     itr->Start();
@@ -99,7 +99,7 @@ void ExecutorManager::Start() {
 }
 
 void ExecutorManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   executor_manager_proxy_map_.clear();
@@ -116,8 +116,8 @@ void ExecutorManager::Shutdown() {
 void ExecutorManager::RegisterExecutorGenFunc(
     std::string_view type, ExecutorGenFunc&& executor_gen_func) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   executor_gen_func_map_.emplace(type, std::move(executor_gen_func));
 }
@@ -125,8 +125,8 @@ void ExecutorManager::RegisterExecutorGenFunc(
 ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   auto itr = executor_manager_proxy_map_.find(module_info.name);
   if (itr != executor_manager_proxy_map_.end()) return *(itr->second);

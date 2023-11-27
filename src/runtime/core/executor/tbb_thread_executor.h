@@ -17,6 +17,13 @@ class TBBThreadExecutor : public ExecutorBase {
         std::chrono::microseconds(1000 * 1000);
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
  public:
   TBBThreadExecutor() = default;
   ~TBBThreadExecutor() override = default;
@@ -35,17 +42,12 @@ class TBBThreadExecutor : public ExecutorBase {
   void Execute(Task&& task) override;
   void ExecuteAfterNs(uint64_t dt, Task&& task) override;
 
- private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
+  State GetState() const { return state_.load(); }
 
+ private:
   std::string name_;
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   tbb::concurrent_queue<Task> qu_;
   std::atomic_bool sig_flag_ = false;

@@ -51,8 +51,7 @@ if(AIMRT_MASTER_PROJECT)
   set(BUILD_SHARED_LIBS OFF)
 
   if(UNIX)
-    # TODO: build tbb in gcc13, need '-Wno-error=stringop-overflow'
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wno-error=stringop-overflow")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 
     if(AIMRT_BUILD_TESTS)

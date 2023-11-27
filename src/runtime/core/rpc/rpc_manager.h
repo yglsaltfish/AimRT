@@ -26,6 +26,13 @@ class RpcManager {
     std::vector<BackendOptions> backends_options;
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
  public:
   RpcManager() = default;
   ~RpcManager() = default;
@@ -48,19 +55,14 @@ class RpcManager {
   const RpcRegistry* GetRpcRegistry() const;
   const std::vector<std::string>& GetRpcBackendNameList() const;
 
+  State GetState() const { return state_.load(); }
+
  private:
   void RegisterLocalRpcBackend();
 
  private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
-
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 

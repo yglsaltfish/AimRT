@@ -79,7 +79,7 @@ class LcmChannelBackend : public runtime::core::channel::ChannelBackendBase {
   void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
  private:
-  enum class Status : uint32_t {
+  enum class State : uint32_t {
     PreInit,
     Init,
     Start,
@@ -87,7 +87,7 @@ class LcmChannelBackend : public runtime::core::channel::ChannelBackendBase {
   };
 
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   executor::ExecutorRef sub_default_executor_ref_;                            // default executor
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;  // can get executor by name

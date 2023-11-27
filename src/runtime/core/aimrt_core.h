@@ -22,9 +22,21 @@ class AimRTCore {
 
     bool dump_cfg_file = false;
     std::filesystem::path dump_cfg_file_path;
+
+    bool register_signal = true;
+
+    bool auto_set_to_global = true;
   };
 
-  enum class HookPoint : uint32_t {
+  enum class State : uint32_t {
+    PreInit,
+
+    PreInitConfigurator,
+    PostInitConfigurator,
+
+    PreInitPlugin,
+    PostInitPlugin,
+
     PreInitMainThread,
     PostInitMainThread,
 
@@ -43,17 +55,22 @@ class AimRTCore {
     PreInitModules,
     PostInitModules,
 
+    PostInit,
+
     PreStart,
     PostStart,
 
     PreShutdown,
     PostShutdown,
 
-    HookPointNum,
+    MaxStateNum,
   };
 
+  using HookTask = std::function<void()>;
+  using SignalHandle = std::function<void(int)>;
+
  public:
-  AimRTCore() = default;
+  AimRTCore();
   ~AimRTCore();
 
   AimRTCore(const AimRTCore&) = delete;
@@ -63,11 +80,19 @@ class AimRTCore {
   void Start();
   void Shutdown();
 
+  State GetState() const { return state_; }
+
   template <typename... Args>
-    requires std::constructible_from<std::function<void()>, Args...>
-  void RegisterHookFunc(HookPoint hook_point, Args&&... args) {
-    hook_func_vec_array_[static_cast<uint32_t>(hook_point)].emplace_back(
-        std::forward<Args>(args)...);
+    requires std::constructible_from<HookTask, Args...>
+  void RegisterHookFunc(State state, Args&&... args) {
+    hook_task_vec_array_[static_cast<uint32_t>(state)]
+        .emplace_back(std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+    requires std::constructible_from<SignalHandle, Args...>
+  void RegisterSignalHandle(const std::set<int>& sigs, Args&&... args) {
+    signal_handle_vec_.emplace_back(sigs, std::forward<Args>(args)...);
   }
 
   executor::MainThreadExecutor& GetMainThreadExecutor() { return main_thread_executor_; }
@@ -94,10 +119,21 @@ class AimRTCore {
   module::ModuleManager& GetModuleManager() { return module_manager_; }
   const module::ModuleManager& GetModuleManager() const { return module_manager_; }
 
+  void SetGlobal() {
+    assert(global_core_ptr_ == nullptr);
+    global_core_ptr_ = this;
+  }
+
+  void UnSetGlobal() {
+    if (global_core_ptr_ == this) global_core_ptr_ = nullptr;
+  }
+
+  static AimRTCore* GetGlobalAimRTCore() { return global_core_ptr_; }
+
  private:
-  void ExecuteHook(HookPoint hook_point) {
-    for (const auto& func :
-         hook_func_vec_array_[static_cast<uint32_t>(hook_point)])
+  void EnterState(State state) {
+    state_ = state;
+    for (const auto& func : hook_task_vec_array_[static_cast<uint32_t>(state)])
       func();
   }
 
@@ -110,12 +146,20 @@ class AimRTCore {
 
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
 
+  void DumpCfgFile();
+
+  void RegisterSignalToSystem();
+
+  static void SignalHandler(int sig);
+
  private:
   Options options_;
   std::atomic_bool stop_flag_ = false;
 
-  std::vector<std::function<void()> >
-      hook_func_vec_array_[static_cast<uint32_t>(HookPoint::HookPointNum)];
+  State state_ = State::PreInit;
+  std::vector<HookTask> hook_task_vec_array_[static_cast<uint32_t>(State::MaxStateNum)];
+
+  std::vector<std::pair<std::set<int>, SignalHandle>> signal_handle_vec_;
 
   executor::MainThreadExecutor main_thread_executor_;
 
@@ -126,6 +170,8 @@ class AimRTCore {
   rpc::RpcManager rpc_manager_;
   channel::ChannelManager channel_manager_;
   module::ModuleManager module_manager_;
+
+  static AimRTCore* global_core_ptr_;
 };
 
 }  // namespace aimrt::runtime::core

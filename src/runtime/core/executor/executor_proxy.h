@@ -4,7 +4,6 @@
 #include <optional>
 
 #include "core/executor/executor_base.h"
-#include "core/global.h"
 
 namespace aimrt::runtime::core::executor {
 
@@ -85,14 +84,7 @@ class ExecutorManagerProxy {
   ExecutorManagerProxy(const ExecutorManagerProxy&) = delete;
   ExecutorManagerProxy& operator=(const ExecutorManagerProxy&) = delete;
 
-  ExecutorProxy* GetExecutor(std::string_view executor_name) const {
-    auto finditr = executor_proxy_map_.find(executor_name);
-    if (finditr != executor_proxy_map_.end()) return finditr->second.get();
-
-    AIMRT_WARN("Get executor failed, executor name '{}'", executor_name);
-
-    return nullptr;
-  }
+  ExecutorProxy* GetExecutor(std::string_view executor_name) const;
 
   const aimrt_executor_manager_base_t* NativeHandle() const { return &base_; }
 

@@ -48,7 +48,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
   RegisterLocalRpcBackend();
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Rpc manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -88,14 +88,14 @@ void RpcManager::Initialize(YAML::Node options_node) {
 
 void RpcManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   rpc_backend_manager_.Start();
 }
 
 void RpcManager::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   rpc_handle_proxy_map_.clear();
@@ -114,8 +114,8 @@ void RpcManager::Shutdown() {
 void RpcManager::RegisterRpcBackend(
     std::unique_ptr<RpcBackendBase>&& rpc_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   rpc_backend_vec_.emplace_back(std::move(rpc_backend_ptr));
 }
@@ -123,8 +123,8 @@ void RpcManager::RegisterRpcBackend(
 void RpcManager::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::PreInit,
-      "Function can only be called when status is 'PreInit'.");
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
 }
@@ -132,8 +132,8 @@ void RpcManager::RegisterGetExecutorFunc(
 RpcHandleProxy& RpcManager::GetRpcHandleProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   auto itr = rpc_handle_proxy_map_.find(module_info.name);
   if (itr != rpc_handle_proxy_map_.end()) return *(itr->second);
@@ -147,16 +147,16 @@ RpcHandleProxy& RpcManager::GetRpcHandleProxy(
 
 const RpcRegistry* RpcManager::GetRpcRegistry() const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return rpc_registry_ptr_.get();
 }
 
 const std::vector<std::string>& RpcManager::GetRpcBackendNameList() const {
   AIMRT_CHECK_ERROR_THROW(
-      status_.load() == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
   return rpc_backend_name_vec_;
 }

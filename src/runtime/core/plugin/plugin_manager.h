@@ -21,6 +21,13 @@ class PluginManager {
     std::vector<PluginOptions> plugins_options;
   };
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
   using PluginInitFunc = std::function<void(AimRTCorePluginBase*)>;
 
  public:
@@ -38,16 +45,11 @@ class PluginManager {
 
   YAML::Node GetPluginOptionsNode(std::string_view plugin_name) const;
 
- private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
+  State GetState() const { return state_.load(); }
 
+ private:
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   PluginInitFunc plugin_init_func_;
 

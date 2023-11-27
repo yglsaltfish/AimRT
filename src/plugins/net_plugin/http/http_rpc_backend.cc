@@ -45,7 +45,7 @@ void HttpRpcBackend::Initialize(YAML::Node options_node,
                                 const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
                                 runtime::core::rpc::ContextManager* context_manager_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Http Rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -59,19 +59,19 @@ void HttpRpcBackend::Initialize(YAML::Node options_node,
 
 void HttpRpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void HttpRpcBackend::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 }
 
 bool HttpRpcBackend::RegisterServiceFunc(
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Service func can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -269,8 +269,8 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
 bool HttpRpcBackend::RegisterClientFunc(
     const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Client func can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -279,7 +279,7 @@ bool HttpRpcBackend::RegisterClientFunc(
 
 bool HttpRpcBackend::TryInvoke(
     const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
-  assert(status_.load() == Status::Start);
+  assert(state_.load() == State::Start);
 
   namespace asio = boost::asio;
   namespace http = boost::beast::http;

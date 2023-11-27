@@ -28,7 +28,7 @@ void LocalRpcBackend::Initialize(YAML::Node options_node,
                                  const RpcRegistry* rpc_registry_ptr,
                                  ContextManager* context_manager_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Local rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -42,12 +42,12 @@ void LocalRpcBackend::Initialize(YAML::Node options_node,
 
 void LocalRpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void LocalRpcBackend::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   service_func_register_index_.clear();
@@ -55,8 +55,8 @@ void LocalRpcBackend::Shutdown() {
 
 bool LocalRpcBackend::RegisterServiceFunc(
     const ServiceFuncWrapper& service_func_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Service func can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -71,8 +71,8 @@ bool LocalRpcBackend::RegisterServiceFunc(
 
 bool LocalRpcBackend::RegisterClientFunc(
     const ClientFuncWrapper& client_func_wrapper) noexcept {
-  if (status_.load() != Status::Init) {
-    AIMRT_ERROR("Client func can only be registered when status is 'Init'.");
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
     return false;
   }
 
@@ -81,7 +81,7 @@ bool LocalRpcBackend::RegisterClientFunc(
 
 bool LocalRpcBackend::TryInvoke(
     const std::shared_ptr<ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
-  assert(status_.load() == Status::Start);
+  assert(state_.load() == State::Start);
 
   std::string_view pkg_path = client_invoke_wrapper_ptr->pkg_path;
   std::string_view module_name = client_invoke_wrapper_ptr->module_name;

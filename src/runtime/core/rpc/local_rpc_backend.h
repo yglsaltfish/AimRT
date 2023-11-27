@@ -10,6 +10,13 @@ class LocalRpcBackend : public RpcBackendBase {
  public:
   struct Options {};
 
+  enum class State : uint32_t {
+    PreInit,
+    Init,
+    Start,
+    Shutdown,
+  };
+
  public:
   LocalRpcBackend() = default;
   ~LocalRpcBackend() override = default;
@@ -29,16 +36,11 @@ class LocalRpcBackend : public RpcBackendBase {
   bool TryInvoke(
       const std::shared_ptr<ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
 
- private:
-  enum class Status : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
-  };
+  State GetState() const { return state_.load(); }
 
+ private:
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   const RpcRegistry* rpc_registry_ptr_ = nullptr;
   ContextManager* context_manager_ptr_ = nullptr;

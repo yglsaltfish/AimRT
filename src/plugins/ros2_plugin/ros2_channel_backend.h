@@ -46,7 +46,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   }
 
  private:
-  enum class Status : uint32_t {
+  enum class State : uint32_t {
     PreInit,
     Init,
     Start,
@@ -54,7 +54,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   };
 
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 

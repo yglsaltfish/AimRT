@@ -34,7 +34,7 @@ namespace aimrt::runtime::core::executor {
 
 void MainThreadExecutor::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Executor can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -54,8 +54,8 @@ void MainThreadExecutor::Initialize(YAML::Node options_node) {
 
 void MainThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Main thread executor can only run when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Main thread executor can only run when state is 'Init'.");
 
   Task task;
   while (true) {
@@ -66,14 +66,14 @@ void MainThreadExecutor::Start() {
                   Name(), e.what());
     }
 
-    if (status_.load() == Status::Shutdown) break;
+    if (state_.load() == State::Shutdown) break;
 
     sig_flag_.wait(false);
   }
 }
 
 void MainThreadExecutor::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   sig_flag_.store(true);
@@ -83,7 +83,7 @@ void MainThreadExecutor::Shutdown() {
 }
 
 void MainThreadExecutor::Execute(Task&& task) {
-  assert(status_ == Status::Init || status_ == Status::Start);
+  assert(state_ == State::Init || state_ == State::Start);
   qu_.emplace(std::move(task));
   sig_flag_.store(true);
   sig_flag_.notify_one();

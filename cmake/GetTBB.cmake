@@ -17,4 +17,9 @@ if(NOT tbb_POPULATED)
       OFF
       CACHE BOOL "")
   FetchContent_MakeAvailable(tbb)
+
+  target_compile_options(tbb PRIVATE "-Wno-error=stringop-overflow")
 endif()
+
+# import targets:
+# TBB::tbb

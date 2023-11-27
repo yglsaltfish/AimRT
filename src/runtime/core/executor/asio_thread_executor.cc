@@ -41,7 +41,7 @@ namespace aimrt::runtime::core::executor {
 void AsioThreadExecutor::Initialize(std::string_view name,
                                     YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Init) == Status::PreInit,
+      std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "AsioThreadExecutor can only be initialized once.");
 
   name_ = std::string(name);
@@ -76,7 +76,7 @@ void AsioThreadExecutor::Initialize(std::string_view name,
                    Name(), e.what());
       }
 
-      while (status_.load() != Status::Shutdown) {
+      while (state_.load() != State::Shutdown) {
         try {
           io_ptr_->run();
         } catch (const std::exception& e) {
@@ -94,12 +94,12 @@ void AsioThreadExecutor::Initialize(std::string_view name,
 
 void AsioThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&status_, Status::Start) == Status::Init,
-      "Function can only be called when status is 'Init'.");
+      std::atomic_exchange(&state_, State::Start) == State::Init,
+      "Function can only be called when state is 'Init'.");
 }
 
 void AsioThreadExecutor::Shutdown() {
-  if (std::atomic_exchange(&status_, Status::Shutdown) == Status::Shutdown)
+  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
   if (work_guard_ptr_) work_guard_ptr_->reset();
@@ -111,18 +111,18 @@ void AsioThreadExecutor::Shutdown() {
 }
 
 bool AsioThreadExecutor::IsInCurrentExecutor() const {
-  assert(status_ == Status::Start);
+  assert(state_ == State::Start);
   return (std::find(thread_id_vec_.begin(), thread_id_vec_.end(),
                     std::this_thread::get_id()) != thread_id_vec_.end());
 }
 
 void AsioThreadExecutor::Execute(Task&& task) {
-  assert(status_ == Status::Start);
+  assert(state_ == State::Start);
   boost::asio::post(*io_ptr_, std::move(task));
 }
 
 void AsioThreadExecutor::ExecuteAfterNs(uint64_t dt, Task&& task) {
-  assert(status_ == Status::Start);
+  assert(state_ == State::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
   timer_ptr_->expires_after(std::chrono::nanoseconds(dt));
   timer_ptr_->async_wait([this, timer_ptr_,

@@ -46,7 +46,7 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   }
 
  private:
-  enum class Status : uint32_t {
+  enum class State : uint32_t {
     PreInit,
     Init,
     Start,
@@ -54,7 +54,7 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   };
 
   Options options_;
-  std::atomic<Status> status_ = Status::PreInit;
+  std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::rpc::RpcRegistry* rpc_registry_ptr_ = nullptr;
   runtime::core::rpc::ContextManager* context_manager_ptr_ = nullptr;
