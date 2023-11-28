@@ -48,4 +48,4 @@ aimrt:
 # 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 10 # 发布频率，次/s
+  channel_frq: 0.5 # 发布频率，次/s

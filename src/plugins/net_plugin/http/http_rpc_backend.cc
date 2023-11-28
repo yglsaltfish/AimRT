@@ -163,10 +163,8 @@ bool HttpRpcBackend::RegisterServiceFunc(
         });
 
     // service rpc调用
-    auto strand_ptr =
-        std::make_shared<asio::strand<asio::io_context::executor_type>>(asio::make_strand(*io_ptr_));
-    auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*strand_ptr, timeout);
-    bool handle_flag = false;
+    auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, timeout);
+    std::atomic_bool handle_flag = false;
 
     aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
         [&service_func_wrapper,
@@ -177,8 +175,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
          service_rsp_ptr,
          serialization_type{std::move(serialization_type)},
          sig_timer_ptr,
-         &handle_flag,
-         strand_ptr](uint32_t code) {
+         &handle_flag](uint32_t code) {
           aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
 
           // service rsp序列化
@@ -224,10 +221,10 @@ bool HttpRpcBackend::RegisterServiceFunc(
           rsp.keep_alive(req.keep_alive());
           rsp.prepare_payload();
 
-          asio::dispatch(*strand_ptr, [&handle_flag, sig_timer_ptr]() {
-            handle_flag = true;
-            sig_timer_ptr->cancel();
-          });
+          handle_flag.store(true);
+
+          // TODO: 这里可能会有提前cancel的风险。可能的解决方案：多cancel几次？
+          sig_timer_ptr->cancel();
         });
 
     service_func_wrapper.service_func(
@@ -236,26 +233,19 @@ bool HttpRpcBackend::RegisterServiceFunc(
         service_rsp_ptr.get(),
         service_callback.NativeHandle());
 
-    co_await asio::co_spawn(
-        *strand_ptr,
-        [&handle_flag, sig_timer_ptr]() -> asio::awaitable<void> {
-          bool finish_flag = true;
-          if (!handle_flag) {
-            try {
-              co_await sig_timer_ptr->async_wait(asio::use_awaitable);
-              finish_flag = false;
-            } catch (const std::exception& e) {
-              AIMRT_TRACE(
-                  "rpc cli session recv sig timer canceled, exception info: {}",
-                  e.what());
-            }
-          }
+    bool finish_flag = true;
+    if (!handle_flag.load()) {
+      try {
+        co_await sig_timer_ptr->async_wait(asio::use_awaitable);
+        finish_flag = false;
+      } catch (const std::exception& e) {
+        AIMRT_TRACE(
+            "rpc cli session recv sig timer canceled, exception info: {}",
+            e.what());
+      }
+    }
 
-          AIMRT_CHECK_ERROR_THROW(finish_flag, "Local processing timeout.");
-
-          co_return;
-        },
-        asio::use_awaitable);
+    AIMRT_CHECK_ERROR_THROW(finish_flag, "Local processing timeout.");
 
     co_return net::AsioHttpServer::HttpHandleStatus::OK;
   };
