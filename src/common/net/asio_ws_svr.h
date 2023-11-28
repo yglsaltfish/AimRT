@@ -4,8 +4,8 @@
 #include <chrono>
 #include <functional>
 #include <list>
-#include <map>
 #include <memory>
+#include <unordered_map>
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
@@ -599,7 +599,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
-  std::map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
+  std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
 }  // namespace aimrt::common::net

@@ -28,7 +28,7 @@ aimrt:
       - name: work_thread_pool # 线程池
         type: asio_thread
         options:
-          thread_num: 4 # 参数，4线程，不指定则默认单线程
+          thread_num: 4 # 线程数，不指定则默认单线程
   channel: # 消息队列相关配置
     backends: # 消息队列后端配置
       - type: http
@@ -47,4 +47,4 @@ aimrt:
 # 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 10 # 发布频率，次/s
+  channel_frq: 0.5 # 发布频率，次/s

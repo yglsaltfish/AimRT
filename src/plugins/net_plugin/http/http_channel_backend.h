@@ -60,8 +60,8 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::shared_ptr<common::net::AsioHttpClientPool> http_cli_pool_ptr_;
   std::shared_ptr<common::net::AsioHttpServer> http_svr_ptr_;
 
-  std::map<std::string,
-           std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
+  std::unordered_map<std::string,
+                     std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
       http_subscribe_wrapper_map_;
 };
 

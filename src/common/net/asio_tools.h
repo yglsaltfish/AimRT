@@ -169,8 +169,8 @@ class AsioExecutor {
   std::shared_ptr<boost::asio::io_context> io_ptr_;
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard_;
   std::list<std::thread> threads_;
-  std::vector<std::function<void()> > start_func_vec_;
-  std::vector<std::function<void()> > stop_func_vec_;
+  std::vector<std::function<void()>> start_func_vec_;
+  std::vector<std::function<void()>> stop_func_vec_;
 };
 
 }  // namespace aimrt::common::net

@@ -15,7 +15,7 @@
 namespace aimrt {
 
 template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value> >
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
   static const aimrt_string_view_t kChannelRos2SerializationTypesSupportedList[] = {
       aimrt::util::ToAimRTStringView("ros2"), aimrt::util::ToAimRTStringView("json")};

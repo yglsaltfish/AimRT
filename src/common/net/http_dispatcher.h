@@ -41,7 +41,7 @@ class HttpDispatcher {
   }
 
  private:
-  std::list<std::pair<std::regex, HttpHandle> > http_handle_list_;
+  std::list<std::pair<std::regex, HttpHandle>> http_handle_list_;
 };
 
 }  // namespace aimrt::common::net

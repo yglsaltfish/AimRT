@@ -66,8 +66,8 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::shared_ptr<common::net::AsioTcpServer> tcp_svr_ptr_;
   std::shared_ptr<TcpMsgHandleRegistry> msg_handle_registry_ptr_;
 
-  std::map<std::string,
-           std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
+  std::unordered_map<std::string,
+                     std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
       tcp_subscribe_wrapper_map_;
 };
 

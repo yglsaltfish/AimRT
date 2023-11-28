@@ -5,6 +5,7 @@
 #include <functional>
 #include <list>
 #include <memory>
+#include <unordered_map>
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
@@ -597,7 +598,7 @@ class AsioWebSocketClientPool
   std::atomic<State> state_ = State::PreInit;
 
   // client管理
-  std::map<std::string, std::shared_ptr<AsioWebSocketClient>> client_map_;
+  std::unordered_map<std::string, std::shared_ptr<AsioWebSocketClient>> client_map_;
 };
 
 }  // namespace aimrt::common::net

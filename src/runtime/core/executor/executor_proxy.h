@@ -1,9 +1,10 @@
 #pragma once
 
-#include <map>
 #include <optional>
+#include <unordered_map>
 
 #include "core/executor/executor_base.h"
+#include "util/string_util.h"
 
 namespace aimrt::runtime::core::executor {
 
@@ -71,8 +72,8 @@ class ExecutorProxy {
 
 class ExecutorManagerProxy {
  public:
-  using ExecutorProxyMap =
-      std::map<std::string, std::unique_ptr<ExecutorProxy>, std::less<> >;
+  using ExecutorProxyMap = std::unordered_map<
+      std::string, std::unique_ptr<ExecutorProxy>, aimrt::common::util::StringHash, std::equal_to<>>;
 
  public:
   explicit ExecutorManagerProxy(const ExecutorProxyMap& executor_proxy_map)

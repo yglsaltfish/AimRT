@@ -1,7 +1,7 @@
 #pragma once
 
-#include <map>
 #include <string>
+#include <unordered_map>
 
 #include <boost/asio.hpp>
 
@@ -63,7 +63,7 @@ class MsgHandleRegistry {
     }
   }
 
-  std::map<std::string, MsgHandleFunc> msg_handle_map_;
+  std::unordered_map<std::string, MsgHandleFunc> msg_handle_map_;
 };
 
 }  // namespace aimrt::plugins::net_plugin

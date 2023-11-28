@@ -65,11 +65,13 @@ class LocalChannelBackend : public ChannelBackendBase {
   ContextManager* context_manager_ptr_ = nullptr;
 
   // 订阅回调索引表: msg_type:topic:lib_path:module_name
-  using SubscribeIndexMap = std::map<
-      std::string_view,                                    // msg_type
-      std::map<std::string_view,                           // topic
-               std::map<std::string_view,                  // lib_path
-                        std::set<std::string_view> > > >;  // module_name
+  using SubscribeIndexMap = std::unordered_map<
+      std::string_view,  // msg_type
+      std::unordered_map<
+          std::string_view,  // topic
+          std::unordered_map<
+              std::string_view,               // lib_path
+              std::set<std::string_view>>>>;  // module_name
   SubscribeIndexMap subscribe_index_map_;
 
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;

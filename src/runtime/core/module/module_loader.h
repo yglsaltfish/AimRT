@@ -1,11 +1,12 @@
 #pragma once
 
-#include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "aimrt_module_c_interface/module_base.h"
 #include "util/dynamic_lib.h"
+#include "util/string_util.h"
 
 namespace aimrt::runtime::core::module {
 
@@ -41,7 +42,12 @@ class ModuleLoader {
 
   std::vector<std::string> module_name_vec_;
   std::vector<std::string> loaded_module_name_vec_;
-  std::map<std::string, const aimrt_module_base_t*, std::less<>> module_ptr_map_;
+  std::unordered_map<
+      std::string,
+      const aimrt_module_base_t*,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      module_ptr_map_;
 };
 
 }  // namespace aimrt::runtime::core::module

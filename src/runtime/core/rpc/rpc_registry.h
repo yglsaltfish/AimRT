@@ -1,9 +1,9 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
@@ -54,15 +54,15 @@ class RpcRegistry {
 
  private:
   // pkg_path:module_name:func_name:wrapper
-  using ServiceFuncMap = std::map<std::string_view, std::unique_ptr<ServiceFuncWrapper> >;
-  using ServiceModuleMap = std::map<std::string_view, ServiceFuncMap>;
-  using ServicePkgMap = std::map<std::string_view, ServiceModuleMap>;
+  using ServiceFuncMap = std::unordered_map<std::string_view, std::unique_ptr<ServiceFuncWrapper>>;
+  using ServiceModuleMap = std::unordered_map<std::string_view, ServiceFuncMap>;
+  using ServicePkgMap = std::unordered_map<std::string_view, ServiceModuleMap>;
   ServicePkgMap service_func_wrapper_map_;
 
   // pkg_path:module_name:func_name:wrapper
-  using ClientFuncMap = std::map<std::string_view, std::unique_ptr<ClientFuncWrapper> >;
-  using ClientModuleMap = std::map<std::string_view, ClientFuncMap>;
-  using ClientPkgMap = std::map<std::string_view, ClientModuleMap>;
+  using ClientFuncMap = std::unordered_map<std::string_view, std::unique_ptr<ClientFuncWrapper>>;
+  using ClientModuleMap = std::unordered_map<std::string_view, ClientFuncMap>;
+  using ClientPkgMap = std::unordered_map<std::string_view, ClientModuleMap>;
   ClientPkgMap client_func_wrapper_map_;
 };
 }  // namespace aimrt::runtime::core::rpc

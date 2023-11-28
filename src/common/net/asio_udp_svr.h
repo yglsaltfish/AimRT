@@ -2,10 +2,10 @@
 
 #include <atomic>
 #include <chrono>
-#include <map>
 #include <memory>
 #include <source_location>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/asio.hpp>
@@ -424,7 +424,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
-  std::map<Udp::endpoint, std::shared_ptr<Session> > session_ptr_map_;
+  std::unordered_map<Udp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
 }  // namespace aimrt::common::net

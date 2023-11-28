@@ -68,11 +68,11 @@ class ChannelManager {
 
   std::unique_ptr<ContextManager> context_manager_ptr_;
 
-  std::vector<std::unique_ptr<ChannelBackendBase> > channel_backend_vec_;
+  std::vector<std::unique_ptr<ChannelBackendBase>> channel_backend_vec_;
 
   ChannelBackendManager channel_backend_manager_;
 
-  std::map<std::string, std::unique_ptr<ChannelProxy> > channel_proxy_map_;
+  std::unordered_map<std::string, std::unique_ptr<ChannelProxy>> channel_proxy_map_;
 
   // 信息查询类变量
   std::vector<std::string> channel_backend_name_vec_;

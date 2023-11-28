@@ -40,6 +40,6 @@ class RpcBackendManager {
   RpcRegistry* rpc_registry_ptr_ = nullptr;
 
   std::vector<RpcBackendBase*> rpc_backend_index_vec_;
-  std::map<std::string_view, RpcBackendBase*> rpc_backend_index_map_;
+  std::unordered_map<std::string_view, RpcBackendBase*> rpc_backend_index_map_;
 };
 }  // namespace aimrt::runtime::core::rpc

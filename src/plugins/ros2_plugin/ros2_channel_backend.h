@@ -1,8 +1,8 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "core/channel/channel_backend_base.h"
 
@@ -61,57 +61,26 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::shared_ptr<rclcpp::Node> ros2_node_ptr_;
 
   struct ChannelTypeKey {
-    ChannelTypeKey(std::string_view input_lib_path,
-                   std::string_view input_module_name,
-                   std::string_view input_topic_name,
-                   std::string_view input_msg_type)
-        : lib_path(input_lib_path),
-          module_name(input_module_name),
-          topic_name(input_topic_name),
-          msg_type(input_msg_type) {}
-
-    // 关系运算符重载
-    bool operator<(const ChannelTypeKey& val) const {
-      if (lib_path < val.lib_path) return true;
-      if (lib_path > val.lib_path) return false;
-
-      if (module_name < val.module_name) return true;
-      if (module_name > val.module_name) return false;
-
-      if (topic_name < val.topic_name) return true;
-      if (topic_name > val.topic_name) return false;
-
-      if (msg_type < val.msg_type) return true;
-      return false;
-    }
-
-    bool operator>(const ChannelTypeKey& val) const {
-      if (lib_path > val.lib_path) return true;
-      if (lib_path < val.lib_path) return false;
-
-      if (module_name > val.module_name) return true;
-      if (module_name < val.module_name) return false;
-
-      if (topic_name > val.topic_name) return true;
-      if (topic_name < val.topic_name) return false;
-
-      if (msg_type > val.msg_type) return true;
-      return false;
-    }
-
-    bool operator==(const ChannelTypeKey& val) const {
-      return ((lib_path == val.lib_path) && (module_name == val.module_name) &&
-              (topic_name == val.topic_name) && (msg_type == val.msg_type));
-    }
-
-    bool operator<=(const ChannelTypeKey& val) const { return !(*this > val); }
-    bool operator>=(const ChannelTypeKey& val) const { return !(*this < val); }
-    bool operator!=(const ChannelTypeKey& val) const { return !(*this == val); }
-
     std::string_view lib_path;
     std::string_view module_name;
     std::string_view topic_name;
     std::string_view msg_type;
+
+    bool operator==(const ChannelTypeKey& val) const {
+      return ((lib_path == val.lib_path) &&
+              (module_name == val.module_name) &&
+              (topic_name == val.topic_name) &&
+              (msg_type == val.msg_type));
+    }
+  };
+
+  struct ChannelTypeKeyHash {
+    std::size_t operator()(const ChannelTypeKey& key) const {
+      return std::hash<std::string_view>{}(key.lib_path) +
+             std::hash<std::string_view>{}(key.module_name) +
+             std::hash<std::string_view>{}(key.topic_name) +
+             std::hash<std::string_view>{}(key.msg_type);
+    }
   };
 
   struct Ros2PublishWrapper {
@@ -119,9 +88,19 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
     rcl_publisher_t publisher;
   };
 
-  std::map<ChannelTypeKey, std::unique_ptr<Ros2PublishWrapper> > publish_type_wrapper_map_;
+  std::unordered_map<
+      ChannelTypeKey,
+      std::unique_ptr<Ros2PublishWrapper>,
+      ChannelTypeKeyHash,
+      std::equal_to<>>
+      publish_type_wrapper_map_;
 
-  std::map<ChannelTypeKey, std::shared_ptr<rclcpp::SubscriptionBase> > subscribe_wrapper_map_;
+  std::unordered_map<
+      ChannelTypeKey,
+      std::shared_ptr<rclcpp::SubscriptionBase>,
+      ChannelTypeKeyHash,
+      std::equal_to<>>
+      subscribe_wrapper_map_;
 
   struct PublisherGidView {
     explicit PublisherGidView(const rmw_gid_t& input_git) : git(input_git) {}
@@ -174,7 +153,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
     const rmw_gid_t& git;
   };
 
-  std::vector<std::unique_ptr<rmw_gid_t> > publisher_gid_vec_;
+  std::vector<std::unique_ptr<rmw_gid_t>> publisher_gid_vec_;
   std::set<PublisherGidView> publisher_gid_view_set_;
 };
 

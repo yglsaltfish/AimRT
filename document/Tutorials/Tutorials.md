@@ -421,7 +421,7 @@ aimrt:
     executors: # 当前先支持thread型/strand型，未来可根据加载的网络模块提供更多类型
       - name: work_thread_pool # 线程池
         type: asio_thread # 类型为asio实现的线程池
-        thread_num: 4 # 参数，4线程，不指定则默认单线程
+        thread_num: 4 # 线程数，不指定则默认单线程
       - name: my_single_thread # 单线程
         type: asio_thread # 类型为asio实现的线程池
 ```

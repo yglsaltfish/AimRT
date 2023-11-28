@@ -46,9 +46,11 @@ class LocalRpcBackend : public RpcBackendBase {
   ContextManager* context_manager_ptr_ = nullptr;
 
   using ServiceFuncIndexMap =
-      std::map<std::string_view,                         // func_name
-               std::map<std::string_view,                // lib_path
-                        std::set<std::string_view> > >;  // module_name
+      std::unordered_map<
+          std::string_view,  // func_name
+          std::unordered_map<
+              std::string_view,              // lib_path
+              std::set<std::string_view>>>;  // module_name
   ServiceFuncIndexMap service_func_register_index_;
 };
 

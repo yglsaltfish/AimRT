@@ -66,8 +66,8 @@ class UdpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::shared_ptr<common::net::AsioUdpServer> udp_svr_ptr_;
   std::shared_ptr<UdpMsgHandleRegistry> msg_handle_registry_ptr_;
 
-  std::map<std::string,
-           std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
+  std::unordered_map<std::string,
+                     std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
       udp_subscribe_wrapper_map_;
 };
 

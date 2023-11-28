@@ -3,8 +3,8 @@
 #include <atomic>
 #include <chrono>
 #include <list>
-#include <map>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/asio.hpp>
@@ -316,7 +316,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
             try {
               while (state_.load() == SessionState::Start) {
                 while (!data_list.empty()) {
-                  std::list<std::shared_ptr<Streambuf> > tmp_data_list;
+                  std::list<std::shared_ptr<Streambuf>> tmp_data_list;
                   tmp_data_list.swap(data_list);
 
                   std::vector<char> head_buf(tmp_data_list.size() * HEAD_SIZE);
@@ -570,7 +570,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     // misc
     std::string remote_addr_;
     std::atomic_bool tick_has_data_ = false;
-    std::list<std::shared_ptr<Streambuf> > data_list;
+    std::list<std::shared_ptr<Streambuf>> data_list;
   };
 
  private:
@@ -602,7 +602,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
-  std::map<Tcp::endpoint, std::shared_ptr<Session> > session_ptr_map_;
+  std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
 }  // namespace aimrt::common::net

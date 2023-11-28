@@ -1,8 +1,8 @@
 #pragma once
 
 #include <atomic>
-#include <map>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
@@ -66,10 +66,10 @@ class LoggerManager {
 
   aimrt::executor::ExecutorRef log_executor_;
 
-  std::vector<std::unique_ptr<LoggerBackendBase> > logger_backend_ptr_vec_;
+  std::vector<std::unique_ptr<LoggerBackendBase>> logger_backend_ptr_vec_;
   std::vector<LoggerBackendBase*> used_logger_backend_ptr_vec_;
 
-  std::map<std::string, std::unique_ptr<LoggerProxy> > logger_proxy_map_;
+  std::unordered_map<std::string, std::unique_ptr<LoggerProxy>> logger_proxy_map_;
 };
 
 }  // namespace aimrt::runtime::core::logger

@@ -23,7 +23,7 @@ aimrt:
       - name: work_thread_pool # 线程池
         type: asio_threadpassable_pub_topics
         options:
-          thread_num: 4 # 参数，5线程，不指定则默认单线程
+          thread_num: 4 # 线程数，不指定则默认单线程
           thread_sched_policy: SCHED_FIFO:80 # SCHED_OTHER | SCHED_FIFO:xx | SCHED_RR:xx
           thread_bind_cpu: [2, 3, 4, 5] # cpu index
   channel: # 消息队列相关配置

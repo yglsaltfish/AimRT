@@ -3,10 +3,10 @@
 #include <atomic>
 #include <filesystem>
 #include <functional>
-#include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "aimrt_module_c_interface/logger/logger_base.h"
@@ -90,10 +90,10 @@ class ModuleManager {
   std::vector<std::string> module_init_order_;
 
   // 动态库路径-动态库
-  std::map<std::string, std::unique_ptr<ModuleLoader> > module_loader_map_;
+  std::unordered_map<std::string, std::unique_ptr<ModuleLoader>> module_loader_map_;
 
   // 模块名称-模块
-  std::map<std::string, std::unique_ptr<ModuleWrapper> > module_wrapper_map_;
+  std::unordered_map<std::string, std::unique_ptr<ModuleWrapper>> module_wrapper_map_;
 
   // 信息查询类变量
   std::vector<const util::ModuleDetailInfo*> module_detail_info_vec_;
