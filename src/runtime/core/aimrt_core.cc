@@ -143,6 +143,7 @@ void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CorePr
   proxy.SetExecutorManager(executor_manager_.GetExecutorManagerProxy(info).NativeHandle());
   proxy.SetRpcHandle(rpc_manager_.GetRpcHandleProxy(info).NativeHandle());
   proxy.SetChannel(channel_manager_.GetChannelProxy(info).NativeHandle());
+  proxy.SetAllocator(nullptr);
 }
 
 void AimRTCore::DumpCfgFile() {
