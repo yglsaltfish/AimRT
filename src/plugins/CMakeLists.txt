@@ -8,7 +8,7 @@ if(AIMRT_BUILD_SM_PLUGIN AND CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(sm_plugin)
 endif()
 
-if(AIMRT_BUILD_LCM_PLUGIN)
+if(AIMRT_BUILD_LCM_PLUGIN AND CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(lcm_plugin)
 endif()
 

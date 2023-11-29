@@ -60,7 +60,7 @@ void AsioThreadExecutor::Initialize(std::string_view name,
   thread_id_vec_.resize(options_.thread_num);
 
   for (uint32_t ii = 0; ii < options_.thread_num; ++ii) {
-    threads_.emplace(threads_.end(), [this, ii] {
+    threads_.emplace_back([this, ii] {
       thread_id_vec_[ii] = std::this_thread::get_id();
 
       std::string threadname = name_;

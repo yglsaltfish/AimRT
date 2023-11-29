@@ -18,7 +18,10 @@ if(NOT tbb_POPULATED)
       CACHE BOOL "")
   FetchContent_MakeAvailable(tbb)
 
-  target_compile_options(tbb PRIVATE "-Wno-error=stringop-overflow")
+  # fix gcc13 build error
+  if(UNIX)
+    target_compile_options(tbb PRIVATE "-Wno-error=stringop-overflow")
+  endif()
 endif()
 
 # import targets:

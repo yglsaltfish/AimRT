@@ -54,8 +54,10 @@ class AsyncWrapper {
     Receiver receiver_;
   };
 
-  template <typename F>
-  explicit AsyncWrapper(F &&f) : async_func_((F &&) f) {}
+  template <typename... Args>
+    requires std::constructible_from<AsyncFunc, Args...>
+  explicit AsyncWrapper(Args &&...args)
+      : async_func_(std::forward<Args>(args)...) {}
 
   using is_sender = void;
 

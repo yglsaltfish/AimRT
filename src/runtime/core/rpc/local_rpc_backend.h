@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <unordered_set>
 
 #include "core/rpc/rpc_backend_base.h"
 
@@ -49,8 +50,9 @@ class LocalRpcBackend : public RpcBackendBase {
       std::unordered_map<
           std::string_view,  // func_name
           std::unordered_map<
-              std::string_view,              // lib_path
-              std::set<std::string_view>>>;  // module_name
+              std::string_view,  // lib_path
+              std::unordered_set<
+                  std::string_view>>>;  // module_name
   ServiceFuncIndexMap service_func_register_index_;
 };
 
