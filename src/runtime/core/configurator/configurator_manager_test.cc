@@ -50,7 +50,7 @@ ConfiguratorManagerTest:
     auto file_status = std::filesystem::status(configurator_manager_test_path, error);
 
     if (std::filesystem::exists(file_status)) {
-      std::remove(configurator_manager_test_path.c_str());
+      std::filesystem::remove(configurator_manager_test_path);
     }
   }
 

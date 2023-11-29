@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <unordered_set>
 
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
@@ -70,8 +71,9 @@ class LocalChannelBackend : public ChannelBackendBase {
       std::unordered_map<
           std::string_view,  // topic
           std::unordered_map<
-              std::string_view,               // lib_path
-              std::set<std::string_view>>>>;  // module_name
+              std::string_view,  // lib_path
+              std::unordered_set<
+                  std::string_view>>>>;  // module_name
   SubscribeIndexMap subscribe_index_map_;
 
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;

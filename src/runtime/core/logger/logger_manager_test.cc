@@ -134,7 +134,7 @@ TEST_F(LoggerManagerTest, log_with_backends) {
   EXPECT_EQ(is_exist, true);
 
   if (is_exist) {
-    std::remove(log_file_path.c_str());
+    std::filesystem::remove(log_file_path);
   }
 
   // test the mocked_backend

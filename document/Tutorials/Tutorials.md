@@ -443,11 +443,9 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
 
 &emsp;&emsp;通过获取到的`ExecutorRef`指针，模块可以使用`Execute(task)`方法将任务投递到各个执行器中去执行：
 ```cpp
-bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
-  core_ = core;
-
+bool HelloWorldModule::Start() noexcept {
   // 获取执行器句柄，参数为配置时的执行器名称
-  executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
+  ExecutorRef executor = core_.GetExecutorManager().GetExecutor("work_thread_pool");
 
   // 将在work_thread_pool线程池中执行投递的任务
   executor_.Execute([logger = core_.GetLogger()]() {
@@ -457,6 +455,8 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 ```
+
+&emsp;&emsp;请注意：仅能在`Start`方法以及之后使用执行器。
 
 
 ### 使用Channel通信

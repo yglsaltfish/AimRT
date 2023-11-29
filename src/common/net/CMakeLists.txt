@@ -35,6 +35,11 @@ target_link_libraries(
 # Set compile definitions of target
 target_compile_definitions(${CUR_TARGET_NAME} INTERFACE BOOST_ASIO_NO_DEPRECATED)
 
+# Set compile options of target
+if(WIN32)
+  target_compile_options(${CUR_TARGET_NAME} INTERFACE /bigobj)
+endif()
+
 # Set installation of target
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
 install(

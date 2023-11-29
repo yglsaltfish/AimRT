@@ -151,7 +151,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
 
   const auto& publisher_gid_ref = *(publisher_gid_vec_.emplace_back(
       std::make_unique<rmw_gid_t>(std::move(rmw_gid))));
-  publisher_gid_view_set_.emplace(PublisherGidView(publisher_gid_ref));
+  publisher_gid_view_set_.emplace(PublisherGidView{publisher_gid_ref});
 
   return true;
 }
@@ -212,7 +212,7 @@ bool Ros2ChannelBackend::Subscribe(
                 options.to_rcl_subscription_options<void>(qos),
                 subscribe_wrapper,
                 [publisher_gid_view_set_ptr](const rmw_gid_t& gid) -> bool {
-                  return (publisher_gid_view_set_ptr->find(PublisherGidView(gid)) !=
+                  return (publisher_gid_view_set_ptr->find(PublisherGidView{gid}) !=
                           publisher_gid_view_set_ptr->end());
                 });
         return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);

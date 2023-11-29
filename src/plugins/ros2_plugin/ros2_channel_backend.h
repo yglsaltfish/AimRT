@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <numeric>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "core/channel/channel_backend_base.h"
 
@@ -103,31 +105,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
       subscribe_wrapper_map_;
 
   struct PublisherGidView {
-    explicit PublisherGidView(const rmw_gid_t& input_git) : git(input_git) {}
-
-    bool operator<(const PublisherGidView& val) const {
-      int identifier_ret = strcmp(git.implementation_identifier,
-                                  val.git.implementation_identifier);
-      if (identifier_ret != 0) return (identifier_ret < 0);
-
-      for (size_t ii = 0; ii < RMW_GID_STORAGE_SIZE; ++ii) {
-        if (git.data[ii] < val.git.data[ii]) return true;
-        if (git.data[ii] > val.git.data[ii]) return false;
-      }
-      return false;
-    }
-
-    bool operator>(const PublisherGidView& val) const {
-      int identifier_ret = strcmp(git.implementation_identifier,
-                                  val.git.implementation_identifier);
-      if (identifier_ret != 0) return (identifier_ret > 0);
-
-      for (size_t ii = 0; ii < RMW_GID_STORAGE_SIZE; ++ii) {
-        if (git.data[ii] > val.git.data[ii]) return true;
-        if (git.data[ii] < val.git.data[ii]) return false;
-      }
-      return false;
-    }
+    const rmw_gid_t& git;
 
     bool operator==(const PublisherGidView& val) const {
       int identifier_ret = strcmp(git.implementation_identifier,
@@ -139,22 +117,20 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
       }
       return true;
     }
+  };
 
-    bool operator<=(const PublisherGidView& val) const {
-      return !(*this > val);
+  struct PublisherGidViewHash {
+    std::size_t operator()(const PublisherGidView& key) const {
+      return std::accumulate(
+          std::begin(key.git.data),
+          std::end(key.git.data),
+          std::hash<std::string_view>{}(key.git.implementation_identifier));
     }
-    bool operator>=(const PublisherGidView& val) const {
-      return !(*this < val);
-    }
-    bool operator!=(const PublisherGidView& val) const {
-      return !(*this == val);
-    }
-
-    const rmw_gid_t& git;
   };
 
   std::vector<std::unique_ptr<rmw_gid_t>> publisher_gid_vec_;
-  std::set<PublisherGidView> publisher_gid_view_set_;
+  std::unordered_set<PublisherGidView, PublisherGidViewHash, std::equal_to<>>
+      publisher_gid_view_set_;
 };
 
 }  // namespace aimrt::plugins::ros2_plugin

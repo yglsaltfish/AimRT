@@ -372,8 +372,7 @@ inline int CmpVersion(std::string_view ver1, std::string_view ver2) {
       SplitToVec<std::string_view>(ver2, ".", true, true);
 
   size_t idx = 0;
-  for (idx = 0; idx < version1_detail.size() && idx < version2_detail.size();
-       ++idx) {
+  for (idx = 0; idx < version1_detail.size() && idx < version2_detail.size(); ++idx) {
     int ver1 = atoi(version1_detail[idx].data());
     int ver2 = atoi(version2_detail[idx].data());
     if (ver1 < ver2)

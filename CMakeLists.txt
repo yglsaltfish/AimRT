@@ -165,7 +165,7 @@ if(AIMRT_BUILD_RUNTIME)
     include(GetSqlite)
   endif()
 
-  if(AIMRT_BUILD_LCM_PLUGIN)
+  if(AIMRT_BUILD_LCM_PLUGIN AND CMAKE_SYSTEM_NAME MATCHES "Linux")
     include(GetLcm)
   endif()
 endif()

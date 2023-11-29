@@ -3,6 +3,8 @@
 
 本章将介绍如何安装AimRT。
 
+（TODO：待完善）
+
 ## 系统环境要求
 AimRT兼容linux、windows等主流操作系统。我们已经在以下操作系统上测试过：
 - Ubuntu22.04
