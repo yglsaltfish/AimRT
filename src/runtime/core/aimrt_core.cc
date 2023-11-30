@@ -48,6 +48,12 @@ void AimRTCore::Initialize(const Options& options) {
   AIMRT_INFO("Main thread executor init complete.");
   EnterState(State::PostInitMainThread);
 
+  // init allocator
+  EnterState(State::PreInitAllocator);
+  allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
+  AIMRT_INFO("Allocator init complete.");
+  EnterState(State::PostInitAllocator);
+
   // init log
   EnterState(State::PreInitLog);
   logger_manager_.SetLogExecutor(
@@ -100,6 +106,7 @@ void AimRTCore::Start() {
   EnterState(State::PreStart);
   configurator_manager_.Start();
   plugin_manager_.Start();
+  allocator_manager_.Start();
   logger_manager_.Start();
   executor_manager_.Start();
   rpc_manager_.Start();
@@ -122,6 +129,7 @@ void AimRTCore::Shutdown() {
     rpc_manager_.Shutdown();
     executor_manager_.Shutdown();
     logger_manager_.Shutdown();
+    allocator_manager_.Shutdown();
     plugin_manager_.Shutdown();
     configurator_manager_.Shutdown();
 
@@ -139,11 +147,11 @@ void AimRTCore::Shutdown() {
 
 void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy) {
   proxy.SetConfigurator(configurator_manager_.GetConfiguratorProxy(info).NativeHandle());
+  proxy.SetAllocator(allocator_manager_.GetAllocatorProxy(info).NativeHandle());
   proxy.SetLogger(logger_manager_.GetLoggerProxy(info).NativeHandle());
   proxy.SetExecutorManager(executor_manager_.GetExecutorManagerProxy(info).NativeHandle());
   proxy.SetRpcHandle(rpc_manager_.GetRpcHandleProxy(info).NativeHandle());
   proxy.SetChannel(channel_manager_.GetChannelProxy(info).NativeHandle());
-  proxy.SetAllocator(nullptr);
 }
 
 void AimRTCore::DumpCfgFile() {

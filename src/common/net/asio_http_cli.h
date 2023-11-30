@@ -61,15 +61,6 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
   AsioHttpClient(const AsioHttpClient&) = delete;
   AsioHttpClient& operator=(const AsioHttpClient&) = delete;
 
-  template <typename... Args>
-  void SetLogger(Args&&... args) {
-    AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
-
-    logger_ptr_ = std::make_shared<util::LoggerWrapper>(std::forward<Args>(args)...);
-  }
-
   void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
@@ -500,15 +491,6 @@ class AsioHttpClientPool
 
   AsioHttpClientPool(const AsioHttpClientPool&) = delete;
   AsioHttpClientPool& operator=(const AsioHttpClientPool&) = delete;
-
-  template <typename... Args>
-  void SetLogger(Args&&... args) {
-    AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
-
-    logger_ptr_ = std::make_shared<util::LoggerWrapper>(std::forward<Args>(args)...);
-  }
 
   void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(

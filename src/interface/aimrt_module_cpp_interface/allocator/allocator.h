@@ -17,14 +17,9 @@ class AllocatorRef {
 
   const aimrt_allocator_base_t* NativeHandle() const { return base_ptr_; }
 
-  void* AllocateThreadLocalBuf(size_t buf_size) {
+  void* GetThreadLocalBuf(size_t buf_size) {
     assert(base_ptr_);
-    return base_ptr_->allocate_thread_local_buf(base_ptr_->impl, buf_size);
-  }
-
-  void ReleaseThreadLocalBuf() {
-    assert(base_ptr_);
-    base_ptr_->release_thread_local_buf(base_ptr_->impl);
+    return base_ptr_->get_thread_local_buf(base_ptr_->impl, buf_size);
   }
 
  private:

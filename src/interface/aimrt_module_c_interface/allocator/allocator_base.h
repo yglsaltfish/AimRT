@@ -8,16 +8,10 @@ extern "C" {
 
 typedef struct {
   /**
-   * @brief Allocate thread local buf from core
+   * @brief Get thread local buf from core
    *
    */
-  void* (*allocate_thread_local_buf)(void* impl, size_t buf_size);
-
-  /**
-   * @brief Release thread local buf
-   *
-   */
-  void (*release_thread_local_buf)(void* impl);
+  void* (*get_thread_local_buf)(void* impl, size_t buf_size);
 
   /// Implement pointer
   void* impl;
