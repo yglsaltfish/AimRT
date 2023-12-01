@@ -29,8 +29,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
  private:
   aimrt::CoreRef core_;
-  aimrt::executor::ExecutorRef work_thread_pool_1_;
-  aimrt::executor::ExecutorRef work_thread_pool_2_;
+  aimrt::executor::ExecutorRef work_thread_pool;
 
   aimrt::co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;

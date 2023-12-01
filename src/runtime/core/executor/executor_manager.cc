@@ -1,5 +1,6 @@
 #include "core/executor/executor_manager.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "core/executor/asio_strand_executor.h"
 #include "core/executor/asio_thread_executor.h"
 #include "core/executor/tbb_thread_executor.h"
 #include "core/global.h"
@@ -49,8 +50,8 @@ struct convert<aimrt::runtime::core::executor::ExecutorManager::Options> {
 namespace aimrt::runtime::core::executor {
 
 void ExecutorManager::Initialize(YAML::Node options_node) {
-  RegisterAsioThreadExecutorGenFunc();
-  RegisterTBBThreadExecutorGenFunc();
+  RegisterAsioExecutorGenFunc();
+  RegisterTBBExecutorGenFunc();
 
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
@@ -138,13 +139,33 @@ ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(
   return *(emplace_ret.first->second);
 }
 
-void ExecutorManager::RegisterAsioThreadExecutorGenFunc() {
+void ExecutorManager::RegisterAsioExecutorGenFunc() {
   RegisterExecutorGenFunc("asio_thread", []() -> std::unique_ptr<ExecutorBase> {
     return std::make_unique<AsioThreadExecutor>();
   });
+
+  RegisterExecutorGenFunc("asio_strand", [this]() -> std::unique_ptr<ExecutorBase> {
+    auto ptr = std::make_unique<AsioStrandExecutor>();
+    ptr->RegisterGetAsioHandle(
+        [this](std::string_view name) -> boost::asio::io_context* {
+          auto itr = std::find_if(
+              executor_vec_.begin(),
+              executor_vec_.end(),
+              [name](const std::unique_ptr<ExecutorBase>& executor) -> bool {
+                return (executor->Type() == "asio_thread") &&
+                       (executor->Name() == name);
+              });
+
+          if (itr != executor_vec_.end())
+            return dynamic_cast<AsioThreadExecutor*>(itr->get())->IOCTX();
+
+          return nullptr;
+        });
+    return ptr;
+  });
 }
 
-void ExecutorManager::RegisterTBBThreadExecutorGenFunc() {
+void ExecutorManager::RegisterTBBExecutorGenFunc() {
   RegisterExecutorGenFunc("tbb_thread", []() -> std::unique_ptr<ExecutorBase> {
     return std::make_unique<TBBThreadExecutor>();
   });

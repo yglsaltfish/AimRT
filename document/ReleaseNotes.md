@@ -1,7 +1,7 @@
 
 # ReleaseNotes
 
-## v0.3.0
+## v0.3.0 [2023-11-13]
 &emsp;&emsp;***AimRT v0.3.0***版本是AimRT的第一个正式版本。
 
 - v0.3.0版本功能上已经相对完备，未来一段时间内在接口层面将不会有太大变动。但测试、文档上还有一些完善空间。
@@ -11,7 +11,13 @@
 - 下一阶段的建设重点将集中在AimRT的周边生态 上，包括上位机、开发工具、仿真平台等。
 
 
-## v0.3.1
+## v0.3.1 [2023-11-29]
+
+&emsp;&emsp;修改日志：
+- 修复net插件中`http rpc backend`的一些问题。
+
+
+## v0.4.0
 
 &emsp;&emsp;修改日志：
 
@@ -22,4 +28,3 @@
 - 优化了aimrt_cli。
 - 支持TBB作为一种新的执行器，名称为`tbb_executor`。主线程执行器的实现也换为TBB类型。原来的asio实现的执行器仍然保留，名称由`thread`改为`asio_thread`。
 - 将一些std::map/std::set改为了std::unordered_map/std::unordered_set。
-
