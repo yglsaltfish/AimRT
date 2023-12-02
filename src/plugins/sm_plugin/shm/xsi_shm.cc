@@ -12,7 +12,7 @@ namespace aimrt::plugins::sm_plugin {
 XsiSharedMemory::XsiSharedMemory() : shm_id_(-1), memory_(nullptr) {}
 XsiSharedMemory::~XsiSharedMemory() { Close(); }
 
-void* XsiSharedMemory::Create(const std::string_view& name, size_t size) {
+void* XsiSharedMemory::Create(std::string_view name, size_t size) {
   if (name.empty()) {
     throw std::runtime_error("Invalid shared memory name");
   }
@@ -41,7 +41,7 @@ void* XsiSharedMemory::Create(const std::string_view& name, size_t size) {
   return memory_;
 }
 
-void* XsiSharedMemory::Open(const std::string_view& name) {
+void* XsiSharedMemory::Open(std::string_view name) {
   key_t key = std::hash<std::string_view>{}(name) % std::numeric_limits<key_t>::max();
   if (key == -1) {
     throw std::runtime_error("Failed to create XSI key");

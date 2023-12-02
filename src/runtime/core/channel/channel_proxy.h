@@ -61,6 +61,9 @@ class PublisherProxy {
   PublisherProxy(const PublisherProxy&) = delete;
   PublisherProxy& operator=(const PublisherProxy&) = delete;
 
+  const aimrt_channel_publisher_base_t* NativeHandle() const { return &base_; }
+
+ private:
   bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) {
     return channel_backend_manager_.RegisterPublishType(PublishTypeWrapper{
         .msg_type = aimrt::util::ToStdStringView(msg_type_support->type_name),
@@ -82,9 +85,6 @@ class PublisherProxy {
         .msg_ptr = msg_ptr});
   }
 
-  const aimrt_channel_publisher_base_t* NativeHandle() const { return &base_; }
-
- private:
   static aimrt_channel_publisher_base_t GenBase(void* impl) {
     return aimrt_channel_publisher_base_t{
         .register_publish_type = [](void* impl, const aimrt_type_support_base_t* msg_type_support) -> bool {
@@ -131,6 +131,9 @@ class SubscriberProxy {
   SubscriberProxy(const SubscriberProxy&) = delete;
   SubscriberProxy& operator=(const SubscriberProxy&) = delete;
 
+  const aimrt_channel_subscriber_base_t* NativeHandle() const { return &base_; }
+
+ private:
   bool Subscribe(const aimrt_type_support_base_t* msg_type_support,
                  aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
     return channel_backend_manager_.Subscribe(SubscribeWrapper{
@@ -142,9 +145,6 @@ class SubscriberProxy {
         .callback = std::move(callback)});
   }
 
-  const aimrt_channel_subscriber_base_t* NativeHandle() const { return &base_; }
-
- private:
   static aimrt_channel_subscriber_base_t GenBase(void* impl) {
     return aimrt_channel_subscriber_base_t{
         .subscribe = [](void* impl,
@@ -184,6 +184,9 @@ class ChannelProxy {
   ChannelProxy(const ChannelProxy&) = delete;
   ChannelProxy& operator=(const ChannelProxy&) = delete;
 
+  const aimrt_channel_handle_base_t* NativeHandle() const { return &base_; }
+
+ private:
   PublisherProxy& GetPublisher(std::string_view topic) {
     {
       std::shared_lock read_lock{publisher_proxy_map_mutex_};
@@ -217,9 +220,6 @@ class ChannelProxy {
     return *(emplace_ret.first->second);
   }
 
-  const aimrt_channel_handle_base_t* NativeHandle() const { return &base_; }
-
- private:
   static aimrt_channel_handle_base_t GenBase(void* impl) {
     return aimrt_channel_handle_base_t{
         .get_publisher = [](void* impl, aimrt_string_view_t topic)

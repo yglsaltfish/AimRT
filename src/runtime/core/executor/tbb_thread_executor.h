@@ -40,7 +40,11 @@ class TBBThreadExecutor : public ExecutorBase {
   bool SupportTimerSchedule() const override { return false; }
 
   void Execute(Task&& task) override;
-  void ExecuteAfterNs(uint64_t dt, Task&& task) override;
+
+  std::chrono::steady_clock::time_point Now() const override {
+    return std::chrono::steady_clock::now();
+  }
+  void ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) override;
 
   State GetState() const { return state_.load(); }
 

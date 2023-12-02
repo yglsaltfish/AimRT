@@ -41,7 +41,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   using HttpHandle = std::function<boost::asio::awaitable<HttpHandleStatus>(
       const Request<ReqBodyType>&,
       Response<RspBodyType>&,
-      const std::chrono::steady_clock::duration&)>;
+      std::chrono::steady_clock::duration)>;
 
   struct Options {
     /// 监听的地址

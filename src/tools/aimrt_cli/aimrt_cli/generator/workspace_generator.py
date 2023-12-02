@@ -59,6 +59,7 @@ aimrt_core_options = [
     'AIMRT_BUILD_ROS2_PLUGIN',
     'AIMRT_BUILD_LCM_PLUGIN',
     'AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN',
+    'AIMRT_BUILD_TIME_REGULATOR_PLUGIN',
 ]
 
 workspace_template_infos = [

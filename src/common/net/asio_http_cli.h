@@ -109,10 +109,10 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
             typename RspBodyType = boost::beast::http::string_body>
   boost::asio::awaitable<Response<RspBodyType>> HttpSendRecvCo(
       const Request<ReqBodyType>& req,
-      const std::chrono::steady_clock::duration& timeout = std::chrono::seconds(5)) {
+      std::chrono::steady_clock::duration timeout = std::chrono::seconds(5)) {
     return boost::asio::co_spawn(
         mgr_strand_,
-        [this, &req, &timeout]()
+        [this, &req, timeout]()
             -> boost::asio::awaitable<Response<RspBodyType>> {
           AIMRT_CHECK_ERROR_THROW(
               state_.load() == State::Start,
@@ -300,10 +300,10 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
               typename RspBodyType = boost::beast::http::string_body>
     boost::asio::awaitable<Response<RspBodyType>> HttpSendRecvCo(
         const Request<ReqBodyType>& req,
-        const std::chrono::steady_clock::duration& timeout) {
+        std::chrono::steady_clock::duration timeout) {
       return boost::asio::co_spawn(
           session_socket_strand_,
-          [this, &req, &timeout]() -> boost::asio::awaitable<Response<RspBodyType>> {
+          [this, &req, timeout]() -> boost::asio::awaitable<Response<RspBodyType>> {
             AIMRT_CHECK_ERROR_THROW(
                 state_.load() == SessionState::Start,
                 "Function can only be called when state is 'Start'.");

@@ -121,10 +121,10 @@ void AsioThreadExecutor::Execute(Task&& task) {
   boost::asio::post(*io_ptr_, std::move(task));
 }
 
-void AsioThreadExecutor::ExecuteAfterNs(uint64_t dt, Task&& task) {
+void AsioThreadExecutor::ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) {
   assert(state_ == State::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
-  timer_ptr_->expires_after(std::chrono::nanoseconds(dt));
+  timer_ptr_->expires_after(dt);
   timer_ptr_->async_wait([this, timer_ptr_,
                           task{std::move(task)}](boost::system::error_code ec) {
     if (ec) [[unlikely]] {

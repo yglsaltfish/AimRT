@@ -26,7 +26,7 @@ enum TimeConstant {
  * @param t 时间点
  * @return uint64_t 毫秒时间戳
  */
-inline uint64_t GetTimestampMs(const std::chrono::system_clock::time_point& t) {
+inline uint64_t GetTimestampMs(std::chrono::system_clock::time_point t) {
   return std::chrono::duration_cast<std::chrono::milliseconds>(t.time_since_epoch()).count();
 }
 
@@ -55,7 +55,7 @@ inline const std::chrono::system_clock::time_point GetTimePointFromTimestampMs(u
  * @param t 时间点
  * @return uint64_t 秒时间戳
  */
-inline uint64_t GetTimestampSec(const std::chrono::system_clock::time_point& t) {
+inline uint64_t GetTimestampSec(std::chrono::system_clock::time_point t) {
   return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
 }
 
@@ -93,7 +93,7 @@ inline time_t GetCurTimeT() {
  * @param t
  * @return struct tm
  */
-inline struct tm TimeT2TmLocal(const time_t& t) {
+inline struct tm TimeT2TmLocal(time_t t) {
   struct tm st;
 #if defined(_WIN32)
   localtime_s(&st, &t);
@@ -109,7 +109,7 @@ inline struct tm TimeT2TmLocal(const time_t& t) {
  * @param t
  * @return struct tm
  */
-inline struct tm TimeT2TmGm(const time_t& t) {
+inline struct tm TimeT2TmGm(time_t t) {
   struct tm st;
 #if defined(_WIN32)
   gmtime_s(&st, &t);

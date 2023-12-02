@@ -33,7 +33,7 @@ class ContextRef {
         base_ptr_->ops->get_deadline_ns(base_ptr_->impl)));
   }
 
-  void SetDeadline(const std::chrono::steady_clock::time_point& deadline) {
+  void SetDeadline(std::chrono::steady_clock::time_point deadline) {
     assert(base_ptr_ && base_ptr_->ops);
     base_ptr_->ops->set_deadline_ns(
         base_ptr_->impl,
@@ -47,7 +47,7 @@ class ContextRef {
     return Deadline() - std::chrono::steady_clock::now();
   }
 
-  void SetTimeout(const std::chrono::steady_clock::duration& timeout) {
+  void SetTimeout(std::chrono::steady_clock::duration timeout) {
     SetDeadline(std::chrono::steady_clock::now() + timeout);
   }
 

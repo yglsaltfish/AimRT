@@ -49,6 +49,14 @@ typedef struct {
   void (*execute)(void* impl, aimrt_function_base_t* task);
 
   /**
+   * @brief Function to get current timestamp
+   * @note
+   * Input 1: Implement pointer to executor handle
+   * Return: Current ns timestamp
+   */
+  uint64_t (*now)(void* impl);
+
+  /**
    * @brief Function to execute task after some time
    * @note
    * Input 1: Implement pointer to executor handle

@@ -25,6 +25,7 @@ option(AIMRT_BUILD_SM_PLUGIN "AimRT build sm plugin." OFF)
 option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF)
 option(AIMRT_BUILD_LCM_PLUGIN "AimRT build lcm plugin." OFF)
 option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF)
+option(AIMRT_BUILD_TIME_REGULATOR_PLUGIN "AimRT build time regulator plugin." OFF)
 
 # Some necessary settings
 set(CMAKE_CXX_STANDARD 20)

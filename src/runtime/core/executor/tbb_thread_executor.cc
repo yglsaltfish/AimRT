@@ -125,7 +125,7 @@ void TBBThreadExecutor::Execute(Task&& task) {
   sig_flag_.notify_one();
 }
 
-void TBBThreadExecutor::ExecuteAfterNs(uint64_t dt, Task&& task) {
+void TBBThreadExecutor::ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) {
   AIMRT_ERROR_THROW("Tbb thread executor '{}' does not support timer schedule.", Name());
 }
 

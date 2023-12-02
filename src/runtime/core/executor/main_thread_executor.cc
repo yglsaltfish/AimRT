@@ -62,8 +62,8 @@ void MainThreadExecutor::Start() {
     try {
       while (qu_.try_pop(task)) task();
     } catch (const std::exception& e) {
-      AIMRT_FATAL("Tbb thread executor '{}' run loop get exception, {}",
-                  Name(), e.what());
+      AIMRT_FATAL("Main thread executor run loop get exception, {}",
+                  e.what());
     }
 
     if (state_.load() == State::Shutdown) break;

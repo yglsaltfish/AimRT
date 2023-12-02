@@ -17,43 +17,25 @@ class CoreProxy {
   void SetConfigurator(const aimrt_configurator_base_t* ptr) {
     configurator_ = ptr;
   }
-  const aimrt_configurator_base_t* GetConfigurator() const {
-    return configurator_;
-  }
 
   void SetLogger(const aimrt_logger_base_t* ptr) {
     logger_ = ptr;
-  }
-  const aimrt_logger_base_t* GetLogger() const {
-    return logger_;
   }
 
   void SetExecutorManager(const aimrt_executor_manager_base_t* ptr) {
     executor_manager_ = ptr;
   }
-  const aimrt_executor_manager_base_t* GetExecutorManager() const {
-    return executor_manager_;
-  }
 
   void SetRpcHandle(const aimrt_rpc_handle_base_t* ptr) {
     rpc_handle_ = ptr;
-  }
-  const aimrt_rpc_handle_base_t* GetRpcHandle() const {
-    return rpc_handle_;
   }
 
   void SetChannel(const aimrt_channel_handle_base_t* ptr) {
     channel_handle_ = ptr;
   }
-  const aimrt_channel_handle_base_t* GetChannel() const {
-    return channel_handle_;
-  }
 
   void SetAllocator(const aimrt_allocator_base_t* ptr) {
     allocator_handle_ = ptr;
-  }
-  const aimrt_allocator_base_t* GetAllocator() const {
-    return allocator_handle_;
   }
 
   const aimrt_core_base_t* NativeHandle() const { return &base_; }
@@ -62,22 +44,22 @@ class CoreProxy {
   static aimrt_core_base_t GenBase(void* impl) {
     return aimrt_core_base_t{
         .configurator = [](void* impl) -> const aimrt_configurator_base_t* {
-          return static_cast<CoreProxy*>(impl)->GetConfigurator();
+          return static_cast<CoreProxy*>(impl)->configurator_;
         },
         .logger = [](void* impl) -> const aimrt_logger_base_t* {
-          return static_cast<CoreProxy*>(impl)->GetLogger();
+          return static_cast<CoreProxy*>(impl)->logger_;
         },
         .executor_manager = [](void* impl) -> const aimrt_executor_manager_base_t* {
-          return static_cast<CoreProxy*>(impl)->GetExecutorManager();
+          return static_cast<CoreProxy*>(impl)->executor_manager_;
         },
         .rpc_handle = [](void* impl) -> const aimrt_rpc_handle_base_t* {
-          return static_cast<CoreProxy*>(impl)->GetRpcHandle();
+          return static_cast<CoreProxy*>(impl)->rpc_handle_;
         },
         .channel_handle = [](void* impl) -> const aimrt_channel_handle_base_t* {
-          return static_cast<CoreProxy*>(impl)->GetChannel();
+          return static_cast<CoreProxy*>(impl)->channel_handle_;
         },
         .allocator_handle = [](void* impl) -> const aimrt_allocator_base_t* {
-          return static_cast<CoreProxy*>(impl)->GetAllocator();
+          return static_cast<CoreProxy*>(impl)->allocator_handle_;
         },
         .impl = impl};
   }

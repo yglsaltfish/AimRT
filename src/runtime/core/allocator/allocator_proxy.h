@@ -15,6 +15,9 @@ class AllocatorProxy {
   AllocatorProxy(const AllocatorProxy&) = delete;
   AllocatorProxy& operator=(const AllocatorProxy&) = delete;
 
+  const aimrt_allocator_base_t* NativeHandle() const { return &base_; }
+
+ private:
   static void* GetThreadLocalBuf(size_t buf_size) {
     constexpr size_t kMaxThreadLocalBufSize = 1024 * 1024 * 16;
     constexpr size_t kMinThreadLocalBufSize = 1024 * 4;
@@ -46,9 +49,6 @@ class AllocatorProxy {
     return thread_local_buf.buf;
   }
 
-  const aimrt_allocator_base_t* NativeHandle() const { return &base_; }
-
- private:
   static aimrt_allocator_base_t GenBase(void* impl) {
     return aimrt_allocator_base_t{
         .get_thread_local_buf = [](void* impl, size_t buf_size) -> void* {

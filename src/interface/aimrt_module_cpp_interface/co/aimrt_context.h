@@ -147,8 +147,8 @@ class AimRTScheduler {
   }
 
   friend std::chrono::steady_clock::time_point
-  tag_invoke(exec::now_t, const AimRTScheduler&) noexcept {
-    return std::chrono::steady_clock::now();
+  tag_invoke(exec::now_t, const AimRTScheduler& s) noexcept {
+    return s.executor_ref_.Now();
   }
 
   friend SchedulerAfterTask
@@ -161,8 +161,8 @@ class AimRTScheduler {
   friend SchedulerAfterTask
   tag_invoke(exec::schedule_at_t,
              const AimRTScheduler& s,
-             const std::chrono::steady_clock::time_point& tp) noexcept {
-    return SchedulerAfterTask(s.executor_ref_, tp - std::chrono::steady_clock::now());
+             std::chrono::steady_clock::time_point tp) noexcept {
+    return SchedulerAfterTask(s.executor_ref_, tp - s.executor_ref_.Now());
   }
 
   friend bool operator==(const AimRTScheduler& a, const AimRTScheduler& b) noexcept {

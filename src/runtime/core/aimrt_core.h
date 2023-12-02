@@ -144,12 +144,7 @@ class AimRTCore {
       func();
   }
 
-  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name) {
-    auto ptr = GetExecutorManager()
-                   .GetExecutorManagerProxy(util::ModuleDetailInfo{})
-                   .GetExecutor(executor_name);
-    return ptr ? aimrt::executor::ExecutorRef(ptr->NativeHandle()) : aimrt::executor::ExecutorRef();
-  }
+  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
 
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
 

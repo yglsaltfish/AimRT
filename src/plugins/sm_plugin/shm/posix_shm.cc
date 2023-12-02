@@ -17,7 +17,7 @@ PosixSharedMemory::PosixSharedMemory() : memory_(nullptr), size_(0) {}
 
 PosixSharedMemory::~PosixSharedMemory() { Close(); }
 
-void* PosixSharedMemory::Create(const std::string_view& name, size_t size) {
+void* PosixSharedMemory::Create(std::string_view name, size_t size) {
   if (name.empty()) {
     throw std::runtime_error("Invalid shared memory name");
   }
@@ -51,7 +51,7 @@ void* PosixSharedMemory::Create(const std::string_view& name, size_t size) {
   return memory_;
 }
 
-void* PosixSharedMemory::Open(const std::string_view& name) {
+void* PosixSharedMemory::Open(std::string_view name) {
   name_ = std::to_string(std::hash<std::string_view>{}(name));
   int fd = shm_open(name_.c_str(), O_RDWR, 0644);
   if (fd == -1) {

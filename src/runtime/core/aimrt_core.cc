@@ -145,6 +145,15 @@ void AimRTCore::Shutdown() {
   }
 }
 
+aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_name) {
+  auto executor_manager =
+      GetExecutorManager().GetExecutorManagerProxy(util::ModuleDetailInfo{}).NativeHandle();
+
+  return aimrt::executor::ExecutorRef(
+      executor_manager->get_executor(
+          executor_manager->impl, aimrt::util::ToAimRTStringView(executor_name)));
+}
+
 void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy) {
   proxy.SetConfigurator(configurator_manager_.GetConfiguratorProxy(info).NativeHandle());
   proxy.SetAllocator(allocator_manager_.GetAllocatorProxy(info).NativeHandle());

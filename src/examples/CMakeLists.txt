@@ -38,3 +38,7 @@ endif()
 if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
   add_subdirectory(example_record_playback)
 endif()
+
+if(AIMRT_BUILD_TIME_REGULATOR_PLUGIN)
+  add_subdirectory(example_time_regulator)
+endif()

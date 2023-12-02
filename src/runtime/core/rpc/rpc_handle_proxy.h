@@ -24,6 +24,9 @@ class RpcHandleProxy {
   RpcHandleProxy(const RpcHandleProxy&) = delete;
   RpcHandleProxy& operator=(const RpcHandleProxy&) = delete;
 
+  const aimrt_rpc_handle_base_t* NativeHandle() const { return &base_; }
+
+ private:
   bool RegisterServiceFunc(
       std::string_view func_name,
       const void* custom_type_support_ptr,
@@ -81,9 +84,6 @@ class RpcHandleProxy {
     context_manager_.DeleteContext(ctx_ptr);
   }
 
-  const aimrt_rpc_handle_base_t* NativeHandle() const { return &base_; }
-
- private:
   static aimrt_rpc_handle_base_t GenBase(void* impl) {
     return aimrt_rpc_handle_base_t{
         .register_service_func = [](void* impl,
