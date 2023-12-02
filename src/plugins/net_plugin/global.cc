@@ -1,5 +1,5 @@
 #include "net_plugin/global.h"
-#include "core/util/buffer_array_allocator.h"
+#include "core/util/simple_buffer_array_allocator.h"
 #include "core/util/simple_logger.h"
 
 namespace aimrt::plugins::net_plugin {
@@ -17,7 +17,7 @@ aimrt::logger::LoggerRef GetLogger() {
 }
 
 aimrt::util::BufferArrayAllocatorRef GetDefaultBufferArrayAllocator() {
-  return aimrt::util::BufferArrayAllocatorRef(runtime::core::util::BufferArrayAllocator::NativeHandle());
+  return aimrt::util::BufferArrayAllocatorRef(runtime::core::util::SimpleBufferArrayAllocator::NativeHandle());
 }
 
 }  // namespace aimrt::plugins::net_plugin

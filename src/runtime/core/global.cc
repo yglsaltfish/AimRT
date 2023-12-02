@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "core/aimrt_core.h"
-#include "core/util/buffer_array_allocator.h"
+#include "core/util/simple_buffer_array_allocator.h"
 #include "core/util/simple_logger.h"
 
 namespace aimrt::runtime::core {
@@ -28,7 +28,7 @@ aimrt::logger::LoggerRef GetLogger() {
 }
 
 aimrt::util::BufferArrayAllocatorRef GetDefaultBufferArrayAllocator() {
-  return aimrt::util::BufferArrayAllocatorRef(util::BufferArrayAllocator::NativeHandle());
+  return aimrt::util::BufferArrayAllocatorRef(util::SimpleBufferArrayAllocator::NativeHandle());
 }
 
 }  // namespace aimrt::runtime::core

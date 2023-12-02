@@ -11,8 +11,8 @@ class PosixSharedMemory : public SharedMemoryBase {
   PosixSharedMemory();
   virtual ~PosixSharedMemory();
 
-  void* Create(const std::string_view& name, size_t size) override;
-  void* Open(const std::string_view& name) override;
+  void* Create(std::string_view name, size_t size) override;
+  void* Open(std::string_view name) override;
   bool Close() override;
   bool Destroy() override;
 

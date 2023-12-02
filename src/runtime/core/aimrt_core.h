@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "core/allocator/allocator_manager.h"
 #include "core/channel/channel_manager.h"
 #include "core/configurator/configurator_manager.h"
 #include "core/executor/executor_manager.h"
@@ -39,6 +40,9 @@ class AimRTCore {
 
     PreInitMainThread,
     PostInitMainThread,
+
+    PreInitAllocator,
+    PostInitAllocator,
 
     PreInitLog,
     PostInitLog,
@@ -104,6 +108,9 @@ class AimRTCore {
   plugin::PluginManager& GetPluginManager() { return plugin_manager_; }
   const plugin::PluginManager& GetPluginManager() const { return plugin_manager_; }
 
+  allocator::AllocatorManager& GetAllocatorManager() { return allocator_manager_; }
+  const allocator::AllocatorManager& GetAllocatorManager() const { return allocator_manager_; }
+
   logger::LoggerManager& GetLoggerManager() { return logger_manager_; }
   const logger::LoggerManager& GetLoggerManager() const { return logger_manager_; }
 
@@ -137,12 +144,7 @@ class AimRTCore {
       func();
   }
 
-  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name) {
-    auto ptr = GetExecutorManager()
-                   .GetExecutorManagerProxy(util::ModuleDetailInfo{})
-                   .GetExecutor(executor_name);
-    return ptr ? aimrt::executor::ExecutorRef(ptr->NativeHandle()) : aimrt::executor::ExecutorRef();
-  }
+  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
 
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
 
@@ -165,6 +167,7 @@ class AimRTCore {
 
   configurator::ConfiguratorManager configurator_manager_;
   plugin::PluginManager plugin_manager_;
+  allocator::AllocatorManager allocator_manager_;
   logger::LoggerManager logger_manager_;
   executor::ExecutorManager executor_manager_;
   rpc::RpcManager rpc_manager_;

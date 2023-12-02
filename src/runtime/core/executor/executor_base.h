@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 #include "aimrt_module_c_interface/executor/executor_manager_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
@@ -31,7 +33,9 @@ class ExecutorBase {
   virtual bool SupportTimerSchedule() const = 0;
 
   virtual void Execute(Task&& task) = 0;
-  virtual void ExecuteAfterNs(uint64_t dt, Task&& task) = 0;
+
+  virtual std::chrono::steady_clock::time_point Now() const = 0;
+  virtual void ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) = 0;
 };
 
 }  // namespace aimrt::runtime::core::executor

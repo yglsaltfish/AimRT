@@ -36,8 +36,12 @@ class LoggerManagerTest : public ::testing::Test {
     util::ModuleDetailInfo detail_info = {
         .name = "logger_test",
     };
+
+    auto executor_manager = executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle();
+
     logger_manager_.SetLogExecutor(
-        aimrt::executor::ExecutorRef{executor_manager_.GetExecutorManagerProxy(detail_info).GetExecutor("work_thread_pool")->NativeHandle()});
+        aimrt::executor::ExecutorRef{executor_manager->get_executor(
+            executor_manager->impl, aimrt::util::ToAimRTStringView("work_thread_pool"))});
 
     // register the mocked backend, register can only in PreInit state.
     std::unique_ptr<LoggerBackendBase> mocked_backend_ptr = std::make_unique<LoggerBackendMock>();
@@ -89,8 +93,9 @@ TEST_F(LoggerManagerTest, initialize_and_start_using_cfg_log_lvl) {
       .use_default_log_lvl = false,
   };
 
-  ASSERT_NE(logger_manager_.GetLoggerProxy(module_info).NativeHandle(), nullptr);
-  EXPECT_EQ(logger_manager_.GetLoggerProxy(module_info).GetLogLevel(), AIMRT_LOG_LEVEL_TRACE);
+  auto h = logger_manager_.GetLoggerProxy(module_info).NativeHandle();
+  ASSERT_NE(h, nullptr);
+  EXPECT_EQ(h->get_log_level(h->impl), AIMRT_LOG_LEVEL_TRACE);
 
   logger_manager_.Start();
 }
@@ -102,29 +107,31 @@ TEST_F(LoggerManagerTest, initialize_using_default_log_lvl) {
       .use_default_log_lvl = true,
   };
 
-  ASSERT_NE(logger_manager_.GetLoggerProxy(module_info).NativeHandle(), nullptr);
-  EXPECT_EQ(logger_manager_.GetLoggerProxy(module_info).GetLogLevel(), AIMRT_LOG_LEVEL_INFO);
+  auto h = logger_manager_.GetLoggerProxy(module_info).NativeHandle();
+  ASSERT_NE(h, nullptr);
+  EXPECT_EQ(h->get_log_level(h->impl), AIMRT_LOG_LEVEL_INFO);
 }
 
 TEST_F(LoggerManagerTest, log_with_backends) {
   const util::ModuleDetailInfo module_info = {
       .name = "logger_manager_test",
   };
-  auto& logger = logger_manager_.GetLoggerProxy(module_info);
-  ASSERT_NE(logger.NativeHandle(), nullptr);
+  auto logger = logger_manager_.GetLoggerProxy(module_info).NativeHandle();
+  ASSERT_NE(logger, nullptr);
 
   executor_manager_.Start();
   logger_manager_.Start();
 
   auto location = std::source_location::current();
   std::string log_str("logger_test");
-  logger.Log(AIMRT_LOG_LEVEL_INFO,
-             location.line(),
-             location.column(),
-             location.file_name(),
-             location.function_name(),
-             log_str.c_str(),
-             log_str.size());
+  logger->log(logger->impl,
+              AIMRT_LOG_LEVEL_INFO,
+              location.line(),
+              location.column(),
+              location.file_name(),
+              location.function_name(),
+              log_str.c_str(),
+              log_str.size());
   std::this_thread::sleep_for(std::chrono::milliseconds(100));  // wait the log thread
 
   const std::filesystem::path log_file_path = "./logger_manager_test.log";

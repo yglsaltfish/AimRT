@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "aimrt_module_cpp_interface/util/buffer.h"
-#include "core/util/buffer_array_allocator.h"
+#include "core/util/simple_buffer_array_allocator.h"
 
 namespace aimrt::runtime::core::util {
 
@@ -11,7 +11,7 @@ bool CheckBufferEqual(const aimrt_buffer_t& lhs, const aimrt_buffer_t& rhs) {
 
 TEST(BUFFER_TEST, Base) {
   // init
-  aimrt::util::BufferArray buffer_array(BufferArrayAllocator::NativeHandle());
+  aimrt::util::BufferArray buffer_array(SimpleBufferArrayAllocator::NativeHandle());
   EXPECT_EQ(buffer_array.Data(), nullptr);
   EXPECT_EQ(buffer_array.Size(), 0);
   EXPECT_EQ(buffer_array.Capacity(), 0);

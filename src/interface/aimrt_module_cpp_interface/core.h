@@ -1,6 +1,7 @@
 #pragma once
 
 #include "aimrt_module_c_interface/core_base.h"
+#include "aimrt_module_cpp_interface/allocator/allocator.h"
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
 #include "aimrt_module_cpp_interface/configurator/configurator.h"
 #include "aimrt_module_cpp_interface/executor/executor_manager.h"
@@ -72,6 +73,16 @@ class CoreRef {
   channel::ChannelHandleRef GetChannel() const {
     assert(base_ptr_);
     return channel::ChannelHandleRef(base_ptr_->channel_handle(base_ptr_->impl));
+  }
+
+  /**
+   * @brief Get allocator handle
+   *
+   * @return allocator::AllocatorRef
+   */
+  allocator::AllocatorRef GetAllocator() const {
+    assert(base_ptr_);
+    return allocator::AllocatorRef(base_ptr_->allocator_handle(base_ptr_->impl));
   }
 
  private:

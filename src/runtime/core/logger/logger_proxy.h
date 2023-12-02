@@ -23,6 +23,9 @@ class LoggerProxy {
   LoggerProxy(const LoggerProxy&) = delete;
   LoggerProxy& operator=(const LoggerProxy&) = delete;
 
+  const aimrt_logger_base_t* NativeHandle() const { return &base_; }
+
+ private:
   aimrt_log_level_t GetLogLevel() const { return lvl_; }
 
   void Log(aimrt_log_level_t lvl,
@@ -59,9 +62,6 @@ class LoggerProxy {
     }
   }
 
-  const aimrt_logger_base_t* NativeHandle() const { return &base_; }
-
- private:
   static aimrt_logger_base_t GenBase(void* impl) {
     return aimrt_logger_base_t{
         .get_log_level = [](void* impl) -> aimrt_log_level_t {

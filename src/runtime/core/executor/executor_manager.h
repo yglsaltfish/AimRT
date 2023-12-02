@@ -54,8 +54,8 @@ class ExecutorManager {
   State GetState() const { return state_.load(); }
 
  private:
-  void RegisterAsioThreadExecutorGenFunc();
-  void RegisterTBBThreadExecutorGenFunc();
+  void RegisterAsioExecutorGenFunc();
+  void RegisterTBBExecutorGenFunc();
 
  private:
   Options options_;

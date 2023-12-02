@@ -1,6 +1,5 @@
 #pragma once
 
-#include <optional>
 #include <unordered_map>
 
 #include "core/executor/executor_base.h"
@@ -11,27 +10,12 @@ namespace aimrt::runtime::core::executor {
 class ExecutorProxy {
  public:
   explicit ExecutorProxy(ExecutorBase* executor_ptr)
-      : executor_ptr_(executor_ptr),
-        base_(GenBase(this)) {}
+      : base_(GenBase(executor_ptr)) {}
 
   ~ExecutorProxy() = default;
 
   ExecutorProxy(const ExecutorProxy&) = delete;
   ExecutorProxy& operator=(const ExecutorProxy&) = delete;
-
-  std::string_view Type() const { return executor_ptr_->Type(); }
-  std::string_view Name() const { return executor_ptr_->Name(); }
-
-  bool ThreadSafe() const { return executor_ptr_->ThreadSafe(); };
-  bool IsInCurrentExecutor() const { return executor_ptr_->IsInCurrentExecutor(); };
-  bool SupportTimerSchedule() const { return executor_ptr_->SupportTimerSchedule(); }
-
-  void Execute(ExecutorBase::Task&& task) {
-    executor_ptr_->Execute(std::move(task));
-  }
-  void ExecuteAfterNs(uint64_t dt, ExecutorBase::Task&& task) {
-    executor_ptr_->ExecuteAfterNs(dt, std::move(task));
-  }
 
   const aimrt_executor_base_t* NativeHandle() const { return &base_; }
 
@@ -40,33 +24,38 @@ class ExecutorProxy {
     return aimrt_executor_base_t{
         .type = [](void* impl) -> aimrt_string_view_t {
           return aimrt::util::ToAimRTStringView(
-              static_cast<ExecutorProxy*>(impl)->Type());
+              static_cast<ExecutorBase*>(impl)->Type());
         },
         .name = [](void* impl) -> aimrt_string_view_t {
           return aimrt::util::ToAimRTStringView(
-              static_cast<ExecutorProxy*>(impl)->Name());
+              static_cast<ExecutorBase*>(impl)->Name());
         },
         .is_thread_safe = [](void* impl) -> bool {
-          return static_cast<ExecutorProxy*>(impl)->ThreadSafe();
+          return static_cast<ExecutorBase*>(impl)->ThreadSafe();
         },
         .is_in_current_executor = [](void* impl) -> bool {
-          return static_cast<ExecutorProxy*>(impl)->IsInCurrentExecutor();
+          return static_cast<ExecutorBase*>(impl)->IsInCurrentExecutor();
         },
         .is_support_timer_schedule = [](void* impl) -> bool {
-          return static_cast<ExecutorProxy*>(impl)->SupportTimerSchedule();
+          return static_cast<ExecutorBase*>(impl)->SupportTimerSchedule();
         },
         .execute = [](void* impl, aimrt_function_base_t* task) {
-          static_cast<ExecutorProxy*>(impl)->Execute(ExecutorBase::Task(task));  //
+          static_cast<ExecutorBase*>(impl)->Execute(ExecutorBase::Task(task));  //
+        },
+        .now = [](void* impl) -> uint64_t {
+          return static_cast<uint64_t>(
+              std::chrono::duration_cast<std::chrono::nanoseconds>(
+                  static_cast<ExecutorBase*>(impl)->Now().time_since_epoch())
+                  .count());
         },
         .execute_after_ns = [](void* impl, uint64_t dt, aimrt_function_base_t* task) {
-          static_cast<ExecutorProxy*>(impl)->ExecuteAfterNs(dt, ExecutorBase::Task(task));  //
+          static_cast<ExecutorBase*>(impl)->ExecuteAfter(
+              std::chrono::nanoseconds(dt), ExecutorBase::Task(task));  //
         },
         .impl = impl};
   }
 
  private:
-  ExecutorBase* executor_ptr_;
-
   const aimrt_executor_base_t base_;
 };
 
@@ -85,11 +74,11 @@ class ExecutorManagerProxy {
   ExecutorManagerProxy(const ExecutorManagerProxy&) = delete;
   ExecutorManagerProxy& operator=(const ExecutorManagerProxy&) = delete;
 
-  ExecutorProxy* GetExecutor(std::string_view executor_name) const;
-
   const aimrt_executor_manager_base_t* NativeHandle() const { return &base_; }
 
  private:
+  ExecutorProxy* GetExecutor(std::string_view executor_name) const;
+
   static aimrt_executor_manager_base_t GenBase(void* impl) {
     return aimrt_executor_manager_base_t{
         .get_executor = [](void* impl, aimrt_string_view_t executor_name)

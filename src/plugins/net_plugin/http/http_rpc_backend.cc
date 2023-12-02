@@ -86,7 +86,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
       [this, &service_func_wrapper](
           const http::request<http::dynamic_body>& req,
           http::response<http::dynamic_body>& rsp,
-          const std::chrono::steady_clock::duration& timeout)
+          std::chrono::steady_clock::duration timeout)
       -> asio::awaitable<net::AsioHttpServer::HttpHandleStatus> {
     // ctx 创建
     std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr(

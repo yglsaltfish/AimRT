@@ -78,24 +78,30 @@ TEST_F(ConfiguratorManagerTest, get_configuratorProxy_with_legal_module_name) {
       .name = "ConfiguratorManagerTest",
       .cfg_file_path = "./cfg/tmp",
   };
-  ASSERT_NE(configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle(), nullptr);
-  EXPECT_EQ(configurator_manager_.GetConfiguratorProxy(detail_info).GetConfigFilePath(), "./cfg/tmp");
+
+  auto h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
+  ASSERT_NE(h, nullptr);
+  EXPECT_EQ(aimrt::util::ToStdStringView(h->config_file_path(h->impl)), "./cfg/tmp");
 }
 
 TEST_F(ConfiguratorManagerTest, get_configuratorProxy_with_illegal_module_name) {
   util::ModuleDetailInfo detail_info = {
       .name = "IllegalTest",
   };
-  ASSERT_NE(configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle(), nullptr);
-  EXPECT_EQ(configurator_manager_.GetConfiguratorProxy(detail_info).GetConfigFilePath(), "");
+
+  auto h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
+  ASSERT_NE(h, nullptr);
+  EXPECT_EQ(aimrt::util::ToStdStringView(h->config_file_path(h->impl)), "");
 }
 
 TEST_F(ConfiguratorManagerTest, get_configuratorProxy_with_configured_module_name) {
   util::ModuleDetailInfo detail_info = {
       .name = "ConfiguratorManagerTest",
   };
-  ASSERT_NE(configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle(), nullptr);
-  EXPECT_EQ(configurator_manager_.GetConfiguratorProxy(detail_info).GetConfigFilePath(),
+
+  auto h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
+  ASSERT_NE(h, nullptr);
+  EXPECT_EQ(aimrt::util::ToStdStringView(h->config_file_path(h->impl)),
             "./cfg/tmp/temp_cfg_file_for_ConfiguratorManagerTest.yaml");
 }
 

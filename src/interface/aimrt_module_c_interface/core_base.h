@@ -1,5 +1,6 @@
 #pragma once
 
+#include "aimrt_module_c_interface/allocator/allocator_base.h"
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
 #include "aimrt_module_c_interface/configurator/configurator_base.h"
 #include "aimrt_module_c_interface/executor/executor_manager_base.h"
@@ -64,6 +65,16 @@ typedef struct {
    * Output: Channel handle
    */
   const aimrt_channel_handle_base_t* (*channel_handle)(void* impl);
+
+  /**
+   * @brief Function to get allocator handle
+   * @note
+   *
+   * Parameter definition:
+   * Input 1: Pointer to impl
+   * Output: Allocator handle
+   */
+  const aimrt_allocator_base_t* (*allocator_handle)(void* impl);
 
   /// Implement pointer
   void* impl;

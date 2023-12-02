@@ -210,7 +210,7 @@ deploy_modes:
 
 最终将在指定的目录中生成具体的工程， `configuration_example.yaml`生成的工程结构如下：
 
-<img src="./project_tree.jpg" alt="工程树形图" width="300" height="450">
+<img src="./picture/project_tree.jpg" alt="工程树形图" width="300" height="450">
 
 ## 问题及需求
 您在使用此工具中的有价值需求可以在aimrt代码仓中给我们提issue，

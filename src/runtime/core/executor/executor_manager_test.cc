@@ -40,10 +40,14 @@ TEST_F(ExecutorManagerTest, initialize2) {
       .name = "test",
   };
 
-  auto executor_ptr = executor_manager_.GetExecutorManagerProxy(detail_info).GetExecutor("work_thread_pool");
+  auto executor_manager = executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle();
+
+  auto executor_ptr = executor_manager->get_executor(
+      executor_manager->impl, aimrt::util::ToAimRTStringView("work_thread_pool"));
+
   ASSERT_NE(executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle(), nullptr);
-  EXPECT_EQ(executor_ptr->Type(), "asio_thread");
-  EXPECT_EQ(executor_ptr->Name(), "work_thread_pool");
+  EXPECT_EQ(aimrt::util::ToStdStringView(executor_ptr->type(executor_ptr->impl)), "asio_thread");
+  EXPECT_EQ(aimrt::util::ToStdStringView(executor_ptr->name(executor_ptr->impl)), "work_thread_pool");
 }
 
 TEST_F(ExecutorManagerTest, start) {
