@@ -73,14 +73,14 @@ void AsioStrandExecutor::Shutdown() {
 }
 
 void AsioStrandExecutor::Execute(Task&& task) {
-  assert(state_ == State::Start);
+  assert(state_.load() == State::Start);
   boost::asio::post(*strand_ptr_, std::move(task));
 }
 
-void AsioStrandExecutor::ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) {
-  assert(state_ == State::Start);
+void AsioStrandExecutor::ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {
+  assert(state_.load() == State::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*strand_ptr_);
-  timer_ptr_->expires_after(dt);
+  timer_ptr_->expires_at(tp);
   timer_ptr_->async_wait([this, timer_ptr_,
                           task{std::move(task)}](boost::system::error_code ec) {
     if (ec) [[unlikely]] {

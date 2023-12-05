@@ -48,9 +48,10 @@ class ExecutorProxy {
                   static_cast<ExecutorBase*>(impl)->Now().time_since_epoch())
                   .count());
         },
-        .execute_after_ns = [](void* impl, uint64_t dt, aimrt_function_base_t* task) {
-          static_cast<ExecutorBase*>(impl)->ExecuteAfter(
-              std::chrono::nanoseconds(dt), ExecutorBase::Task(task));  //
+        .execute_at_ns = [](void* impl, uint64_t tp, aimrt_function_base_t* task) {
+          static_cast<ExecutorBase*>(impl)->ExecuteAt(
+              std::chrono::steady_clock::time_point(std::chrono::nanoseconds(tp)),
+              ExecutorBase::Task(task));  //
         },
         .impl = impl};
   }

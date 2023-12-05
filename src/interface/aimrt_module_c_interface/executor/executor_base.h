@@ -57,14 +57,14 @@ typedef struct {
   uint64_t (*now)(void* impl);
 
   /**
-   * @brief Function to execute task after some time
+   * @brief Function to execute task at a time point
    * @note
    * Input 1: Implement pointer to executor handle
-   * Input 2: Time, ns
+   * Input 2: Timestamp, ns
    * Input 2: Task, which ops type is aimrt_function_executor_task_ops_t
    */
-  void (*execute_after_ns)(
-      void* impl, uint64_t dt, aimrt_function_base_t* task);
+  void (*execute_at_ns)(
+      void* impl, uint64_t tp, aimrt_function_base_t* task);
 
   /// Implement pointer
   void* impl;

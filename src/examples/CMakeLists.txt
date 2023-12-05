@@ -39,6 +39,8 @@ if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
   add_subdirectory(example_record_playback)
 endif()
 
-if(AIMRT_BUILD_TIME_REGULATOR_PLUGIN)
-  add_subdirectory(example_time_regulator)
+if(AIMRT_BUILD_WITH_PROTOBUF
+   AND AIMRT_BUILD_NET_PLUGIN
+   AND AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN)
+  add_subdirectory(example_time_manipulator)
 endif()

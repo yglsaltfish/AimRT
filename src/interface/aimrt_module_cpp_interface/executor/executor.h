@@ -60,20 +60,23 @@ class ExecutorRef {
         std::chrono::nanoseconds(base_ptr_->now(base_ptr_->impl)));
   }
 
-  void ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) {
+  void ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {
     assert(base_ptr_);
 
     if (!SupportTimerSchedule()) [[unlikely]]
       throw std::runtime_error("Current executor does not support timer scheduling.");
 
-    base_ptr_->execute_after_ns(
+    base_ptr_->execute_at_ns(
         base_ptr_->impl,
-        static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(dt).count()),
+        static_cast<uint64_t>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                tp.time_since_epoch())
+                .count()),
         task.NativeHandle());
   }
 
-  void ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {
-    ExecuteAfter(tp - Now(), std::move(task));
+  void ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) {
+    ExecuteAt(Now() + dt, std::move(task));
   }
 
  private:

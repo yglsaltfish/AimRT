@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package aimrt.protocols.time_manipulator_plugin;
+
+message CommonRsp {
+  double time_ratio = 1;
+  int32 code = 2;
+  string msg = 3;
+}
+
+message SetTimeRatioReq {
+  string executor_name = 1;
+  double time_ratio = 2;
+}
+
+message PauseReq {
+  string executor_name = 1;
+}
+
+message GetTimeRatioReq {
+  string executor_name = 1;
+}
+
+service TimeManipulatorService {
+  rpc SetTimeRatio(SetTimeRatioReq) returns (CommonRsp);
+  rpc Pause(PauseReq) returns (CommonRsp);
+  rpc GetTimeRatio(GetTimeRatioReq) returns (CommonRsp);
+}

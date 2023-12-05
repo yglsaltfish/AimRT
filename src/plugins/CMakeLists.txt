@@ -20,6 +20,6 @@ if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
   add_subdirectory(record_playback_plugin)
 endif()
 
-if(AIMRT_BUILD_TIME_REGULATOR_PLUGIN)
-  add_subdirectory(time_regulator_plugin)
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN)
+  add_subdirectory(time_manipulator_plugin)
 endif()

@@ -79,6 +79,8 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 
     executor_ptr->Initialize(executor_options.name, executor_options.options);
 
+    AIMRT_TRACE("Gen executor '{}' success.", executor_ptr->Name());
+
     executor_proxy_map_.emplace(
         executor_options.name,
         std::make_unique<ExecutorProxy>(executor_ptr.get()));
