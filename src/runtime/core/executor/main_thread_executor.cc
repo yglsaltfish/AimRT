@@ -83,7 +83,7 @@ void MainThreadExecutor::Shutdown() {
 }
 
 void MainThreadExecutor::Execute(Task&& task) {
-  assert(state_ == State::Init || state_ == State::Start);
+  assert(state_.load() == State::Init || state_.load() == State::Start);
   qu_.emplace(std::move(task));
   sig_flag_.store(true);
   sig_flag_.notify_one();

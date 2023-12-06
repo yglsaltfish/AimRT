@@ -136,7 +136,7 @@ YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) con
   auto finditr = std::find_if(
       options_.plugins_options.begin(),
       options_.plugins_options.end(),
-      [&plugin_name](const auto& op) { return plugin_name == op.name; });
+      [plugin_name](const auto& op) { return plugin_name == op.name; });
 
   if (finditr != options_.plugins_options.end())
     return finditr->options;

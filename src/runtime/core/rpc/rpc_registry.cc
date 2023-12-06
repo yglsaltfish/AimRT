@@ -19,6 +19,10 @@ bool RpcRegistry::RegisterServiceFunc(
   }
 
   target_service_func_wrapper_ptr = std::move(service_func_wrapper_ptr);
+
+  AIMRT_TRACE(
+      "Service func '{}' is successfully registered, module '{}', pkg path '{}'",
+      func_name, module_name, pkg_path);
   return true;
 }
 
@@ -38,6 +42,10 @@ bool RpcRegistry::RegisterClientFunc(
   }
 
   target_client_func_wrapper_ptr = std::move(client_func_wrapper_ptr);
+
+  AIMRT_TRACE(
+      "Client func '{}' is successfully registered, module '{}', pkg path '{}'",
+      func_name, module_name, pkg_path);
   return true;
 }
 

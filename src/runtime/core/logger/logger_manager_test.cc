@@ -60,7 +60,7 @@ class LoggerManagerTest : public ::testing::Test {
 
     YAML::Node logger_manager_options_node = YAML::Load(R"str(
         log: # log配置
-        core_lvl: TRACE # 内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
+        core_lvl: INFO # 内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
         default_module_lvl: INFO # 模块默认日志等级
         backends: # 日志backends
           - type: console # 控制台日志

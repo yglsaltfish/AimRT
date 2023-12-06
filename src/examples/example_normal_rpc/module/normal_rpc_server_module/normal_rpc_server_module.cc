@@ -17,7 +17,7 @@ bool NormalRpcServerModule::Initialize(aimrt::CoreRef core) noexcept {
     service_ptr_->RegisterFilter(DebugLogServerFilter);
     service_ptr_->RegisterFilter(TimeCostLogServerFilter);
 
-    bool ret = core_.GetRpcHandle().RegisterService(service_ptr_);
+    bool ret = core_.GetRpcHandle().RegisterService(service_ptr_.get());
     AIMRT_CHECK_ERROR_THROW(ret, "Register service failed.");
 
     AIMRT_INFO("Register service succeeded.");

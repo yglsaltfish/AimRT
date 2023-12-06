@@ -18,3 +18,7 @@ endif()
 if(AIMRT_BUILD_WITH_ROS2)
   add_subdirectory(sensor_ros2)
 endif()
+
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN)
+  add_subdirectory(time_manipulator_plugin)
+endif()

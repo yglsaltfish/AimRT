@@ -85,7 +85,7 @@ void RealTimeModule::Shutdown() noexcept {
   try {
     // Wait all coroutine complete
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.on_empty());
+    aimrt::co::SyncWait(scope_.complete());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;

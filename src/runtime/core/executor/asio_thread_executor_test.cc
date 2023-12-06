@@ -62,9 +62,11 @@ TEST(ASIO_THREAD_EXECUTOR_TEST, execute) {
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_TRUE(ret);
 
-  // ExecuteAfter
+  // ExecuteAt
   ret = false;
-  executor.ExecuteAfter(std::chrono::milliseconds(5), [&]() { ret = true; });
+  executor.ExecuteAt(
+      std::chrono::steady_clock::now() + std::chrono::milliseconds(5),
+      [&]() { ret = true; });
   EXPECT_FALSE(ret);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(100));

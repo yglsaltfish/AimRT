@@ -26,7 +26,12 @@ if(NOT yaml-cpp_POPULATED)
   set(YAML_CPP_INSTALL
       ON
       CACHE BOOL "")
-
+  set(YAML_CPP_FORMAT_SOURCE
+      OFF
+      CACHE BOOL "")
+  set(YAML_CPP_BUILD_CONTRIB
+      OFF
+      CACHE BOOL "")
   FetchContent_MakeAvailable(yaml-cpp)
 endif()
 

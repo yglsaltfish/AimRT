@@ -74,7 +74,7 @@ class MainThreadExecutor {
         .execute = [](void* impl, aimrt_function_base_t* task) {
           static_cast<MainThreadExecutor*>(impl)->Execute(Task(task));  //
         },
-        .execute_after_ns = nullptr,
+        .execute_at_ns = nullptr,
         .impl = impl};
   }
 

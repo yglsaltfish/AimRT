@@ -29,7 +29,8 @@ target_include_directories(
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
-  PRIVATE aimrt::runtime::core
+  PRIVATE aimrt::interface::aimrt_core_plugin_interface
+          aimrt::runtime::core
           aimrt::common::net)
 
 # Set installation of target

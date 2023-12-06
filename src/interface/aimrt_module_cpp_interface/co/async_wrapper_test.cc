@@ -46,7 +46,12 @@ TEST(AsyncWrapper, SingleRet) {
     co_return ret1 + ret2;
   };
 
+#ifdef AIMRT_EXECUTOR_USE_STDEXEC
   auto [ret] = SyncWait(work()).value();
+#else
+  auto ret = SyncWait(work()).value();
+#endif
+
   EXPECT_EQ(ret, 1102);
 }
 
@@ -57,7 +62,12 @@ TEST(AsyncWrapper, MultipleRet) {
     co_return (code == 101 && str == "abc" && str_ref == "xyz");
   };
 
+#ifdef AIMRT_EXECUTOR_USE_STDEXEC
   auto [ret] = SyncWait(work()).value();
+#else
+  auto ret = SyncWait(work()).value();
+#endif
+
   EXPECT_TRUE(ret);
 }
 
@@ -67,7 +77,12 @@ TEST(AsyncWrapper, VoidRet) {
     co_return true;
   };
 
+#ifdef AIMRT_EXECUTOR_USE_STDEXEC
   auto [ret] = SyncWait(work()).value();
+#else
+  auto ret = SyncWait(work()).value();
+#endif
+
   EXPECT_TRUE(ret);
 }
 

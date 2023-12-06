@@ -79,6 +79,8 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 
     executor_ptr->Initialize(executor_options.name, executor_options.options);
 
+    AIMRT_TRACE("Gen executor '{}' success.", executor_ptr->Name());
+
     executor_proxy_map_.emplace(
         executor_options.name,
         std::make_unique<ExecutorProxy>(executor_ptr.get()));
@@ -137,6 +139,16 @@ ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(
       std::make_unique<ExecutorManagerProxy>(executor_proxy_map_));
 
   return *(emplace_ret.first->second);
+}
+
+aimrt::executor::ExecutorRef ExecutorManager::GetExecutor(std::string_view executor_name) {
+  auto finditr = executor_proxy_map_.find(executor_name);
+  if (finditr != executor_proxy_map_.end())
+    return aimrt::executor::ExecutorRef(finditr->second->NativeHandle());
+
+  AIMRT_WARN("Get executor failed, executor name '{}'", executor_name);
+
+  return aimrt::executor::ExecutorRef();
 }
 
 void ExecutorManager::RegisterAsioExecutorGenFunc() {

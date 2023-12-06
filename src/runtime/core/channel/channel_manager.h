@@ -45,7 +45,7 @@ class ChannelManager {
       std::unique_ptr<ChannelBackendBase>&& channel_backend_ptr);
 
   void RegisterGetExecutorFunc(
-      const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
+      const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
   ChannelProxy& GetChannelProxy(const util::ModuleDetailInfo& module_info);
 
@@ -62,7 +62,7 @@ class ChannelManager {
   Options options_;
   std::atomic<State> state_ = State::PreInit;
 
-  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
+  std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 
   std::unique_ptr<ChannelRegistry> channel_registry_ptr_;
 

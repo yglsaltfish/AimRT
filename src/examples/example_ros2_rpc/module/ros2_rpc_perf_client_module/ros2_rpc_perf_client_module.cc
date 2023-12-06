@@ -124,7 +124,7 @@ bool Ros2RpcPerfClientModule::Start() noexcept {
 void Ros2RpcPerfClientModule::Shutdown() noexcept {
   try {
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.on_empty());
+    aimrt::co::SyncWait(scope_.complete());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -174,7 +174,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
     bench_run_flag = false;
     co_await aimrt::co::On(
         client_statistics_thread_pool_scheduler,
-        bench_scope.on_empty());
+        bench_scope.complete());
 
     auto end_time = std::chrono::steady_clock::now();  // 获取当前系统时间
     double total_time = std::chrono::duration<double>(end_time - start_time).count() * 1e3;
@@ -254,7 +254,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
     fixedfreq_run_flag = false;
     co_await aimrt::co::On(
         client_statistics_thread_pool_scheduler,
-        fixedfreq_scope.on_empty());
+        fixedfreq_scope.complete());
 
     auto end_time = std::chrono::steady_clock::now();  // 获取当前系统时间
     double total_time = std::chrono::duration<double>(end_time - start_time).count() * 1e3;

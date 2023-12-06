@@ -45,7 +45,7 @@ class AsioStrandExecutor : public ExecutorBase {
   std::chrono::steady_clock::time_point Now() const override {
     return std::chrono::steady_clock::now();
   }
-  void ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) override;
+  void ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) override;
 
   void RegisterGetAsioHandle(GetAsioHandle&& handle);
 

@@ -111,20 +111,20 @@ void AsioThreadExecutor::Shutdown() {
 }
 
 bool AsioThreadExecutor::IsInCurrentExecutor() const {
-  assert(state_ == State::Start);
+  assert(state_.load() == State::Start);
   return (std::find(thread_id_vec_.begin(), thread_id_vec_.end(),
                     std::this_thread::get_id()) != thread_id_vec_.end());
 }
 
 void AsioThreadExecutor::Execute(Task&& task) {
-  assert(state_ == State::Start);
+  assert(state_.load() == State::Start);
   boost::asio::post(*io_ptr_, std::move(task));
 }
 
-void AsioThreadExecutor::ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) {
-  assert(state_ == State::Start);
+void AsioThreadExecutor::ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {
+  assert(state_.load() == State::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
-  timer_ptr_->expires_after(dt);
+  timer_ptr_->expires_at(tp);
   timer_ptr_->async_wait([this, timer_ptr_,
                           task{std::move(task)}](boost::system::error_code ec) {
     if (ec) [[unlikely]] {
