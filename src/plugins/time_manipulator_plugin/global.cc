@@ -1,5 +1,4 @@
 #include "time_manipulator_plugin/global.h"
-#include "core/util/simple_buffer_array_allocator.h"
 #include "core/util/simple_logger.h"
 
 namespace aimrt::plugins::time_manipulator_plugin {

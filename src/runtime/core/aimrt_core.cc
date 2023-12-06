@@ -18,6 +18,11 @@ AimRTCore::~AimRTCore() {
     AIMRT_INFO("AimRTCore destruct get exception, {}", e.what());
   }
 
+  signal_handle_vec_.clear();
+  for (uint32_t ii = 0; ii < static_cast<uint32_t>(State::MaxStateNum); ++ii) {
+    hook_task_vec_array_[ii].clear();
+  }
+
   UnSetGlobal();
 }
 
@@ -146,12 +151,7 @@ void AimRTCore::Shutdown() {
 }
 
 aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_name) {
-  auto executor_manager =
-      GetExecutorManager().GetExecutorManagerProxy(util::ModuleDetailInfo{}).NativeHandle();
-
-  return aimrt::executor::ExecutorRef(
-      executor_manager->get_executor(
-          executor_manager->impl, aimrt::util::ToAimRTStringView(executor_name)));
+  return GetExecutorManager().GetExecutor(executor_name);
 }
 
 void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy) {

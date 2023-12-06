@@ -73,10 +73,8 @@ class RpcHandleRef {
    * @param service_ptr
    * @return Register result
    */
-  bool RegisterService(const std::shared_ptr<ServiceBase>& service_ptr) {
+  bool RegisterService(ServiceBase* service_ptr) {
     assert(base_ptr_);
-
-    service_vec_.emplace_back(service_ptr);
 
     for (auto& itr : service_ptr->service_func_wrapper_map_) {
       if (!base_ptr_->register_service_func(
@@ -156,7 +154,6 @@ class RpcHandleRef {
 
  private:
   const aimrt_rpc_handle_base_t* base_ptr_ = nullptr;
-  std::vector<std::shared_ptr<ServiceBase>> service_vec_;
 };
 
 class ProxyBase {

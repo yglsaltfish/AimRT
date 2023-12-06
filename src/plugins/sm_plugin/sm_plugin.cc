@@ -82,17 +82,11 @@ void SmPlugin::RegisterSmChannelBackend() {
   std::unique_ptr<runtime::core::channel::ChannelBackendBase> sm_channel_backend_ptr =
       std::make_unique<SmChannelBackend>();
 
-  auto get_executor_func = [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
-    auto executor_manager =
-        core_ptr_->GetExecutorManager().GetExecutorManagerProxy(runtime::core::util::ModuleDetailInfo{}).NativeHandle();
-
-    return aimrt::executor::ExecutorRef(
-        executor_manager->get_executor(
-            executor_manager->impl, aimrt::util::ToAimRTStringView(executor_name)));
-  };
-
   static_cast<SmChannelBackend*>(sm_channel_backend_ptr.get())
-      ->RegisterGetExecutorFunc(get_executor_func);
+      ->RegisterGetExecutorFunc(
+          [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
+            return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+          });
 
   core_ptr_->GetChannelManager().RegisterChannelBackend(
       std::move(sm_channel_backend_ptr));

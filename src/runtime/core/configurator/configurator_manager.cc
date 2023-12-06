@@ -36,6 +36,12 @@ void ConfiguratorManager::Initialize(
 
   cfg_file_path_ = cfg_file_path;
 
+  // TODO: yaml-cpp和插件一起使用时无法在结束时正常析构。这里先不析构
+  ori_root_options_node_ptr_ = new YAML::Node();
+  root_options_node_ptr_ = new YAML::Node();
+  auto& ori_root_options_node_ = *ori_root_options_node_ptr_;
+  auto& root_options_node_ = *root_options_node_ptr_;
+
   if (!cfg_file_path_.empty()) {
     ori_root_options_node_ = YAML::LoadFile(cfg_file_path_.string());
   }
@@ -75,7 +81,7 @@ YAML::Node ConfiguratorManager::GetOriRootOptionsNode() const {
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
 
-  return ori_root_options_node_;
+  return *ori_root_options_node_ptr_;
 }
 
 YAML::Node ConfiguratorManager::DumpRootOptionsNode() const {
@@ -83,7 +89,7 @@ YAML::Node ConfiguratorManager::DumpRootOptionsNode() const {
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
 
-  return root_options_node_;
+  return *root_options_node_ptr_;
 }
 
 const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
@@ -102,6 +108,9 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
         std::make_unique<ConfiguratorProxy>(module_info.cfg_file_path));
     return *(emplace_ret.first->second);
   }
+
+  auto& ori_root_options_node_ = *ori_root_options_node_ptr_;
+  auto& root_options_node_ = *root_options_node_ptr_;
 
   // 如果根配置文件中有这个模块节点，则将内容生成到临时配置文件中
   if (ori_root_options_node_[module_info.name] &&
@@ -134,8 +143,10 @@ YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
 
-  return root_options_node_["aimrt"][key] =
-             ori_root_options_node_["aimrt"][key];
+  auto& ori_root_options_node_ = *ori_root_options_node_ptr_;
+  auto& root_options_node_ = *root_options_node_ptr_;
+
+  return root_options_node_["aimrt"][key] = ori_root_options_node_["aimrt"][key];
 }
 
 }  // namespace aimrt::runtime::core::configurator

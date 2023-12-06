@@ -4,7 +4,7 @@ package aimrt.protocols.time_manipulator_plugin;
 
 message CommonRsp {
   double time_ratio = 1;
-  int32 code = 2;
+  uint32 code = 2;
   string msg = 3;
 }
 

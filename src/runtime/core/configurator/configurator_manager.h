@@ -52,8 +52,8 @@ class ConfiguratorManager {
   Options options_;
   std::atomic<State> state_ = State::PreInit;
 
-  YAML::Node ori_root_options_node_;
-  YAML::Node root_options_node_;
+  YAML::Node* ori_root_options_node_ptr_;
+  YAML::Node* root_options_node_ptr_;
 
   std::unordered_map<std::string, std::unique_ptr<ConfiguratorProxy>> cfg_proxy_map_;
 };

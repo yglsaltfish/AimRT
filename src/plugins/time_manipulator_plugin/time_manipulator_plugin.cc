@@ -1,6 +1,6 @@
 #include "time_manipulator_plugin/time_manipulator_plugin.h"
-#include "time_manipulator_plugin/time_manipulator_executor.h"
 
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "core/aimrt_core.h"
 #include "time_manipulator_plugin/global.h"
 
@@ -50,6 +50,11 @@ bool TimeManipulatorPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexc
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitExecutor,
                                 [this] { RegisterTimeManipulatorExecutor(); });
 
+    if (options_.enable_rpc) {
+      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitModules,
+                                  [this] { RegisterRpcService(); });
+    }
+
     plugin_options_node = options_;
     return true;
   } catch (const std::exception& e) {
@@ -78,19 +83,39 @@ void TimeManipulatorPlugin::RegisterTimeManipulatorExecutor() {
   core_ptr_->GetExecutorManager().RegisterExecutorGenFunc(
       "time_manipulator",
       [this]() -> std::unique_ptr<aimrt::runtime::core::executor::ExecutorBase> {
-        auto get_executor_func = [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
-          auto executor_manager =
-              core_ptr_->GetExecutorManager().GetExecutorManagerProxy(runtime::core::util::ModuleDetailInfo{}).NativeHandle();
-
-          return aimrt::executor::ExecutorRef(
-              executor_manager->get_executor(
-                  executor_manager->impl, aimrt::util::ToAimRTStringView(executor_name)));
-        };
-
         auto ptr = std::make_unique<TimeManipulatorExecutor>();
-        ptr->RegisterGetExecutorFunc(get_executor_func);
+        ptr->RegisterGetExecutorFunc(
+            [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
+              return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+            });
         return ptr;
       });
+}
+
+void TimeManipulatorPlugin::RegisterRpcService() {
+  // 注册rpc服务
+  service_ptr_ = std::make_shared<TimeManipulatorServiceImpl>();
+
+  auto& executor_vec = core_ptr_->GetExecutorManager().GetAllExecutors();
+
+  for (auto& itr : executor_vec) {
+    if (itr->Type() == "time_manipulator") {
+      auto ptr = dynamic_cast<TimeManipulatorExecutor*>(itr.get());
+      if (ptr) {
+        service_ptr_->RegisterTimeManipulatorExecutor(ptr);
+      } else {
+        AIMRT_ERROR("Invalid executor pointer");
+      }
+    }
+  }
+
+  auto rpc_handle_ref = aimrt::rpc::RpcHandleRef(
+      core_ptr_->GetRpcManager()
+          .GetRpcHandleProxy(aimrt::runtime::core::util::ModuleDetailInfo{})
+          .NativeHandle());
+
+  bool ret = rpc_handle_ref.RegisterService(service_ptr_.get());
+  AIMRT_CHECK_ERROR(ret, "Register service failed.");
 }
 
 }  // namespace aimrt::plugins::time_manipulator_plugin

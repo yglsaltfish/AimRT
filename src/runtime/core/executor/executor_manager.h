@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "aimrt_module_cpp_interface/executor/executor.h"
 #include "core/executor/executor_proxy.h"
 #include "core/util/module_detail_info.h"
 #include "util/string_util.h"
@@ -52,6 +53,12 @@ class ExecutorManager {
   ExecutorManagerProxy& GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info);
 
   State GetState() const { return state_.load(); }
+
+  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
+
+  const std::vector<std::unique_ptr<ExecutorBase>>& GetAllExecutors() const {
+    return executor_vec_;
+  }
 
  private:
   void RegisterAsioExecutorGenFunc();

@@ -52,8 +52,6 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
 
   void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
-  std::chrono::steady_clock::time_point StartTimePoint() const;
-
   void SetTimeRatio(double ratio);
   double GetTimeRatio() const;
 

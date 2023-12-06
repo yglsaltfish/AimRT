@@ -27,6 +27,8 @@ option(AIMRT_BUILD_LCM_PLUGIN "AimRT build lcm plugin." OFF)
 option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF)
 option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time manipulator plugin." OFF)
 
+option(AIMRT_EXECUTOR_USE_STDEXEC "AimRT use stdexec as executor impl. (Experimental)" OFF)
+
 # Some necessary settings
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -92,7 +94,11 @@ if(AIMRT_BUILD_TESTS)
   enable_testing()
 endif()
 
-include(GetStdexec)
+if(AIMRT_EXECUTOR_USE_STDEXEC)
+  include(GetStdexec)
+else()
+  include(GetLibUnifex)
+endif()
 
 if(AIMRT_USE_FMT_LIB)
   include(GetFmt)

@@ -1,9 +1,6 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 
 namespace aimrt::plugins::sm_plugin {

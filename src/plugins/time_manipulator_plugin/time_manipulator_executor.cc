@@ -61,22 +61,22 @@ void TimeManipulatorExecutor::Initialize(std::string_view name,
   SetTimeRatio(options_.init_ratio);
 
   dt_count_ = static_cast<uint64_t>(
-      std::chrono::duration_cast<std::chrono::microseconds>(options_.dt).count());
+      std::chrono::duration_cast<std::chrono::nanoseconds>(options_.dt).count());
 
   uint64_t cur_scale = 1;
   for (size_t ii = 0; ii < options_.wheel_size.size(); ++ii) {
+    uint64_t start_pos = (ii == 0) ? 0 : 1;
     timing_wheel_vec_.emplace_back(TimingWheelTool{
-        .current_pos = 0,
+        .current_pos = start_pos,
         .scale = (cur_scale *= options_.wheel_size[ii]),
         .wheel = std::vector<TaskList>(options_.wheel_size[ii]),
         .borrow_func = [ii, this]() {
           TaskList task_list;
           if (ii < options_.wheel_size.size() - 1) {
-            ++(timing_wheel_vec_[ii + 1].current_pos);
             task_list = timing_wheel_vec_[ii + 1].Tick();
           } else {
-            ++timing_task_map_pos_;
             auto itr = timing_task_map_.find(timing_task_map_pos_);
+            ++timing_task_map_pos_;
             if (itr != timing_task_map_.end()) {
               task_list = std::move(itr->second);
               timing_task_map_.erase(itr);
@@ -86,10 +86,12 @@ void TimeManipulatorExecutor::Initialize(std::string_view name,
           while (!task_list.empty()) {
             auto itr = task_list.begin();
             auto& cur_list = timing_wheel_vec_[ii].wheel[itr->tick_count % timing_wheel_vec_[ii].scale];
-            cur_list.splice(cur_list.begin(), task_list, itr);
+            cur_list.splice(cur_list.end(), task_list, itr);
           }
         }});
   }
+
+  timing_task_map_pos_ = 1;
 
   options_node = options_;
 }
@@ -109,6 +111,11 @@ void TimeManipulatorExecutor::Shutdown() {
     return;
 
   if (timer_thread_->joinable()) timer_thread_->join();
+
+  timer_thread_.reset();
+  timing_task_map_.clear();
+  timing_wheel_vec_.clear();
+  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
 
 bool TimeManipulatorExecutor::ThreadSafe() const {
@@ -182,12 +189,6 @@ void TimeManipulatorExecutor::RegisterGetExecutorFunc(
       state_.load() == State::PreInit,
       "Function can only be called when state is 'PreInit'.");
   get_executor_func_ = get_executor_func;
-}
-
-std::chrono::steady_clock::time_point TimeManipulatorExecutor::StartTimePoint() const {
-  assert(state_.load() == State::Start);
-
-  return std::chrono::steady_clock::time_point(std::chrono::nanoseconds(start_time_point_));
 }
 
 void TimeManipulatorExecutor::SetTimeRatio(double ratio) {
@@ -266,7 +267,7 @@ void TimeManipulatorExecutor::TimerLoop() {
       real_dt -= sleep_time;
 
       // 一个小优化，防止real_dt太小
-      if (options_.dt < max_sleep_dt && real_dt <= options_.dt) {
+      if (real_dt.count() && options_.dt < max_sleep_dt && real_dt <= options_.dt) {
         sleep_time += real_dt;
         real_dt -= real_dt;
       }

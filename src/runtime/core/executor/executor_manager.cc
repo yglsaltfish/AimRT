@@ -141,6 +141,16 @@ ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(
   return *(emplace_ret.first->second);
 }
 
+aimrt::executor::ExecutorRef ExecutorManager::GetExecutor(std::string_view executor_name) {
+  auto finditr = executor_proxy_map_.find(executor_name);
+  if (finditr != executor_proxy_map_.end())
+    return aimrt::executor::ExecutorRef(finditr->second->NativeHandle());
+
+  AIMRT_WARN("Get executor failed, executor name '{}'", executor_name);
+
+  return aimrt::executor::ExecutorRef();
+}
+
 void ExecutorManager::RegisterAsioExecutorGenFunc() {
   RegisterExecutorGenFunc("asio_thread", []() -> std::unique_ptr<ExecutorBase> {
     return std::make_unique<AsioThreadExecutor>();

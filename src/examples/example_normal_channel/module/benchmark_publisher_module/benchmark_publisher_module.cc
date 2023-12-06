@@ -91,7 +91,7 @@ void BenchmarkPublisherModule::Shutdown() noexcept {
       future.wait();
     }
 
-    aimrt::co::SyncWait(scope_.on_empty());
+    aimrt::co::SyncWait(scope_.complete());
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());

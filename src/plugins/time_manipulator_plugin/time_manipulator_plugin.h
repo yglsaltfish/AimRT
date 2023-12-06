@@ -1,9 +1,9 @@
 #pragma once
 
-#include <chrono>
-#include <vector>
+#include <memory>
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
+#include "time_manipulator_plugin/rpc_service.h"
 
 namespace aimrt::plugins::time_manipulator_plugin {
 
@@ -25,6 +25,7 @@ class TimeManipulatorPlugin : public AimRTCorePluginBase {
  private:
   void SetPluginLogger();
   void RegisterTimeManipulatorExecutor();
+  void RegisterRpcService();
 
  private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;
@@ -32,6 +33,8 @@ class TimeManipulatorPlugin : public AimRTCorePluginBase {
   Options options_;
 
   bool init_flag_ = false;
+
+  std::shared_ptr<TimeManipulatorServiceImpl> service_ptr_;
 };
 
 }  // namespace aimrt::plugins::time_manipulator_plugin
