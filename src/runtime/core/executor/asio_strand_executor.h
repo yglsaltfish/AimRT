@@ -12,7 +12,7 @@ class AsioStrandExecutor : public ExecutorBase {
  public:
   struct Options {
     std::string bind_asio_thread_executor_name;
-    std::chrono::microseconds timeout_alarm_threshold_us =
+    std::chrono::steady_clock::duration timeout_alarm_threshold_us =
         std::chrono::microseconds(1000 * 1000);
   };
 
