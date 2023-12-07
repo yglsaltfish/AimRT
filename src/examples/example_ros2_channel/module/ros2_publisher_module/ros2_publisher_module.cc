@@ -33,7 +33,7 @@ bool Ros2PublisherModule::Initialize(aimrt::CoreRef core) noexcept {
                             "Get executor 'work_thread_pool' failed.");
 
     // Register publish type
-    publisher_ = core_.GetChannel().GetPublisher(topic_name_);
+    publisher_ = core_.GetChannelHandle().GetPublisher(topic_name_);
     AIMRT_CHECK_ERROR_THROW(publisher_,
                             "Get publisher for topic '{}' failed.", topic_name_);
 

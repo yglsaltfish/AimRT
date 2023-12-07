@@ -19,7 +19,7 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
     }
 
     // 订阅事件
-    subscriber_ = core_.GetChannel().GetSubscriber(topic_name_);
+    subscriber_ = core_.GetChannelHandle().GetSubscriber(topic_name_);
     AIMRT_CHECK_ERROR_THROW(
         subscriber_, "Get subscriber for topic '{}' failed.", topic_name_);
 

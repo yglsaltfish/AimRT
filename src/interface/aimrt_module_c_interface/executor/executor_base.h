@@ -52,7 +52,7 @@ typedef struct {
    * @brief Function to get current timestamp
    * @note
    * Input 1: Implement pointer to executor handle
-   * Return: Current ns timestamp
+   * Output: Current ns timestamp
    */
   uint64_t (*now)(void* impl);
 

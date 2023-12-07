@@ -131,7 +131,7 @@ bool BenchmarkSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
       }
     }
 
-    signal_subscriber_ = core_.GetChannel().GetSubscriber("benchmark_signal");
+    signal_subscriber_ = core_.GetChannelHandle().GetSubscriber("benchmark_signal");
     AIMRT_CHECK_ERROR_THROW(signal_subscriber_, "Get subscriber for topic 'benchmark_signal' failed.");
     bool ret = aimrt::channel::SubscribeCo<aimrt::protocols::example::BenchmarkSignal>(
         signal_subscriber_, std::bind(&BenchmarkSubscriberModule::BenchmarkSignalHandle, this, std::placeholders::_1));
@@ -140,7 +140,7 @@ bool BenchmarkSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
     // // 订阅事件
     for (uint32_t i = 0; i < topic_number_; i++) {
       auto topic = topic_name_prefix_ + "_" + std::to_string(i);
-      auto& subscriber = subscribers_.emplace_back(core_.GetChannel().GetSubscriber(topic));
+      auto& subscriber = subscribers_.emplace_back(core_.GetChannelHandle().GetSubscriber(topic));
       AIMRT_CHECK_ERROR_THROW(subscriber, "Get subscriber for topic '{}' failed.", topic);
 
       ret = aimrt::channel::SubscribeCo<aimrt::protocols::example::BenchmarkMessage>(

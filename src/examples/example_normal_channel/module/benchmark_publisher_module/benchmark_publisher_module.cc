@@ -40,13 +40,13 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
     AIMRT_CHECK_ERROR_THROW(executor_, "Get executor 'work_thread_pool' failed.");
 
     // Register publish type
-    signal_publisher_ = core_.GetChannel().GetPublisher("benchmark_signal");
+    signal_publisher_ = core_.GetChannelHandle().GetPublisher("benchmark_signal");
     AIMRT_CHECK_ERROR_THROW(signal_publisher_, "Get publisher for topic 'benchmark_signal' failed.");
     aimrt::channel::RegisterPublishType<aimrt::protocols::example::BenchmarkSignal>(signal_publisher_);
 
     for (uint32_t i = 0; i < topic_number_; i++) {
       auto topic = topic_name_prefix_ + "_" + std::to_string(i);
-      publishers_.push_back(core_.GetChannel().GetPublisher(topic));
+      publishers_.push_back(core_.GetChannelHandle().GetPublisher(topic));
       auto& publisher = publishers_[i];
       AIMRT_CHECK_ERROR_THROW(publisher, "Get publisher for topic '{}' failed.", topic);
       bool ret = aimrt::channel::RegisterPublishType<aimrt::protocols::example::BenchmarkMessage>(publisher);
