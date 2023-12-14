@@ -14,6 +14,11 @@ class HttpRpcBackend : public runtime::core::rpc::RpcBackendBase {
       std::string server_url;
     };
     std::vector<ClientOptions> clients_options;
+
+    struct ServerOptions {
+      std::string func_name;
+    };
+    std::vector<ServerOptions> servers_options;
   };
 
  public:

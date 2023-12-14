@@ -127,12 +127,27 @@ co::Task<void> NormalRpcClientModule::MainLoop() {
       count++;
       AIMRT_INFO("Loop count : {} -------------------------", count);
 
-      // call rpc
-      aimrt::protocols::example::GetFooDataReq req;
-      aimrt::protocols::example::GetFooDataRsp rsp;
-      req.set_msg("hello world, count " + std::to_string(count));
+      // call rpc 1
+      {
+        aimrt::protocols::example::GetFooDataReq req;
+        aimrt::protocols::example::GetFooDataRsp rsp;
+        req.set_msg("hello world foo, count " + std::to_string(count));
 
-      auto status = co_await proxy_->GetFooData(req, rsp);
+        auto status = co_await proxy_->GetFooData(req, rsp);
+
+        AIMRT_CHECK_WARN(status, "Call GetFooData failed, status: {}", status.ToString());
+      }
+
+      // call rpc 2
+      {
+        aimrt::protocols::example::GetBarDataReq req;
+        aimrt::protocols::example::GetBarDataRsp rsp;
+        req.set_msg("hello world bar, count " + std::to_string(count));
+
+        auto status = co_await proxy_->GetBarData(req, rsp);
+
+        AIMRT_CHECK_WARN(status, "Call GetBarData failed, status: {}", status.ToString());
+      }
     }
 
     AIMRT_INFO("Exit MainLoop.");

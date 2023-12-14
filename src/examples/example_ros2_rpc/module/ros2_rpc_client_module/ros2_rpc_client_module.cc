@@ -119,6 +119,8 @@ co::Task<void> Ros2RpcClientModule::MainLoop() {
 
       AIMRT_INFO("Get rpc ret, status: {}. rsp:\n{}",
                  status.ToString(), example_ros2::srv::to_yaml(rsp));
+
+      AIMRT_CHECK_WARN(status, "Call GetFooData failed, status: {}", status.ToString());
     }
 
     AIMRT_INFO("Exit MainLoop.");

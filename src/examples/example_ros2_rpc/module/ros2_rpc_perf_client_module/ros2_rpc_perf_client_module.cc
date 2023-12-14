@@ -331,7 +331,7 @@ co::Task<void> Ros2RpcPerfClientModule::BenchLoop(
 
     auto task_end_time = std::chrono::steady_clock::now();
 
-    if (!status.OK()) AIMRT_WARN("Rpc get error.");
+    AIMRT_CHECK_WARN(status, "Call rpc failed, status: {}", status.ToString());
 
     if (task_end_time < task_start_time) {
       AIMRT_WARN("Invalid time");
@@ -381,7 +381,7 @@ co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
 
     auto task_end_time = std::chrono::steady_clock::now();
 
-    if (!status.OK()) AIMRT_WARN("Rpc get error.");
+    AIMRT_CHECK_WARN(status, "Call rpc failed, status: {}", status.ToString());
 
     if (task_end_time < task_start_time) {
       AIMRT_WARN("Invalid time");
