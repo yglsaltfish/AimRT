@@ -4,7 +4,7 @@
 
 namespace aimrt::examples::example_ros2_rpc::ros2_rpc_server_module {
 
-aimrt::co::Task<aimrt::rpc::Status> RosTestRpcServiceImpl::RosTestRpc(
+co::Task<aimrt::rpc::Status> RosTestRpcServiceImpl::RosTestRpc(
     aimrt::rpc::ContextRef ctx,
     const example_ros2::srv::RosTestRpc_Request& req,
     example_ros2::srv::RosTestRpc_Response& rsp) {

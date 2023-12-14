@@ -9,7 +9,7 @@ class RosTestRpcServiceImpl : public example_ros2::srv::RosTestRpcService {
   RosTestRpcServiceImpl() = default;
   ~RosTestRpcServiceImpl() override = default;
 
-  aimrt::co::Task<aimrt::rpc::Status> RosTestRpc(
+  co::Task<aimrt::rpc::Status> RosTestRpc(
       aimrt::rpc::ContextRef ctx,
       const example_ros2::srv::RosTestRpc_Request& req,
       example_ros2::srv::RosTestRpc_Response& rsp) override;

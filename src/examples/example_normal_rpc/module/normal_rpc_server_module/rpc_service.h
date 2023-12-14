@@ -9,12 +9,12 @@ class HardwareServiceImpl : public aimrt::protocols::example::ExampleService {
   HardwareServiceImpl() = default;
   ~HardwareServiceImpl() override = default;
 
-  aimrt::co::Task<aimrt::rpc::Status> GetFooData(
+  co::Task<aimrt::rpc::Status> GetFooData(
       aimrt::rpc::ContextRef ctx,
       const ::aimrt::protocols::example::GetFooDataReq& req,
       ::aimrt::protocols::example::GetFooDataRsp& rsp) override;
 
-  aimrt::co::Task<aimrt::rpc::Status> GetBarData(
+  co::Task<aimrt::rpc::Status> GetBarData(
       aimrt::rpc::ContextRef ctx,
       const ::aimrt::protocols::example::GetBarDataReq& req,
       ::aimrt::protocols::example::GetBarDataRsp& rsp) override;

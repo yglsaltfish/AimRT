@@ -5,7 +5,7 @@
 
 namespace aimrt::examples::example_ros2_rpc::ros2_rpc_server_module {
 
-inline aimrt::co::Task<aimrt::rpc::Status> TimeCostLogServerFilter(
+inline co::Task<aimrt::rpc::Status> TimeCostLogServerFilter(
     aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
     const aimrt::rpc::RpcHandle& next) {
   auto begin_time = std::chrono::steady_clock::now();

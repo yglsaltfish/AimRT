@@ -24,14 +24,14 @@ class HelloWorldModule : public aimrt::ModuleBase {
   void Shutdown() noexcept override;
 
  private:
-  aimrt::co::Task<void> MainLoop();
-  aimrt::co::Task<void> TestTask(uint32_t count);
+  co::Task<void> MainLoop();
+  co::Task<void> TestTask(uint32_t count);
 
  private:
   aimrt::CoreRef core_;
   aimrt::executor::ExecutorRef work_executor_;
 
-  aimrt::co::AsyncScope scope_;
+  co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
 };
 

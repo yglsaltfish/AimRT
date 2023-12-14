@@ -176,7 +176,7 @@ void BenchmarkSubscriberModule::Shutdown() noexcept {
   AIMRT_INFO("{}", all_output.Info());
 }
 
-aimrt::co::Task<void> BenchmarkSubscriberModule::BenchmarkSignalHandle(const aimrt::protocols::example::BenchmarkSignal& data) {
+co::Task<void> BenchmarkSubscriberModule::BenchmarkSignalHandle(const aimrt::protocols::example::BenchmarkSignal& data) {
   AIMRT_INFO("Get new pb event, data: {}", aimrt::Pb2CompactJson(data));
 
   for (auto& topic : data.topic_info()) {
@@ -204,7 +204,7 @@ aimrt::co::Task<void> BenchmarkSubscriberModule::BenchmarkSignalHandle(const aim
   co_return;
 }
 
-aimrt::co::Task<void> BenchmarkSubscriberModule::BenchmarkMessageHandle(const aimrt::protocols::example::BenchmarkMessage& data) {
+co::Task<void> BenchmarkSubscriberModule::BenchmarkMessageHandle(const aimrt::protocols::example::BenchmarkMessage& data) {
   auto curr_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
                             std::chrono::steady_clock::now().time_since_epoch())
                             .count();

@@ -25,7 +25,7 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
  private:
   aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
-  aimrt::co::Task<void> EventHandle(
+  co::Task<void> EventHandle(
       const aimrt::protocols::example::ExampleEventMsg& data);
 
  private:

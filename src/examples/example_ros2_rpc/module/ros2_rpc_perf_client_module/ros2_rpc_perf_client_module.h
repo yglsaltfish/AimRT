@@ -42,19 +42,19 @@ class Ros2RpcPerfClientModule : public aimrt::ModuleBase {
  private:
   aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
-  aimrt::co::Task<void> BenchStatisticsLoop();
-  aimrt::co::Task<void> BenchLoop(int seq, std::atomic_bool& bench_run_flag);
+  co::Task<void> BenchStatisticsLoop();
+  co::Task<void> BenchLoop(int seq, std::atomic_bool& bench_run_flag);
 
-  aimrt::co::Task<void> FixedFreqStatisticsLoop();
-  aimrt::co::Task<void> FixedFreqLoop(int32_t freq, std::atomic_bool& bench_run_flag);
+  co::Task<void> FixedFreqStatisticsLoop();
+  co::Task<void> FixedFreqLoop(int32_t freq, std::atomic_bool& bench_run_flag);
 
-  aimrt::co::Task<void> WaitForServiceServer();
+  co::Task<void> WaitForServiceServer();
 
  private:
   Options options_;
 
   aimrt::CoreRef core_;
-  aimrt::co::AsyncScope scope_;
+  co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
 
   std::shared_ptr<example_ros2::srv::RosTestRpcProxy> proxy_;

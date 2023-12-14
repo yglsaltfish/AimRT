@@ -73,7 +73,7 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
 
 bool BenchmarkPublisherModule::Start() noexcept {
   try {
-    scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), MainLoop()));
+    scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
     return false;
@@ -91,7 +91,7 @@ void BenchmarkPublisherModule::Shutdown() noexcept {
       future.wait();
     }
 
-    aimrt::co::SyncWait(scope_.complete());
+    co::SyncWait(scope_.complete());
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
@@ -102,7 +102,7 @@ void BenchmarkPublisherModule::Shutdown() noexcept {
 }
 
 // Main loop
-aimrt::co::Task<void> BenchmarkPublisherModule::MainLoop() {
+co::Task<void> BenchmarkPublisherModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 

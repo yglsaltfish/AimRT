@@ -4,7 +4,7 @@
 
 namespace aimrt::examples::example_normal_rpc::normal_rpc_server_module {
 
-aimrt::co::Task<aimrt::rpc::Status> HardwareServiceImpl::GetFooData(
+co::Task<aimrt::rpc::Status> HardwareServiceImpl::GetFooData(
     aimrt::rpc::ContextRef ctx,
     const ::aimrt::protocols::example::GetFooDataReq& req,
     ::aimrt::protocols::example::GetFooDataRsp& rsp) {
@@ -16,7 +16,7 @@ aimrt::co::Task<aimrt::rpc::Status> HardwareServiceImpl::GetFooData(
   co_return aimrt::rpc::Status();
 }
 
-aimrt::co::Task<aimrt::rpc::Status> HardwareServiceImpl::GetBarData(
+co::Task<aimrt::rpc::Status> HardwareServiceImpl::GetBarData(
     aimrt::rpc::ContextRef ctx,
     const ::aimrt::protocols::example::GetBarDataReq& req,
     ::aimrt::protocols::example::GetBarDataRsp& rsp) {

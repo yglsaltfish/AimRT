@@ -6,15 +6,15 @@
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/module_base.h"
 
-namespace aimrt::examples::example_ros2_channel::ros2_publisher_module {
+namespace aimrt::examples::example_parameter::parameter_module {
 
-class Ros2PublisherModule : public aimrt::ModuleBase {
+class ParameterModule : public aimrt::ModuleBase {
  public:
-  Ros2PublisherModule() = default;
-  ~Ros2PublisherModule() override = default;
+  ParameterModule() = default;
+  ~ParameterModule() override = default;
 
   ModuleInfo Info() const noexcept override {
-    return ModuleInfo{.name = "Ros2PublisherModule"};
+    return ModuleInfo{.name = "ParameterModule"};
   }
 
   bool Initialize(aimrt::CoreRef core) noexcept override;
@@ -26,18 +26,16 @@ class Ros2PublisherModule : public aimrt::ModuleBase {
  private:
   aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
-  co::Task<void> MainLoop();
+  co::Task<void> SetParameterLoop();
+  co::Task<void> GetParameterLoop();
 
  private:
   aimrt::CoreRef core_;
-  aimrt::executor::ExecutorRef executor_;
+  aimrt::executor::ExecutorRef work_executor_;
+  aimrt::parameter::ParameterHandleRef parameter_handle_;
 
   co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
-
-  std::string topic_name_;
-  double channel_frq_;
-  aimrt::channel::PublisherRef publisher_;
 };
 
-}  // namespace aimrt::examples::example_ros2_channel::ros2_publisher_module
+}  // namespace aimrt::examples::example_parameter::parameter_module
