@@ -1,6 +1,6 @@
 set_namespace()
 
-if(AIMRT_BUILD_NET_PLUGIN)
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_NET_PLUGIN)
   add_subdirectory(net_plugin)
 endif()
 

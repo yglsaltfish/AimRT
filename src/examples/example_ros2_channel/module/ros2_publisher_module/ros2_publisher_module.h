@@ -26,13 +26,13 @@ class Ros2PublisherModule : public aimrt::ModuleBase {
  private:
   aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
-  aimrt::co::Task<void> MainLoop();
+  co::Task<void> MainLoop();
 
  private:
   aimrt::CoreRef core_;
   aimrt::executor::ExecutorRef executor_;
 
-  aimrt::co::AsyncScope scope_;
+  co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
 
   std::string topic_name_;

@@ -16,12 +16,8 @@ aimrt:
           max_file_num: 10 # 最大日志文件数量，0代表无限
   executor: # 执行器配置
     executors: # 当前先支持thread型，未来可根据加载的网络模块提供更多类型
-      - name: work_thread_pool_1 # 线程池
+      - name: work_thread_pool # 线程池
         type: asio_thread
-        options:
-          thread_num: 2 # 线程数，不指定则默认单线程
-      - name: work_thread_pool_2 # 线程池
-        type: tbb_thread
         options:
           thread_num: 2 # 线程数，不指定则默认单线程
   module: # 模块配置

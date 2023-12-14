@@ -6,6 +6,7 @@
 #include "aimrt_module_cpp_interface/configurator/configurator.h"
 #include "aimrt_module_cpp_interface/executor/executor_manager.h"
 #include "aimrt_module_cpp_interface/logger/logger.h"
+#include "aimrt_module_cpp_interface/parameter/parameter_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 
 namespace aimrt {
@@ -70,7 +71,7 @@ class CoreRef {
    *
    * @return channel::ChannelHandleRef
    */
-  channel::ChannelHandleRef GetChannel() const {
+  channel::ChannelHandleRef GetChannelHandle() const {
     assert(base_ptr_);
     return channel::ChannelHandleRef(base_ptr_->channel_handle(base_ptr_->impl));
   }
@@ -83,6 +84,16 @@ class CoreRef {
   allocator::AllocatorRef GetAllocator() const {
     assert(base_ptr_);
     return allocator::AllocatorRef(base_ptr_->allocator_handle(base_ptr_->impl));
+  }
+
+  /**
+   * @brief Get parameter handle
+   *
+   * @return parameter::ParameterHandleRef
+   */
+  parameter::ParameterHandleRef GetParameterHandle() const {
+    assert(base_ptr_);
+    return parameter::ParameterHandleRef(base_ptr_->parameter_handle(base_ptr_->impl));
   }
 
  private:

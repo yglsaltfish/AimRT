@@ -26,8 +26,8 @@ class BenchmarkSubscriberModule : public aimrt::ModuleBase {
  private:
   aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
-  aimrt::co::Task<void> BenchmarkSignalHandle(const aimrt::protocols::example::BenchmarkSignal& data);
-  aimrt::co::Task<void> BenchmarkMessageHandle(const aimrt::protocols::example::BenchmarkMessage& data);
+  co::Task<void> BenchmarkSignalHandle(const aimrt::protocols::example::BenchmarkSignal& data);
+  co::Task<void> BenchmarkMessageHandle(const aimrt::protocols::example::BenchmarkMessage& data);
 
  private:
   aimrt::CoreRef core_;

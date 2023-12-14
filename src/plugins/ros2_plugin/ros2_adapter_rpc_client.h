@@ -36,7 +36,7 @@ class Ros2AdapterClient : public rclcpp::ClientBase {
 
   std::optional<CallBackWrapper> GetAndErasePendingRequest(
       int64_t request_number) {
-    std::unique_lock<std::mutex> lock(pending_requests_mutex_);
+    std::lock_guard<std::mutex> lock(pending_requests_mutex_);
     auto finditr = pending_requests_.find(request_number);
     if (finditr == pending_requests_.end()) return std::nullopt;
 

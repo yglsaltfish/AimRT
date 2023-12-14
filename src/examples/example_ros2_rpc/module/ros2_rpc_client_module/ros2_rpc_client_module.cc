@@ -44,7 +44,7 @@ bool Ros2RpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
     proxy_->RegisterFilter([this](aimrt::rpc::ContextRef ctx,
                                   const void* req_ptr, void* rsp_ptr,
                                   const aimrt::rpc::RpcHandle& next)
-                               -> aimrt::co::Task<aimrt::rpc::Status> {
+                               -> co::Task<aimrt::rpc::Status> {
       // timecost count
       auto begin_time = std::chrono::steady_clock::now();
       const auto& status = co_await next(ctx, req_ptr, rsp_ptr);
@@ -68,7 +68,7 @@ bool Ros2RpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
 
 bool Ros2RpcClientModule::Start() noexcept {
   try {
-    scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), MainLoop()));
+    scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
     return false;
@@ -81,7 +81,7 @@ bool Ros2RpcClientModule::Start() noexcept {
 void Ros2RpcClientModule::Shutdown() noexcept {
   try {
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    co::SyncWait(scope_.complete());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -91,17 +91,17 @@ void Ros2RpcClientModule::Shutdown() noexcept {
 }
 
 // Main loop
-aimrt::co::Task<void> Ros2RpcClientModule::MainLoop() {
+co::Task<void> Ros2RpcClientModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 
-    aimrt::co::AimRTScheduler work_thread_pool_scheduler(executor_);
+    co::AimRTScheduler work_thread_pool_scheduler(executor_);
 
-    co_await aimrt::co::Schedule(work_thread_pool_scheduler);
+    co_await co::Schedule(work_thread_pool_scheduler);
 
     uint32_t count = 0;
     while (run_flag_) {
-      co_await aimrt::co::ScheduleAfter(
+      co_await co::ScheduleAfter(
           work_thread_pool_scheduler,
           std::chrono::milliseconds(static_cast<uint32_t>(1000 / rpc_frq_)));
       count++;
@@ -119,6 +119,8 @@ aimrt::co::Task<void> Ros2RpcClientModule::MainLoop() {
 
       AIMRT_INFO("Get rpc ret, status: {}. rsp:\n{}",
                  status.ToString(), example_ros2::srv::to_yaml(rsp));
+
+      AIMRT_CHECK_WARN(status, "Call GetFooData failed, status: {}", status.ToString());
     }
 
     AIMRT_INFO("Exit MainLoop.");

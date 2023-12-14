@@ -108,9 +108,9 @@ bool Ros2RpcPerfClientModule::Initialize(aimrt::CoreRef core) noexcept {
 bool Ros2RpcPerfClientModule::Start() noexcept {
   try {
     if (options_.perf_mod == Options::PerfMod::FixedFreq) {
-      scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), FixedFreqStatisticsLoop()));
+      scope_.spawn(co::On(co::InlineScheduler(), FixedFreqStatisticsLoop()));
     } else {
-      scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), BenchStatisticsLoop()));
+      scope_.spawn(co::On(co::InlineScheduler(), BenchStatisticsLoop()));
     }
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
@@ -124,7 +124,7 @@ bool Ros2RpcPerfClientModule::Start() noexcept {
 void Ros2RpcPerfClientModule::Shutdown() noexcept {
   try {
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    co::SyncWait(scope_.complete());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -133,7 +133,7 @@ void Ros2RpcPerfClientModule::Shutdown() noexcept {
   AIMRT_INFO("Shutdown succeeded.");
 }
 
-aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
+co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
   AIMRT_DEBUG("Start BenchStatisticsLoop.");
 
   auto client_statistics_thread_pool = core_.GetExecutorManager().GetExecutor("client_statistics_thread_pool");
@@ -141,15 +141,15 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
       client_statistics_thread_pool && client_statistics_thread_pool.SupportTimerSchedule(),
       "Get executor 'client_statistics_thread_pool' failed.");
 
-  aimrt::co::AimRTScheduler client_statistics_thread_pool_scheduler(client_statistics_thread_pool);
+  co::AimRTScheduler client_statistics_thread_pool_scheduler(client_statistics_thread_pool);
 
-  co_await aimrt::co::Schedule(client_statistics_thread_pool_scheduler);
+  co_await co::Schedule(client_statistics_thread_pool_scheduler);
 
   co_await WaitForServiceServer();
 
   uint32_t loop_count = 0;
   while (run_flag_) {
-    aimrt::co::AsyncScope bench_scope;
+    co::AsyncScope bench_scope;
     std::atomic_bool bench_run_flag = true;
 
     uint32_t real_parallel = options_.parallel;
@@ -162,17 +162,17 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
 
     // 开启几个bench协程
     for (uint32_t ii = 0; ii < real_parallel; ii++) {
-      bench_scope.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), BenchLoop(ii, bench_run_flag)));
+      bench_scope.spawn(co::On(co::InlineScheduler(), BenchLoop(ii, bench_run_flag)));
     }
 
     // sleep几秒
-    co_await aimrt::co::ScheduleAfter(
+    co_await co::ScheduleAfter(
         client_statistics_thread_pool_scheduler,
         std::chrono::milliseconds(10000));
 
     // 等待bench协程结束
     bench_run_flag = false;
-    co_await aimrt::co::On(
+    co_await co::On(
         client_statistics_thread_pool_scheduler,
         bench_scope.complete());
 
@@ -220,7 +220,7 @@ p999_time(us): {})str",
   co_return;
 }
 
-aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
+co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
   AIMRT_DEBUG("Start FixedFreqStatisticsLoop.");
 
   auto client_statistics_thread_pool = core_.GetExecutorManager().GetExecutor("client_statistics_thread_pool");
@@ -228,9 +228,9 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
       client_statistics_thread_pool && client_statistics_thread_pool.SupportTimerSchedule(),
       "Get executor 'client_statistics_thread_pool' failed.");
 
-  aimrt::co::AimRTScheduler client_statistics_thread_pool_scheduler(client_statistics_thread_pool);
+  co::AimRTScheduler client_statistics_thread_pool_scheduler(client_statistics_thread_pool);
 
-  co_await aimrt::co::Schedule(client_statistics_thread_pool_scheduler);
+  co_await co::Schedule(client_statistics_thread_pool_scheduler);
 
   co_await WaitForServiceServer();
 
@@ -238,21 +238,21 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
   for (auto freq : options_.freq_vec) {
     if (!run_flag_) break;
 
-    aimrt::co::AsyncScope fixedfreq_scope;
+    co::AsyncScope fixedfreq_scope;
     std::atomic_bool fixedfreq_run_flag = true;
 
     auto start_time = std::chrono::steady_clock::now();  // 获取当前系统时间
 
-    fixedfreq_scope.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), FixedFreqLoop(freq, fixedfreq_run_flag)));
+    fixedfreq_scope.spawn(co::On(co::InlineScheduler(), FixedFreqLoop(freq, fixedfreq_run_flag)));
 
     // sleep几秒
-    co_await aimrt::co::ScheduleAfter(
+    co_await co::ScheduleAfter(
         client_statistics_thread_pool_scheduler,
         std::chrono::milliseconds(10000));
 
     // 等待bench协程结束
     fixedfreq_run_flag = false;
-    co_await aimrt::co::On(
+    co_await co::On(
         client_statistics_thread_pool_scheduler,
         fixedfreq_scope.complete());
 
@@ -300,7 +300,7 @@ p999_time(us): {})str",
   co_return;
 }
 
-aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchLoop(
+co::Task<void> Ros2RpcPerfClientModule::BenchLoop(
     int seq, std::atomic_bool& bench_run_flag) {
   AIMRT_DEBUG("Start BenchLoop {}", seq);
 
@@ -308,8 +308,8 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchLoop(
   auto client_thread_pool = core_.GetExecutorManager().GetExecutor(executor_name);
   AIMRT_CHECK_ERROR_THROW(client_thread_pool, "Get executor '{}' failed.", executor_name);
 
-  aimrt::co::AimRTScheduler client_thread_pool_scheduler(client_thread_pool);
-  co_await aimrt::co::Schedule(client_thread_pool_scheduler);
+  co::AimRTScheduler client_thread_pool_scheduler(client_thread_pool);
+  co_await co::Schedule(client_thread_pool_scheduler);
 
   example_ros2::srv::RosTestRpc_Request req;
   example_ros2::srv::RosTestRpc_Response rsp;
@@ -321,17 +321,17 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchLoop(
   auto bench_start_time = std::chrono::steady_clock::now();
 
   while (bench_run_flag) {
-    co_await aimrt::co::Schedule(client_thread_pool_scheduler);
+    co_await co::Schedule(client_thread_pool_scheduler);
 
     auto task_start_time = std::chrono::steady_clock::now();
 
     // call rpc
     auto status = co_await proxy_->RosTestRpc(req, rsp);
-    co_await aimrt::co::Schedule(client_thread_pool_scheduler);
+    co_await co::Schedule(client_thread_pool_scheduler);
 
     auto task_end_time = std::chrono::steady_clock::now();
 
-    if (!status.OK()) AIMRT_WARN("Rpc get error.");
+    AIMRT_CHECK_WARN(status, "Call rpc failed, status: {}", status.ToString());
 
     if (task_end_time < task_start_time) {
       AIMRT_WARN("Invalid time");
@@ -347,7 +347,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::BenchLoop(
   co_return;
 }
 
-aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
+co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
     int32_t freq, std::atomic_bool& fixedfreq_run_flag) {
   AIMRT_DEBUG("start FixedFreqLoop");
 
@@ -356,8 +356,8 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
   AIMRT_CHECK_ERROR_THROW(client_thread_pool && client_thread_pool.SupportTimerSchedule(),
                           "Get executor '{}' failed.", executor_name);
 
-  aimrt::co::AimRTScheduler client_thread_pool_scheduler(client_thread_pool);
-  co_await aimrt::co::Schedule(client_thread_pool_scheduler);
+  co::AimRTScheduler client_thread_pool_scheduler(client_thread_pool);
+  co_await co::Schedule(client_thread_pool_scheduler);
 
   example_ros2::srv::RosTestRpc_Request req;
   example_ros2::srv::RosTestRpc_Response rsp;
@@ -369,7 +369,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
   auto bench_start_time = std::chrono::steady_clock::now();
 
   while (fixedfreq_run_flag) {
-    co_await aimrt::co::ScheduleAt(
+    co_await co::ScheduleAt(
         client_thread_pool_scheduler,
         bench_start_time += std::chrono::nanoseconds(1000000000 / freq));
 
@@ -377,11 +377,11 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
 
     // call rpc
     auto status = co_await proxy_->RosTestRpc(req, rsp);
-    co_await aimrt::co::Schedule(client_thread_pool_scheduler);
+    co_await co::Schedule(client_thread_pool_scheduler);
 
     auto task_end_time = std::chrono::steady_clock::now();
 
-    if (!status.OK()) AIMRT_WARN("Rpc get error.");
+    AIMRT_CHECK_WARN(status, "Call rpc failed, status: {}", status.ToString());
 
     if (task_end_time < task_start_time) {
       AIMRT_WARN("Invalid time");
@@ -397,7 +397,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
   co_return;
 }
 
-aimrt::co::Task<void> Ros2RpcPerfClientModule::WaitForServiceServer() {
+co::Task<void> Ros2RpcPerfClientModule::WaitForServiceServer() {
   AIMRT_DEBUG("wait for service server...");
 
   std::string executor_name = "client_statistics_thread_pool";
@@ -405,8 +405,8 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::WaitForServiceServer() {
   AIMRT_CHECK_ERROR_THROW(client_thread_pool && client_thread_pool.SupportTimerSchedule(),
                           "Get executor '{}' failed.", executor_name);
 
-  aimrt::co::AimRTScheduler client_scheduler(client_thread_pool);
-  co_await aimrt::co::Schedule(client_scheduler);
+  co::AimRTScheduler client_scheduler(client_thread_pool);
+  co_await co::Schedule(client_scheduler);
 
   example_ros2::srv::RosTestRpc_Request req;
   example_ros2::srv::RosTestRpc_Response rsp;
@@ -414,7 +414,7 @@ aimrt::co::Task<void> Ros2RpcPerfClientModule::WaitForServiceServer() {
   memcpy(req.data.data(), msg_.c_str(), msg_.size());
 
   while (run_flag_) {
-    co_await aimrt::co::ScheduleAfter(
+    co_await co::ScheduleAfter(
         client_scheduler,
         std::chrono::milliseconds(1000));
 

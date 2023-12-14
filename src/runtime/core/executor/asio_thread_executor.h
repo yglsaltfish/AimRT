@@ -21,7 +21,7 @@ class AsioThreadExecutor : public ExecutorBase {
     uint32_t thread_num = 1;
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
-    std::chrono::microseconds timeout_alarm_threshold_us =
+    std::chrono::steady_clock::duration timeout_alarm_threshold_us =
         std::chrono::microseconds(1000 * 1000);
   };
 

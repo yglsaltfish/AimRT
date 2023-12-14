@@ -6,7 +6,7 @@
 
 namespace aimrt::examples::example_normal_rpc::normal_rpc_server_module {
 
-inline aimrt::co::Task<aimrt::rpc::Status> DebugLogServerFilter(
+inline co::Task<aimrt::rpc::Status> DebugLogServerFilter(
     aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
     const aimrt::rpc::RpcHandle& next) {
   AIMRT_INFO("Svr get new rpc call. req: {}",
@@ -18,7 +18,7 @@ inline aimrt::co::Task<aimrt::rpc::Status> DebugLogServerFilter(
   co_return status;
 }
 
-inline aimrt::co::Task<aimrt::rpc::Status> TimeCostLogServerFilter(
+inline co::Task<aimrt::rpc::Status> TimeCostLogServerFilter(
     aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
     const aimrt::rpc::RpcHandle& next) {
   auto begin_time = std::chrono::steady_clock::now();

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package aimrt.protocols.net_plugin;
+
+message CommonRsp {
+  uint32 code = 2;
+  string msg = 3;
+}
+
+message SetParameterReq {
+  string module_name = 1;
+}
+
+message GetParameterReq {
+  string module_name = 1;
+}
+
+service ParameterService {
+  rpc SetParameter(SetParameterReq) returns (CommonRsp);
+  rpc GetParameter(GetParameterReq) returns (CommonRsp);
+}

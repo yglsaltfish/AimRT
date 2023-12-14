@@ -50,6 +50,11 @@ class Function<R(Args...)> {
   }
 
   Function(aimrt_function_base_t* function_base) {
+    if (function_base == nullptr) [[unlikely]] {
+      base_.ops = nullptr;
+      return;
+    }
+
     base_.ops = std::exchange(function_base->ops, nullptr);
     if (base_.ops)
       static_cast<const OpsType*>(base_.ops)
@@ -200,6 +205,11 @@ class Function<Ops> {
   }
 
   Function(aimrt_function_base_t* function_base) {
+    if (function_base == nullptr) [[unlikely]] {
+      base_.ops = nullptr;
+      return;
+    }
+
     base_.ops = std::exchange(function_base->ops, nullptr);
     if (base_.ops)
       static_cast<const OpsType*>(base_.ops)

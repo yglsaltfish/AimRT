@@ -5,6 +5,7 @@
 #include "aimrt_module_c_interface/configurator/configurator_base.h"
 #include "aimrt_module_c_interface/executor/executor_manager_base.h"
 #include "aimrt_module_c_interface/logger/logger_base.h"
+#include "aimrt_module_c_interface/parameter/parameter_handle_base.h"
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 
 #ifdef __cplusplus
@@ -19,7 +20,6 @@ typedef struct {
   /**
    * @brief Function to get configurator handle
    * @note
-   *
    * Parameter definition:
    * Input 1: Pointer to impl
    * Output: Configurator handle
@@ -29,7 +29,6 @@ typedef struct {
   /**
    * @brief Function to get logger handle
    * @note
-   *
    * Parameter definition:
    * Input 1: Pointer to impl
    * Output: Logger handle
@@ -39,7 +38,6 @@ typedef struct {
   /**
    * @brief Function to get executor manager handle
    * @note
-   *
    * Parameter definition:
    * Input 1: Pointer to impl
    * Output: Executor manager handle
@@ -49,7 +47,6 @@ typedef struct {
   /**
    * @brief Function to get rpc handle
    * @note
-   *
    * Parameter definition:
    * Input 1: Pointer to impl
    * Output: Rpc handle
@@ -59,7 +56,6 @@ typedef struct {
   /**
    * @brief Function to get channel handle
    * @note
-   *
    * Parameter definition:
    * Input 1: Pointer to impl
    * Output: Channel handle
@@ -69,12 +65,20 @@ typedef struct {
   /**
    * @brief Function to get allocator handle
    * @note
-   *
    * Parameter definition:
    * Input 1: Pointer to impl
    * Output: Allocator handle
    */
   const aimrt_allocator_base_t* (*allocator_handle)(void* impl);
+
+  /**
+   * @brief Function to get parameter handle
+   * @note
+   * Parameter definition:
+   * Input 1: Pointer to impl
+   * Output: Parameter handle
+   */
+  const aimrt_parameter_handle_base_t* (*parameter_handle)(void* impl);
 
   /// Implement pointer
   void* impl;

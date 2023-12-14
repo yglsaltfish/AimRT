@@ -13,6 +13,8 @@
 #include "core/channel/context_manager.h"
 #include "util/string_util.h"
 
+#include "tbb/concurrent_hash_map.h"
+
 namespace aimrt::runtime::core::channel {
 
 class ChannelContextManagerProxy {
@@ -166,102 +168,108 @@ class SubscriberProxy {
   const aimrt_channel_subscriber_base_t base_;
 };
 
-class ChannelProxy {
+class ChannelHandleProxy {
  public:
-  ChannelProxy(std::string_view pkg_path,
-               std::string_view module_name,
-               ChannelBackendManager& channel_backend_manager,
-               ContextManager& context_manager)
+  struct StringHashCompare {
+    using is_transparent = void;
+
+    bool equal(const std::string& lhs, const std::string& rhs) const { return lhs == rhs; }
+    bool equal(const std::string& lhs, std::string_view rhs) const { return lhs == rhs; }
+    bool equal(std::string_view lhs, const std::string& rhs) const { return lhs == rhs; }
+
+    std::size_t hash(const std::string& k) const { return std::hash<std::string_view>{}(k); }
+    std::size_t hash(std::string_view k) const { return std::hash<std::string_view>{}(k); }
+  };
+
+  using PublisherProxyMap = tbb::concurrent_hash_map<
+      std::string,
+      std::unique_ptr<PublisherProxy>,
+      StringHashCompare>;
+
+  using SubscriberProxyMap = tbb::concurrent_hash_map<
+      std::string,
+      std::unique_ptr<SubscriberProxy>,
+      StringHashCompare>;
+
+  ChannelHandleProxy(std::string_view pkg_path,
+                     std::string_view module_name,
+                     ChannelBackendManager& channel_backend_manager,
+                     ContextManager& context_manager,
+                     PublisherProxyMap& publisher_proxy_map,
+                     SubscriberProxyMap& subscriber_proxy_map)
       : pkg_path_(pkg_path),
         module_name_(module_name),
         channel_backend_manager_(channel_backend_manager),
         context_manager_(context_manager),
         context_manager_proxy_(context_manager_),
+        publisher_proxy_map_(publisher_proxy_map),
+        subscriber_proxy_map_(subscriber_proxy_map),
         base_(GenBase(this)) {}
 
-  ~ChannelProxy() = default;
+  ~ChannelHandleProxy() = default;
 
-  ChannelProxy(const ChannelProxy&) = delete;
-  ChannelProxy& operator=(const ChannelProxy&) = delete;
+  ChannelHandleProxy(const ChannelHandleProxy&) = delete;
+  ChannelHandleProxy& operator=(const ChannelHandleProxy&) = delete;
 
   const aimrt_channel_handle_base_t* NativeHandle() const { return &base_; }
 
  private:
   PublisherProxy& GetPublisher(std::string_view topic) {
-    {
-      std::shared_lock read_lock{publisher_proxy_map_mutex_};
-      auto itr = publisher_proxy_map_.find(topic);
-      if (itr != publisher_proxy_map_.end()) return *(itr->second);
-    }
+    PublisherProxyMap::const_accessor ac;
+    bool find_ret = publisher_proxy_map_.find(ac, topic);
+    if (find_ret) return *(ac->second);
 
-    std::unique_lock write_lock{publisher_proxy_map_mutex_};
-
-    auto emplace_ret = publisher_proxy_map_.emplace(
+    publisher_proxy_map_.emplace(
+        ac,
         topic,
         std::make_unique<PublisherProxy>(
             pkg_path_, module_name_, topic, channel_backend_manager_, context_manager_));
 
-    return *(emplace_ret.first->second);
+    return *(ac->second);
   }
 
   SubscriberProxy& GetSubscriber(std::string_view topic) {
-    {
-      std::shared_lock read_lock{subscriber_proxy_map_mutex_};
-      auto itr = subscriber_proxy_map_.find(topic);
-      if (itr != subscriber_proxy_map_.end()) return *(itr->second);
-    }
+    SubscriberProxyMap::const_accessor ac;
+    bool find_ret = subscriber_proxy_map_.find(ac, topic);
+    if (find_ret) return *(ac->second);
 
-    std::unique_lock write_lock{subscriber_proxy_map_mutex_};
-    auto emplace_ret = subscriber_proxy_map_.emplace(
+    subscriber_proxy_map_.emplace(
+        ac,
         topic,
         std::make_unique<SubscriberProxy>(
             pkg_path_, module_name_, topic, channel_backend_manager_));
 
-    return *(emplace_ret.first->second);
+    return *(ac->second);
   }
 
   static aimrt_channel_handle_base_t GenBase(void* impl) {
     return aimrt_channel_handle_base_t{
         .get_publisher = [](void* impl, aimrt_string_view_t topic)
             -> const aimrt_channel_publisher_base_t* {
-          return static_cast<ChannelProxy*>(impl)
+          return static_cast<ChannelHandleProxy*>(impl)
               ->GetPublisher(aimrt::util::ToStdStringView(topic))
               .NativeHandle();
         },
         .get_subscriber = [](void* impl, aimrt_string_view_t topic)
             -> const aimrt_channel_subscriber_base_t* {
-          return static_cast<ChannelProxy*>(impl)
+          return static_cast<ChannelHandleProxy*>(impl)
               ->GetSubscriber(aimrt::util::ToStdStringView(topic))
               .NativeHandle();
         },
         .get_context_manager = [](void* impl) -> const aimrt_channel_context_manager_base_t* {
-          return static_cast<ChannelProxy*>(impl)->context_manager_proxy_.NativeHandle();
+          return static_cast<ChannelHandleProxy*>(impl)->context_manager_proxy_.NativeHandle();
         },
         .impl = impl};
   }
 
  private:
-  const std::string pkg_path_;
-  const std::string module_name_;
+  const std::string_view pkg_path_;
+  const std::string_view module_name_;
   ChannelBackendManager& channel_backend_manager_;
   ContextManager& context_manager_;
   ChannelContextManagerProxy context_manager_proxy_;
-
-  std::shared_mutex publisher_proxy_map_mutex_;
-  std::unordered_map<
-      std::string,
-      std::unique_ptr<PublisherProxy>,
-      aimrt::common::util::StringHash,
-      std::equal_to<>>
-      publisher_proxy_map_;
-
-  std::shared_mutex subscriber_proxy_map_mutex_;
-  std::unordered_map<
-      std::string,
-      std::unique_ptr<SubscriberProxy>,
-      aimrt::common::util::StringHash,
-      std::equal_to<>>
-      subscriber_proxy_map_;
+  PublisherProxyMap& publisher_proxy_map_;
+  SubscriberProxyMap& subscriber_proxy_map_;
 
   const aimrt_channel_handle_base_t base_;
 };

@@ -10,7 +10,10 @@ struct convert<aimrt::runtime::core::executor::AsioStrandExecutor::Options> {
     Node node;
 
     node["bind_asio_thread_executor_name"] = rhs.bind_asio_thread_executor_name;
-    node["timeout_alarm_threshold_us"] = rhs.timeout_alarm_threshold_us.count();
+    node["timeout_alarm_threshold_us"] = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            rhs.timeout_alarm_threshold_us)
+            .count());
 
     return node;
   }
@@ -23,7 +26,7 @@ struct convert<aimrt::runtime::core::executor::AsioStrandExecutor::Options> {
           node["bind_asio_thread_executor_name"].as<std::string>();
     if (node["timeout_alarm_threshold_us"])
       rhs.timeout_alarm_threshold_us = std::chrono::microseconds(
-          node["timeout_alarm_threshold_us"].as<uint32_t>());
+          node["timeout_alarm_threshold_us"].as<uint64_t>());
 
     return true;
   }

@@ -26,11 +26,11 @@ class RealTimeModule : public aimrt::ModuleBase {
  private:
   aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
-  aimrt::co::Task<void> WorkLoop(aimrt::executor::ExecutorRef executor_ptr);
+  co::Task<void> WorkLoop(aimrt::executor::ExecutorRef executor_ptr);
 
  private:
   aimrt::CoreRef core_;
-  aimrt::co::AsyncScope scope_;
+  co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
 };
 

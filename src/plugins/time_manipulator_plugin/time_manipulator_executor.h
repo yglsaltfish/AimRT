@@ -18,7 +18,9 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
     std::string bind_executor;
     std::chrono::steady_clock::duration dt = std::chrono::microseconds(1000);
     double init_ratio = 1.0;
-    std::vector<size_t> wheel_size = {1000, 3600};
+    std::vector<size_t> wheel_size = {1000, 600};
+    std::string thread_sched_policy;
+    std::vector<uint32_t> thread_bind_cpu;
   };
 
   enum class State : uint32_t {

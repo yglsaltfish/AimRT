@@ -31,7 +31,8 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          aimrt::common::net)
+          aimrt::common::net
+          aimrt::protocols::net_plugin_aimrt_rpc_gencode)
 
 # Set installation of target
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})

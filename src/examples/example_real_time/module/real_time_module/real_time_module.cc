@@ -46,8 +46,8 @@ bool RealTimeModule::Start() noexcept {
         sched_fifo_thread_executor && sched_fifo_thread_executor.SupportTimerSchedule(),
         "Get executor 'sched_fifo_thread' failed.");
     scope_.spawn(
-        aimrt::co::On(
-            aimrt::co::AimRTScheduler(sched_fifo_thread_executor),
+        co::On(
+            co::AimRTScheduler(sched_fifo_thread_executor),
             WorkLoop(sched_fifo_thread_executor)));
 
     // sched_other_thread
@@ -57,8 +57,8 @@ bool RealTimeModule::Start() noexcept {
         sched_other_thread_executor && sched_other_thread_executor.SupportTimerSchedule(),
         "Get executor 'sched_other_thread' failed.");
     scope_.spawn(
-        aimrt::co::On(
-            aimrt::co::AimRTScheduler(sched_other_thread_executor),
+        co::On(
+            co::AimRTScheduler(sched_other_thread_executor),
             WorkLoop(sched_other_thread_executor)));
 
     // sched_rr_thread
@@ -68,8 +68,8 @@ bool RealTimeModule::Start() noexcept {
         sched_rr_thread_executor && sched_rr_thread_executor.SupportTimerSchedule(),
         "Get executor 'sched_rr_thread' failed.");
     scope_.spawn(
-        aimrt::co::On(
-            aimrt::co::AimRTScheduler(sched_rr_thread_executor),
+        co::On(
+            co::AimRTScheduler(sched_rr_thread_executor),
             WorkLoop(sched_rr_thread_executor)));
 
   } catch (const std::exception& e) {
@@ -85,7 +85,7 @@ void RealTimeModule::Shutdown() noexcept {
   try {
     // Wait all coroutine complete
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    co::SyncWait(scope_.complete());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -94,7 +94,7 @@ void RealTimeModule::Shutdown() noexcept {
   AIMRT_INFO("Shutdown succeeded.");
 }
 
-aimrt::co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
+co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
   try {
     AIMRT_INFO("Start WorkLoop in {}.", executor.Name());
 
@@ -116,8 +116,8 @@ aimrt::co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef exec
 
       // Sleep for some time
       auto start_tp = std::chrono::steady_clock::now();
-      co_await aimrt::co::ScheduleAfter(
-          aimrt::co::AimRTScheduler(executor), std::chrono::milliseconds(1000));
+      co_await co::ScheduleAfter(
+          co::AimRTScheduler(executor), std::chrono::milliseconds(1000));
       auto end_tp = std::chrono::steady_clock::now();
 
       // Get cpuset used by the current thread

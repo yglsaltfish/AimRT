@@ -44,6 +44,42 @@ v2
   }
 }
 
+TEST(STL_TOOL_TEST, Vec2Str_bool_test) {
+  struct TestCase {
+    std::string name;
+
+    std::vector<bool> v;
+
+    std::string want_result;
+  };
+  std::vector<TestCase> test_cases;
+
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 1",
+          .v = {},
+          .want_result = R"str(vec size = 0
+)str"});
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 2",
+          .v = {true, true, false, false, true, true},
+          .want_result = R"str(vec size = 6
+[index=0]:1
+[index=1]:1
+[index=2]:0
+[index=3]:0
+[index=4]:1
+[index=5]:1
+)str"});
+
+  for (size_t ii = 0; ii < test_cases.size(); ++ii) {
+    auto ret = Vec2Str(test_cases[ii].v);
+    EXPECT_STREQ(ret.c_str(), test_cases[ii].want_result.c_str())
+        << "Test " << test_cases[ii].name << " failed, index " << ii;
+  }
+}
+
 TEST(STL_TOOL_TEST, Set2Str_test) {
   struct TestCase {
     std::string name;
@@ -179,6 +215,49 @@ TEST(STL_TOOL_TEST, CheckVectorEqual_test) {
           .name = "case 3",
           .vec1 = {"v1", "v2"},
           .vec2 = {"v1", "v2x"},
+          .want_result = false});
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 4",
+          .vec1 = {},
+          .vec2 = {},
+          .want_result = true});
+
+  for (size_t ii = 0; ii < test_cases.size(); ++ii) {
+    auto ret = CheckVectorEqual(test_cases[ii].vec1, test_cases[ii].vec2);
+    EXPECT_EQ(ret, test_cases[ii].want_result)
+        << "Test " << test_cases[ii].name << " failed, index " << ii;
+  }
+}
+
+TEST(STL_TOOL_TEST, CheckVectorEqual_bool_test) {
+  struct TestCase {
+    std::string name;
+
+    std::vector<bool> vec1;
+    std::vector<bool> vec2;
+
+    bool want_result;
+  };
+  std::vector<TestCase> test_cases;
+
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 1",
+          .vec1 = {true, false},
+          .vec2 = {true, false},
+          .want_result = true});
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 2",
+          .vec1 = {true, false},
+          .vec2 = {true, false, true},
+          .want_result = false});
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 3",
+          .vec1 = {true, false},
+          .vec2 = {true, true},
           .want_result = false});
   test_cases.emplace_back(
       TestCase{

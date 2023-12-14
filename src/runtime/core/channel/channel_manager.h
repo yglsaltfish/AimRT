@@ -7,9 +7,11 @@
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "core/channel/channel_backend_base.h"
-#include "core/channel/channel_proxy.h"
+#include "core/channel/channel_handle_proxy.h"
 #include "core/channel/context_manager.h"
 #include "core/util/module_detail_info.h"
+
+#include "tbb/concurrent_hash_map.h"
 
 namespace aimrt::runtime::core::channel {
 
@@ -47,7 +49,7 @@ class ChannelManager {
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
-  ChannelProxy& GetChannelProxy(const util::ModuleDetailInfo& module_info);
+  ChannelHandleProxy& GetChannelHandleProxy(const util::ModuleDetailInfo& module_info);
 
   // 信息查询类接口
   const ChannelRegistry* GetChannelRegistry() const;
@@ -72,7 +74,32 @@ class ChannelManager {
 
   ChannelBackendManager channel_backend_manager_;
 
-  std::unordered_map<std::string, std::unique_ptr<ChannelProxy>> channel_proxy_map_;
+  class ChannelHandleProxyWrap {
+   public:
+    ChannelHandleProxyWrap(
+        std::string_view input_pkg_path,
+        std::string_view input_module_name,
+        ChannelBackendManager& channel_backend_manager,
+        ContextManager& context_manager)
+        : pkg_path(input_pkg_path),
+          module_name(input_module_name),
+          channel_handle_proxy(
+              pkg_path,
+              module_name,
+              channel_backend_manager,
+              context_manager,
+              publisher_proxy_map,
+              subscriber_proxy_map) {}
+
+    const std::string pkg_path;
+    const std::string module_name;
+
+    ChannelHandleProxy::PublisherProxyMap publisher_proxy_map;
+    ChannelHandleProxy::SubscriberProxyMap subscriber_proxy_map;
+    ChannelHandleProxy channel_handle_proxy;
+  };
+
+  std::unordered_map<std::string, std::unique_ptr<ChannelHandleProxyWrap>> channel_handle_proxy_wrap_map_;
 
   // 信息查询类变量
   std::vector<std::string> channel_backend_name_vec_;

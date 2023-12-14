@@ -98,7 +98,7 @@ void ChannelManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  channel_proxy_map_.clear();
+  channel_handle_proxy_wrap_map_.clear();
 
   channel_backend_manager_.Shutdown();
 
@@ -129,21 +129,24 @@ void ChannelManager::RegisterGetExecutorFunc(
   get_executor_func_ = get_executor_func;
 }
 
-ChannelProxy& ChannelManager::GetChannelProxy(
+ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
 
-  auto itr = channel_proxy_map_.find(module_info.name);
-  if (itr != channel_proxy_map_.end()) return *(itr->second);
+  auto itr = channel_handle_proxy_wrap_map_.find(module_info.name);
+  if (itr != channel_handle_proxy_wrap_map_.end()) return itr->second->channel_handle_proxy;
 
-  auto emplace_ret = channel_proxy_map_.emplace(
+  auto emplace_ret = channel_handle_proxy_wrap_map_.emplace(
       module_info.name,
-      std::make_unique<ChannelProxy>(module_info.pkg_path, module_info.name,
-                                     channel_backend_manager_, *context_manager_ptr_));
+      std::make_unique<ChannelHandleProxyWrap>(
+          module_info.pkg_path,
+          module_info.name,
+          channel_backend_manager_,
+          *context_manager_ptr_));
 
-  return *(emplace_ret.first->second);
+  return emplace_ret.first->second->channel_handle_proxy;
 }
 
 const ChannelRegistry* ChannelManager::GetChannelRegistry() const {

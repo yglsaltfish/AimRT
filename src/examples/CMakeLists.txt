@@ -1,6 +1,7 @@
 set_namespace()
 
 add_subdirectory(example_helloworld)
+add_subdirectory(example_parameter)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(example_real_time)

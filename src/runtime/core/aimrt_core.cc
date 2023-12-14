@@ -89,6 +89,12 @@ void AimRTCore::Initialize(const Options& options) {
   AIMRT_INFO("Channel init complete.");
   EnterState(State::PostInitChannel);
 
+  // init parameter
+  EnterState(State::PreInitParameter);
+  parameter_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("parameter"));
+  AIMRT_INFO("Parameter init complete.");
+  EnterState(State::PostInitParameter);
+
   // init modules
   EnterState(State::PreInitModules);
   module_manager_.RegisterCoreProxyConfigurator(
@@ -116,6 +122,7 @@ void AimRTCore::Start() {
   executor_manager_.Start();
   rpc_manager_.Start();
   channel_manager_.Start();
+  parameter_manager_.Start();
   module_manager_.Start();
   AIMRT_INFO("All modules start complete.");
   EnterState(State::PostStart);
@@ -130,6 +137,7 @@ void AimRTCore::Shutdown() {
     EnterState(State::PreShutdown);
 
     module_manager_.Shutdown();
+    parameter_manager_.Shutdown();
     channel_manager_.Shutdown();
     rpc_manager_.Shutdown();
     executor_manager_.Shutdown();
@@ -160,7 +168,8 @@ void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CorePr
   proxy.SetLogger(logger_manager_.GetLoggerProxy(info).NativeHandle());
   proxy.SetExecutorManager(executor_manager_.GetExecutorManagerProxy(info).NativeHandle());
   proxy.SetRpcHandle(rpc_manager_.GetRpcHandleProxy(info).NativeHandle());
-  proxy.SetChannel(channel_manager_.GetChannelProxy(info).NativeHandle());
+  proxy.SetChannelHandle(channel_manager_.GetChannelHandleProxy(info).NativeHandle());
+  proxy.SetParameterHandle(parameter_manager_.GetParameterHandleProxy(info).NativeHandle());
 }
 
 void AimRTCore::DumpCfgFile() {

@@ -20,5 +20,9 @@ if(AIMRT_BUILD_WITH_ROS2)
 endif()
 
 if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN)
-  add_subdirectory(time_manipulator_plugin)
+  add_subdirectory(plugins/time_manipulator_plugin)
+endif()
+
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_NET_PLUGIN)
+  add_subdirectory(plugins/net_plugin)
 endif()

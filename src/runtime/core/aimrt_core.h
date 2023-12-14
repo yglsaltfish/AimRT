@@ -11,6 +11,7 @@
 #include "core/executor/main_thread_executor.h"
 #include "core/logger/logger_manager.h"
 #include "core/module/module_manager.h"
+#include "core/parameter/parameter_manager.h"
 #include "core/plugin/plugin_manager.h"
 #include "core/rpc/rpc_manager.h"
 
@@ -55,6 +56,9 @@ class AimRTCore {
 
     PreInitChannel,
     PostInitChannel,
+
+    PreInitParameter,
+    PostInitParameter,
 
     PreInitModules,
     PostInitModules,
@@ -172,6 +176,7 @@ class AimRTCore {
   executor::ExecutorManager executor_manager_;
   rpc::RpcManager rpc_manager_;
   channel::ChannelManager channel_manager_;
+  parameter::ParameterManager parameter_manager_;
   module::ModuleManager module_manager_;
 
   static AimRTCore* global_core_ptr_;

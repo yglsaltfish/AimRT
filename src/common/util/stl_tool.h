@@ -27,8 +27,8 @@ std::string Vec2Str(const std::vector<T>& v,
   constexpr size_t kMaxLineLen = 32;
 
   size_t ct = 0;
-  for (auto& itr : v) {
-    std::string obj_str = f(itr);
+  for (size_t ii = 0; ii < v.size(); ++ii) {
+    std::string obj_str = f(v[ii]);
     if (obj_str.empty()) obj_str = "<empty string>";
 
     ss << "[index=" << ct << "]:";
@@ -40,6 +40,7 @@ std::string Vec2Str(const std::vector<T>& v,
 
     ++ct;
   }
+
   return ss.str();
 }
 

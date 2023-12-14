@@ -16,9 +16,16 @@ struct convert<aimrt::plugins::net_plugin::HttpRpcBackend::Options> {
     node["clients_options"] = YAML::Node();
     for (const auto& client_options : rhs.clients_options) {
       Node client_options_node;
-      client_options_node["type"] = client_options.func_name;
-      client_options_node["options"] = client_options.server_url;
+      client_options_node["func_name"] = client_options.func_name;
+      client_options_node["server_url"] = client_options.server_url;
       node["clients_options"].push_back(client_options_node);
+    }
+
+    node["servers_options"] = YAML::Node();
+    for (const auto& server_options : rhs.servers_options) {
+      Node server_options_node;
+      server_options_node["func_name"] = server_options.func_name;
+      node["servers_options"].push_back(server_options_node);
     }
 
     return node;
@@ -34,6 +41,16 @@ struct convert<aimrt::plugins::net_plugin::HttpRpcBackend::Options> {
         rhs.clients_options.emplace_back(std::move(client_options));
       }
     }
+
+    if (node["servers_options"] && node["servers_options"].IsSequence()) {
+      for (auto& server_options_node : node["servers_options"]) {
+        auto server_options = Options::ServerOptions{
+            .func_name = server_options_node["func_name"].as<std::string>()};
+
+        rhs.servers_options.emplace_back(std::move(server_options));
+      }
+    }
+
     return true;
   }
 };

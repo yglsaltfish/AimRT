@@ -1,4 +1,5 @@
 #include "time_manipulator_plugin/time_manipulator_executor.h"
+#include "core/util/thread_tools.h"
 #include "time_manipulator_plugin/global.h"
 
 namespace YAML {
@@ -14,6 +15,8 @@ struct convert<aimrt::plugins::time_manipulator_plugin::TimeManipulatorExecutor:
         std::chrono::duration_cast<std::chrono::microseconds>(rhs.dt).count());
     node["init_ratio"] = rhs.init_ratio;
     node["wheel_size"] = rhs.wheel_size;
+    node["thread_sched_policy"] = rhs.thread_sched_policy;
+    node["thread_bind_cpu"] = rhs.thread_bind_cpu;
 
     return node;
   }
@@ -22,9 +25,17 @@ struct convert<aimrt::plugins::time_manipulator_plugin::TimeManipulatorExecutor:
     if (!node.IsMap()) return false;
 
     rhs.bind_executor = node["bind_executor"].as<std::string>();
-    rhs.dt = std::chrono::microseconds(node["dt_us"].as<uint64_t>());
-    rhs.init_ratio = node["init_ratio"].as<double>();
-    rhs.wheel_size = node["wheel_size"].as<std::vector<size_t>>();
+
+    if (node["dt_us"])
+      rhs.dt = std::chrono::microseconds(node["dt_us"].as<uint64_t>());
+    if (node["init_ratio"])
+      rhs.init_ratio = node["init_ratio"].as<double>();
+    if (node["wheel_size"])
+      rhs.wheel_size = node["wheel_size"].as<std::vector<size_t>>();
+    if (node["thread_sched_policy"])
+      rhs.thread_sched_policy = node["thread_sched_policy"].as<std::string>();
+    if (node["thread_bind_cpu"])
+      rhs.thread_bind_cpu = node["thread_bind_cpu"].as<std::vector<uint32_t>>();
 
     return true;
   }
@@ -231,6 +242,17 @@ double TimeManipulatorExecutor::GetTimeRatio() const {
 }
 
 void TimeManipulatorExecutor::TimerLoop() {
+  std::string threadname = name_;
+
+  try {
+    aimrt::runtime::core::util::SetNameForCurrentThread(threadname);
+    aimrt::runtime::core::util::BindCpuForCurrentThread(options_.thread_bind_cpu);
+    aimrt::runtime::core::util::SetCpuSchedForCurrentThread(options_.thread_sched_policy);
+  } catch (const std::exception& e) {
+    AIMRT_WARN("Set thread policy for time manipulator executor '{}' get exception, {}",
+               Name(), e.what());
+  }
+
   auto last_loop_time_point = std::chrono::steady_clock::now();
 
   // 记录初始时间
@@ -243,67 +265,72 @@ void TimeManipulatorExecutor::TimerLoop() {
   start_flag_.notify_all();
 
   while (state_.load() != State::Shutdown) {
-    // 获取时间比例。注意：调速只能在下一个tick生效
-    ratio_mutex_.lock_shared();
+    try {
+      // 获取时间比例。注意：调速只能在下一个tick生效
+      ratio_mutex_.lock_shared();
 
-    bool ratio_direction = ratio_direction_;
-    uint32_t real_ratio = real_ratio_;
+      bool ratio_direction = ratio_direction_;
+      uint32_t real_ratio = real_ratio_;
 
-    ratio_mutex_.unlock_shared();
+      ratio_mutex_.unlock_shared();
 
-    // sleep一个tick
-    if (real_ratio == std::numeric_limits<uint32_t>::max()) {
-      // 暂停了
-      std::this_thread::sleep_until(last_loop_time_point += std::chrono::seconds(1));
-      continue;
-    }
-
-    auto real_dt = ratio_direction ? options_.dt : (options_.dt * real_ratio);
-    do {
-      // 最长sleep时间
-      static constexpr auto max_sleep_dt = std::chrono::seconds(1);
-
-      auto sleep_time = (real_dt > max_sleep_dt) ? max_sleep_dt : real_dt;
-      real_dt -= sleep_time;
-
-      // 一个小优化，防止real_dt太小
-      if (real_dt.count() && options_.dt < max_sleep_dt && real_dt <= options_.dt) {
-        sleep_time += real_dt;
-        real_dt -= real_dt;
+      // sleep一个tick
+      if (real_ratio == std::numeric_limits<uint32_t>::max()) {
+        // 暂停了
+        std::this_thread::sleep_until(last_loop_time_point += std::chrono::seconds(1));
+        continue;
       }
 
-      std::this_thread::sleep_until(last_loop_time_point += sleep_time);
+      auto real_dt = ratio_direction ? options_.dt : (options_.dt * real_ratio);
+      do {
+        // 最长sleep时间
+        static constexpr auto max_sleep_dt = std::chrono::seconds(1);
 
-    } while (state_.load() != State::Shutdown && real_dt.count());
+        auto sleep_time = (real_dt > max_sleep_dt) ? max_sleep_dt : real_dt;
+        real_dt -= sleep_time;
 
-    // 走时间轮
-
-    // 要走的tick数
-    uint64_t diff_tick_count = ratio_direction ? real_ratio : 1;
-
-    tick_mutex_.lock();
-
-    do {
-      // 取出task
-      TaskList task_list = timing_wheel_vec_[0].Tick();
-
-      // 执行任务
-      if (!task_list.empty()) {
-        tick_mutex_.unlock();
-
-        for (auto& itr : task_list) {
-          bind_executor_ref_.Execute(std::move(itr.task));
+        // 一个小优化，防止real_dt太小
+        if (real_dt.count() && options_.dt < max_sleep_dt && real_dt <= options_.dt) {
+          sleep_time += real_dt;
+          real_dt -= real_dt;
         }
 
-        tick_mutex_.lock();
-      }
+        std::this_thread::sleep_until(last_loop_time_point += sleep_time);
 
-      // 更新time point
-      ++current_tick_count_;
+      } while (state_.load() != State::Shutdown && real_dt.count());
 
-    } while (--diff_tick_count);
+      // 走时间轮
 
-    tick_mutex_.unlock();
+      // 要走的tick数
+      uint64_t diff_tick_count = ratio_direction ? real_ratio : 1;
+
+      tick_mutex_.lock();
+
+      do {
+        // 取出task
+        TaskList task_list = timing_wheel_vec_[0].Tick();
+
+        // 执行任务
+        if (!task_list.empty()) {
+          tick_mutex_.unlock();
+
+          for (auto& itr : task_list) {
+            bind_executor_ref_.Execute(std::move(itr.task));
+          }
+
+          tick_mutex_.lock();
+        }
+
+        // 更新time point
+        ++current_tick_count_;
+
+      } while (--diff_tick_count);
+
+      tick_mutex_.unlock();
+    } catch (const std::exception& e) {
+      AIMRT_FATAL("Time manipulator executor '{}' run loop get exception, {}",
+                  Name(), e.what());
+    }
   }
 }
 }  // namespace aimrt::plugins::time_manipulator_plugin

@@ -32,7 +32,7 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
                             "Get executor 'work_thread_pool' failed.");
 
     // Register publish type
-    publisher_ = core_.GetChannel().GetPublisher(topic_name_);
+    publisher_ = core_.GetChannelHandle().GetPublisher(topic_name_);
     AIMRT_CHECK_ERROR_THROW(publisher_, "Get publisher for topic '{}' failed.", topic_name_);
 
     bool ret = aimrt::channel::RegisterPublishType<
@@ -51,7 +51,7 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
 
 bool NormalPublisherModule::Start() noexcept {
   try {
-    scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), MainLoop()));
+    scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
     return false;
@@ -64,7 +64,7 @@ bool NormalPublisherModule::Start() noexcept {
 void NormalPublisherModule::Shutdown() noexcept {
   try {
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    co::SyncWait(scope_.complete());
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -74,17 +74,17 @@ void NormalPublisherModule::Shutdown() noexcept {
 }
 
 // Main loop
-aimrt::co::Task<void> NormalPublisherModule::MainLoop() {
+co::Task<void> NormalPublisherModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 
-    aimrt::co::AimRTScheduler work_thread_pool_scheduler(executor_);
+    co::AimRTScheduler work_thread_pool_scheduler(executor_);
 
-    co_await aimrt::co::Schedule(work_thread_pool_scheduler);
+    co_await co::Schedule(work_thread_pool_scheduler);
 
     uint32_t count = 0;
     while (run_flag_) {
-      co_await aimrt::co::ScheduleAfter(
+      co_await co::ScheduleAfter(
           work_thread_pool_scheduler,
           std::chrono::microseconds(static_cast<uint32_t>(1000000 / channel_frq_)));
       count++;

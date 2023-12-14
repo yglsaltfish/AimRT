@@ -47,7 +47,7 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
 bool HelloWorldModule::Start() noexcept {
   try {
     // Start main loop
-    scope_.spawn(aimrt::co::On(aimrt::co::InlineScheduler(), MainLoop()));
+    scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
     AIMRT_HL_ERROR(core_.GetLogger(), "Start failed, {}", e.what());
     return false;
@@ -61,7 +61,7 @@ void HelloWorldModule::Shutdown() noexcept {
   try {
     // Wait all coroutine complete
     run_flag_ = false;
-    aimrt::co::SyncWait(scope_.complete());
+    co::SyncWait(scope_.complete());
   } catch (const std::exception& e) {
     AIMRT_HL_ERROR(core_.GetLogger(), "Shutdown failed, {}", e.what());
     return;
@@ -70,13 +70,13 @@ void HelloWorldModule::Shutdown() noexcept {
   AIMRT_HL_INFO(core_.GetLogger(), "Shutdown succeeded.");
 }
 
-aimrt::co::Task<void> HelloWorldModule::MainLoop() {
+co::Task<void> HelloWorldModule::MainLoop() {
   try {
     AIMRT_HL_INFO(core_.GetLogger(), "Start MainLoop.");
 
-    aimrt::co::AimRTScheduler work_scheduler(work_executor_);
+    co::AimRTScheduler work_scheduler(work_executor_);
 
-    co_await aimrt::co::Schedule(work_scheduler);
+    co_await co::Schedule(work_scheduler);
 
     uint32_t count = 0;
     while (run_flag_) {
@@ -84,12 +84,12 @@ aimrt::co::Task<void> HelloWorldModule::MainLoop() {
       AIMRT_HL_INFO(core_.GetLogger(),
                     "Loop count : {} -------------------------", count);
 
-      co_await aimrt::co::ScheduleAfter(
+      co_await co::ScheduleAfter(
           work_scheduler,
           std::chrono::milliseconds(500));
 
       // Start a new task coroutine
-      scope_.spawn(aimrt::co::On(work_scheduler, TestTask(count)));
+      scope_.spawn(co::On(work_scheduler, TestTask(count)));
     }
 
     AIMRT_HL_INFO(core_.GetLogger(), "Exit MainLoop.");
@@ -101,11 +101,11 @@ aimrt::co::Task<void> HelloWorldModule::MainLoop() {
   co_return;
 }
 
-aimrt::co::Task<void> HelloWorldModule::TestTask(uint32_t count) {
+co::Task<void> HelloWorldModule::TestTask(uint32_t count) {
   AIMRT_HL_INFO(core_.GetLogger(), "Start TestTask {}.", count);
 
-  co_await aimrt::co::ScheduleAfter(
-      aimrt::co::AimRTScheduler(work_executor_),
+  co_await co::ScheduleAfter(
+      co::AimRTScheduler(work_executor_),
       std::chrono::milliseconds(2000));
 
   AIMRT_HL_INFO(core_.GetLogger(), "Exit TestTask {}.", count);

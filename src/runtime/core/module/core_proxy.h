@@ -30,12 +30,16 @@ class CoreProxy {
     rpc_handle_ = ptr;
   }
 
-  void SetChannel(const aimrt_channel_handle_base_t* ptr) {
+  void SetChannelHandle(const aimrt_channel_handle_base_t* ptr) {
     channel_handle_ = ptr;
   }
 
   void SetAllocator(const aimrt_allocator_base_t* ptr) {
     allocator_handle_ = ptr;
+  }
+
+  void SetParameterHandle(const aimrt_parameter_handle_base_t* ptr) {
+    parameter_handle_ = ptr;
   }
 
   const aimrt_core_base_t* NativeHandle() const { return &base_; }
@@ -61,6 +65,9 @@ class CoreProxy {
         .allocator_handle = [](void* impl) -> const aimrt_allocator_base_t* {
           return static_cast<CoreProxy*>(impl)->allocator_handle_;
         },
+        .parameter_handle = [](void* impl) -> const aimrt_parameter_handle_base_t* {
+          return static_cast<CoreProxy*>(impl)->parameter_handle_;
+        },
         .impl = impl};
   }
 
@@ -71,6 +78,7 @@ class CoreProxy {
   const aimrt_rpc_handle_base_t* rpc_handle_;
   const aimrt_channel_handle_base_t* channel_handle_;
   const aimrt_allocator_base_t* allocator_handle_;
+  const aimrt_parameter_handle_base_t* parameter_handle_;
 
   const aimrt_core_base_t base_;
 };
