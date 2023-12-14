@@ -96,7 +96,10 @@ std::shared_ptr<Parameter> ParameterHandle::GetParameter(std::string_view key) {
   ParameterMap::const_accessor ac;
   bool find_ret = parameter_map_.find(ac, key);
 
-  if (find_ret) return ac->second.load();
+  if (find_ret) {
+    std::lock_guard<std::mutex> lck(ac->second.mu);
+    return ac->second.ptr;
+  }
 
   static auto ptr = std::make_shared<Parameter>();
   return ptr;
@@ -109,7 +112,8 @@ void ParameterHandle::SetParameter(
 
   if (emplace_ret) return;
 
-  ac->second.store(parameter_ptr);
+  std::lock_guard<std::mutex> lck(ac->second.mu);
+  ac->second.ptr = parameter_ptr;
 }
 
 }  // namespace aimrt::runtime::core::parameter

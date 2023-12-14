@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -53,8 +54,14 @@ class ParameterHandle {
     std::size_t hash(std::string_view k) const { return std::hash<std::string_view>{}(k); }
   };
 
-  using ParameterMap = tbb::concurrent_hash_map<
-      std::string, std::atomic<std::shared_ptr<Parameter>>, StringHashCompare>;
+  // TODO: 编译器支持后可以换成std::atomic<std::shared_ptr<Parameter>
+  struct ParameterWrap {
+    explicit ParameterWrap(const std::shared_ptr<Parameter>& input_ptr)
+        : ptr(input_ptr) {}
+    std::shared_ptr<Parameter> ptr;
+    mutable std::mutex mu;
+  };
+  using ParameterMap = tbb::concurrent_hash_map<std::string, ParameterWrap, StringHashCompare>;
   ParameterMap parameter_map_;
 };
 

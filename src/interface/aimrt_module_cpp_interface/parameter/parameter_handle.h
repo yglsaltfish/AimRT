@@ -206,12 +206,23 @@ class ParameterView {
         return static_cast<T>(base_.data.f);
 
       throw std::runtime_error("Can not convert parameter to floating point num");
-    } else if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
+    } else if constexpr (std::is_same_v<T, std::string_view> ||
+                         std::is_same_v<T, std::string> ||
+                         std::is_same_v<T, std::span<const char>>) {
       if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING &&
           base_.data.array.type_size == 1)
         return T(static_cast<const char*>(base_.data.array.data), base_.data.array.len);
 
       throw std::runtime_error("Can not convert parameter to string");
+    } else if constexpr (std::is_same_v<T, std::vector<char>>) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING &&
+          base_.data.array.type_size == 1) {
+        std::vector<char> result(base_.data.array.len);
+        memcpy(result.data(), base_.data.array.data, base_.data.array.len);
+        return result;
+      }
+
+      throw std::runtime_error("Can not convert parameter to char array");
     } else if constexpr (std::is_same_v<T, std::span<const bool>>) {
       if ((base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY ||
            base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY ||
@@ -460,7 +471,7 @@ class ParameterView {
 
       throw std::runtime_error("Can not convert parameter to string array");
     } else {
-      static_assert(false, "Can not convert parameter to target type");
+      static_assert(sizeof(T) == 0, "Can not convert parameter to target type");
     }
   }
 
