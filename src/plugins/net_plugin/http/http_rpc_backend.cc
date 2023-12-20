@@ -254,7 +254,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
     if (!handle_flag.load()) {
       try {
         co_await sig_timer_ptr->async_wait(asio::use_awaitable);
-        finish_flag = false;
+        if (!handle_flag.load()) finish_flag = false;
       } catch (const std::exception& e) {
         AIMRT_TRACE(
             "rpc cli session recv sig timer canceled, exception info: {}",
