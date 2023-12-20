@@ -568,7 +568,13 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
         Response<RspBodyType> handle_rsp{boost::beast::http::status::ok, req.version()};
         HttpHandleStatus handle_status;
 
-        const auto handle_timeout = std::chrono::seconds(5);
+        auto handle_timeout = std::chrono::seconds(5);
+        auto req_timeout_itr = req.find(boost::beast::http::field::timeout);
+        if (req_timeout_itr != req.end()) {
+          auto timeout_str = req_timeout_itr->value();
+          if (util::IsDigitStr(timeout_str))
+            handle_timeout = std::chrono::seconds(atoi(timeout_str.data()));
+        }
 
         std::string err_info;
         try {
