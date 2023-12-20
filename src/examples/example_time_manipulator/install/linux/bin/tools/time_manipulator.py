@@ -6,20 +6,22 @@ import urllib.parse
 import json
 import time
 
+
 class URLApp:
     def __init__(self, root):
         self.root = root
         self.root.title("App")
 
         self.url_entry = tk.Entry(root, width=100)
-        self.url_entry.insert(0, "http://127.0.0.1:50080/rpc/aimrt.protocols.time_manipulator_plugin.TimeManipulatorService/SetTimeRatio")
+        self.url_entry.insert(
+            0, "http://127.0.0.1:50080/rpc/aimrt.protocols.time_manipulator_plugin.TimeManipulatorService/SetTimeRatio")
         self.url_entry.pack()
 
         self.executor_name_entry = tk.Entry(root, width=100)
         self.executor_name_entry.insert(0, "work_thread_pool")
         self.executor_name_entry.pack()
 
-        self.discrete_values = [0, 1/8, 1/4, 1/2, 1, 2, 4, 8]
+        self.discrete_values = [0, 1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8]
         self.slider_value = tk.DoubleVar()
         self.slider = ttk.Scale(root, from_=0, to=len(self.discrete_values) - 1,
                                 orient='horizontal', length=200,
@@ -82,10 +84,12 @@ class URLApp:
                 json_data = json.dumps({'executor_name': executor_name, 'time_ratio': self.discrete_values[index]})
                 conn.request("POST", parsed_url.path, json_data, headers)
                 response = conn.getresponse()
-                print(f"Sent POST request to {url} with json_data {json_data}, response: {response.status} {response.reason}")
+                print(
+                    f"Sent POST request to {url} with json_data {json_data}, response: {response.status} {response.reason}")
                 conn.close()
             except Exception as e:
                 print(f"Error sending request: {e}")
+
 
 if __name__ == "__main__":
     root = tk.Tk()
