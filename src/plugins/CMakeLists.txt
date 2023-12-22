@@ -1,6 +1,6 @@
 set_namespace()
 
-if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_NET_PLUGIN)
+if(AIMRT_BUILD_NET_PLUGIN)
   add_subdirectory(net_plugin)
 endif()
 
@@ -22,4 +22,8 @@ endif()
 
 if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN)
   add_subdirectory(time_manipulator_plugin)
+endif()
+
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_PARAMETER_PLUGIN)
+  add_subdirectory(parameter_plugin)
 endif()

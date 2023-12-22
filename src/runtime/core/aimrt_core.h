@@ -127,6 +127,9 @@ class AimRTCore {
   channel::ChannelManager& GetChannelManager() { return channel_manager_; }
   const channel::ChannelManager& GetChannelManager() const { return channel_manager_; }
 
+  parameter::ParameterManager& GetParameterManager() { return parameter_manager_; }
+  const parameter::ParameterManager& GetParameterManager() const { return parameter_manager_; }
+
   module::ModuleManager& GetModuleManager() { return module_manager_; }
   const module::ModuleManager& GetModuleManager() const { return module_manager_; }
 

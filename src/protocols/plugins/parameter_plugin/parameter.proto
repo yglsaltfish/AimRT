@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package aimrt.protocols.parameter_plugin;
+
+message NullValue {}
+
+message BoolArray {
+  repeated bool items = 1;
+}
+
+message IntArray {
+  repeated int64 items = 1;
+}
+
+message UintArray {
+  repeated uint64 items = 1;
+}
+
+message DoubleArray {
+  repeated double items = 1;
+}
+
+message StringArray {
+  repeated string items = 1;
+}
+
+message ParameterValue {
+  oneof kind {
+    NullValue null_value = 1;
+    bool bool_value = 2;
+    int64 int_value = 3;
+    uint64 uint_value = 4;
+    double double_value = 5;
+    string string_value = 6;
+    bytes bytes_value = 7;
+    BoolArray bool_array = 8;
+    IntArray int_array = 9;
+    UintArray uint_array = 10;
+    DoubleArray double_array = 11;
+    StringArray string_array = 12;
+  }
+}
+
+message SetParameterReq {
+  string module_name = 1;
+  string parameter_name = 2;
+  ParameterValue parameter_value = 3;
+}
+
+message SetParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+}
+
+message GetParameterReq {
+  string module_name = 1;
+  string parameter_name = 2;
+}
+
+message GetParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+  ParameterValue parameter_value = 3;
+}
+
+message ListParameterReq {
+  string module_name = 1;
+}
+
+message ListParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+  repeated string parameter_names = 3;
+}
+
+message ParameterMap {
+  map<string, ParameterValue> value = 1;
+}
+
+message DumpParameterReq {
+  repeated string module_names = 1;  // key: parameter_name
+}
+
+message DumpParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+
+  map<string, ParameterMap> value = 3;  // key: module_name
+}
+
+message LoadParameterReq {
+  map<string, ParameterMap> value = 1;  // key: module_name
+}
+
+message LoadParameterRsp {
+  uint32 code = 1;
+  string msg = 2;
+}
+
+service ParameterService {
+  rpc Set(SetParameterReq) returns (SetParameterRsp);
+  rpc Get(GetParameterReq) returns (GetParameterRsp);
+  rpc List(ListParameterReq) returns (ListParameterRsp);
+  rpc Dump(DumpParameterReq) returns (DumpParameterRsp);
+  rpc Load(LoadParameterReq) returns (LoadParameterRsp);
+}

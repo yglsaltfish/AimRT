@@ -25,6 +25,8 @@ class Parameter {
 
   bool IsArray() const { return !(array_data_.empty()); }
 
+  bool IsNull() const { return view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_NULL; }
+
  private:
   aimrt_parameter_view_t view_;
   std::vector<uint8_t> array_data_;
@@ -39,8 +41,8 @@ class ParameterHandle {
   ParameterHandle& operator=(const ParameterHandle&) = delete;
 
   std::shared_ptr<Parameter> GetParameter(std::string_view key);
-
   void SetParameter(std::string_view key, const std::shared_ptr<Parameter>& parameter_ptr);
+  std::vector<std::string> ListParameter() const;
 
  private:
   struct StringHashCompare {

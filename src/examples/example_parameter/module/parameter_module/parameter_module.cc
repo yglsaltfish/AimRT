@@ -109,18 +109,18 @@ co::Task<void> ParameterModule::SetParameterLoop() {
         byte_array[ii] = static_cast<unsigned char>(ii);
         bool_array[ii] = (ii % 2);
 
-        int8_array[ii] = static_cast<int8_t>(ii);
-        int16_array[ii] = static_cast<int16_t>(ii);
-        int32_array[ii] = static_cast<int32_t>(ii);
-        int64_array[ii] = static_cast<int64_t>(ii);
+        int8_array[ii] = -static_cast<int8_t>(ii);
+        int16_array[ii] = -static_cast<int16_t>(ii);
+        int32_array[ii] = -static_cast<int32_t>(ii);
+        int64_array[ii] = -static_cast<int64_t>(ii);
 
         uint8_array[ii] = static_cast<uint8_t>(ii);
         uint16_array[ii] = static_cast<uint16_t>(ii);
         uint32_array[ii] = static_cast<uint32_t>(ii);
         uint64_array[ii] = static_cast<uint64_t>(ii);
 
-        float_array[ii] = static_cast<float>(ii);
-        double_array[ii] = static_cast<double>(ii);
+        float_array[ii] = static_cast<float>(ii) * 3.14;
+        double_array[ii] = static_cast<double>(ii) * 3.14;
 
         string_array[ii] = "str_" + std::to_string(ii);
       }
@@ -129,13 +129,13 @@ co::Task<void> ParameterModule::SetParameterLoop() {
           parameter_handle_.SetParameter("test_bool", static_cast<bool>(count % 2)),
           "Set parameter failed");
       AIMRT_CHECK_ERROR_THROW(
-          parameter_handle_.SetParameter("test_int", static_cast<int64_t>(count)),
+          parameter_handle_.SetParameter("test_int", -static_cast<int64_t>(count)),
           "Set parameter failed");
       AIMRT_CHECK_ERROR_THROW(
           parameter_handle_.SetParameter("test_uint", static_cast<uint64_t>(count)),
           "Set parameter failed");
       AIMRT_CHECK_ERROR_THROW(
-          parameter_handle_.SetParameter("test_double", static_cast<double>(count)),
+          parameter_handle_.SetParameter("test_double", static_cast<double>(count) * 3.14),
           "Set parameter failed");
       AIMRT_CHECK_ERROR_THROW(
           parameter_handle_.SetParameter("test_string", "count: " + std::to_string(count)),
@@ -237,18 +237,14 @@ co::Task<void> ParameterModule::GetParameterLoop() {
                    ToString(int8_span_val), ToString(int8_vec_val));
 
         auto test_int16_array_parameter = parameter_handle_.GetParameter("test_int16_array");
-        auto int16_span_val = test_int16_array_parameter.As<std::span<const int16_t>>();
         auto int16_vec_val = test_int16_array_parameter.As<std::vector<int16_t>>();
 
-        AIMRT_INFO("int16_span_val: '{}', int16_vec_val: '{}'",
-                   ToString(int16_span_val), ToString(int16_vec_val));
+        AIMRT_INFO("int16_vec_val: '{}'", ToString(int16_vec_val));
 
         auto test_int32_array_parameter = parameter_handle_.GetParameter("test_int32_array");
-        auto int32_span_val = test_int32_array_parameter.As<std::span<const int32_t>>();
         auto int32_vec_val = test_int32_array_parameter.As<std::vector<int32_t>>();
 
-        AIMRT_INFO("int32_span_val: '{}', int32_vec_val: '{}'",
-                   ToString(int32_span_val), ToString(int32_vec_val));
+        AIMRT_INFO("int32_vec_val: '{}'", ToString(int32_vec_val));
 
         auto test_int64_array_parameter = parameter_handle_.GetParameter("test_int64_array");
         auto int64_span_val = test_int64_array_parameter.As<std::span<const int64_t>>();
@@ -265,18 +261,14 @@ co::Task<void> ParameterModule::GetParameterLoop() {
                    ToString(uint8_span_val), ToString(uint8_vec_val));
 
         auto test_uint16_array_parameter = parameter_handle_.GetParameter("test_uint16_array");
-        auto uint16_span_val = test_uint16_array_parameter.As<std::span<const uint16_t>>();
         auto uint16_vec_val = test_uint16_array_parameter.As<std::vector<uint16_t>>();
 
-        AIMRT_INFO("uint16_span_val: '{}', uint16_vec_val: '{}'",
-                   ToString(uint16_span_val), ToString(uint16_vec_val));
+        AIMRT_INFO("uint16_vec_val: '{}'", ToString(uint16_vec_val));
 
         auto test_uint32_array_parameter = parameter_handle_.GetParameter("test_uint32_array");
-        auto uint32_span_val = test_uint32_array_parameter.As<std::span<const uint32_t>>();
         auto uint32_vec_val = test_uint32_array_parameter.As<std::vector<uint32_t>>();
 
-        AIMRT_INFO("uint32_span_val: '{}', uint32_vec_val: '{}'",
-                   ToString(uint32_span_val), ToString(uint32_vec_val));
+        AIMRT_INFO("uint32_vec_val: '{}'", ToString(uint32_vec_val));
 
         auto test_uint64_array_parameter = parameter_handle_.GetParameter("test_uint64_array");
         auto uint64_span_val = test_uint64_array_parameter.As<std::span<const uint64_t>>();
@@ -286,11 +278,9 @@ co::Task<void> ParameterModule::GetParameterLoop() {
                    ToString(uint64_span_val), ToString(uint64_vec_val));
 
         auto test_float_array_parameter = parameter_handle_.GetParameter("test_float_array");
-        auto float_span_val = test_float_array_parameter.As<std::span<const float>>();
         auto float_vec_val = test_float_array_parameter.As<std::vector<float>>();
 
-        AIMRT_INFO("float_span_val: '{}', float_vec_val: '{}'",
-                   ToString(float_span_val), ToString(float_vec_val));
+        AIMRT_INFO("float_vec_val: '{}'", ToString(float_vec_val));
 
         auto test_double_array_parameter = parameter_handle_.GetParameter("test_double_array");
         auto double_span_val = test_double_array_parameter.As<std::span<const double>>();

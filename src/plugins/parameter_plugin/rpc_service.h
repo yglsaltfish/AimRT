@@ -1,0 +1,70 @@
+#pragma once
+
+#include "core/parameter/parameter_manager.h"
+
+#include "parameter.aimrt_rpc.pb.h"
+
+namespace aimrt::plugins::parameter_plugin {
+
+class ParameterServiceImpl : public aimrt::protocols::parameter_plugin::ParameterService {
+ public:
+  ParameterServiceImpl() = default;
+  ~ParameterServiceImpl() override = default;
+
+  void SetParameterManager(aimrt::runtime::core::parameter::ParameterManager* ptr) {
+    parameter_manager_ptr_ = ptr;
+  }
+
+  aimrt::co::Task<aimrt::rpc::Status> Set(
+      aimrt::rpc::ContextRef ctx_ref,
+      const ::aimrt::protocols::parameter_plugin::SetParameterReq& req,
+      ::aimrt::protocols::parameter_plugin::SetParameterRsp& rsp) override;
+
+  aimrt::co::Task<aimrt::rpc::Status> Get(
+      aimrt::rpc::ContextRef ctx_ref,
+      const ::aimrt::protocols::parameter_plugin::GetParameterReq& req,
+      ::aimrt::protocols::parameter_plugin::GetParameterRsp& rsp) override;
+
+  aimrt::co::Task<aimrt::rpc::Status> List(
+      aimrt::rpc::ContextRef ctx_ref,
+      const ::aimrt::protocols::parameter_plugin::ListParameterReq& req,
+      ::aimrt::protocols::parameter_plugin::ListParameterRsp& rsp) override;
+
+  aimrt::co::Task<aimrt::rpc::Status> Dump(
+      aimrt::rpc::ContextRef ctx_ref,
+      const ::aimrt::protocols::parameter_plugin::DumpParameterReq& req,
+      ::aimrt::protocols::parameter_plugin::DumpParameterRsp& rsp) override;
+
+  aimrt::co::Task<aimrt::rpc::Status> Load(
+      aimrt::rpc::ContextRef ctx_ref,
+      const ::aimrt::protocols::parameter_plugin::LoadParameterReq& req,
+      ::aimrt::protocols::parameter_plugin::LoadParameterRsp& rsp) override;
+
+ private:
+  static void SetPbParameter(
+      const std::shared_ptr<aimrt::runtime::core::parameter::Parameter>& aimrt_parameter,
+      ::aimrt::protocols::parameter_plugin::ParameterValue* pb_parameter);
+
+  static std::shared_ptr<aimrt::runtime::core::parameter::Parameter> GetPbParameter(
+      const ::aimrt::protocols::parameter_plugin::ParameterValue& pb_parameter);
+
+ private:
+  enum class ErrorCode : uint32_t {
+    SUC = 0,
+    INVALID_MODULE_NAME = 1,
+  };
+
+  static constexpr std::string_view error_info_array[] = {
+      "",
+      "INVALID_MODULE_NAME"};
+
+  template <typename T>
+  void SetErrorCode(ErrorCode code, T& rsp) {
+    rsp.set_code(static_cast<uint32_t>(code));
+    rsp.set_msg(std::string(error_info_array[static_cast<uint32_t>(code)]));
+  }
+
+  aimrt::runtime::core::parameter::ParameterManager* parameter_manager_ptr_ = nullptr;
+};
+
+}  // namespace aimrt::plugins::parameter_plugin

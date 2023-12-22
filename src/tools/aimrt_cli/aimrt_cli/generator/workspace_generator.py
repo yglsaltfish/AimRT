@@ -60,6 +60,7 @@ aimrt_core_options = [
     'AIMRT_BUILD_LCM_PLUGIN',
     'AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN',
     'AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN',
+    'AIMRT_BUILD_PARAMETER_PLUGIN',
 ]
 
 workspace_template_infos = [

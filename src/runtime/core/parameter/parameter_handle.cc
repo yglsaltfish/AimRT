@@ -6,8 +6,11 @@ namespace aimrt::runtime::core::parameter {
 bool Parameter::SetData(aimrt_parameter_view_t input_view) {
   view_.type = input_view.type;
 
-  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_NULL ||
-      view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL ||
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_NULL) {
+    return true;
+  }
+
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE) {
@@ -101,12 +104,16 @@ std::shared_ptr<Parameter> ParameterHandle::GetParameter(std::string_view key) {
     return ac->second.ptr;
   }
 
-  static auto ptr = std::make_shared<Parameter>();
-  return ptr;
+  return std::shared_ptr<Parameter>();
 }
 
 void ParameterHandle::SetParameter(
     std::string_view key, const std::shared_ptr<Parameter>& parameter_ptr) {
+  if (!parameter_ptr || parameter_ptr->IsNull()) [[unlikely]] {
+    parameter_map_.erase(key);
+    return;
+  }
+
   ParameterMap::accessor ac;
   bool emplace_ret = parameter_map_.emplace(ac, key, parameter_ptr);
 
@@ -114,6 +121,17 @@ void ParameterHandle::SetParameter(
 
   std::lock_guard<std::mutex> lck(ac->second.mu);
   ac->second.ptr = parameter_ptr;
+}
+
+std::vector<std::string> ParameterHandle::ListParameter() const {
+  std::vector<std::string> result;
+  result.reserve(parameter_map_.size());
+
+  for (auto itr = parameter_map_.begin(); itr != parameter_map_.end(); ++itr) {
+    result.emplace_back(itr->first);
+  }
+
+  return result;
 }
 
 }  // namespace aimrt::runtime::core::parameter

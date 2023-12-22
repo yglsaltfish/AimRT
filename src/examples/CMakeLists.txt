@@ -1,7 +1,6 @@
 set_namespace()
 
 add_subdirectory(example_helloworld)
-add_subdirectory(example_parameter)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(example_real_time)
@@ -44,4 +43,10 @@ if(AIMRT_BUILD_WITH_PROTOBUF
    AND AIMRT_BUILD_NET_PLUGIN
    AND AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN)
   add_subdirectory(example_time_manipulator)
+endif()
+
+if(AIMRT_BUILD_WITH_PROTOBUF
+   AND AIMRT_BUILD_NET_PLUGIN
+   AND AIMRT_BUILD_PARAMETER_PLUGIN)
+  add_subdirectory(example_parameter)
 endif()
