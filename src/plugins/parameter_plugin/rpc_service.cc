@@ -221,6 +221,41 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Dump(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::parameter_plugin::DumpParameterReq& req,
     ::aimrt::protocols::parameter_plugin::DumpParameterRsp& rsp) {
+  assert(parameter_manager_ptr_);
+
+  using ParameterHandleMap =
+      std::unordered_map<std::string_view, aimrt::runtime::core::parameter::ParameterHandle*>;
+  ParameterHandleMap parameter_handle_map;
+
+  // 检查module name合法性
+  for (auto itr = req.module_names().begin(); itr != req.module_names().end(); ++itr) {
+    std::string_view module_name(*itr);
+    auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(module_name);
+
+    if (parameter_handle_ptr == nullptr) {
+      SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+      co_return aimrt::rpc::Status();
+    }
+
+    parameter_handle_map.emplace(module_name, parameter_handle_ptr);
+  }
+
+  // 填rsp
+  for (auto& itr : parameter_handle_map) {
+    auto& pb_parameter_map = (*rsp.mutable_value())[itr.first];
+
+    const auto& parameter_names = itr.second->ListParameter();
+
+    for (auto& parameter_name : parameter_names) {
+      auto parameter_ptr = itr.second->GetParameter(parameter_name);
+      if (!parameter_ptr) [[unlikely]] {
+        continue;
+      }
+
+      SetPbParameter(parameter_ptr, &(*pb_parameter_map.mutable_value())[parameter_name]);
+    }
+  }
+
   co_return aimrt::rpc::Status();
 }
 

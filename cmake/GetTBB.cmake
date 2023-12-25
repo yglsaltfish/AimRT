@@ -17,6 +17,11 @@ if(NOT tbb_POPULATED)
   set(TBB_TEST
       OFF
       CACHE BOOL "")
+
+  set(TBB_DIR
+      ""
+      CACHE STRING "" FORCE)
+
   FetchContent_MakeAvailable(tbb)
 
   # fix gcc13 build error
