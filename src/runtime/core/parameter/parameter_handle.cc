@@ -21,14 +21,7 @@ bool Parameter::SetData(aimrt_parameter_view_t input_view) {
   if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY) {
-    if (input_view.data.array.type_size != 1) [[unlikely]] {
-      AIMRT_ERROR("Invalid parameter view type: {}, type_size: {}",
-                  static_cast<size_t>(view_.type), input_view.data.array.type_size);
-      return false;
-    }
-
     view_.data.array.len = input_view.data.array.len;
-    view_.data.array.type_size = 1;
 
     array_data_ = std::vector<uint8_t>(view_.data.array.len);
     view_.data.array.data = array_data_.data();
@@ -37,22 +30,30 @@ bool Parameter::SetData(aimrt_parameter_view_t input_view) {
     return true;
   }
 
-  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY ||
-      view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY ||
-      view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY) {
-    if (input_view.data.array.type_size != 1 &&
-        input_view.data.array.type_size != 2 &&
-        input_view.data.array.type_size != 4 &&
-        input_view.data.array.type_size != 8) [[unlikely]] {
-      AIMRT_ERROR("Invalid parameter view type: {}, type_size: {}",
-                  static_cast<size_t>(view_.type), input_view.data.array.type_size);
-      return false;
-    }
-
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY) {
     view_.data.array.len = input_view.data.array.len;
-    view_.data.array.type_size = input_view.data.array.type_size;
 
-    array_data_ = std::vector<uint8_t>(view_.data.array.len * view_.data.array.type_size);
+    array_data_ = std::vector<uint8_t>(view_.data.array.len * sizeof(int64_t));
+    view_.data.array.data = array_data_.data();
+
+    memcpy(array_data_.data(), input_view.data.array.data, array_data_.size());
+    return true;
+  }
+
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY) {
+    view_.data.array.len = input_view.data.array.len;
+
+    array_data_ = std::vector<uint8_t>(view_.data.array.len * sizeof(uint64_t));
+    view_.data.array.data = array_data_.data();
+
+    memcpy(array_data_.data(), input_view.data.array.data, array_data_.size());
+    return true;
+  }
+
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY) {
+    view_.data.array.len = input_view.data.array.len;
+
+    array_data_ = std::vector<uint8_t>(view_.data.array.len * sizeof(double));
     view_.data.array.data = array_data_.data();
 
     memcpy(array_data_.data(), input_view.data.array.data, array_data_.size());
@@ -60,14 +61,7 @@ bool Parameter::SetData(aimrt_parameter_view_t input_view) {
   }
 
   if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY) {
-    if (input_view.data.array.type_size != sizeof(aimrt_string_view_t)) [[unlikely]] {
-      AIMRT_ERROR("Invalid parameter view type: {}, type_size: {}",
-                  static_cast<size_t>(view_.type), input_view.data.array.type_size);
-      return false;
-    }
-
     view_.data.array.len = input_view.data.array.len;
-    view_.data.array.type_size = input_view.data.array.type_size;
 
     const size_t array_data_len = view_.data.array.len * sizeof(aimrt_string_view_t);
     size_t buf_len = array_data_len;

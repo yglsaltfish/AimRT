@@ -47,28 +47,24 @@ class ParameterView {
   ParameterView(std::string_view val) {
     base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING;
     base_.data.array.data = val.data();
-    base_.data.array.type_size = 1;
     base_.data.array.len = val.size();
   }
 
   ParameterView(const std::string& val) {
     base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING;
     base_.data.array.data = val.c_str();
-    base_.data.array.type_size = 1;
     base_.data.array.len = val.size();
   }
 
   ParameterView(const void* buf, size_t len) {
     base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY;
     base_.data.array.data = buf;
-    base_.data.array.type_size = 1;
     base_.data.array.len = len;
   }
 
   ParameterView(std::span<const bool> val) {
     base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY;
     base_.data.array.data = val.data();
-    base_.data.array.type_size = 1;
     base_.data.array.len = val.size();
   }
 
@@ -81,7 +77,6 @@ class ParameterView {
 
     base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY;
     base_.data.array.data = convert_buf_.data();
-    base_.data.array.type_size = 1;
     base_.data.array.len = len;
   }
 
@@ -90,12 +85,10 @@ class ParameterView {
     if constexpr (sizeof(T) == 1) {
       base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY;
       base_.data.array.data = val.data();
-      base_.data.array.type_size = 1;
       base_.data.array.len = val.size();
     } else if constexpr (sizeof(T) == sizeof(int64_t)) {
       base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY;
       base_.data.array.data = val.data();
-      base_.data.array.type_size = sizeof(int64_t);
       base_.data.array.len = val.size();
     } else {
       const size_t len = val.size();
@@ -107,7 +100,6 @@ class ParameterView {
 
       base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY;
       base_.data.array.data = int64_data;
-      base_.data.array.type_size = sizeof(int64_t);
       base_.data.array.len = len;
     }
   }
@@ -121,12 +113,10 @@ class ParameterView {
     if constexpr (sizeof(T) == 1) {
       base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY;
       base_.data.array.data = val.data();
-      base_.data.array.type_size = 1;
       base_.data.array.len = val.size();
     } else if constexpr (sizeof(T) == sizeof(uint64_t)) {
       base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY;
       base_.data.array.data = val.data();
-      base_.data.array.type_size = sizeof(uint64_t);
       base_.data.array.len = val.size();
     } else {
       const size_t len = val.size();
@@ -138,7 +128,6 @@ class ParameterView {
 
       base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY;
       base_.data.array.data = uint64_data;
-      base_.data.array.type_size = sizeof(uint64_t);
       base_.data.array.len = len;
     }
   }
@@ -153,7 +142,6 @@ class ParameterView {
 
     if constexpr (sizeof(T) == sizeof(double)) {
       base_.data.array.data = val.data();
-      base_.data.array.type_size = sizeof(double);
       base_.data.array.len = val.size();
     } else {
       const size_t len = val.size();
@@ -164,7 +152,6 @@ class ParameterView {
       }
 
       base_.data.array.data = double_data;
-      base_.data.array.type_size = sizeof(double);
       base_.data.array.len = len;
     }
   }
@@ -176,7 +163,6 @@ class ParameterView {
   ParameterView(std::span<const aimrt_string_view_t> val) {
     base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY;
     base_.data.array.data = val.data();
-    base_.data.array.type_size = sizeof(aimrt_string_view_t);
     base_.data.array.len = val.size();
   }
 
@@ -192,7 +178,6 @@ class ParameterView {
 
     base_.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY;
     base_.data.array.data = convert_buf_.data();
-    base_.data.array.type_size = sizeof(aimrt_string_view_t);
     base_.data.array.len = len;
   }
 
@@ -233,30 +218,26 @@ class ParameterView {
       throw std::runtime_error("Can not convert parameter to floating point num");
     } else if constexpr (std::is_same_v<T, std::string_view> ||
                          std::is_same_v<T, std::string>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING &&
-          base_.data.array.type_size == 1)
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING)
         return T(static_cast<const char*>(base_.data.array.data), base_.data.array.len);
 
       throw std::runtime_error("Can not convert parameter to string");
     } else if constexpr (std::is_same_v<T, std::pair<const void*, size_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY &&
-          base_.data.array.type_size == 1)
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY)
         return T(base_.data.array.data, base_.data.array.len);
 
       throw std::runtime_error("Can not convert parameter to byte array");
     } else if constexpr (std::is_same_v<T, std::span<const char>> ||
                          std::is_same_v<T, std::span<const int8_t>> ||
                          std::is_same_v<T, std::span<const uint8_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY &&
-          base_.data.array.type_size == 1)
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY)
         return T(static_cast<T::element_type*>(base_.data.array.data), base_.data.array.len);
 
       throw std::runtime_error("Can not convert parameter to byte array");
     } else if constexpr (std::is_same_v<T, std::vector<char>> ||
                          std::is_same_v<T, std::vector<int8_t>> ||
                          std::is_same_v<T, std::vector<uint8_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY &&
-          base_.data.array.type_size == 1) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY) {
         T result(base_.data.array.len);
         memcpy(result.data(), base_.data.array.data, base_.data.array.len);
         return result;
@@ -264,16 +245,14 @@ class ParameterView {
 
       throw std::runtime_error("Can not convert parameter to byte array");
     } else if constexpr (std::is_same_v<T, std::span<const bool>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY &&
-          base_.data.array.type_size == 1) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY) {
         return std::span<const bool>(
             static_cast<const bool*>(base_.data.array.data), base_.data.array.len);
       }
 
       throw std::runtime_error("Can not convert parameter to bool array");
     } else if constexpr (std::is_same_v<T, std::vector<bool>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY &&
-          base_.data.array.type_size == 1) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY) {
         std::vector<bool> result(base_.data.array.len);
         for (size_t ii = 0; ii < base_.data.array.len; ++ii) {
           result[ii] = static_cast<const bool*>(base_.data.array.data)[ii];
@@ -284,8 +263,7 @@ class ParameterView {
 
       throw std::runtime_error("Can not convert parameter to bool array");
     } else if constexpr (std::is_same_v<T, std::span<const int64_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY &&
-          base_.data.array.type_size == sizeof(int64_t)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY) {
         return std::span<const int64_t>(
             static_cast<const int64_t*>(base_.data.array.data), base_.data.array.len);
       }
@@ -294,8 +272,7 @@ class ParameterView {
     } else if constexpr (std::is_same_v<T, std::vector<int16_t>> ||
                          std::is_same_v<T, std::vector<int32_t>> ||
                          std::is_same_v<T, std::vector<int64_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY &&
-          base_.data.array.type_size == sizeof(int64_t)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY) {
         T result(base_.data.array.len);
         const int64_t* int64_data = reinterpret_cast<const int64_t*>(base_.data.array.data);
         for (size_t ii = 0; ii < base_.data.array.len; ++ii) {
@@ -307,8 +284,7 @@ class ParameterView {
 
       throw std::runtime_error("Can not convert parameter to int vector");
     } else if constexpr (std::is_same_v<T, std::span<const uint64_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY &&
-          base_.data.array.type_size == sizeof(uint64_t)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY) {
         return std::span<const uint64_t>(
             static_cast<const uint64_t*>(base_.data.array.data), base_.data.array.len);
       }
@@ -317,8 +293,7 @@ class ParameterView {
     } else if constexpr (std::is_same_v<T, std::vector<uint16_t>> ||
                          std::is_same_v<T, std::vector<uint32_t>> ||
                          std::is_same_v<T, std::vector<uint64_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY &&
-          base_.data.array.type_size == sizeof(uint64_t)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY) {
         T result(base_.data.array.len);
         const uint64_t* uint64_data = reinterpret_cast<const uint64_t*>(base_.data.array.data);
         for (size_t ii = 0; ii < base_.data.array.len; ++ii) {
@@ -330,8 +305,7 @@ class ParameterView {
 
       throw std::runtime_error("Can not convert parameter to uint vector");
     } else if constexpr (std::is_same_v<T, std::span<const double>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY &&
-          base_.data.array.type_size == sizeof(double)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY) {
         return std::span<const double>(
             static_cast<const double*>(base_.data.array.data), base_.data.array.len);
       }
@@ -339,8 +313,7 @@ class ParameterView {
       throw std::runtime_error("Can not convert parameter to double span");
     } else if constexpr (std::is_same_v<T, std::vector<float>> ||
                          std::is_same_v<T, std::vector<double>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY &&
-          base_.data.array.type_size == sizeof(double)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY) {
         T result(base_.data.array.len);
         const double* double_data = reinterpret_cast<const double*>(base_.data.array.data);
         for (size_t ii = 0; ii < base_.data.array.len; ++ii) {
@@ -352,16 +325,14 @@ class ParameterView {
 
       throw std::runtime_error("Can not convert parameter to float point vector");
     } else if constexpr (std::is_same_v<T, std::span<const aimrt_string_view_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY &&
-          base_.data.array.type_size == sizeof(aimrt_string_view_t)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY) {
         return std::span<const aimrt_string_view_t>(
             static_cast<const aimrt_string_view_t*>(base_.data.array.data), base_.data.array.len);
       }
 
       throw std::runtime_error("Can not convert parameter to string array");
     } else if constexpr (std::is_same_v<T, std::vector<aimrt_string_view_t>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY &&
-          base_.data.array.type_size == sizeof(aimrt_string_view_t)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY) {
         std::vector<aimrt_string_view_t> result(base_.data.array.len);
         memcpy(result.data(), base_.data.array.data, base_.data.array.len * sizeof(aimrt_string_view_t));
         return result;
@@ -369,8 +340,7 @@ class ParameterView {
 
       throw std::runtime_error("Can not convert parameter to string array");
     } else if constexpr (std::is_same_v<T, std::vector<std::string_view>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY &&
-          base_.data.array.type_size == sizeof(aimrt_string_view_t)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY) {
         std::vector<std::string_view> result(base_.data.array.len);
         for (size_t ii = 0; ii < base_.data.array.len; ++ii) {
           result[ii] = util::ToStdStringView(
@@ -382,8 +352,7 @@ class ParameterView {
 
       throw std::runtime_error("Can not convert parameter to string array");
     } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
-      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY &&
-          base_.data.array.type_size == sizeof(aimrt_string_view_t)) {
+      if (base_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY) {
         std::vector<std::string> result(base_.data.array.len);
         for (size_t ii = 0; ii < base_.data.array.len; ++ii) {
           result[ii] = util::ToStdString(

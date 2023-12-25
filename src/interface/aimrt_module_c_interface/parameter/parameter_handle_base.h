@@ -12,17 +12,17 @@ extern "C" {
 /// Parameter type
 typedef enum {
   AIMRT_PARAMETER_TYPE_NULL = 0,
-  AIMRT_PARAMETER_TYPE_BOOL = 1,
-  AIMRT_PARAMETER_TYPE_INTEGER = 2,
-  AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER = 3,
-  AIMRT_PARAMETER_TYPE_DOUBLE = 4,
-  AIMRT_PARAMETER_TYPE_STRING = 5,
-  AIMRT_PARAMETER_TYPE_BYTE_ARRAY = 6,
-  AIMRT_PARAMETER_TYPE_BOOL_ARRAY = 7,
-  AIMRT_PARAMETER_TYPE_INTEGER_ARRAY = 8,
-  AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY = 9,
-  AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY = 10,
-  AIMRT_PARAMETER_TYPE_STRING_ARRAY = 11,
+  AIMRT_PARAMETER_TYPE_BOOL = 1,                    // use b
+  AIMRT_PARAMETER_TYPE_INTEGER = 2,                 // use i
+  AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER = 3,        // use u
+  AIMRT_PARAMETER_TYPE_DOUBLE = 4,                  // use f
+  AIMRT_PARAMETER_TYPE_STRING = 5,                  // use array, char array
+  AIMRT_PARAMETER_TYPE_BYTE_ARRAY = 6,              // use array, char array
+  AIMRT_PARAMETER_TYPE_BOOL_ARRAY = 7,              // use array, char array
+  AIMRT_PARAMETER_TYPE_INTEGER_ARRAY = 8,           // use array, int64 array
+  AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY = 9,  // use array, uint64 array
+  AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY = 10,           // use array, double array
+  AIMRT_PARAMETER_TYPE_STRING_ARRAY = 11,           // use array, aimrt_string_view_t array
 } aimrt_parameter_type_t;
 
 /// Parameter variant
@@ -39,7 +39,6 @@ typedef struct {
 
     struct {
       const void* data;
-      size_t type_size;
       size_t len;
     } array;
 

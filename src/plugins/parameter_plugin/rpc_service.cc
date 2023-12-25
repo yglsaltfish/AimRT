@@ -5,11 +5,6 @@
 
 namespace aimrt::plugins::parameter_plugin {
 
-template <typename T, typename ProtobufArray>
-void SetProtobufArray(std::span<T> array, ProtobufArray* protobuf_array) {
-  for (auto item : array) protobuf_array->add_items(item);
-}
-
 void ParameterServiceImpl::SetPbParameter(
     const std::shared_ptr<aimrt::runtime::core::parameter::Parameter>& aimrt_parameter,
     ::aimrt::protocols::parameter_plugin::ParameterValue* pb_parameter) {
@@ -49,29 +44,27 @@ void ParameterServiceImpl::SetPbParameter(
       break;
     }
     case aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY: {
-      SetProtobufArray(
-          parameter_view.As<std::span<const int64_t>>(),
-          pb_parameter->mutable_int_array());
+      const auto& array = parameter_view.As<std::span<const int64_t>>();
+      auto* pb_array = pb_parameter->mutable_int_array();
+      for (auto item : array) pb_array->add_items(item);
       break;
     }
     case aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY: {
-      SetProtobufArray(
-          parameter_view.As<std::span<const uint64_t>>(),
-          pb_parameter->mutable_uint_array());
+      const auto& array = parameter_view.As<std::span<const uint64_t>>();
+      auto* pb_array = pb_parameter->mutable_uint_array();
+      for (auto item : array) pb_array->add_items(item);
       break;
     }
     case aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY: {
-      SetProtobufArray(
-          parameter_view.As<std::span<const double>>(),
-          pb_parameter->mutable_double_array());
+      const auto& array = parameter_view.As<std::span<const double>>();
+      auto* pb_array = pb_parameter->mutable_double_array();
+      for (auto item : array) pb_array->add_items(item);
       break;
     }
     case aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY: {
-      auto string_array = parameter_view.As<std::span<const aimrt_string_view_t>>();
-      auto pb_string_array = pb_parameter->mutable_string_array();
-      for (auto itm : string_array) {
-        pb_string_array->add_items(itm.str, itm.len);
-      }
+      auto array = parameter_view.As<std::span<const aimrt_string_view_t>>();
+      auto pb_array = pb_parameter->mutable_string_array();
+      for (auto itm : array) pb_array->add_items(itm.str, itm.len);
       break;
     }
     default:
@@ -168,8 +161,6 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Set(
     SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
     co_return aimrt::rpc::Status();
   }
-
-  using namespace protocols::parameter_plugin;
 
   if (!req.has_parameter_value()) [[unlikely]] {
     parameter_handle_ptr->SetParameter(
