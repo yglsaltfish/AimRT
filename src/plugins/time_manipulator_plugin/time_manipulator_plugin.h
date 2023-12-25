@@ -34,7 +34,7 @@ class TimeManipulatorPlugin : public AimRTCorePluginBase {
 
   bool init_flag_ = false;
 
-  std::shared_ptr<TimeManipulatorServiceImpl> service_ptr_;
+  std::unique_ptr<TimeManipulatorServiceImpl> service_ptr_;
 };
 
 }  // namespace aimrt::plugins::time_manipulator_plugin

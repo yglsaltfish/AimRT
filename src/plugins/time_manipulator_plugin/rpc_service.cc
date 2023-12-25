@@ -8,9 +8,6 @@ aimrt::co::Task<aimrt::rpc::Status> TimeManipulatorServiceImpl::SetTimeRatio(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::time_manipulator_plugin::SetTimeRatioReq& req,
     ::aimrt::protocols::time_manipulator_plugin::CommonRsp& rsp) {
-  AIMRT_TRACE("Server handle new rpc call. req: {}, return rsp: {}",
-              aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
-
   auto itr = executor_map_.find(req.executor_name());
   if (itr == executor_map_.end()) [[unlikely]] {
     SetErrorCode(ErrorCode::INVALID_EXECUTOR_NAME, rsp);
@@ -27,9 +24,6 @@ aimrt::co::Task<aimrt::rpc::Status> TimeManipulatorServiceImpl::Pause(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::time_manipulator_plugin::PauseReq& req,
     ::aimrt::protocols::time_manipulator_plugin::CommonRsp& rsp) {
-  AIMRT_TRACE("Server handle new rpc call. req: {}, return rsp: {}",
-              aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
-
   auto itr = executor_map_.find(req.executor_name());
   if (itr == executor_map_.end()) [[unlikely]] {
     SetErrorCode(ErrorCode::INVALID_EXECUTOR_NAME, rsp);
@@ -46,9 +40,6 @@ aimrt::co::Task<aimrt::rpc::Status> TimeManipulatorServiceImpl::GetTimeRatio(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::time_manipulator_plugin::GetTimeRatioReq& req,
     ::aimrt::protocols::time_manipulator_plugin::CommonRsp& rsp) {
-  AIMRT_TRACE("Server handle new rpc call. req: {}, return rsp: {}",
-              aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
-
   auto itr = executor_map_.find(req.executor_name());
   if (itr == executor_map_.end()) [[unlikely]] {
     SetErrorCode(ErrorCode::INVALID_EXECUTOR_NAME, rsp);

@@ -23,6 +23,13 @@ class ParameterHandleProxy {
     return aimrt_parameter_handle_base_t{
         .get_parameter = [](void* impl, aimrt_string_view_t name) -> aimrt_parameter_view_holder_t {
           auto ptr = static_cast<ParameterHandle*>(impl)->GetParameter(aimrt::util::ToStdStringView(name));
+          if (!ptr) [[unlikely]] {
+            return aimrt_parameter_view_holder_t{
+                .parameter_view = aimrt_parameter_view_t{
+                    .type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_NULL},
+                .release_callback = nullptr};
+          }
+
           if (!ptr->IsArray()) {
             return aimrt_parameter_view_holder_t{
                 .parameter_view = ptr->GetView(),

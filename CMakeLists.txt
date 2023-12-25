@@ -26,6 +26,7 @@ option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF)
 option(AIMRT_BUILD_LCM_PLUGIN "AimRT build lcm plugin." OFF)
 option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF)
 option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time manipulator plugin." OFF)
+option(AIMRT_BUILD_PARAMETER_PLUGIN "AimRT build parameter plugin." OFF)
 
 option(AIMRT_EXECUTOR_USE_STDEXEC "AimRT use stdexec as executor impl. (Experimental)" OFF)
 

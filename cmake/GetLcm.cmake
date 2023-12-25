@@ -16,25 +16,26 @@ FetchContent_GetProperties(lcm)
 if(NOT lcm_POPULATED)
   set(LCM_ENABLE_TESTS
       OFF
-      CACHE BOOL "" FORCE)
+      CACHE BOOL "")
 
   set(LCM_ENABLE_EXAMPLES
       OFF
-      CACHE BOOL "" FORCE)
+      CACHE BOOL "")
 
   set(LCM_ENABLE_JAVA
       OFF
-      CACHE BOOL "" FORCE)
+      CACHE BOOL "")
 
   set(LCM_ENABLE_LUA
       OFF
-      CACHE BOOL "" FORCE)
+      CACHE BOOL "")
 
   set(LCM_ENABLE_GO
       OFF
-      CACHE BOOL "" FORCE)
+      CACHE BOOL "")
 
   FetchContent_MakeAvailable(lcm)
+  add_library(lcm::lcm ALIAS lcm)
 endif()
 
 # import targets：

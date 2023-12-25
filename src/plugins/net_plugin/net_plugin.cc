@@ -104,10 +104,9 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     YAML::Node plugin_options_node = core_ptr_->GetPluginManager().GetPluginOptionsNode(Name());
 
-    if (!plugin_options_node || plugin_options_node.IsNull())
-      return true;
-
-    options_ = plugin_options_node.as<Options>();
+    if (plugin_options_node && !plugin_options_node.IsNull()) {
+      options_ = plugin_options_node.as<Options>();
+    }
 
     init_flag_ = true;
 

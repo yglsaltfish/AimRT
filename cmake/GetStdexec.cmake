@@ -9,7 +9,8 @@ set(stdexec_DOWNLOAD_URL
 FetchContent_Declare(
   stdexec
   URL ${stdexec_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  OVERRIDE_FIND_PACKAGE)
 
 FetchContent_GetProperties(stdexec)
 if(NOT stdexec_POPULATED)

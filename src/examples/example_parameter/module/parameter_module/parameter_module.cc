@@ -82,60 +82,66 @@ co::Task<void> ParameterModule::SetParameterLoop() {
 
     co::AimRTScheduler work_scheduler(work_executor_);
 
+    constexpr uint32_t max_array_len = 16;
+
     uint32_t count = 0;
     while (run_flag_) {
       count++;
       AIMRT_INFO("SetParameterLoop count : {} -------------------------", count);
 
-      std::vector<unsigned char> byte_array(count);
-      std::vector<bool> bool_array(count);
+      uint32_t array_len = std::min(count, max_array_len);
 
-      std::vector<int8_t> int8_array(count);
-      std::vector<int16_t> int16_array(count);
-      std::vector<int32_t> int32_array(count);
-      std::vector<int64_t> int64_array(count);
+      std::vector<unsigned char> byte_array(array_len);
+      std::vector<bool> bool_array(array_len);
 
-      std::vector<uint8_t> uint8_array(count);
-      std::vector<uint16_t> uint16_array(count);
-      std::vector<uint32_t> uint32_array(count);
-      std::vector<uint64_t> uint64_array(count);
+      std::vector<int8_t> int8_array(array_len);
+      std::vector<int16_t> int16_array(array_len);
+      std::vector<int32_t> int32_array(array_len);
+      std::vector<int64_t> int64_array(array_len);
 
-      std::vector<float> float_array(count);
-      std::vector<double> double_array(count);
+      std::vector<uint8_t> uint8_array(array_len);
+      std::vector<uint16_t> uint16_array(array_len);
+      std::vector<uint32_t> uint32_array(array_len);
+      std::vector<uint64_t> uint64_array(array_len);
 
-      std::vector<std::string> string_array(count);
+      std::vector<float> float_array(array_len);
+      std::vector<double> double_array(array_len);
 
-      for (size_t ii = 0; ii < count; ++ii) {
-        byte_array[ii] = static_cast<unsigned char>(ii);
-        bool_array[ii] = (ii % 2);
+      std::vector<std::string> string_array(array_len);
 
-        int8_array[ii] = static_cast<int8_t>(ii);
-        int16_array[ii] = static_cast<int16_t>(ii);
-        int32_array[ii] = static_cast<int32_t>(ii);
-        int64_array[ii] = static_cast<int64_t>(ii);
+      for (size_t ii = 0; ii < array_len; ++ii) {
+        uint32_t cur_idx = count - ii;
 
-        uint8_array[ii] = static_cast<uint8_t>(ii);
-        uint16_array[ii] = static_cast<uint16_t>(ii);
-        uint32_array[ii] = static_cast<uint32_t>(ii);
-        uint64_array[ii] = static_cast<uint64_t>(ii);
+        byte_array[ii] = static_cast<unsigned char>(cur_idx);
+        bool_array[ii] = (cur_idx % 2);
 
-        float_array[ii] = static_cast<float>(ii);
-        double_array[ii] = static_cast<double>(ii);
+        int8_array[ii] = -static_cast<int8_t>(cur_idx);
+        int16_array[ii] = -static_cast<int16_t>(cur_idx);
+        int32_array[ii] = -static_cast<int32_t>(cur_idx);
+        int64_array[ii] = -static_cast<int64_t>(cur_idx);
 
-        string_array[ii] = "str_" + std::to_string(ii);
+        uint8_array[ii] = static_cast<uint8_t>(cur_idx);
+        uint16_array[ii] = static_cast<uint16_t>(cur_idx);
+        uint32_array[ii] = static_cast<uint32_t>(cur_idx);
+        uint64_array[ii] = static_cast<uint64_t>(cur_idx);
+
+        float_array[ii] = static_cast<float>(cur_idx) * 3.14;
+        double_array[ii] = static_cast<double>(cur_idx) * 3.14;
+
+        string_array[ii] = "str_" + std::to_string(cur_idx);
       }
 
       AIMRT_CHECK_ERROR_THROW(
           parameter_handle_.SetParameter("test_bool", static_cast<bool>(count % 2)),
           "Set parameter failed");
       AIMRT_CHECK_ERROR_THROW(
-          parameter_handle_.SetParameter("test_int", static_cast<int64_t>(count)),
+          parameter_handle_.SetParameter("test_int", -static_cast<int64_t>(count)),
           "Set parameter failed");
       AIMRT_CHECK_ERROR_THROW(
           parameter_handle_.SetParameter("test_uint", static_cast<uint64_t>(count)),
           "Set parameter failed");
       AIMRT_CHECK_ERROR_THROW(
-          parameter_handle_.SetParameter("test_double", static_cast<double>(count)),
+          parameter_handle_.SetParameter("test_double", static_cast<double>(count) * 3.14),
           "Set parameter failed");
       AIMRT_CHECK_ERROR_THROW(
           parameter_handle_.SetParameter("test_string", "count: " + std::to_string(count)),
@@ -212,99 +218,83 @@ co::Task<void> ParameterModule::GetParameterLoop() {
         auto double_val = parameter_handle_.GetParameter("test_double").As<double>();
         auto string_view_val = parameter_handle_.GetParameter("test_string").As<std::string_view>();
 
-        AIMRT_INFO("bool_val: '{}', int64_val: '{}', uint64_val: '{}', double_val: '{}', string_view_val: '{}'",
-                   bool_val, int64_val, uint64_val, double_val, string_view_val);
-
         auto test_byte_array_parameter = parameter_handle_.GetParameter("test_byte_array");
         auto char_span_val = test_byte_array_parameter.As<std::span<const signed char>>();
         auto char_vec_val = test_byte_array_parameter.As<std::vector<signed char>>();
-
-        AIMRT_INFO("char_span_val: '{}', char_vec_val: '{}'",
-                   ToString(char_span_val), ToString(char_vec_val));
 
         auto test_bool_array_parameter = parameter_handle_.GetParameter("test_bool_array");
         auto bool_span_val = test_bool_array_parameter.As<std::span<const bool>>();
         auto bool_vec_val = test_bool_array_parameter.As<std::vector<bool>>();
 
-        AIMRT_INFO("bool_span_val: '{}', bool_vec_val: '{}'",
-                   ToString(bool_span_val), ToString(bool_vec_val));
-
         auto test_int8_array_parameter = parameter_handle_.GetParameter("test_int8_array");
         auto int8_span_val = test_int8_array_parameter.As<std::span<const int8_t>>();
         auto int8_vec_val = test_int8_array_parameter.As<std::vector<int8_t>>();
 
-        AIMRT_INFO("int8_span_val: '{}', int8_vec_val: '{}'",
-                   ToString(int8_span_val), ToString(int8_vec_val));
-
         auto test_int16_array_parameter = parameter_handle_.GetParameter("test_int16_array");
-        auto int16_span_val = test_int16_array_parameter.As<std::span<const int16_t>>();
         auto int16_vec_val = test_int16_array_parameter.As<std::vector<int16_t>>();
 
-        AIMRT_INFO("int16_span_val: '{}', int16_vec_val: '{}'",
-                   ToString(int16_span_val), ToString(int16_vec_val));
-
         auto test_int32_array_parameter = parameter_handle_.GetParameter("test_int32_array");
-        auto int32_span_val = test_int32_array_parameter.As<std::span<const int32_t>>();
         auto int32_vec_val = test_int32_array_parameter.As<std::vector<int32_t>>();
-
-        AIMRT_INFO("int32_span_val: '{}', int32_vec_val: '{}'",
-                   ToString(int32_span_val), ToString(int32_vec_val));
 
         auto test_int64_array_parameter = parameter_handle_.GetParameter("test_int64_array");
         auto int64_span_val = test_int64_array_parameter.As<std::span<const int64_t>>();
         auto int64_vec_val = test_int64_array_parameter.As<std::vector<int64_t>>();
 
-        AIMRT_INFO("int64_span_val: '{}', int64_vec_val: '{}'",
-                   ToString(int64_span_val), ToString(int64_vec_val));
-
         auto test_uint8_array_parameter = parameter_handle_.GetParameter("test_uint8_array");
         auto uint8_span_val = test_uint8_array_parameter.As<std::span<const uint8_t>>();
         auto uint8_vec_val = test_uint8_array_parameter.As<std::vector<uint8_t>>();
 
-        AIMRT_INFO("uint8_span_val: '{}', uint8_vec_val: '{}'",
-                   ToString(uint8_span_val), ToString(uint8_vec_val));
-
         auto test_uint16_array_parameter = parameter_handle_.GetParameter("test_uint16_array");
-        auto uint16_span_val = test_uint16_array_parameter.As<std::span<const uint16_t>>();
         auto uint16_vec_val = test_uint16_array_parameter.As<std::vector<uint16_t>>();
 
-        AIMRT_INFO("uint16_span_val: '{}', uint16_vec_val: '{}'",
-                   ToString(uint16_span_val), ToString(uint16_vec_val));
-
         auto test_uint32_array_parameter = parameter_handle_.GetParameter("test_uint32_array");
-        auto uint32_span_val = test_uint32_array_parameter.As<std::span<const uint32_t>>();
         auto uint32_vec_val = test_uint32_array_parameter.As<std::vector<uint32_t>>();
-
-        AIMRT_INFO("uint32_span_val: '{}', uint32_vec_val: '{}'",
-                   ToString(uint32_span_val), ToString(uint32_vec_val));
 
         auto test_uint64_array_parameter = parameter_handle_.GetParameter("test_uint64_array");
         auto uint64_span_val = test_uint64_array_parameter.As<std::span<const uint64_t>>();
         auto uint64_vec_val = test_uint64_array_parameter.As<std::vector<uint64_t>>();
 
-        AIMRT_INFO("uint64_span_val: '{}', uint64_vec_val: '{}'",
-                   ToString(uint64_span_val), ToString(uint64_vec_val));
-
         auto test_float_array_parameter = parameter_handle_.GetParameter("test_float_array");
-        auto float_span_val = test_float_array_parameter.As<std::span<const float>>();
         auto float_vec_val = test_float_array_parameter.As<std::vector<float>>();
-
-        AIMRT_INFO("float_span_val: '{}', float_vec_val: '{}'",
-                   ToString(float_span_val), ToString(float_vec_val));
 
         auto test_double_array_parameter = parameter_handle_.GetParameter("test_double_array");
         auto double_span_val = test_double_array_parameter.As<std::span<const double>>();
         auto double_vec_val = test_double_array_parameter.As<std::vector<double>>();
 
-        AIMRT_INFO("double_span_val: '{}', double_vec_val: '{}'",
-                   ToString(double_span_val), ToString(double_vec_val));
-
         auto test_string_array_parameter = parameter_handle_.GetParameter("test_string_array");
         auto string_view_vec_val = test_string_array_parameter.As<std::vector<std::string_view>>();
         auto string_vec_val = test_string_array_parameter.As<std::vector<std::string>>();
 
-        AIMRT_INFO("string_view_vec_val: '{}', string_vec_val: '{}'",
-                   ToString(string_view_vec_val), ToString(string_vec_val));
+        AIMRT_INFO(
+            "bool_val: '{}', int64_val: '{}', uint64_val: '{}', double_val: '{}', string_view_val: '{}'\n"
+            "char_span_val: '{}', char_vec_val: '{}'\n"
+            "bool_span_val: '{}', bool_vec_val: '{}'\n"
+            "int8_span_val: '{}', int8_vec_val: '{}'\n"
+            "int16_vec_val: '{}'\n"
+            "int32_vec_val: '{}'\n"
+            "int64_span_val: '{}', int64_vec_val: '{}'\n"
+            "uint8_span_val: '{}', uint8_vec_val: '{}'\n"
+            "uint16_vec_val: '{}'\n"
+            "uint32_vec_val: '{}'\n"
+            "uint64_span_val: '{}', uint64_vec_val: '{}'\n"
+            "float_vec_val: '{}'\n"
+            "double_span_val: '{}', double_vec_val: '{}'\n"
+            "string_view_vec_val: '{}', string_vec_val: '{}'",
+            bool_val, int64_val, uint64_val, double_val, string_view_val,
+            ToString(char_span_val), ToString(char_vec_val),
+            ToString(bool_span_val), ToString(bool_vec_val),
+            ToString(int8_span_val), ToString(int8_vec_val),
+            ToString(int16_vec_val),
+            ToString(int32_vec_val),
+            ToString(int64_span_val), ToString(int64_vec_val),
+            ToString(uint8_span_val), ToString(uint8_vec_val),
+            ToString(uint16_vec_val),
+            ToString(uint32_vec_val),
+            ToString(uint64_span_val), ToString(uint64_vec_val),
+            ToString(float_vec_val),
+            ToString(double_span_val), ToString(double_vec_val),
+            ToString(string_view_vec_val), ToString(string_vec_val));
+
       } catch (const std::exception& e) {
         AIMRT_ERROR("Get parameter failed with exception, {}", e.what());
       }

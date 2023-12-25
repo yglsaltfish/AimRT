@@ -6,8 +6,11 @@ namespace aimrt::runtime::core::parameter {
 bool Parameter::SetData(aimrt_parameter_view_t input_view) {
   view_.type = input_view.type;
 
-  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_NULL ||
-      view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL ||
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_NULL) {
+    return true;
+  }
+
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE) {
@@ -18,14 +21,7 @@ bool Parameter::SetData(aimrt_parameter_view_t input_view) {
   if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BYTE_ARRAY ||
       view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_BOOL_ARRAY) {
-    if (input_view.data.array.type_size != 1) [[unlikely]] {
-      AIMRT_ERROR("Invalid parameter view type: {}, type_size: {}",
-                  static_cast<size_t>(view_.type), input_view.data.array.type_size);
-      return false;
-    }
-
     view_.data.array.len = input_view.data.array.len;
-    view_.data.array.type_size = 1;
 
     array_data_ = std::vector<uint8_t>(view_.data.array.len);
     view_.data.array.data = array_data_.data();
@@ -34,22 +30,30 @@ bool Parameter::SetData(aimrt_parameter_view_t input_view) {
     return true;
   }
 
-  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY ||
-      view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY ||
-      view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY) {
-    if (input_view.data.array.type_size != 1 &&
-        input_view.data.array.type_size != 2 &&
-        input_view.data.array.type_size != 4 &&
-        input_view.data.array.type_size != 8) [[unlikely]] {
-      AIMRT_ERROR("Invalid parameter view type: {}, type_size: {}",
-                  static_cast<size_t>(view_.type), input_view.data.array.type_size);
-      return false;
-    }
-
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_INTEGER_ARRAY) {
     view_.data.array.len = input_view.data.array.len;
-    view_.data.array.type_size = input_view.data.array.type_size;
 
-    array_data_ = std::vector<uint8_t>(view_.data.array.len * view_.data.array.type_size);
+    array_data_ = std::vector<uint8_t>(view_.data.array.len * sizeof(int64_t));
+    view_.data.array.data = array_data_.data();
+
+    memcpy(array_data_.data(), input_view.data.array.data, array_data_.size());
+    return true;
+  }
+
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_UNSIGNED_INTEGER_ARRAY) {
+    view_.data.array.len = input_view.data.array.len;
+
+    array_data_ = std::vector<uint8_t>(view_.data.array.len * sizeof(uint64_t));
+    view_.data.array.data = array_data_.data();
+
+    memcpy(array_data_.data(), input_view.data.array.data, array_data_.size());
+    return true;
+  }
+
+  if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_DOUBLE_ARRAY) {
+    view_.data.array.len = input_view.data.array.len;
+
+    array_data_ = std::vector<uint8_t>(view_.data.array.len * sizeof(double));
     view_.data.array.data = array_data_.data();
 
     memcpy(array_data_.data(), input_view.data.array.data, array_data_.size());
@@ -57,14 +61,7 @@ bool Parameter::SetData(aimrt_parameter_view_t input_view) {
   }
 
   if (view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_STRING_ARRAY) {
-    if (input_view.data.array.type_size != sizeof(aimrt_string_view_t)) [[unlikely]] {
-      AIMRT_ERROR("Invalid parameter view type: {}, type_size: {}",
-                  static_cast<size_t>(view_.type), input_view.data.array.type_size);
-      return false;
-    }
-
     view_.data.array.len = input_view.data.array.len;
-    view_.data.array.type_size = input_view.data.array.type_size;
 
     const size_t array_data_len = view_.data.array.len * sizeof(aimrt_string_view_t);
     size_t buf_len = array_data_len;
@@ -101,12 +98,16 @@ std::shared_ptr<Parameter> ParameterHandle::GetParameter(std::string_view key) {
     return ac->second.ptr;
   }
 
-  static auto ptr = std::make_shared<Parameter>();
-  return ptr;
+  return std::shared_ptr<Parameter>();
 }
 
 void ParameterHandle::SetParameter(
     std::string_view key, const std::shared_ptr<Parameter>& parameter_ptr) {
+  if (!parameter_ptr || parameter_ptr->IsNull()) [[unlikely]] {
+    parameter_map_.erase(key);
+    return;
+  }
+
   ParameterMap::accessor ac;
   bool emplace_ret = parameter_map_.emplace(ac, key, parameter_ptr);
 
@@ -114,6 +115,17 @@ void ParameterHandle::SetParameter(
 
   std::lock_guard<std::mutex> lck(ac->second.mu);
   ac->second.ptr = parameter_ptr;
+}
+
+std::vector<std::string> ParameterHandle::ListParameter() const {
+  std::vector<std::string> result;
+  result.reserve(parameter_map_.size());
+
+  for (auto itr = parameter_map_.begin(); itr != parameter_map_.end(); ++itr) {
+    result.emplace_back(itr->first);
+  }
+
+  return result;
 }
 
 }  // namespace aimrt::runtime::core::parameter
