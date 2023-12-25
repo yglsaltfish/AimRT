@@ -223,31 +223,22 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Dump(
     ::aimrt::protocols::parameter_plugin::DumpParameterRsp& rsp) {
   assert(parameter_manager_ptr_);
 
-  using ParameterHandleMap =
-      std::unordered_map<std::string_view, aimrt::runtime::core::parameter::ParameterHandle*>;
-  ParameterHandleMap parameter_handle_map;
-
-  // 检查module name合法性
   for (auto itr = req.module_names().begin(); itr != req.module_names().end(); ++itr) {
     std::string_view module_name(*itr);
     auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(module_name);
 
+    // 检查module name合法性
     if (parameter_handle_ptr == nullptr) {
       SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
       co_return aimrt::rpc::Status();
     }
 
-    parameter_handle_map.emplace(module_name, parameter_handle_ptr);
-  }
+    auto& pb_parameter_map = (*rsp.mutable_module_parameter_map())[module_name];
 
-  // 填rsp
-  for (auto& itr : parameter_handle_map) {
-    auto& pb_parameter_map = (*rsp.mutable_value())[itr.first];
-
-    const auto& parameter_names = itr.second->ListParameter();
+    const auto& parameter_names = parameter_handle_ptr->ListParameter();
 
     for (auto& parameter_name : parameter_names) {
-      auto parameter_ptr = itr.second->GetParameter(parameter_name);
+      auto parameter_ptr = parameter_handle_ptr->GetParameter(parameter_name);
       if (!parameter_ptr) [[unlikely]] {
         continue;
       }
@@ -263,6 +254,27 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Load(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::parameter_plugin::LoadParameterReq& req,
     ::aimrt::protocols::parameter_plugin::LoadParameterRsp& rsp) {
+  for (auto module_itr = req.module_parameter_map().begin();
+       module_itr != req.module_parameter_map().end();
+       ++module_itr) {
+    std::string_view module_name(module_itr->first);
+    auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(module_name);
+
+    // 检查module name合法性
+    if (parameter_handle_ptr == nullptr) {
+      SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+      co_return aimrt::rpc::Status();
+    }
+
+    const auto& pb_parameter_map = module_itr->second.value();
+    for (auto parameter_itr = pb_parameter_map.begin();
+         parameter_itr != pb_parameter_map.end();
+         ++parameter_itr) {
+      parameter_handle_ptr->SetParameter(
+          parameter_itr->first, GetPbParameter(parameter_itr->second));
+    }
+  }
+
   co_return aimrt::rpc::Status();
 }
 
