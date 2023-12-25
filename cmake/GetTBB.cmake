@@ -9,7 +9,8 @@ set(tbb_DOWNLOAD_URL
 FetchContent_Declare(
   tbb
   URL ${tbb_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  OVERRIDE_FIND_PACKAGE)
 
 FetchContent_GetProperties(tbb)
 if(NOT tbb_POPULATED)

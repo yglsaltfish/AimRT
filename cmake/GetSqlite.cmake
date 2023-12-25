@@ -10,7 +10,8 @@ set(sqlite_DOWNLOAD_URL
 FetchContent_Declare(
   sqlite
   URL ${sqlite_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  OVERRIDE_FIND_PACKAGE)
 
 FetchContent_GetProperties(sqlite)
 if(NOT sqlite_POPULATED)
