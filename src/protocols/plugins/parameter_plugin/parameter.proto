@@ -85,11 +85,11 @@ message DumpParameterRsp {
   uint32 code = 1;
   string msg = 2;
 
-  map<string, ParameterMap> value = 3;  // key: module_name
+  map<string, ParameterMap> module_parameter_map = 3;  // key: module_name
 }
 
 message LoadParameterReq {
-  map<string, ParameterMap> value = 1;  // key: module_name
+  map<string, ParameterMap> module_parameter_map = 1;  // key: module_name
 }
 
 message LoadParameterRsp {

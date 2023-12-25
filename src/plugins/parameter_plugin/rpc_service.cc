@@ -221,6 +221,32 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Dump(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::parameter_plugin::DumpParameterReq& req,
     ::aimrt::protocols::parameter_plugin::DumpParameterRsp& rsp) {
+  assert(parameter_manager_ptr_);
+
+  for (auto itr = req.module_names().begin(); itr != req.module_names().end(); ++itr) {
+    std::string_view module_name(*itr);
+    auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(module_name);
+
+    // 检查module name合法性
+    if (parameter_handle_ptr == nullptr) {
+      SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+      co_return aimrt::rpc::Status();
+    }
+
+    auto& pb_parameter_map = (*rsp.mutable_module_parameter_map())[module_name];
+
+    const auto& parameter_names = parameter_handle_ptr->ListParameter();
+
+    for (auto& parameter_name : parameter_names) {
+      auto parameter_ptr = parameter_handle_ptr->GetParameter(parameter_name);
+      if (!parameter_ptr) [[unlikely]] {
+        continue;
+      }
+
+      SetPbParameter(parameter_ptr, &(*pb_parameter_map.mutable_value())[parameter_name]);
+    }
+  }
+
   co_return aimrt::rpc::Status();
 }
 
@@ -228,6 +254,27 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Load(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::parameter_plugin::LoadParameterReq& req,
     ::aimrt::protocols::parameter_plugin::LoadParameterRsp& rsp) {
+  for (auto module_itr = req.module_parameter_map().begin();
+       module_itr != req.module_parameter_map().end();
+       ++module_itr) {
+    std::string_view module_name(module_itr->first);
+    auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(module_name);
+
+    // 检查module name合法性
+    if (parameter_handle_ptr == nullptr) {
+      SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+      co_return aimrt::rpc::Status();
+    }
+
+    const auto& pb_parameter_map = module_itr->second.value();
+    for (auto parameter_itr = pb_parameter_map.begin();
+         parameter_itr != pb_parameter_map.end();
+         ++parameter_itr) {
+      parameter_handle_ptr->SetParameter(
+          parameter_itr->first, GetPbParameter(parameter_itr->second));
+    }
+  }
+
   co_return aimrt::rpc::Status();
 }
 

@@ -189,7 +189,7 @@ co::Task<void> ParameterModule::SetParameterLoop() {
       AIMRT_INFO("SetParameter done");
 
       co_await co::ScheduleAfter(
-          work_scheduler, std::chrono::milliseconds(500));
+          work_scheduler, std::chrono::milliseconds(1000));
     }
 
     AIMRT_INFO("Exit SetParameterLoop.");
@@ -301,7 +301,7 @@ co::Task<void> ParameterModule::GetParameterLoop() {
 
       co_await co::ScheduleAfter(
           work_scheduler,
-          std::chrono::milliseconds(500));
+          std::chrono::milliseconds(1000));
     }
 
     AIMRT_INFO("Exit GetParameterLoop.");
