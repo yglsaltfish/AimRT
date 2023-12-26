@@ -6,6 +6,7 @@
 #include "core/parameter/parameter_handle.h"
 #include "core/parameter/parameter_handle_proxy.h"
 #include "core/util/module_detail_info.h"
+#include "util/log_util.h"
 #include "util/string_util.h"
 
 #include "yaml-cpp/yaml.h"
@@ -24,7 +25,8 @@ class ParameterManager {
   };
 
  public:
-  ParameterManager() = default;
+  ParameterManager()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~ParameterManager() = default;
 
   ParameterManager(const ParameterManager&) = delete;
@@ -39,11 +41,15 @@ class ParameterManager {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
   ParameterHandle* GetParameterHandle(std::string_view module_name) const;
 
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   class ParameterHandleProxyWrap {
    public:

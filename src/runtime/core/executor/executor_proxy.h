@@ -78,7 +78,15 @@ class ExecutorManagerProxy {
   const aimrt_executor_manager_base_t* NativeHandle() const { return &base_; }
 
  private:
-  ExecutorProxy* GetExecutor(std::string_view executor_name) const;
+  ExecutorProxy* GetExecutor(std::string_view executor_name) const {
+    auto finditr = executor_proxy_map_.find(executor_name);
+    if (finditr != executor_proxy_map_.end()) return finditr->second.get();
+
+    // TODO，使找不到executor时打一个日志
+    // AIMRT_WARN("Get executor failed, executor name '{}'", executor_name);
+
+    return nullptr;
+  }
 
   static aimrt_executor_manager_base_t GenBase(void* impl) {
     return aimrt_executor_manager_base_t{

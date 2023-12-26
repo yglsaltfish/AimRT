@@ -79,7 +79,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   AsioWebSocketServer(const AsioWebSocketServer&) = delete;
   AsioWebSocketServer& operator=(const AsioWebSocketServer&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -245,7 +245,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     });
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool IsRunning() const { return state_.load() == State::Start; }
 
@@ -519,7 +519,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           });
     }
 
-    util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     Tcp::socket& Socket() { return stream_.next_layer().socket(); }
 

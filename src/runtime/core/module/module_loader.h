@@ -6,17 +6,22 @@
 
 #include "aimrt_module_c_interface/module_base.h"
 #include "util/dynamic_lib.h"
+#include "util/log_util.h"
 #include "util/string_util.h"
 
 namespace aimrt::runtime::core::module {
 
 class ModuleLoader {
  public:
-  ModuleLoader() = default;
+  ModuleLoader()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~ModuleLoader() { UnLoadPkg(); }
 
   ModuleLoader(const ModuleLoader&) = delete;
   ModuleLoader& operator=(const ModuleLoader&) = delete;
+
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   void LoadPkg(std::string_view pkg_path,
                const std::vector<std::string>& disable_modules);
@@ -35,6 +40,8 @@ class ModuleLoader {
   void DestroyModule(const aimrt_module_base_t* module_ptr);
 
  private:
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+
   std::string pkg_path_;
   common::util::DynamicLib dynamic_lib_;
 

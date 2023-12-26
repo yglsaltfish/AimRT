@@ -31,8 +31,6 @@ bool LcmPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
   try {
     core_ptr_ = core_ptr;
 
-    core_ptr_->SetGlobal();
-
     init_flag_ = true;
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
@@ -53,8 +51,6 @@ bool LcmPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 }
 
 void LcmPlugin::Shutdown() noexcept {
-  if (core_ptr_) core_ptr_->UnSetGlobal();
-
   try {
     if (!init_flag_) return;
   } catch (const std::exception& e) {

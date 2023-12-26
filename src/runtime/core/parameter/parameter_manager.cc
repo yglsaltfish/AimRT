@@ -1,5 +1,4 @@
 #include "core/parameter/parameter_manager.h"
-#include "core/global.h"
 
 namespace YAML {
 template <>
@@ -55,9 +54,12 @@ const ParameterHandleProxy& ParameterManager::GetParameterHandleProxy(
   auto itr = parameter_handle_proxy_wrap_map_.find(module_info.name);
   if (itr != parameter_handle_proxy_wrap_map_.end()) return itr->second->parameter_handle_proxy;
 
+  auto ptr = std::make_unique<ParameterHandleProxyWrap>();
+  ptr->parameter_handle.SetLogger(logger_ptr_);
+
   auto emplace_ret = parameter_handle_proxy_wrap_map_.emplace(
       module_info.name,
-      std::make_unique<ParameterHandleProxyWrap>());
+      std::move(ptr));
 
   return emplace_ret.first->second->parameter_handle_proxy;
 }

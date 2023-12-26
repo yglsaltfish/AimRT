@@ -1,5 +1,4 @@
 #include "core/parameter/parameter_handle.h"
-#include "core/global.h"
 
 namespace aimrt::runtime::core::parameter {
 
@@ -85,7 +84,8 @@ bool Parameter::SetData(aimrt_parameter_view_t input_view) {
     return true;
   }
 
-  AIMRT_ERROR("Invalid parameter view type: {}", static_cast<size_t>(view_.type));
+  // TODO: 设置失败时也能打日志
+  // AIMRT_ERROR("Invalid parameter view type: {}", static_cast<size_t>(view_.type));
   return false;
 }
 
@@ -94,16 +94,19 @@ std::shared_ptr<Parameter> ParameterHandle::GetParameter(std::string_view key) {
   bool find_ret = parameter_map_.find(ac, key);
 
   if (find_ret) {
+    AIMRT_TRACE("Get parameter '{}'", key);
     std::lock_guard<std::mutex> lck(ac->second.mu);
     return ac->second.ptr;
   }
 
+  AIMRT_TRACE("Can not get parameter '{}'", key);
   return std::shared_ptr<Parameter>();
 }
 
 void ParameterHandle::SetParameter(
     std::string_view key, const std::shared_ptr<Parameter>& parameter_ptr) {
   if (!parameter_ptr || parameter_ptr->IsNull()) [[unlikely]] {
+    AIMRT_TRACE("Erase parameter '{}'", key);
     parameter_map_.erase(key);
     return;
   }
@@ -111,8 +114,12 @@ void ParameterHandle::SetParameter(
   ParameterMap::accessor ac;
   bool emplace_ret = parameter_map_.emplace(ac, key, parameter_ptr);
 
-  if (emplace_ret) return;
+  if (emplace_ret) {
+    AIMRT_TRACE("Set parameter '{}'", key);
+    return;
+  }
 
+  AIMRT_TRACE("Update parameter '{}'", key);
   std::lock_guard<std::mutex> lck(ac->second.mu);
   ac->second.ptr = parameter_ptr;
 }

@@ -1,6 +1,5 @@
 #include "core/channel/channel_manager.h"
 #include "core/channel/local_channel_backend.h"
-#include "core/global.h"
 #include "util/stl_tool.h"
 
 namespace YAML {
@@ -55,7 +54,12 @@ void ChannelManager::Initialize(YAML::Node options_node) {
     options_ = options_node.as<Options>();
 
   channel_registry_ptr_ = std::make_unique<ChannelRegistry>();
+  channel_registry_ptr_->SetLogger(logger_ptr_);
+
   context_manager_ptr_ = std::make_unique<ContextManager>();
+  context_manager_ptr_->SetLogger(logger_ptr_);
+
+  channel_backend_manager_.SetLogger(logger_ptr_);
 
   // 根据配置初始化指定的backend
   for (auto& backend_options : options_.backends_options) {
@@ -171,6 +175,9 @@ void ChannelManager::RegisterLocalChannelBackend() {
 
   static_cast<LocalChannelBackend*>(local_channel_backend_ptr.get())
       ->RegisterGetExecutorFunc(get_executor_func_);
+
+  static_cast<LocalChannelBackend*>(local_channel_backend_ptr.get())
+      ->SetLogger(logger_ptr_);
 
   RegisterChannelBackend(std::move(local_channel_backend_ptr));
 }

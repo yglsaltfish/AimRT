@@ -1,5 +1,4 @@
 #include "core/plugin/plugin_loader.h"
-#include "core/global.h"
 
 namespace aimrt::runtime::core::plugin {
 

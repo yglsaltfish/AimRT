@@ -8,6 +8,7 @@
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
 #include "aimrt_module_cpp_interface/util/function.h"
+#include "util/log_util.h"
 
 namespace aimrt::runtime::core::rpc {
 
@@ -32,11 +33,15 @@ struct ClientFuncWrapper {
 
 class RpcRegistry {
  public:
-  RpcRegistry() = default;
+  RpcRegistry()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~RpcRegistry() = default;
 
   RpcRegistry(const RpcRegistry&) = delete;
   RpcRegistry& operator=(const RpcRegistry&) = delete;
+
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool RegisterServiceFunc(
       std::unique_ptr<ServiceFuncWrapper>&& service_func_wrapper_ptr);
@@ -53,6 +58,8 @@ class RpcRegistry {
   }
 
  private:
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+
   // pkg_path:module_name:func_name:wrapper
   using ServiceFuncMap = std::unordered_map<std::string_view, std::unique_ptr<ServiceFuncWrapper>>;
   using ServiceModuleMap = std::unordered_map<std::string_view, ServiceFuncMap>;

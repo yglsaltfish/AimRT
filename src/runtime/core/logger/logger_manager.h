@@ -9,6 +9,7 @@
 #include "core/logger/log_level_tool.h"
 #include "core/logger/logger_proxy.h"
 #include "core/util/module_detail_info.h"
+#include "util/log_util.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -36,7 +37,8 @@ class LoggerManager {
   };
 
  public:
-  LoggerManager() = default;
+  LoggerManager()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~LoggerManager() = default;
 
   LoggerManager(const LoggerManager&) = delete;
@@ -56,6 +58,9 @@ class LoggerManager {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   void RegisterConsoleLoggerBackend();
   void RegisterRotateFileLoggerBackend();
@@ -63,6 +68,7 @@ class LoggerManager {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   aimrt::executor::ExecutorRef log_executor_;
 

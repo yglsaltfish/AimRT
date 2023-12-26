@@ -1,6 +1,5 @@
 #include "core/rpc/rpc_backend_manager.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "core/global.h"
 #include "util/stl_tool.h"
 
 namespace aimrt::runtime::core::rpc {

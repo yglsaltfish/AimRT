@@ -1,5 +1,4 @@
 #include "core/rpc/rpc_manager.h"
-#include "core/global.h"
 #include "core/rpc/local_rpc_backend.h"
 #include "util/stl_tool.h"
 
@@ -55,7 +54,12 @@ void RpcManager::Initialize(YAML::Node options_node) {
     options_ = options_node.as<Options>();
 
   rpc_registry_ptr_ = std::make_unique<RpcRegistry>();
+  rpc_registry_ptr_->SetLogger(logger_ptr_);
+
   context_manager_ptr_ = std::make_unique<ContextManager>();
+  context_manager_ptr_->SetLogger(logger_ptr_);
+
+  rpc_backend_manager_.SetLogger(logger_ptr_);
 
   // 根据配置初始化指定的backend
   for (auto& backend_options : options_.backends_options) {
@@ -162,7 +166,12 @@ const std::vector<std::string>& RpcManager::GetRpcBackendNameList() const {
 }
 
 void RpcManager::RegisterLocalRpcBackend() {
-  std::unique_ptr<RpcBackendBase> local_rpc_backend_ptr = std::make_unique<LocalRpcBackend>();
+  std::unique_ptr<RpcBackendBase> local_rpc_backend_ptr =
+      std::make_unique<LocalRpcBackend>();
+
+  static_cast<LocalRpcBackend*>(local_rpc_backend_ptr.get())
+      ->SetLogger(logger_ptr_);
+
   RegisterRpcBackend(std::move(local_rpc_backend_ptr));
 }
 }  // namespace aimrt::runtime::core::rpc

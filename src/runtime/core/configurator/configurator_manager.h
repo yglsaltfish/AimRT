@@ -6,10 +6,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "yaml-cpp/yaml.h"
-
 #include "core/configurator/configurator_proxy.h"
 #include "core/util/module_detail_info.h"
+#include "util/log_util.h"
+
+#include "yaml-cpp/yaml.h"
 
 namespace aimrt::runtime::core::configurator {
 
@@ -27,7 +28,8 @@ class ConfiguratorManager {
   };
 
  public:
-  ConfiguratorManager() = default;
+  ConfiguratorManager()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~ConfiguratorManager() = default;
 
   ConfiguratorManager(const ConfiguratorManager&) = delete;
@@ -47,10 +49,14 @@ class ConfiguratorManager {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   std::filesystem::path cfg_file_path_;
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   YAML::Node* ori_root_options_node_ptr_;
   YAML::Node* root_options_node_ptr_;

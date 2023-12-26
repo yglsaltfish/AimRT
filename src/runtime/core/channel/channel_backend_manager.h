@@ -6,6 +6,7 @@
 
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_registry.h"
+#include "util/log_util.h"
 
 namespace aimrt::runtime::core::channel {
 
@@ -19,7 +20,8 @@ class ChannelBackendManager {
   };
 
  public:
-  ChannelBackendManager() = default;
+  ChannelBackendManager()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~ChannelBackendManager() = default;
 
   ChannelBackendManager(const ChannelBackendManager&) = delete;
@@ -37,8 +39,12 @@ class ChannelBackendManager {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   ChannelRegistry* channel_registry_ptr_;
 

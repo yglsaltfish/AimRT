@@ -4,6 +4,7 @@
 
 #include "core/executor/executor_base.h"
 #include "tbb/concurrent_queue.h"
+#include "util/log_util.h"
 
 namespace aimrt::runtime::core::executor {
 
@@ -25,7 +26,8 @@ class TBBThreadExecutor : public ExecutorBase {
   };
 
  public:
-  TBBThreadExecutor() = default;
+  TBBThreadExecutor()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~TBBThreadExecutor() override = default;
 
   void Initialize(std::string_view name, YAML::Node options_node) override;
@@ -48,10 +50,14 @@ class TBBThreadExecutor : public ExecutorBase {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   std::string name_;
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   tbb::concurrent_queue<Task> qu_;
   std::atomic_bool sig_flag_ = false;

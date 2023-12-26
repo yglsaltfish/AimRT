@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "aimrt_module_c_interface/util/buffer_base.h"
+#include "aimrt_module_cpp_interface/util/simple_buffer_array_allocator.h"
 
 namespace aimrt::util {
 
@@ -40,7 +41,8 @@ class BufferArrayAllocatorRef {
 
 class BufferArray {
  public:
-  explicit BufferArray(const aimrt_buffer_array_allocator_t* allocator) {
+  explicit BufferArray(
+      const aimrt_buffer_array_allocator_t* allocator = SimpleBufferArrayAllocator::NativeHandle()) {
     base_ = aimrt_buffer_array_t{
         .data = nullptr,
         .len = 0,

@@ -1,6 +1,5 @@
 #include "core/module/module_loader.h"
 #include "aimrt_module_cpp_interface/util/string.h"
-#include "core/global.h"
 
 namespace aimrt::runtime::core::module {
 

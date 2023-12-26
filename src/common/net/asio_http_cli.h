@@ -61,7 +61,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
   AsioHttpClient(const AsioHttpClient&) = delete;
   AsioHttpClient& operator=(const AsioHttpClient&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -149,7 +149,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
         boost::asio::use_awaitable);
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool IsRunning() const { return state_.load() == State::Start; }
 
@@ -392,7 +392,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
           boost::asio::use_awaitable);
     }
 
-    util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     bool CheckIdleAndUse() {
       bool is_idle = std::atomic_exchange(&idle_flag_, false);
@@ -492,7 +492,7 @@ class AsioHttpClientPool
   AsioHttpClientPool(const AsioHttpClientPool&) = delete;
   AsioHttpClientPool& operator=(const AsioHttpClientPool&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -562,7 +562,7 @@ class AsioHttpClientPool
           }
 
           auto client_ptr = std::make_shared<AsioHttpClient>(io_ptr_);
-          client_ptr->SetLoggerWrapper(logger_ptr_);
+          client_ptr->SetLogger(logger_ptr_);
           client_ptr->Initialize(client_options);
           client_ptr->Start();
 
@@ -572,7 +572,7 @@ class AsioHttpClientPool
         boost::asio::use_awaitable);
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   enum class State : uint32_t {

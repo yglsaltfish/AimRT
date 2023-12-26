@@ -5,6 +5,7 @@
 #include <string>
 
 #include "core/plugin/plugin_loader.h"
+#include "util/log_util.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -31,7 +32,8 @@ class PluginManager {
   using PluginInitFunc = std::function<void(AimRTCorePluginBase*)>;
 
  public:
-  PluginManager() = default;
+  PluginManager()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~PluginManager() = default;
 
   PluginManager(const PluginManager&) = delete;
@@ -47,9 +49,13 @@ class PluginManager {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   PluginInitFunc plugin_init_func_;
 

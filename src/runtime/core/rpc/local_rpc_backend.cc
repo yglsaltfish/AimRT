@@ -1,6 +1,6 @@
 #include "core/rpc/local_rpc_backend.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "core/global.h"
+#include "aimrt_module_cpp_interface/util/buffer.h"
 #include "core/util/thread_tools.h"
 #include "util/string_util.h"
 #include "util/url_parser.h"
@@ -218,7 +218,7 @@ bool LocalRpcBackend::TryInvoke(
   };
   const auto* client_func_wrapper_ptr = get_client_func_wrapper_ptr_func();
 
-  aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
+  aimrt::util::BufferArray buffer_array;
 
   // client req序列化
   bool serialize_ret = client_func_wrapper_ptr->req_type_support->serialize(
@@ -273,11 +273,14 @@ bool LocalRpcBackend::TryInvoke(
 
   // service rpc调用
   aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
-      [service_func_wrapper_ptr, client_func_wrapper_ptr,
-       client_invoke_wrapper_ptr, service_req_ptr, service_rsp_ptr,
-       serialization_type{std::move(serialization_type)}](
-          uint32_t code) {
-        aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
+      [this,
+       service_func_wrapper_ptr,
+       client_func_wrapper_ptr,
+       client_invoke_wrapper_ptr,
+       service_req_ptr,
+       service_rsp_ptr,
+       serialization_type{std::move(serialization_type)}](uint32_t code) {
+        aimrt::util::BufferArray buffer_array;
 
         // service rsp 序列化
         bool serialize_ret =

@@ -6,7 +6,7 @@
 
 #include "aimrt_module_c_interface/util/buffer_base.h"
 
-namespace aimrt::runtime::core::util {
+namespace aimrt::util {
 
 class SimpleBufferArrayAllocator {
  public:
@@ -74,4 +74,4 @@ class SimpleBufferArrayAllocator {
   }
 };
 
-}  // namespace aimrt::runtime::core::util
+}  // namespace aimrt::util

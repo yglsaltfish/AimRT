@@ -1,5 +1,4 @@
 #include "core/allocator/allocator_manager.h"
-#include "core/global.h"
 
 namespace YAML {
 template <>
