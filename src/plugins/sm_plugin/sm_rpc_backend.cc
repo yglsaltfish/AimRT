@@ -1,8 +1,6 @@
 
 #include "sm_rpc_backend.h"
 
-#include "core/global.h"
-
 namespace YAML {
 template <>
 struct convert<aimrt::plugins::sm_plugin::SmRpcBackend::Options> {

@@ -7,6 +7,7 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "core/channel/channel_backend_base.h"
+#include "util/log_util.h"
 
 namespace aimrt::runtime::core::channel {
 
@@ -25,7 +26,8 @@ class LocalChannelBackend : public ChannelBackendBase {
   };
 
  public:
-  LocalChannelBackend() = default;
+  LocalChannelBackend()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~LocalChannelBackend() override = default;
 
   std::string_view Name() const override { return "local"; }
@@ -46,6 +48,9 @@ class LocalChannelBackend : public ChannelBackendBase {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   const SubscribeWrapper* GetTplSubscribeWrapper(
       std::string_view subscribe_pkg_path,
@@ -61,6 +66,7 @@ class LocalChannelBackend : public ChannelBackendBase {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   const ChannelRegistry* channel_registry_ptr_ = nullptr;
   ContextManager* context_manager_ptr_ = nullptr;

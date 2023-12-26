@@ -3,10 +3,10 @@
 #include "aimrt_module_c_interface/executor/executor_manager_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
-
-#include "yaml-cpp/yaml.h"
+#include "util/log_util.h"
 
 #include "tbb/concurrent_queue.h"
+#include "yaml-cpp/yaml.h"
 
 namespace aimrt::runtime::core::executor {
 
@@ -28,7 +28,8 @@ class MainThreadExecutor {
 
  public:
   MainThreadExecutor()
-      : thread_id_(std::this_thread::get_id()),
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()),
+        thread_id_(std::this_thread::get_id()),
         base_(GenBase(this)) {}
   ~MainThreadExecutor() = default;
 
@@ -48,6 +49,9 @@ class MainThreadExecutor {
   void Execute(Task&& task);
 
   State GetState() const { return state_.load(); }
+
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   const aimrt_executor_base_t* NativeHandle() const { return &base_; }
 
@@ -81,6 +85,7 @@ class MainThreadExecutor {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   const std::thread::id thread_id_;
 

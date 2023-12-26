@@ -1,5 +1,4 @@
 #include "core/logger/logger_manager.h"
-#include "core/global.h"
 #include "core/logger/console_logger_backend.h"
 #include "core/logger/rotate_file_logger_backend.h"
 
@@ -129,8 +128,8 @@ void LoggerManager::RegisterLoggerBackend(
 LoggerProxy& LoggerManager::GetLoggerProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      state_.load() == State::Init || state_.load() == State::Start,
+      "Function can only be called when state is 'Init' or 'Start'.");
 
   // module_name为空等效于aimrt节点
   const std::string& real_module_name =
@@ -155,8 +154,8 @@ LoggerProxy& LoggerManager::GetLoggerProxy(
 
 LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      state_.load() == State::Init || state_.load() == State::Start,
+      "Function can only be called when state is 'Init' or 'Start'.");
 
   // logger_name为空等效于aimrt节点
   const std::string& real_logger_name =

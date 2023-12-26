@@ -1,15 +1,15 @@
 #include "core/aimrt_core.h"
 
+#include <csignal>
 #include <fstream>
 #include <iostream>
-
-#include "core/global.h"
 
 namespace aimrt::runtime::core {
 
 AimRTCore* AimRTCore::global_core_ptr_ = nullptr;
 
-AimRTCore::AimRTCore() {}
+AimRTCore::AimRTCore()
+    : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
 
 AimRTCore::~AimRTCore() {
   try {
@@ -35,12 +35,14 @@ void AimRTCore::Initialize(const Options& options) {
 
   // init configurator
   EnterState(State::PreInitConfigurator);
+  configurator_manager_.SetLogger(logger_ptr_);
   configurator_manager_.Initialize(options_.cfg_file_path);
   AIMRT_INFO("Configurator init complete.");
   EnterState(State::PostInitConfigurator);
 
   // init plugin
   EnterState(State::PreInitPlugin);
+  plugin_manager_.SetLogger(logger_ptr_);
   plugin_manager_.RegisterPluginInitFunc(
       [this](AimRTCorePluginBase* plugin_ptr) { plugin_ptr->Initialize(this); });
   plugin_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("plugin"));
@@ -49,32 +51,38 @@ void AimRTCore::Initialize(const Options& options) {
 
   // init main thread executor
   EnterState(State::PreInitMainThread);
+  main_thread_executor_.SetLogger(logger_ptr_);
   main_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("main_thread"));
   AIMRT_INFO("Main thread executor init complete.");
   EnterState(State::PostInitMainThread);
 
   // init allocator
   EnterState(State::PreInitAllocator);
+  allocator_manager_.SetLogger(logger_ptr_);
   allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
   AIMRT_INFO("Allocator init complete.");
   EnterState(State::PostInitAllocator);
 
   // init log
   EnterState(State::PreInitLog);
+  logger_manager_.SetLogger(logger_ptr_);
   logger_manager_.SetLogExecutor(
       aimrt::executor::ExecutorRef(main_thread_executor_.NativeHandle()));
   logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
+  SetCoreLogger();
   AIMRT_INFO("Logger init complete.");
   EnterState(State::PostInitLog);
 
   // init executor
   EnterState(State::PreInitExecutor);
+  executor_manager_.SetLogger(logger_ptr_);
   executor_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("executor"));
   AIMRT_INFO("Executor init complete.");
   EnterState(State::PostInitExecutor);
 
   // init rpc
   EnterState(State::PreInitRpc);
+  rpc_manager_.SetLogger(logger_ptr_);
   rpc_manager_.RegisterGetExecutorFunc(
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   rpc_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("rpc"));
@@ -83,6 +91,7 @@ void AimRTCore::Initialize(const Options& options) {
 
   // init channel
   EnterState(State::PreInitChannel);
+  channel_manager_.SetLogger(logger_ptr_);
   channel_manager_.RegisterGetExecutorFunc(
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   channel_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("channel"));
@@ -91,12 +100,14 @@ void AimRTCore::Initialize(const Options& options) {
 
   // init parameter
   EnterState(State::PreInitParameter);
+  parameter_manager_.SetLogger(logger_ptr_);
   parameter_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("parameter"));
   AIMRT_INFO("Parameter init complete.");
   EnterState(State::PostInitParameter);
 
   // init modules
   EnterState(State::PreInitModules);
+  module_manager_.SetLogger(logger_ptr_);
   module_manager_.RegisterCoreProxyConfigurator(
       std::bind(&AimRTCore::InitCoreProxy, this, std::placeholders::_1, std::placeholders::_2));
   module_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("module"));
@@ -156,6 +167,38 @@ void AimRTCore::Shutdown() {
   } else {
     stop_work();
   }
+}
+
+void AimRTCore::SetCoreLogger() {
+  const auto* core_logger_ptr = logger_manager_.GetLoggerProxy("core").NativeHandle();
+  const auto* core_allocator_ptr = allocator_manager_.GetAllocatorProxy().NativeHandle();
+
+  logger_ptr_->get_log_level_func = [core_logger_ptr]() -> uint32_t {
+    return core_logger_ptr->get_log_level(core_logger_ptr->impl);
+  };
+
+  logger_ptr_->log_func =
+      [core_logger_ptr](
+          uint32_t lvl,
+          uint32_t line,
+          uint32_t column,
+          const char* file_name,
+          const char* function_name,
+          const char* log_data,
+          size_t log_data_size) {
+        core_logger_ptr->log(
+            core_logger_ptr->impl,
+            static_cast<aimrt_log_level_t>(lvl),
+            line, column, file_name, function_name,
+            log_data, log_data_size);  //
+      };
+
+  logger_ptr_->get_log_buf_func =
+      [core_allocator_ptr]() -> std::tuple<char*, size_t> {
+    constexpr size_t kMaxLogBufSize = 1024 * 4;
+    void* buf = core_allocator_ptr->get_thread_local_buf(core_allocator_ptr->impl, kMaxLogBufSize);
+    return {static_cast<char*>(buf), kMaxLogBufSize};
+  };
 }
 
 aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_name) {
@@ -218,7 +261,8 @@ void AimRTCore::SignalHandler(int sig) {
     return;
   }
 
-  AIMRT_WARN("Global AimRTCore pointer is null when handle sig '{}'", sig);
+  AIMRT_HL_WARN(core_ptr->GetLogger(),
+                "Global AimRTCore pointer is null when handle sig '{}'", sig);
 
   raise(sig);
 }

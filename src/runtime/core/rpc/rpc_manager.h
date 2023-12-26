@@ -13,6 +13,7 @@
 #include "core/rpc/rpc_backend_manager.h"
 #include "core/rpc/rpc_handle_proxy.h"
 #include "core/util/module_detail_info.h"
+#include "util/log_util.h"
 
 namespace aimrt::runtime::core::rpc {
 
@@ -34,7 +35,8 @@ class RpcManager {
   };
 
  public:
-  RpcManager() = default;
+  RpcManager()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~RpcManager() = default;
 
   RpcManager(const RpcManager&) = delete;
@@ -57,12 +59,16 @@ class RpcManager {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   void RegisterLocalRpcBackend();
 
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 

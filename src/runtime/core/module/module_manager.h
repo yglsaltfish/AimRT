@@ -14,6 +14,7 @@
 #include "core/module/core_proxy.h"
 #include "core/module/module_loader.h"
 #include "core/util/module_detail_info.h"
+#include "util/log_util.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -47,7 +48,8 @@ class ModuleManager {
   using CoreProxyConfigurator = std::function<void(const util::ModuleDetailInfo&, CoreProxy&)>;
 
  public:
-  ModuleManager() = default;
+  ModuleManager()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~ModuleManager() = default;
 
   ModuleManager(const ModuleManager&) = delete;
@@ -67,6 +69,9 @@ class ModuleManager {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   struct ModuleWrapper {
     util::ModuleDetailInfo info;                // 模块配置
@@ -80,6 +85,7 @@ class ModuleManager {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   CoreProxyConfigurator module_proxy_configurator_;
 

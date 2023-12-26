@@ -1,6 +1,5 @@
 #include "core/executor/tbb_thread_executor.h"
 #include "aimrt_module_cpp_interface/util/string.h"
-#include "core/global.h"
 #include "core/util/thread_tools.h"
 
 namespace YAML {

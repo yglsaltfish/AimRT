@@ -8,7 +8,6 @@
 #include "sm_channel_backend.h"
 #include "transmitter/shm_transmitter.h"
 
-#include "core/global.h"
 #include "sm_plugin/global.h"
 
 namespace YAML {
@@ -397,7 +396,7 @@ void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pub
     buffer_array = find_serialization_cache_itr->second;  // 有缓存
   } else {
     // 没有缓存，序列化一次后放入缓存中
-    buffer_array = std::make_shared<aimrt::util::BufferArray>(runtime::core::GetDefaultBufferArrayAllocator());
+    buffer_array = std::make_shared<aimrt::util::BufferArray>();
     bool serialize_ret = publish_wrapper.msg_type_support->serialize(
         aimrt::util::ToAimRTStringView(serialization_type),
         publish_wrapper.msg_ptr, buffer_array->NativeHandle());

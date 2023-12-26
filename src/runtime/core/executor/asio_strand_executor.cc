@@ -1,5 +1,4 @@
 #include "core/executor/asio_strand_executor.h"
-#include "core/global.h"
 
 namespace YAML {
 template <>

@@ -6,6 +6,8 @@
 #include <vector>
 
 #include "aimrt_module_c_interface/parameter/parameter_handle_base.h"
+#include "util/log_util.h"
+
 #include "tbb/concurrent_hash_map.h"
 
 namespace aimrt::runtime::core::parameter {
@@ -34,17 +36,23 @@ class Parameter {
 
 class ParameterHandle {
  public:
-  ParameterHandle() = default;
+  ParameterHandle()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~ParameterHandle() = default;
 
   ParameterHandle(const ParameterHandle&) = delete;
   ParameterHandle& operator=(const ParameterHandle&) = delete;
+
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   std::shared_ptr<Parameter> GetParameter(std::string_view key);
   void SetParameter(std::string_view key, const std::shared_ptr<Parameter>& parameter_ptr);
   std::vector<std::string> ListParameter() const;
 
  private:
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+
   struct StringHashCompare {
     using is_transparent = void;
 

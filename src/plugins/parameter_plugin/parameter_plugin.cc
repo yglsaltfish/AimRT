@@ -42,8 +42,6 @@ bool ParameterPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
   try {
     core_ptr_ = core_ptr;
 
-    core_ptr_->SetGlobal();
-
     YAML::Node plugin_options_node = core_ptr_->GetPluginManager().GetPluginOptionsNode(Name());
 
     if (plugin_options_node && !plugin_options_node.IsNull()) {
@@ -68,8 +66,6 @@ bool ParameterPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 }
 
 void ParameterPlugin::Shutdown() noexcept {
-  if (core_ptr_) core_ptr_->UnSetGlobal();
-
   try {
     if (!init_flag_) return;
 

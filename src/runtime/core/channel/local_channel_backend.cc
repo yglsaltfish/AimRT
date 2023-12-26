@@ -2,8 +2,6 @@
 
 #include <memory>
 
-#include "core/global.h"
-
 namespace YAML {
 template <>
 struct convert<aimrt::runtime::core::channel::LocalChannelBackend::Options> {
@@ -163,7 +161,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       auto find_serialization_cache_itr = publish_wrapper.serialization_cache.find(serialization_type);
       if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
         // 没有缓存，序列化一次后放入缓存中
-        buffer_array = std::make_shared<aimrt::util::BufferArray>(GetDefaultBufferArrayAllocator());
+        buffer_array = std::make_shared<aimrt::util::BufferArray>();
         bool serialize_ret = publish_wrapper.msg_type_support->serialize(
             aimrt::util::ToAimRTStringView(serialization_type),
             publish_wrapper.msg_ptr, buffer_array->NativeHandle());

@@ -1,5 +1,4 @@
 #include "core/rpc/rpc_registry.h"
-#include "core/global.h"
 
 namespace aimrt::runtime::core::rpc {
 

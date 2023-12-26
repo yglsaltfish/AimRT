@@ -1,5 +1,4 @@
 #include "core/channel/channel_registry.h"
-#include "core/global.h"
 
 namespace aimrt::runtime::core::channel {
 

@@ -1,5 +1,4 @@
 #include "core/plugin/plugin_manager.h"
-#include "core/global.h"
 
 namespace YAML {
 template <>
@@ -79,6 +78,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
 
     // 加载插件
     auto plugin_loader_ptr = std::make_unique<PluginLoader>();
+    plugin_loader_ptr->SetLogger(logger_ptr_);
     plugin_loader_ptr->LoadPlugin(plugin_options.path);
 
     auto plugin_ptr = plugin_loader_ptr->GetPlugin();

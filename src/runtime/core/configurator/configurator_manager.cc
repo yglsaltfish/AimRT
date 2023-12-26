@@ -1,5 +1,4 @@
 #include "core/configurator/configurator_manager.h"
-#include "core/global.h"
 
 #include <fstream>
 

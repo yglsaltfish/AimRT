@@ -100,8 +100,6 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     core_ptr_ = core_ptr;
 
-    core_ptr_->SetGlobal();
-
     YAML::Node plugin_options_node = core_ptr_->GetPluginManager().GetPluginOptionsNode(Name());
 
     if (plugin_options_node && !plugin_options_node.IsNull()) {
@@ -129,11 +127,11 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::PreStart,
           [this] {
-            http_cli_pool_ptr_->SetLoggerWrapper(WrapAimRTLoggerRef(GetLogger()));
+            http_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             http_cli_pool_ptr_->Initialize(AsioHttpClientPool::Options{});
             http_cli_pool_ptr_->Start();
 
-            http_svr_ptr_->SetLoggerWrapper(WrapAimRTLoggerRef(GetLogger()));
+            http_svr_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             http_svr_ptr_->Initialize(AsioHttpServer::Options{
                 .ep = {boost::asio::ip::make_address_v4(options_.http_options->listen_ip),
                        options_.http_options->listen_port}});
@@ -160,11 +158,11 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::PreStart,
           [this] {
-            tcp_cli_pool_ptr_->SetLoggerWrapper(WrapAimRTLoggerRef(GetLogger()));
+            tcp_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             tcp_cli_pool_ptr_->Initialize(AsioTcpClientPool::Options{});
             tcp_cli_pool_ptr_->Start();
 
-            tcp_svr_ptr_->SetLoggerWrapper(WrapAimRTLoggerRef(GetLogger()));
+            tcp_svr_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             tcp_svr_ptr_->RegisterMsgHandle(tcp_msg_handle_registry_ptr_->GetMsgHandleFunc());
             tcp_svr_ptr_->Initialize(AsioTcpServer::Options{
                 .ep = {boost::asio::ip::make_address_v4(options_.tcp_options->listen_ip),
@@ -192,11 +190,11 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       core_ptr_->RegisterHookFunc(
           runtime::core::AimRTCore::State::PreStart,
           [this] {
-            udp_cli_pool_ptr_->SetLoggerWrapper(WrapAimRTLoggerRef(GetLogger()));
+            udp_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             udp_cli_pool_ptr_->Initialize(AsioUdpClientPool::Options{});
             udp_cli_pool_ptr_->Start();
 
-            udp_svr_ptr_->SetLoggerWrapper(WrapAimRTLoggerRef(GetLogger()));
+            udp_svr_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
             udp_svr_ptr_->RegisterMsgHandle(udp_msg_handle_registry_ptr_->GetMsgHandleFunc());
             udp_svr_ptr_->Initialize(AsioUdpServer::Options{
                 .ep = {boost::asio::ip::make_address_v4(options_.udp_options->listen_ip),
@@ -232,8 +230,6 @@ bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 }
 
 void NetPlugin::Shutdown() noexcept {
-  if (core_ptr_) core_ptr_->UnSetGlobal();
-
   try {
     if (!init_flag_) return;
 

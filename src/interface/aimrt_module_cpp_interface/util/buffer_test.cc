@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
 #include "aimrt_module_cpp_interface/util/buffer.h"
-#include "core/util/simple_buffer_array_allocator.h"
+#include "aimrt_module_cpp_interface/util/simple_buffer_array_allocator.h"
 
-namespace aimrt::runtime::core::util {
+namespace aimrt::util {
 
 bool CheckBufferEqual(const aimrt_buffer_t& lhs, const aimrt_buffer_t& rhs) {
   return ((lhs.data == rhs.data) && (lhs.len == rhs.len));
@@ -47,4 +47,4 @@ TEST(BUFFER_TEST, Base) {
   EXPECT_TRUE(CheckBufferEqual(buffer_array_data[2], buffer3));
 }
 
-}  // namespace aimrt::runtime::core::util
+}  // namespace aimrt::util

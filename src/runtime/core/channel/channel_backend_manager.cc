@@ -1,5 +1,4 @@
 #include "core/channel/channel_backend_manager.h"
-#include "core/global.h"
 #include "util/stl_tool.h"
 
 namespace aimrt::runtime::core::channel {

@@ -126,14 +126,15 @@ inline void LogImpl(const Logger& logger,
 }  // namespace aimrt::common::util
 
 /// Log with the specified logger handle
-#define AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ...)                   \
-  do {                                                                     \
-    if (__lvl__ >= __lgr__.GetLogLevel()) {                                \
-      constexpr auto __location__ = std::source_location::current();       \
-      aimrt::common::util::LogImpl(                                        \
-          __lgr__, __lvl__, __location__.line(), __location__.column(),    \
-          __location__.file_name(), __FUNCTION__, __fmt__, ##__VA_ARGS__); \
-    }                                                                      \
+#define AIMRT_HANDLE_LOG(__lgr__, __lvl__, __fmt__, ...)                    \
+  do {                                                                      \
+    const auto& __cur_lgr__ = __lgr__;                                      \
+    if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                             \
+      constexpr auto __location__ = std::source_location::current();        \
+      aimrt::common::util::LogImpl(                                         \
+          __cur_lgr__, __lvl__, __location__.line(), __location__.column(), \
+          __location__.file_name(), __FUNCTION__, __fmt__, ##__VA_ARGS__);  \
+    }                                                                       \
   } while (0)
 
 /// Check and log with the specified logger handle
@@ -148,9 +149,10 @@ inline void LogImpl(const Logger& logger,
 #define AIMRT_HANDLE_LOG_THROW(__lgr__, __lvl__, __fmt__, ...)                           \
   do {                                                                                   \
     std::string __log_str__ = ::aimrt_fmt::format(__fmt__, ##__VA_ARGS__);               \
-    if (__lvl__ >= __lgr__.GetLogLevel()) {                                              \
+    const auto& __cur_lgr__ = __lgr__;                                                   \
+    if (__lvl__ >= __cur_lgr__.GetLogLevel()) {                                          \
       constexpr auto __location__ = std::source_location::current();                     \
-      __lgr__.Log(                                                                       \
+      __cur_lgr__.Log(                                                                   \
           __lvl__, __location__.line(), __location__.column(), __location__.file_name(), \
           __FUNCTION__, __log_str__.c_str(), __log_str__.size());                        \
     }                                                                                    \

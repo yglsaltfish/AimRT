@@ -8,6 +8,7 @@
 #include <thread>
 
 #include "core/executor/executor_base.h"
+#include "util/log_util.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -33,7 +34,8 @@ class AsioThreadExecutor : public ExecutorBase {
   };
 
  public:
-  AsioThreadExecutor() = default;
+  AsioThreadExecutor()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~AsioThreadExecutor() override = default;
 
   void Initialize(std::string_view name, YAML::Node options_node) override;
@@ -56,12 +58,16 @@ class AsioThreadExecutor : public ExecutorBase {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
   boost::asio::io_context* IOCTX() { return io_ptr_.get(); }
 
  private:
   std::string name_;
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   std::unique_ptr<boost::asio::io_context> io_ptr_;
   std::unique_ptr<

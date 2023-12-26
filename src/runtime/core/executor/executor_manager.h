@@ -10,6 +10,7 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "core/executor/executor_proxy.h"
 #include "core/util/module_detail_info.h"
+#include "util/log_util.h"
 #include "util/string_util.h"
 
 #include "yaml-cpp/yaml.h"
@@ -37,7 +38,8 @@ class ExecutorManager {
   using ExecutorGenFunc = std::function<std::unique_ptr<ExecutorBase>()>;
 
  public:
-  ExecutorManager() = default;
+  ExecutorManager()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~ExecutorManager() = default;
 
   ExecutorManager(const ExecutorManager&) = delete;
@@ -54,6 +56,9 @@ class ExecutorManager {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
   aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
 
   const std::vector<std::unique_ptr<ExecutorBase>>& GetAllExecutors() const {
@@ -67,6 +72,7 @@ class ExecutorManager {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   std::unordered_map<std::string, ExecutorGenFunc> executor_gen_func_map_;
 

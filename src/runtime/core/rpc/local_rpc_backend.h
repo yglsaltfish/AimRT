@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 #include "core/rpc/rpc_backend_base.h"
+#include "util/log_util.h"
 
 namespace aimrt::runtime::core::rpc {
 
@@ -19,7 +20,8 @@ class LocalRpcBackend : public RpcBackendBase {
   };
 
  public:
-  LocalRpcBackend() = default;
+  LocalRpcBackend()
+      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
   ~LocalRpcBackend() override = default;
 
   std::string_view Name() const override { return "local"; }
@@ -39,9 +41,13 @@ class LocalRpcBackend : public RpcBackendBase {
 
   State GetState() const { return state_.load(); }
 
+  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   const RpcRegistry* rpc_registry_ptr_ = nullptr;
   ContextManager* context_manager_ptr_ = nullptr;

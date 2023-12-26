@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "aimrt_module_cpp_interface/util/string.h"
-#include "core/global.h"
 #include "core/logger/log_level_tool.h"
 #include "util/stl_tool.h"
 
@@ -108,6 +107,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
                             "Duplicate load pkg lib {}", pkg_options.path);
 
     auto module_loader_ptr = std::make_unique<ModuleLoader>();
+    module_loader_ptr->SetLogger(logger_ptr_);
     module_loader_ptr->LoadPkg(pkg_options.path, pkg_options.disable_modules);
 
     AIMRT_INFO("Load pkg '{}' succeeded, found {} module, load {} module:\n{}",

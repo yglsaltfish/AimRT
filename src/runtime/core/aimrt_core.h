@@ -14,6 +14,7 @@
 #include "core/parameter/parameter_manager.h"
 #include "core/plugin/plugin_manager.h"
 #include "core/rpc/rpc_manager.h"
+#include "util/log_util.h"
 
 namespace aimrt::runtime::core {
 
@@ -133,6 +134,8 @@ class AimRTCore {
   module::ModuleManager& GetModuleManager() { return module_manager_; }
   const module::ModuleManager& GetModuleManager() const { return module_manager_; }
 
+  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
   void SetGlobal() {
     assert(global_core_ptr_ == nullptr);
     global_core_ptr_ = this;
@@ -151,6 +154,8 @@ class AimRTCore {
       func();
   }
 
+  void SetCoreLogger();
+
   aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
 
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
@@ -164,8 +169,9 @@ class AimRTCore {
  private:
   Options options_;
   std::atomic_bool stop_flag_ = false;
-
   State state_ = State::PreInit;
+  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+
   std::vector<HookTask> hook_task_vec_array_[static_cast<uint32_t>(State::MaxStateNum)];
 
   std::vector<std::pair<std::set<int>, SignalHandle>> signal_handle_vec_;

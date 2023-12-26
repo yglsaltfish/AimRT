@@ -67,7 +67,7 @@ class AsioWebSocketClient
   AsioWebSocketClient(const AsioWebSocketClient&) = delete;
   AsioWebSocketClient& operator=(const AsioWebSocketClient&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -132,7 +132,7 @@ class AsioWebSocketClient
     });
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool IsRunning() const { return state_.load() == State::Start; }
 
@@ -386,7 +386,7 @@ class AsioWebSocketClient
           });
     }
 
-    util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     std::string_view RemoteAddr() const { return remote_addr_; }
 
@@ -482,7 +482,7 @@ class AsioWebSocketClientPool
   AsioWebSocketClientPool(const AsioWebSocketClientPool&) = delete;
   AsioWebSocketClientPool& operator=(const AsioWebSocketClientPool&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -546,7 +546,7 @@ class AsioWebSocketClientPool
           }
 
           auto client_ptr = std::make_shared<AsioWebSocketClient>(io_ptr_);
-          client_ptr->SetLoggerWrapper(logger_ptr_);
+          client_ptr->SetLogger(logger_ptr_);
           client_ptr->Initialize(client_options);
           client_ptr->Start();
 
@@ -556,7 +556,7 @@ class AsioWebSocketClientPool
         boost::asio::use_awaitable);
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   enum class State : uint32_t {

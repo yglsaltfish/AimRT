@@ -51,7 +51,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
   AsioUdpClient(const AsioUdpClient&) = delete;
   AsioUdpClient& operator=(const AsioUdpClient&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -109,7 +109,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
     });
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool IsRunning() const { return state_.load() == State::Start; }
 
@@ -278,7 +278,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
           boost::asio::detached);
     }
 
-    util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     bool IsRunning() const { return state_.load() == SessionState::Start; }
 
@@ -366,7 +366,7 @@ class AsioUdpClientPool
   AsioUdpClientPool(const AsioUdpClientPool&) = delete;
   AsioUdpClientPool& operator=(const AsioUdpClientPool&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -437,7 +437,7 @@ class AsioUdpClientPool
           }
 
           auto client_ptr = std::make_shared<AsioUdpClient>(io_ptr_);
-          client_ptr->SetLoggerWrapper(logger_ptr_);
+          client_ptr->SetLogger(logger_ptr_);
           client_ptr->Initialize(client_options);
           client_ptr->Start();
 
@@ -447,7 +447,7 @@ class AsioUdpClientPool
         boost::asio::use_awaitable);
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   enum class State : uint32_t {

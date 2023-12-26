@@ -3,6 +3,7 @@
 #include <regex>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
+#include "aimrt_module_cpp_interface/util/buffer.h"
 #include "net_plugin/global.h"
 
 namespace YAML {
@@ -193,7 +194,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
          serialization_type{std::move(serialization_type)},
          sig_timer_ptr,
          &handle_flag](uint32_t code) {
-          aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
+          aimrt::util::BufferArray buffer_array;
 
           // service rsp序列化
           bool serialize_ret =
@@ -386,7 +387,7 @@ bool HttpRpcBackend::TryInvoke(
             co_return;
           }
 
-          aimrt::util::BufferArray buffer_array(GetDefaultBufferArrayAllocator());
+          aimrt::util::BufferArray buffer_array;
 
           // client req序列化
           bool serialize_ret = client_func_wrapper_ptr->req_type_support->serialize(

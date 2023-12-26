@@ -92,7 +92,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   AsioHttpServer(const AsioHttpServer&) = delete;
   AsioHttpServer& operator=(const AsioHttpServer&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -240,7 +240,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     });
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   struct SessionOptions {
@@ -552,7 +552,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
       });
     }
 
-    util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     Tcp::socket& Socket() { return stream_.socket(); }
 

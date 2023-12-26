@@ -1,5 +1,4 @@
 #include "core/executor/main_thread_executor.h"
-#include "core/global.h"
 #include "core/util/thread_tools.h"
 
 namespace YAML {

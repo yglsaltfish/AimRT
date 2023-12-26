@@ -3,7 +3,6 @@
 #include "core/executor/asio_strand_executor.h"
 #include "core/executor/asio_thread_executor.h"
 #include "core/executor/tbb_thread_executor.h"
-#include "core/global.h"
 #include "util/string_util.h"
 
 namespace YAML {
@@ -152,12 +151,15 @@ aimrt::executor::ExecutorRef ExecutorManager::GetExecutor(std::string_view execu
 }
 
 void ExecutorManager::RegisterAsioExecutorGenFunc() {
-  RegisterExecutorGenFunc("asio_thread", []() -> std::unique_ptr<ExecutorBase> {
-    return std::make_unique<AsioThreadExecutor>();
+  RegisterExecutorGenFunc("asio_thread", [this]() -> std::unique_ptr<ExecutorBase> {
+    auto ptr = std::make_unique<AsioThreadExecutor>();
+    ptr->SetLogger(logger_ptr_);
+    return ptr;
   });
 
   RegisterExecutorGenFunc("asio_strand", [this]() -> std::unique_ptr<ExecutorBase> {
     auto ptr = std::make_unique<AsioStrandExecutor>();
+    ptr->SetLogger(logger_ptr_);
     ptr->RegisterGetAsioHandle(
         [this](std::string_view name) -> boost::asio::io_context* {
           auto itr = std::find_if(
@@ -178,8 +180,10 @@ void ExecutorManager::RegisterAsioExecutorGenFunc() {
 }
 
 void ExecutorManager::RegisterTBBExecutorGenFunc() {
-  RegisterExecutorGenFunc("tbb_thread", []() -> std::unique_ptr<ExecutorBase> {
-    return std::make_unique<TBBThreadExecutor>();
+  RegisterExecutorGenFunc("tbb_thread", [this]() -> std::unique_ptr<ExecutorBase> {
+    auto ptr = std::make_unique<TBBThreadExecutor>();
+    ptr->SetLogger(logger_ptr_);
+    return ptr;
   });
 }
 

@@ -46,8 +46,6 @@ bool TimeManipulatorPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexc
   try {
     core_ptr_ = core_ptr;
 
-    core_ptr_->SetGlobal();
-
     YAML::Node plugin_options_node = core_ptr_->GetPluginManager().GetPluginOptionsNode(Name());
 
     if (plugin_options_node && !plugin_options_node.IsNull()) {
@@ -77,8 +75,6 @@ bool TimeManipulatorPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexc
 }
 
 void TimeManipulatorPlugin::Shutdown() noexcept {
-  if (core_ptr_) core_ptr_->UnSetGlobal();
-
   try {
     if (!init_flag_) return;
 

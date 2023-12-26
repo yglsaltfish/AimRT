@@ -74,7 +74,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   AsioUdpServer(const AsioUdpServer&) = delete;
   AsioUdpServer& operator=(const AsioUdpServer&) = delete;
 
-  void SetLoggerWrapper(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -238,7 +238,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     });
   }
 
-  util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   struct SessionOptions {
@@ -351,7 +351,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
           });
     }
 
-    util::LoggerWrapper& GetLogger() { return *logger_ptr_; }
+    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     bool IsRunning() const { return state_.load() == SessionState::Start; }
 
