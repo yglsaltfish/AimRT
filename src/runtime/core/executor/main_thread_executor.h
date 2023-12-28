@@ -89,8 +89,7 @@ class MainThreadExecutor {
 
   const std::thread::id thread_id_;
 
-  tbb::concurrent_queue<Task> qu_;
-  std::atomic_bool sig_flag_ = false;
+  tbb::concurrent_bounded_queue<Task> qu_;
 
   const aimrt_executor_base_t base_;
 };
