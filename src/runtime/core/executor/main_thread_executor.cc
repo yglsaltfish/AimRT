@@ -61,13 +61,18 @@ void MainThreadExecutor::Start() {
     try {
       while (qu_.try_pop(task)) task();
     } catch (const std::exception& e) {
-      AIMRT_FATAL("Main thread executor run loop get exception, {}",
-                  e.what());
+      AIMRT_FATAL("Main thread executor run loop get exception, {}", e.what());
     }
 
     if (state_.load() == State::Shutdown) break;
 
-    sig_flag_.wait(false);
+    try {
+      qu_.pop(task);
+      task();
+    } catch (const tbb::user_abort& e) {
+    } catch (const std::exception& e) {
+      AIMRT_FATAL("Main thread executor run loop get exception, {}", e.what());
+    }
   }
 }
 
@@ -75,17 +80,18 @@ void MainThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  sig_flag_.store(true);
-  sig_flag_.notify_all();
+  qu_.abort();
 
   // 并不是真正的shutdown，任务队列还要跑，不能全清了
 }
 
 void MainThreadExecutor::Execute(Task&& task) {
   assert(state_.load() == State::Init || state_.load() == State::Start);
-  qu_.emplace(std::move(task));
-  sig_flag_.store(true);
-  sig_flag_.notify_one();
+  try {
+    qu_.emplace(std::move(task));
+  } catch (const std::exception& e) {
+    AIMRT_FATAL("Main thread executor execute task get exception, {}", e.what());
+  }
 }
 
 }  // namespace aimrt::runtime::core::executor

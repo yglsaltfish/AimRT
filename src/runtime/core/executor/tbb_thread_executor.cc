@@ -85,7 +85,14 @@ void TBBThreadExecutor::Initialize(std::string_view name,
 
         if (state_.load() == State::Shutdown) break;
 
-        sig_flag_.wait(false);
+        try {
+          qu_.pop(task);
+          task();
+        } catch (const tbb::user_abort& e) {
+        } catch (const std::exception& e) {
+          AIMRT_FATAL("Tbb thread executor '{}' run loop get exception, {}",
+                      Name(), e.what());
+        }
       }
 
       thread_id_vec_[ii] = std::thread::id();
@@ -105,8 +112,7 @@ void TBBThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  sig_flag_.store(true);
-  sig_flag_.notify_all();
+  qu_.abort();
 
   for (auto itr = threads_.begin(); itr != threads_.end();) {
     if (itr->joinable()) itr->join();
@@ -122,9 +128,12 @@ bool TBBThreadExecutor::IsInCurrentExecutor() const {
 
 void TBBThreadExecutor::Execute(Task&& task) {
   assert(state_.load() == State::Start);
-  qu_.emplace(std::move(task));
-  sig_flag_.store(true);
-  sig_flag_.notify_one();
+  try {
+    qu_.emplace(std::move(task));
+  } catch (const std::exception& e) {
+    AIMRT_FATAL("Tbb thread executor '{}' execute task get exception, {}",
+                Name(), e.what());
+  }
 }
 
 void TBBThreadExecutor::ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {

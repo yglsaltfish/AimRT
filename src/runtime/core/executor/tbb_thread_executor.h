@@ -59,8 +59,7 @@ class TBBThreadExecutor : public ExecutorBase {
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
-  tbb::concurrent_queue<Task> qu_;
-  std::atomic_bool sig_flag_ = false;
+  tbb::concurrent_bounded_queue<Task> qu_;
 
   std::vector<std::thread::id> thread_id_vec_;
   std::list<std::thread> threads_;
