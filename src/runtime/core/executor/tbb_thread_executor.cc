@@ -59,6 +59,8 @@ void TBBThreadExecutor::Initialize(std::string_view name,
 
   for (uint32_t ii = 0; ii < options_.thread_num; ++ii) {
     threads_.emplace_back([this, ii] {
+      ++work_thread_num;
+
       thread_id_vec_[ii] = std::this_thread::get_id();
 
       std::string threadname = name_;
@@ -96,6 +98,8 @@ void TBBThreadExecutor::Initialize(std::string_view name,
       }
 
       thread_id_vec_[ii] = std::thread::id();
+
+      --work_thread_num;
     });
   }
 
@@ -112,7 +116,10 @@ void TBBThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  qu_.abort();
+  while (work_thread_num.load()) {
+    qu_.abort();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
 
   for (auto itr = threads_.begin(); itr != threads_.end();) {
     if (itr->joinable()) itr->join();

@@ -60,6 +60,7 @@ class TBBThreadExecutor : public ExecutorBase {
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   tbb::concurrent_bounded_queue<Task> qu_;
+  std::atomic_uint32_t work_thread_num = 0;
 
   std::vector<std::thread::id> thread_id_vec_;
   std::list<std::thread> threads_;

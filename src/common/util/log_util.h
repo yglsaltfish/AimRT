@@ -7,6 +7,7 @@
 #include <thread>
 #include <tuple>
 
+#include "util/block_queue.h"
 #include "util/exception.h"
 #include "util/format.h"
 #include "util/time_util.h"
@@ -52,9 +53,86 @@ class SimpleLogger {
         column,
         function_name,
         std::string_view(log_data, log_data_size));
-    // TODO, use c++23 std::print
+
     fprintf(stderr, "%s\n", log_str.c_str());
   }
+};
+
+class SimpleAsyncLogger {
+ public:
+  SimpleAsyncLogger()
+      : log_thread_(std::bind(&SimpleAsyncLogger::LogThread, this)) {}
+
+  ~SimpleAsyncLogger() {
+    run_flag_.store(false);
+    queue_.Stop();
+    if (log_thread_.joinable()) log_thread_.join();
+  }
+
+  SimpleAsyncLogger(const SimpleAsyncLogger&) = delete;
+  SimpleAsyncLogger& operator=(const SimpleAsyncLogger&) = delete;
+
+  static uint32_t GetLogLevel() { return 0; }
+
+  void Log(uint32_t lvl,
+           uint32_t line,
+           uint32_t column,
+           const char* file_name,
+           const char* function_name,
+           const char* log_data,
+           size_t log_data_size) const {
+    if (!run_flag_.load()) return;
+
+    static constexpr std::string_view lvl_name_array[] = {
+        "Trace", "Debug", "Info", "Warn", "Error", "Fatal"};
+
+    static constexpr uint32_t lvl_name_array_size =
+        sizeof(lvl_name_array) / sizeof(lvl_name_array[0]);
+    if (lvl >= lvl_name_array_size) lvl = lvl_name_array_size;
+
+    size_t tid;
+#if defined(_WIN32)
+    tid = std::hash<std::thread::id>{}(std::this_thread::get_id());
+#else
+    tid = gettid();
+#endif
+
+    auto t = std::chrono::system_clock::now();
+    uint64_t time_stamp_us =
+        std::chrono::duration_cast<std::chrono::microseconds>(t.time_since_epoch()).count();
+    std::string log_str = ::aimrt_fmt::format(
+        "[{}.{:0>6}][{}][{}][{}:{}:{} @{}]{}",
+        GetTimeStr(std::chrono::system_clock::to_time_t(t)),
+        (time_stamp_us % 1000000),
+        lvl_name_array[lvl],
+        tid,
+        file_name,
+        line,
+        column,
+        function_name,
+        std::string_view(log_data, log_data_size));
+    try {
+      queue_.Enqueue(std::move(log_str));
+    } catch (...) {
+    }
+  }
+
+ private:
+  void LogThread() {
+    while (true) {
+      try {
+        auto log_str = queue_.Dequeue();
+        fprintf(stderr, "%s\n", log_str.c_str());
+        if (!run_flag_.load()) break;
+      } catch (...) {
+        break;
+      }
+    }
+  }
+
+  std::atomic_bool run_flag_ = true;
+  mutable BlockQueue<std::string> queue_;
+  std::thread log_thread_;
 };
 
 struct LoggerWrapper {

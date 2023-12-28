@@ -80,7 +80,7 @@ void MainThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  qu_.abort();
+  // qu_.abort(); // 对主线程来说，shutdown一定跑在task内，不需要abort
 
   // 并不是真正的shutdown，任务队列还要跑，不能全清了
 }
