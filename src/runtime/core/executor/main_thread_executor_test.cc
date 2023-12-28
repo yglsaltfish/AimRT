@@ -29,7 +29,9 @@ TEST_F(MainThreadExecutorTest, execute) {
 
   std::thread timer_thread([&]() {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    main_thread_executor_.Shutdown();
+    main_thread_executor_.Execute([&]() {
+      main_thread_executor_.Shutdown();
+    });
   });
 
   main_thread_executor_.Start();
