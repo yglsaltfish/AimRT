@@ -62,6 +62,16 @@ class BlockQueue {
     cond_.notify_all();
   }
 
+  size_t Size() const {
+    std::lock_guard<std::mutex> lck(mutex_);
+    return queue_.size();
+  }
+
+  bool IsRunning() const {
+    std::lock_guard<std::mutex> lck(mutex_);
+    return running_flag_;
+  }
+
  protected:
   mutable std::mutex mutex_;      ///< 同步锁
   std::condition_variable cond_;  ///< 条件锁
