@@ -110,13 +110,15 @@ namespace srv {
                 *static_cast<{{srv_filename}}_Response*>(rsp_ptr));
           };
 
+          aimrt::util::Function<aimrt_function_service_callback_ops_t> f(callback);
+
           aimrt::co::StartDetached(
               aimrt::co::On(
                   aimrt::co::InlineScheduler(),
                   filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp)) |
               aimrt::co::Then(
-                  [callback](aimrt::rpc::Status status) {
-                    (aimrt::util::Function<aimrt_function_service_callback_ops_t>(callback))(status.Code());
+                  [f{std::move(f)}](aimrt::rpc::Status status) {
+                    f(status.Code());
                   }));
         });
     RegisterServiceFunc(
@@ -124,7 +126,7 @@ namespace srv {
         rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
         aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
         aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>(),
-        callback.NativeHandle());
+        std::move(callback));
   }
 }
 
