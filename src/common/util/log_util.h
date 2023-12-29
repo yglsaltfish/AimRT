@@ -64,7 +64,6 @@ class SimpleAsyncLogger {
       : log_thread_(std::bind(&SimpleAsyncLogger::LogThread, this)) {}
 
   ~SimpleAsyncLogger() {
-    run_flag_.store(false);
     queue_.Stop();
     if (log_thread_.joinable()) log_thread_.join();
   }
@@ -81,8 +80,6 @@ class SimpleAsyncLogger {
            const char* function_name,
            const char* log_data,
            size_t log_data_size) const {
-    if (!run_flag_.load()) return;
-
     static constexpr std::string_view lvl_name_array[] = {
         "Trace", "Debug", "Info", "Warn", "Error", "Fatal"};
 
@@ -123,14 +120,12 @@ class SimpleAsyncLogger {
       try {
         auto log_str = queue_.Dequeue();
         fprintf(stderr, "%s\n", log_str.c_str());
-        if (!run_flag_.load()) break;
       } catch (...) {
         break;
       }
     }
   }
 
-  std::atomic_bool run_flag_ = true;
   mutable BlockQueue<std::string> queue_;
   std::thread log_thread_;
 };
