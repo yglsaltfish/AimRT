@@ -79,13 +79,15 @@ class {{service_name}}Proxy : public aimrt::rpc::ProxyBase {
                 *static_cast<{{rpc_rsp_name}}*>(rsp_ptr));
           };
 
+          aimrt::util::Function<aimrt_function_service_callback_ops_t> f(callback);
+
           aimrt::co::StartDetached(
               aimrt::co::On(
                   aimrt::co::InlineScheduler(),
                   filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp)) |
               aimrt::co::Then(
-                  [callback](aimrt::rpc::Status status) {
-                    (aimrt::util::Function<aimrt_function_service_callback_ops_t>(callback))(status.Code());
+                  [f{std::move(f)}](aimrt::rpc::Status status) {
+                    f(status.Code());
                   }));
         });
     RegisterServiceFunc(
@@ -93,7 +95,7 @@ class {{service_name}}Proxy : public aimrt::rpc::ProxyBase {
         nullptr,
         aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
         aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>(),
-        callback.NativeHandle());
+        std::move(callback));
   }"""
 
     t_ccfile_one_service_func: str = r"""
