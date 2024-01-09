@@ -10,6 +10,9 @@ add_subdirectory(module/helloworld_module)
 # pkg
 add_subdirectory(pkg/helloworld_pkg)
 
+# app
+add_subdirectory(app/helloworld_app)
+
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   set(CUR_INSTALL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/install/linux)

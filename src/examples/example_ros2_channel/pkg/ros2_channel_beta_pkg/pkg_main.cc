@@ -6,8 +6,7 @@
 static constexpr std::tuple<std::string_view, aimrt::ModuleBase* (*)()>
     aimrt_module_register_array[]{
         {"Ros2SubscriberModule", []() -> aimrt::ModuleBase* {
-           return new aimrt::examples::example_ros2_channel::
-               ros2_subscriber_module::Ros2SubscriberModule();
+           return new aimrt::examples::example_ros2_channel::ros2_subscriber_module::Ros2SubscriberModule();
          }}};
 
 AIMRT_PKG_MAIN(aimrt_module_register_array)

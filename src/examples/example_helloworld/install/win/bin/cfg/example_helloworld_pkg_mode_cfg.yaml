@@ -11,7 +11,7 @@ aimrt:
       - type: rotate_file # 文件日志
         options:
           path: ./log # 日志文件路径
-          filename: example_helloworld.log # 日志文件名称
+          filename: example_helloworld_pkg_mode.log # 日志文件名称
           max_file_size_m: 4 # 日志文件最大尺寸，单位m
           max_file_num: 10 # 最大日志文件数量，0代表无限
   executor: # 执行器配置
@@ -22,7 +22,7 @@ aimrt:
           thread_num: 2 # 线程数，不指定则默认单线程
   module: # 模块配置
     pkgs: # 要加载的动态库配置
-      - path: ./libhelloworld_pkg.so # so/dll地址
+      - path: ./helloworld_pkg.dll # so/dll地址
         disable_module: [] # 此动态库中要屏蔽的模块名称。默认全部加载
     modules: # 模块
       - name: HelloWorldModule # 模块Name接口返回的名称

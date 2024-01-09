@@ -6,8 +6,7 @@
 static constexpr std::tuple<std::string_view, aimrt::ModuleBase* (*)()>
     aimrt_module_register_array[]{
         {"NormalRpcClientModule", []() -> aimrt::ModuleBase* {
-           return new aimrt::examples::example_normal_rpc::
-               normal_rpc_client_module::NormalRpcClientModule();
+           return new aimrt::examples::example_normal_rpc::normal_rpc_client_module::NormalRpcClientModule();
          }}};
 
 AIMRT_PKG_MAIN(aimrt_module_register_array)
