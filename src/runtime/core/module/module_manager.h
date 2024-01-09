@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "aimrt_module_c_interface/logger/logger_base.h"
+#include "aimrt_module_cpp_interface/module_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "core/module/core_proxy.h"
 #include "core/module/module_loader.h"
@@ -60,6 +61,7 @@ class ModuleManager {
   void Shutdown();
 
   void RegisterModule(const aimrt_module_base_t* module);
+  void RegisterModule(const ModuleBase& module) { RegisterModule(module.NativeHandle()); }
 
   void RegisterCoreProxyConfigurator(CoreProxyConfigurator&& module_proxy_configurator);
 

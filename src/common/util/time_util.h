@@ -130,7 +130,7 @@ inline std::string_view GetTimeStr(tm t) {
   snprintf(buf,
            sizeof(buf),
            "%04d-%02d-%02d %02d:%02d:%02d",
-           (t.tm_year + 1900) % 1000u,
+           (t.tm_year + 1900) % 10000u,
            (t.tm_mon + 1) % 100u,
            (t.tm_mday) % 100u,
            (t.tm_hour) % 100u,

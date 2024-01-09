@@ -7,8 +7,7 @@
 static constexpr std::tuple<std::string_view, aimrt::ModuleBase* (*)()>
     aimrt_module_register_array[]{
         {"BenchmarkPublisherModule", []() -> aimrt::ModuleBase* {
-           return new aimrt::examples::example_normal_channel::
-               benchmark_publisher_module::BenchmarkPublisherModule();
+           return new aimrt::examples::example_normal_channel::benchmark_publisher_module::BenchmarkPublisherModule();
          }}};
 
 AIMRT_PKG_MAIN(aimrt_module_register_array)

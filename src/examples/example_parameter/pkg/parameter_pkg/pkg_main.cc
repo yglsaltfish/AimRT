@@ -4,8 +4,7 @@
 static constexpr std::tuple<std::string_view, aimrt::ModuleBase* (*)()>
     aimrt_module_register_array[]{
         {"ParameterModule", []() -> aimrt::ModuleBase* {
-           return new aimrt::examples::example_parameter::parameter_module::
-               ParameterModule();
+           return new aimrt::examples::example_parameter::parameter_module::ParameterModule();
          }}};
 
 AIMRT_PKG_MAIN(aimrt_module_register_array)

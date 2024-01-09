@@ -14,15 +14,13 @@ static constexpr std::tuple<std::string_view, aimrt::ModuleBase* (*)()>
 {%- for module in pkg.local_modules %}
         {"{{ module.class_name }}",
          []() -> aimrt::ModuleBase* {
-           return new {{ project_name }}::{{ module.name }}::
-               {{ module.class_name }}();
+           return new {{ project_name }}::{{ module.name }}::{{ module.class_name }}();
          }},
 {%- endfor %}
 {%- for remote_module in pkg.remote_modules %}
         {"{{ remote_module.class_name }}",
          []() -> aimrt::ModuleBase* {
-           return new {{ remote_module.namespace }}::{{ remote_module.name }}::
-               {{ remote_module.class_name }}();
+           return new {{ remote_module.namespace }}::{{ remote_module.name }}::{{ remote_module.class_name }}();
          }},
 {%- endfor %}
     };
