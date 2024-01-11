@@ -22,7 +22,10 @@ else()
   message(FATAL_ERROR "Unsupport os")
 endif()
 
-install(DIRECTORY ${CUR_INSTALL_SOURCE_DIR}/bin DESTINATION ./)
+install(
+  DIRECTORY ${CUR_INSTALL_SOURCE_DIR}/bin
+  DESTINATION ./
+  USE_SOURCE_PERMISSIONS)
 
 # build all
 get_namespace(CUR_SUPERIOR_NAMESPACE)
@@ -31,4 +34,5 @@ add_custom_target(
   ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all ALL
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin $<TARGET_FILE_DIR:aimrt::runtime::main>
   DEPENDS aimrt::runtime::main
+          ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR}::helloworld_app
           ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR}::helloworld_pkg)

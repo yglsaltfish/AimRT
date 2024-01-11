@@ -22,13 +22,15 @@ int32_t main(int32_t argc, char** argv) {
   options.cfg_file_path = FLAGS_cfg_file_path;
   options.dump_cfg_file = FLAGS_dump_cfg_file;
   options.dump_cfg_file_path = FLAGS_dump_cfg_file_path;
+  options.register_signal = true;
+  options.auto_set_to_global = true;
 
   try {
     AimRTCore core;
 
     // register module
     HelloWorldModule helloworld_module;
-    core.GetModuleManager().RegisterModule(helloworld_module);
+    core.GetModuleManager().RegisterModule(helloworld_module.NativeHandle());
 
     core.Initialize(options);
 

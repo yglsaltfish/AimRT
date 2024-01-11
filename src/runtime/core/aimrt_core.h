@@ -1,6 +1,5 @@
 #pragma once
 
-#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -21,14 +20,14 @@ namespace aimrt::runtime::core {
 class AimRTCore {
  public:
   struct Options {
-    std::filesystem::path cfg_file_path;
+    std::string cfg_file_path;
 
     bool dump_cfg_file = false;
-    std::filesystem::path dump_cfg_file_path;
+    std::string dump_cfg_file_path;
 
-    bool register_signal = true;
+    bool register_signal = false;
 
-    bool auto_set_to_global = true;
+    bool auto_set_to_global = false;
   };
 
   enum class State : uint32_t {
@@ -104,6 +103,12 @@ class AimRTCore {
     signal_handle_vec_.emplace_back(sigs, std::forward<Args>(args)...);
   }
 
+  void HandleSignal(int sig) {
+    for (const auto& itr : signal_handle_vec_) {
+      if (itr.first.find(sig) != itr.first.end()) itr.second(sig);
+    }
+  }
+
   executor::MainThreadExecutor& GetMainThreadExecutor() { return main_thread_executor_; }
   const executor::MainThreadExecutor& GetMainThreadExecutor() const { return main_thread_executor_; }
 
@@ -160,11 +165,11 @@ class AimRTCore {
 
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
 
-  void DumpCfgFile();
+  void DumpCfgFile(const std::string& path = "");
 
   void RegisterSignalToSystem();
 
-  static void SignalHandler(int sig);
+  static void HandleGlobalSignal(int sig);
 
  private:
   Options options_;

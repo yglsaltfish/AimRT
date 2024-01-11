@@ -2,6 +2,10 @@ set_namespace()
 
 add_subdirectory(example_helloworld)
 
+if(AIMRT_BUILD_PYTHON_RUNTIME)
+  add_subdirectory(example_helloworld_py)
+endif()
+
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(example_real_time)
 endif()

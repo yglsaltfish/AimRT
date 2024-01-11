@@ -115,10 +115,13 @@ void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PostInitModules);
 
   // dump cfg file
-  DumpCfgFile();
+  if (options_.dump_cfg_file)
+    DumpCfgFile(options_.dump_cfg_file_path);
 
   // register signal handle
-  RegisterSignalToSystem();
+  RegisterSignalHandle(std::set<int>{SIGINT, SIGTERM}, [this](auto) { Shutdown(); });
+  if (options_.register_signal)
+    RegisterSignalToSystem();
 
   EnterState(State::PostInit);
 }
@@ -146,6 +149,8 @@ void AimRTCore::Shutdown() {
 
   auto stop_work = [this]() {
     EnterState(State::PreShutdown);
+
+    AIMRT_INFO("Shutdown.");
 
     module_manager_.Shutdown();
     parameter_manager_.Shutdown();
@@ -215,14 +220,12 @@ void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CorePr
   proxy.SetParameterHandle(parameter_manager_.GetParameterHandleProxy(info).NativeHandle());
 }
 
-void AimRTCore::DumpCfgFile() {
-  if (!options_.dump_cfg_file) return;
-
+void AimRTCore::DumpCfgFile(const std::string& path) {
   YAML::Node dump_node = configurator_manager_.DumpRootOptionsNode();
 
-  if (!options_.dump_cfg_file_path.empty()) {
+  if (!path.empty()) {
     std::ofstream ofs;
-    ofs.open(options_.dump_cfg_file_path, std::ios::trunc);
+    ofs.open(path, std::ios::trunc);
     ofs << dump_node;
     ofs.flush();
     ofs.clear();
@@ -235,28 +238,21 @@ void AimRTCore::DumpCfgFile() {
 }
 
 void AimRTCore::RegisterSignalToSystem() {
-  if (!options_.register_signal) return;
-
-  RegisterSignalHandle(std::set<int>{SIGINT, SIGTERM}, [this](auto) { Shutdown(); });
-
   std::set<int> signals;
   for (auto& itr : signal_handle_vec_) {
     signals.insert(itr.first.begin(), itr.first.end());
   }
 
   for (auto sig : signals) {
-    signal(sig, SignalHandler);
+    signal(sig, HandleGlobalSignal);
   }
 }
 
-void AimRTCore::SignalHandler(int sig) {
+void AimRTCore::HandleGlobalSignal(int sig) {
   AimRTCore* core_ptr = GetGlobalAimRTCore();
 
   if (core_ptr) {
-    const auto& signal_handle_vec = core_ptr->signal_handle_vec_;
-    for (const auto& itr : signal_handle_vec) {
-      if (itr.first.find(sig) != itr.first.end()) itr.second(sig);
-    }
+    core_ptr->HandleSignal(sig);
 
     return;
   }

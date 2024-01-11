@@ -7,7 +7,18 @@ extern "C" {
 #endif
 
 typedef struct {
-  bool (*initialize)(void* impl, aimrt_string_view_t cfg_file_path);
+  aimrt_string_view_t cfg_file_path;
+
+  bool dump_cfg_file;
+  aimrt_string_view_t dump_cfg_file_path;
+
+  bool register_signal;
+
+  bool auto_set_to_global;
+} aimrt_runtime_options_t;
+
+typedef struct {
+  bool (*initialize)(void* impl, aimrt_runtime_options_t options);
 
   bool (*start)(void* impl);
 

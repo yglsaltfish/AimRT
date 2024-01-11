@@ -5,11 +5,15 @@ extern "C" {
 
 const aimrt_runtime_base_t* AimRTDynlibCreateRuntimeHandle() {
   return new aimrt_runtime_base_t{
-      .initialize = [](void* impl, aimrt_string_view_t cfg_file_path) -> bool {
+      .initialize = [](void* impl, aimrt_runtime_options_t options) -> bool {
         try {
           static_cast<aimrt::runtime::core::AimRTCore*>(impl)->Initialize(
               aimrt::runtime::core::AimRTCore::Options{
-                  .cfg_file_path = aimrt::util::ToStdString(cfg_file_path)});
+                  .cfg_file_path = aimrt::util::ToStdString(options.cfg_file_path),
+                  .dump_cfg_file = options.dump_cfg_file,
+                  .dump_cfg_file_path = aimrt::util::ToStdString(options.dump_cfg_file_path),
+                  .register_signal = options.register_signal,
+                  .auto_set_to_global = options.auto_set_to_global});
           return true;
         } catch (const std::exception& e) {
           fprintf(stderr, "aimrt core initialize failed, %s\n", e.what());
