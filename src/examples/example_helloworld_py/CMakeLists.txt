@@ -4,14 +4,9 @@ string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # Set namespace
 set_namespace()
 
-# module
-add_subdirectory(module/helloworld_module)
-
-# pkg
-add_subdirectory(pkg/helloworld_pkg)
-
-# app
-add_subdirectory(app/helloworld_app)
+# py
+file(GLOB_RECURSE py_files ${CMAKE_CURRENT_SOURCE_DIR}/py/*.py)
+install(FILES ${py_files} DESTINATION bin)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -29,7 +24,5 @@ get_namespace(CUR_SUPERIOR_NAMESPACE)
 string(REPLACE "::" "_" CUR_SUPERIOR_NAMESPACE_UNDERLINE ${CUR_SUPERIOR_NAMESPACE})
 add_custom_target(
   ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all ALL
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin $<TARGET_FILE_DIR:aimrt::runtime::main>
-  DEPENDS aimrt::runtime::main
-          ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR}::helloworld_app
-          ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR}::helloworld_pkg)
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin $<TARGET_FILE_DIR:aimrt::runtime::python_runtime>
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/py $<TARGET_FILE_DIR:aimrt::runtime::python_runtime>)

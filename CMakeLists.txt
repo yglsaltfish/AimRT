@@ -12,6 +12,8 @@ option(AIMRT_BUILD_DOCUMENT "AimRT build document." OFF)
 option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
 
+option(AIMRT_BUILD_PYTHON_RUNTIME "AimRT build python runtime." OFF)
+
 option(AIMRT_USE_FMT_LIB "AimRT use fmt library." ON)
 
 option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
@@ -168,6 +170,11 @@ if(AIMRT_BUILD_RUNTIME)
   include(GetGFlags)
   include(GetYamlCpp)
   include(GetTBB)
+
+  if(AIMRT_BUILD_PYTHON_RUNTIME)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    include(GetPybind11)
+  endif()
 
   if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
     include(GetSqlite)
