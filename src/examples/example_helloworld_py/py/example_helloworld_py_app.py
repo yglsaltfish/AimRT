@@ -1,6 +1,8 @@
 import argparse
 import aimrt_py
 
+import helloworld_py_module
+
 
 def main():
     parser = argparse.ArgumentParser(description='Example helloworld app.')
@@ -22,6 +24,10 @@ def main():
 
     try:
         core = aimrt_py.Core()
+
+        module = helloworld_py_module.HelloWorldPyModule()
+        core.RegisterModule(module)
+
         core.Initialize(core_options)
         core.Start()
         core.Shutdown()

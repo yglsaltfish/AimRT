@@ -13,7 +13,10 @@ else()
   message(FATAL_ERROR "Unsupport os")
 endif()
 
-install(DIRECTORY ${CUR_INSTALL_SOURCE_DIR}/bin DESTINATION ./)
+install(
+  DIRECTORY ${CUR_INSTALL_SOURCE_DIR}/bin
+  DESTINATION ./
+  USE_SOURCE_PERMISSIONS)
 
 # build all
 get_namespace(CUR_SUPERIOR_NAMESPACE)

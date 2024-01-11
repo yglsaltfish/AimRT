@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <string_view>
 
 #include "aimrt_module_c_interface/module_base.h"
 #include "aimrt_module_cpp_interface/core.h"
@@ -9,15 +9,15 @@
 namespace aimrt {
 
 struct ModuleInfo {
-  std::string name;
+  std::string_view name;
 
   uint32_t major_version = 0;
   uint32_t minor_version = 0;
   uint32_t patch_version = 0;
   uint32_t build_version = 0;
 
-  std::string author;
-  std::string description;
+  std::string_view author;
+  std::string_view description;
 };
 
 /**
