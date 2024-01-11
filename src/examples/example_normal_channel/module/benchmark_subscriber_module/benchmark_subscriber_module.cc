@@ -206,7 +206,7 @@ co::Task<void> BenchmarkSubscriberModule::BenchmarkSignalHandle(const aimrt::pro
 
 co::Task<void> BenchmarkSubscriberModule::BenchmarkMessageHandle(const aimrt::protocols::example::BenchmarkMessage& data) {
   auto curr_timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                            std::chrono::steady_clock::now().time_since_epoch())
+                            std::chrono::system_clock::now().time_since_epoch())
                             .count();
   auto latency = curr_timestamp - data.timestamp();
 

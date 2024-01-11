@@ -23,12 +23,14 @@ extern "C" {
 typedef struct {
   /**
    * @brief Function to get the msg timestamp(ns)
+   * @note Nanosecond since 1970-01-01 00:00:00 UTC
    *
    */
   uint64_t (*get_msg_timestamp_ns)(void* impl);
 
   /**
    * @brief Function to set the msg timestamp(ns)
+   * @note Nanosecond since 1970-01-01 00:00:00 UTC
    *
    */
   void (*set_msg_timestamp_ns)(void* impl, uint64_t t);

@@ -34,10 +34,10 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     size_t max_session_num = 1000000;
 
     /// 管理协程定时器间隔
-    std::chrono::steady_clock::duration mgr_timer_dt = std::chrono::seconds(10);
+    std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(10);
 
     /// 最长无数据时间
-    std::chrono::steady_clock::duration max_no_data_duration = std::chrono::seconds(300);
+    std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(300);
 
     /// 每包最大长度。不可大于65507
     size_t max_package_size = 1024;
@@ -245,7 +245,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     explicit SessionOptions(const Options& options)
         : max_no_data_duration(options.max_no_data_duration) {}
 
-    std::chrono::steady_clock::duration max_no_data_duration;
+    std::chrono::nanoseconds max_no_data_duration;
   };
 
   class Session : public std::enable_shared_from_this<Session> {

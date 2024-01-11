@@ -52,7 +52,7 @@ typedef struct {
    * @brief Function to get current timestamp
    * @note
    * Input 1: Implement pointer to executor handle
-   * Output: Current ns timestamp
+   * Output: Current nanosecond timestamp, since 1970-01-01 00:00:00 UTC
    */
   uint64_t (*now)(void* impl);
 
@@ -60,7 +60,7 @@ typedef struct {
    * @brief Function to execute task at a time point
    * @note
    * Input 1: Implement pointer to executor handle
-   * Input 2: Timestamp, ns
+   * Input 2: Timestamp, nanosecond since 1970-01-01 00:00:00 UTC
    * Input 2: Task, which ops type is aimrt_function_executor_task_ops_t
    */
   void (*execute_at_ns)(

@@ -123,9 +123,9 @@ void AsioThreadExecutor::Execute(Task&& task) {
   boost::asio::post(*io_ptr_, std::move(task));
 }
 
-void AsioThreadExecutor::ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {
+void AsioThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
   assert(state_.load() == State::Start);
-  auto timer_ptr_ = std::make_shared<boost::asio::steady_timer>(*io_ptr_);
+  auto timer_ptr_ = std::make_shared<boost::asio::system_timer>(*io_ptr_);
   timer_ptr_->expires_at(tp);
   timer_ptr_->async_wait([this, timer_ptr_,
                           task{std::move(task)}](boost::system::error_code ec) {
@@ -135,7 +135,7 @@ void AsioThreadExecutor::ExecuteAt(std::chrono::steady_clock::time_point tp, Tas
       return;
     }
 
-    auto dif_time = std::chrono::steady_clock::now() - timer_ptr_->expiry();
+    auto dif_time = std::chrono::system_clock::now() - timer_ptr_->expiry();
 
     task();
 

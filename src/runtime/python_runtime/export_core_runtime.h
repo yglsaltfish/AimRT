@@ -3,14 +3,13 @@
 #include "aimrt_module_cpp_interface/module_base.h"
 #include "core/aimrt_core.h"
 
-#include "pybind11/functional.h"
 #include "pybind11/pybind11.h"
-#include "pybind11/stl.h"
 
 namespace aimrt::runtime::python_runtime {
 
 inline void ExportCoreOptions(pybind11::object m) {
   using namespace aimrt::runtime::core;
+
   pybind11::class_<AimRTCore::Options>(m, "CoreOptions")
       .def(pybind11::init<>())
       .def_readwrite("cfg_file_path", &AimRTCore::Options::cfg_file_path)
@@ -26,7 +25,14 @@ class PyCore {
     core_.Initialize(options);
   }
 
-  void Start() { core_.Start(); }
+  void Start() {
+    // 阻塞之前需要释放gil锁
+    pybind11::gil_scoped_release release;
+
+    core_.Start();
+
+    pybind11::gil_scoped_acquire acquire;
+  }
 
   void Shutdown() { core_.Shutdown(); }
 

@@ -29,7 +29,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
     Tcp::endpoint svr_ep;
 
     /// 定时器间隔
-    std::chrono::steady_clock::duration heart_beat_time = std::chrono::seconds(60);
+    std::chrono::nanoseconds heart_beat_time = std::chrono::seconds(60);
 
     /// 包最大尺寸，最大10m
     uint32_t max_recv_size = 1024 * 1024 * 10;
@@ -137,7 +137,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
           max_recv_size(options.max_recv_size) {}
 
     Tcp::endpoint svr_ep;
-    std::chrono::steady_clock::duration heart_beat_time;
+    std::chrono::nanoseconds heart_beat_time;
     uint32_t max_recv_size;
   };
 

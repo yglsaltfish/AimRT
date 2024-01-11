@@ -41,7 +41,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   using HttpHandle = std::function<boost::asio::awaitable<HttpHandleStatus>(
       const Request<ReqBodyType>&,
       Response<RspBodyType>&,
-      std::chrono::steady_clock::duration)>;
+      std::chrono::nanoseconds)>;
 
   struct Options {
     /// 监听的地址
@@ -51,10 +51,10 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     size_t max_session_num = 1000000;
 
     /// 管理协程定时器间隔
-    std::chrono::steady_clock::duration mgr_timer_dt = std::chrono::seconds(5);
+    std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(5);
 
     /// 最长无数据时间
-    std::chrono::steady_clock::duration max_no_data_duration = std::chrono::seconds(60);
+    std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(60);
 
     /// 静态网页路径，支持相对路径，要求该目录下存在index.html。为空表示不支持静态网页功能
     std::string doc_root;
@@ -249,7 +249,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
           max_no_data_duration(options.max_no_data_duration) {}
 
     std::string doc_root;
-    std::chrono::steady_clock::duration max_no_data_duration;
+    std::chrono::nanoseconds max_no_data_duration;
   };
 
   class Session : public std::enable_shared_from_this<Session> {

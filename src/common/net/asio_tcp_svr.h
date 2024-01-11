@@ -34,10 +34,10 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     size_t max_session_num = 1000;
 
     /// 管理协程定时器间隔
-    std::chrono::steady_clock::duration mgr_timer_dt = std::chrono::seconds(10);
+    std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(10);
 
     /// 最长无数据时间
-    std::chrono::steady_clock::duration max_no_data_duration = std::chrono::seconds(300);
+    std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(300);
 
     /// 包最大尺寸
     uint32_t max_recv_size = 1024 * 1024 * 16;
@@ -259,7 +259,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
         : max_no_data_duration(options.max_no_data_duration),
           max_recv_size(options.max_recv_size) {}
 
-    std::chrono::steady_clock::duration max_no_data_duration;
+    std::chrono::nanoseconds max_no_data_duration;
     uint32_t max_recv_size;
   };
 
@@ -335,7 +335,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
                 }
 
                 try {
-                  send_sig_timer_.expires_at(std::chrono::steady_clock::time_point::max());
+                  send_sig_timer_.expires_after(std::chrono::seconds(3600));
                   co_await send_sig_timer_.async_wait(boost::asio::use_awaitable);
                 } catch (const std::exception& e) {
                   AIMRT_TRACE(

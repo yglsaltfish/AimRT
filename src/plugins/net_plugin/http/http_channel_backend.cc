@@ -104,7 +104,7 @@ bool HttpChannelBackend::Subscribe(
       [this, subscribe_wrapper_vec_ptr](
           const http::request<http::dynamic_body>& req,
           http::response<http::dynamic_body>& rsp,
-          std::chrono::steady_clock::duration timeout)
+          std::chrono::nanoseconds timeout)
       -> asio::awaitable<net::AsioHttpServer::HttpHandleStatus> {
     // 获取序列化类型
     std::string serialization_type;

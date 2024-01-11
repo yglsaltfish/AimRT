@@ -104,7 +104,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
       [this, &service_func_wrapper](
           const http::request<http::dynamic_body>& req,
           http::response<http::dynamic_body>& rsp,
-          std::chrono::steady_clock::duration timeout)
+          std::chrono::nanoseconds timeout)
       -> asio::awaitable<net::AsioHttpServer::HttpHandleStatus> {
     // ctx 创建
     std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr(
@@ -141,7 +141,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
     // 超时
     ctx_ptr->SetDeadlineNs(static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(
-            (std::chrono::steady_clock::now() + timeout).time_since_epoch())
+            (std::chrono::system_clock::now() + timeout).time_since_epoch())
             .count()));
 
     // service req反序列化

@@ -80,7 +80,7 @@ class AimRTScheduler {
       requires std::constructible_from<Receiver, Receiver2>
     SchedulerAtOperationState(
         executor::ExecutorRef executor_ref,
-        std::chrono::steady_clock::time_point tp,
+        std::chrono::system_clock::time_point tp,
         Receiver2&& r)  //
         noexcept(std::is_nothrow_constructible_v<Receiver, Receiver2>)
         : executor_ref_(executor_ref), tp_(tp), receiver_((Receiver2 &&) r) {}
@@ -97,7 +97,7 @@ class AimRTScheduler {
 
    private:
     executor::ExecutorRef executor_ref_;
-    std::chrono::steady_clock::time_point tp_;
+    std::chrono::system_clock::time_point tp_;
     Receiver receiver_;
   };
 
@@ -111,7 +111,7 @@ class AimRTScheduler {
 
     SchedulerAtTask(
         executor::ExecutorRef executor_ref,
-        std::chrono::steady_clock::time_point tp) noexcept
+        std::chrono::system_clock::time_point tp) noexcept
         : executor_ref_(executor_ref), tp_(tp) {}
 
     template <class R>
@@ -136,7 +136,7 @@ class AimRTScheduler {
 
    private:
     executor::ExecutorRef executor_ref_;
-    std::chrono::steady_clock::time_point tp_;
+    std::chrono::system_clock::time_point tp_;
   };
 
  public:
@@ -148,7 +148,7 @@ class AimRTScheduler {
     return Task(s.executor_ref_);
   }
 
-  friend std::chrono::steady_clock::time_point
+  friend std::chrono::system_clock::time_point
   tag_invoke(exec::now_t, const AimRTScheduler& s) noexcept {
     return s.executor_ref_.Now();
   }
@@ -156,14 +156,14 @@ class AimRTScheduler {
   friend SchedulerAtTask
   tag_invoke(exec::schedule_after_t,
              const AimRTScheduler& s,
-             std::chrono::steady_clock::duration dt) noexcept {
+             std::chrono::nanoseconds dt) noexcept {
     return SchedulerAtTask(s.executor_ref_, dt + s.executor_ref_.Now());
   }
 
   friend SchedulerAtTask
   tag_invoke(exec::schedule_at_t,
              const AimRTScheduler& s,
-             std::chrono::steady_clock::time_point tp) noexcept {
+             std::chrono::system_clock::time_point tp) noexcept {
     return SchedulerAtTask(s.executor_ref_, tp);
   }
 
@@ -262,7 +262,7 @@ class AimRTScheduler {
       requires std::constructible_from<Receiver, Receiver2>
     explicit SchedulerAfterOperationState(
         executor::ExecutorRef executor_ref,
-        const std::chrono::steady_clock::duration& dt,
+        const std::chrono::nanoseconds& dt,
         Receiver2&& r)  //
         noexcept(std::is_nothrow_constructible_v<Receiver, Receiver2>)
         : executor_ref_(executor_ref), dt_(dt), receiver_((Receiver2 &&) r) {}
@@ -279,7 +279,7 @@ class AimRTScheduler {
 
    private:
     executor::ExecutorRef executor_ref_;
-    std::chrono::steady_clock::duration dt_;
+    std::chrono::nanoseconds dt_;
     Receiver receiver_;
   };
 
@@ -297,7 +297,7 @@ class AimRTScheduler {
 
     explicit SchedulerAfterTask(
         executor::ExecutorRef executor_ref,
-        const std::chrono::steady_clock::duration& dt) noexcept
+        const std::chrono::nanoseconds& dt) noexcept
         : executor_ref_(executor_ref), dt_(dt) {}
 
     template <typename Receiver>
@@ -308,7 +308,7 @@ class AimRTScheduler {
 
    private:
     executor::ExecutorRef executor_ref_;
-    std::chrono::steady_clock::duration dt_;
+    std::chrono::nanoseconds dt_;
   };
 
   // OperationState
@@ -318,7 +318,7 @@ class AimRTScheduler {
       requires std::constructible_from<Receiver, Receiver2>
     explicit SchedulerAtOperationState(
         executor::ExecutorRef executor_ref,
-        const std::chrono::steady_clock::time_point& tp,
+        const std::chrono::system_clock::time_point& tp,
         Receiver2&& r)  //
         noexcept(std::is_nothrow_constructible_v<Receiver, Receiver2>)
         : executor_ref_(executor_ref), tp_(tp), receiver_((Receiver2 &&) r) {}
@@ -335,7 +335,7 @@ class AimRTScheduler {
 
    private:
     executor::ExecutorRef executor_ref_;
-    std::chrono::steady_clock::time_point tp_;
+    std::chrono::system_clock::time_point tp_;
     Receiver receiver_;
   };
 
@@ -353,7 +353,7 @@ class AimRTScheduler {
 
     explicit SchedulerAtTask(
         executor::ExecutorRef executor_ref,
-        const std::chrono::steady_clock::time_point& tp) noexcept
+        const std::chrono::system_clock::time_point& tp) noexcept
         : executor_ref_(executor_ref), tp_(tp) {}
 
     template <typename Receiver>
@@ -364,7 +364,7 @@ class AimRTScheduler {
 
    private:
     executor::ExecutorRef executor_ref_;
-    std::chrono::steady_clock::time_point tp_;
+    std::chrono::system_clock::time_point tp_;
   };
 
  public:
@@ -374,12 +374,12 @@ class AimRTScheduler {
   Task schedule() const noexcept { return Task(executor_ref_); }
 
   SchedulerAfterTask schedule_after(
-      const std::chrono::steady_clock::duration& dt) const noexcept {
+      const std::chrono::nanoseconds& dt) const noexcept {
     return SchedulerAfterTask(executor_ref_, dt);
   }
 
   SchedulerAtTask schedule_at(
-      const std::chrono::steady_clock::time_point& tp) const noexcept {
+      const std::chrono::system_clock::time_point& tp) const noexcept {
     return SchedulerAtTask(executor_ref_, tp);
   }
 

@@ -34,8 +34,8 @@ class ExecutorBase {
 
   virtual void Execute(Task&& task) = 0;
 
-  virtual std::chrono::steady_clock::time_point Now() const = 0;
-  virtual void ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) = 0;
+  virtual std::chrono::system_clock::time_point Now() const = 0;
+  virtual void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) = 0;
 };
 
 }  // namespace aimrt::runtime::core::executor

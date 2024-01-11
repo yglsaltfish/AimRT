@@ -384,7 +384,7 @@ TEST(NET_TEST, Http_server_handle) {
   AsioHttpServer::HttpHandle<http::string_body> http_handle =
       [](const http::request<http::dynamic_body>& req,
          http::response<http::string_body>& rsp,
-         std::chrono::steady_clock::duration timeout)
+         std::chrono::nanoseconds timeout)
       -> asio::awaitable<AsioHttpServer::HttpHandleStatus> {
     AIMRT_INFO("handle req:\n{}", util::SSToString(req));
 

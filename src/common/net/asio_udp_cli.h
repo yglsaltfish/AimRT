@@ -26,7 +26,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
     Udp::endpoint svr_ep;
 
     // 最长无数据时间
-    std::chrono::steady_clock::duration max_no_data_duration = std::chrono::seconds(60);
+    std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(60);
 
     // 每包最大长度。不可大于65507
     size_t max_package_size = 65507;
@@ -120,7 +120,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
           max_no_data_duration(options.max_no_data_duration) {}
 
     Udp::endpoint svr_ep;
-    std::chrono::steady_clock::duration max_no_data_duration;
+    std::chrono::nanoseconds max_no_data_duration;
   };
 
   class Session : public std::enable_shared_from_this<Session> {

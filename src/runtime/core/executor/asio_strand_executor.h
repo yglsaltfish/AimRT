@@ -13,8 +13,7 @@ class AsioStrandExecutor : public ExecutorBase {
  public:
   struct Options {
     std::string bind_asio_thread_executor_name;
-    std::chrono::steady_clock::duration timeout_alarm_threshold_us =
-        std::chrono::microseconds(1000 * 1000);
+    std::chrono::nanoseconds timeout_alarm_threshold_us = std::chrono::seconds(1);
   };
 
   enum class State : uint32_t {
@@ -44,10 +43,10 @@ class AsioStrandExecutor : public ExecutorBase {
 
   void Execute(Task&& task) override;
 
-  std::chrono::steady_clock::time_point Now() const override {
-    return std::chrono::steady_clock::now();
+  std::chrono::system_clock::time_point Now() const override {
+    return std::chrono::system_clock::now();
   }
-  void ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) override;
 
   void RegisterGetAsioHandle(GetAsioHandle&& handle);
 
