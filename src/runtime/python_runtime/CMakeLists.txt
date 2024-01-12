@@ -11,6 +11,7 @@ set(CUR_TARGET_ALIAS_NAME ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR})
 
 # Set file collection
 file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+file(GLOB_RECURSE py_files ${CMAKE_CURRENT_SOURCE_DIR}/*.py)
 
 # Add target
 pybind11_add_module(${CUR_TARGET_NAME} SHARED)
@@ -35,3 +36,11 @@ install(
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_py")
+
+# Py files
+add_custom_target(
+  ${CUR_TARGET_NAME}_py ALL
+  COMMAND ${CMAKE_COMMAND} -E copy ${py_files} $<TARGET_FILE_DIR:aimrt::runtime::python_runtime>
+  DEPENDS ${py_files})
+
+install(FILES ${py_files} DESTINATION bin)

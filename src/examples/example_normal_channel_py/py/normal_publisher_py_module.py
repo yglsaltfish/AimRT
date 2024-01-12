@@ -4,7 +4,7 @@ import yaml
 import datetime
 
 
-class HelloWorldPyModule(aimrt_py.ModuleBase):
+class NormalPublisherPyModule(aimrt_py.ModuleBase):
     def __init__(self):
         super().__init__()
         self.core = aimrt_py.CoreRef()
@@ -13,7 +13,7 @@ class HelloWorldPyModule(aimrt_py.ModuleBase):
 
     def Info(self):
         info = aimrt_py.ModuleInfo()
-        info.name = "HelloWorldPyModule"
+        info.name = "NormalPublisherPyModule"
         return info
 
     def Initialize(self, core):

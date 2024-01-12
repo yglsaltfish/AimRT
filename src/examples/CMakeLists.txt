@@ -2,10 +2,6 @@ set_namespace()
 
 add_subdirectory(example_helloworld)
 
-if(AIMRT_BUILD_PYTHON_RUNTIME)
-  add_subdirectory(example_helloworld_py)
-endif()
-
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(example_real_time)
 endif()
@@ -53,4 +49,14 @@ if(AIMRT_BUILD_WITH_PROTOBUF
    AND AIMRT_BUILD_NET_PLUGIN
    AND AIMRT_BUILD_PARAMETER_PLUGIN)
   add_subdirectory(example_parameter)
+endif()
+
+# python interface
+if(AIMRT_BUILD_PYTHON_RUNTIME)
+  add_subdirectory(example_helloworld_py)
+endif()
+
+if(AIMRT_BUILD_WITH_PROTOBUF)
+  add_subdirectory(example_normal_channel_py)
+  add_subdirectory(example_normal_rpc_py)
 endif()

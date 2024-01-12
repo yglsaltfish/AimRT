@@ -1,3 +1,4 @@
+#include "python_runtime/export_channel.h"
 #include "python_runtime/export_configurator.h"
 #include "python_runtime/export_core.h"
 #include "python_runtime/export_core_runtime.h"
@@ -26,4 +27,9 @@ PYBIND11_MODULE(aimrt_py, m) {
 
   ExportExecutorManagerRef(m);
   ExportExecutorRef(m);
+
+  ExportChannelContextRef(m);
+  ExportPublisherRef(m);
+  ExportSubscriberRef(m);
+  ExportChannelHandleRef(m);
 }

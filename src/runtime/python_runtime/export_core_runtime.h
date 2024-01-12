@@ -19,39 +19,28 @@ inline void ExportCoreOptions(pybind11::object m) {
       .def_readwrite("auto_set_to_global", &AimRTCore::Options::auto_set_to_global);
 }
 
-class PyCore {
- public:
-  void Initialize(const aimrt::runtime::core::AimRTCore::Options& options) {
-    core_.Initialize(options);
-  }
+inline void PyCoreStart(aimrt::runtime::core::AimRTCore& core) {
+  // 阻塞之前需要释放gil锁
+  pybind11::gil_scoped_release release;
+  core.Start();
+  pybind11::gil_scoped_acquire acquire;
+}
 
-  void Start() {
-    // 阻塞之前需要释放gil锁
-    pybind11::gil_scoped_release release;
-
-    core_.Start();
-
-    pybind11::gil_scoped_acquire acquire;
-  }
-
-  void Shutdown() { core_.Shutdown(); }
-
-  void RegisterModule(const aimrt::ModuleBase* module) {
-    AIMRT_HL_CHECK_ERROR_THROW(core_.GetLogger(), module, "module is null!");
-    core_.GetModuleManager().RegisterModule(module->NativeHandle());
-  }
-
- private:
-  aimrt::runtime::core::AimRTCore core_;
-};
+inline void PyCoreRegisterModule(
+    aimrt::runtime::core::AimRTCore& core, const aimrt::ModuleBase* module) {
+  AIMRT_HL_CHECK_ERROR_THROW(core.GetLogger(), module, "module is null!");
+  core.GetModuleManager().RegisterModule(module->NativeHandle());
+}
 
 inline void ExportCore(pybind11::object m) {
-  pybind11::class_<PyCore>(m, "Core")
+  using namespace aimrt::runtime::core;
+
+  pybind11::class_<AimRTCore>(m, "Core")
       .def(pybind11::init<>())
-      .def("Initialize", &PyCore::Initialize)
-      .def("Start", &PyCore::Start)
-      .def("Shutdown", &PyCore::Shutdown)
-      .def("RegisterModule", &PyCore::RegisterModule);
+      .def("Initialize", &AimRTCore::Initialize)
+      .def("Start", &PyCoreStart)
+      .def("Shutdown", &AimRTCore::Shutdown)
+      .def("RegisterModule", &PyCoreRegisterModule);
 }
 
 }  // namespace aimrt::runtime::python_runtime
