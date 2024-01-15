@@ -130,22 +130,24 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
         GetTplSubscribeWrapper(subscribe_pkg_path, topic_name, msg_type);
     assert(tpl_subscribe_wrapper_ptr != nullptr);
 
-    auto type_support_ref = aimrt::util::TypeSupportRef(tpl_subscribe_wrapper_ptr->msg_type_support);
+    auto tpl_subscribe_type_support_ref = aimrt::util::TypeSupportRef(tpl_subscribe_wrapper_ptr->msg_type_support);
 
     // 该pkg下创建的结构体的智能指针，带删除器
-    std::shared_ptr<void> msg_ptr = type_support_ref.CreateSharedPtr();
+    std::shared_ptr<void> msg_ptr = tpl_subscribe_type_support_ref.CreateSharedPtr();
 
     if (subscribe_pkg_path == pkg_path) {
       // 在同一个pkg中，直接复制
-      type_support_ref.Copy(publish_wrapper.msg_ptr, msg_ptr.get());
+      tpl_subscribe_type_support_ref.Copy(publish_wrapper.msg_ptr, msg_ptr.get());
     } else {
       // 在不同pkg中，需要进行序列化反序列化
       // 在同一个pkg中的不同模块中，对同一个类型结构可以复用，不管它是通过哪种序列化方法/反序列化方法从发布端原始结构转过来的
 
+      auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
+
       // 查询订阅端和发布端是否有同一种序列化方法
       auto [subscribe_wrapper_ptr, serialization_type] =
           GetSubscribeSerializationType(
-              type_support_ref,
+              publish_type_support_ref,
               subscribe_pkg_path,
               topic_name,
               msg_type);
@@ -160,8 +162,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
         // 没有缓存，序列化一次后放入缓存中
         buffer_array = std::make_shared<aimrt::util::BufferArray>();
-        auto type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
-        bool serialize_ret = type_support_ref.Serialize(
+        bool serialize_ret = publish_type_support_ref.Serialize(
             serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
         if (!serialize_ret) {
@@ -178,8 +179,8 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       }
 
       // subscribe反序列化
-      auto type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
-      bool deserialize_ret = type_support_ref.Deserialize(
+      auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
+      bool deserialize_ret = subscribe_type_support_ref.Deserialize(
           serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array->NativeHandle()), msg_ptr.get());
       if (!deserialize_ret) {
         // 反序列化失败

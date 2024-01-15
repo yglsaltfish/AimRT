@@ -147,13 +147,13 @@ bool UdpChannelBackend::Subscribe(
       if (msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path) != msg_ptr_map.end())
         continue;
 
-      auto type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
+      auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
 
       // 创建消息
-      std::shared_ptr<void> msg_ptr = type_support_ref.CreateSharedPtr();
+      std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
 
       // 消息反序列化
-      bool deserialize_ret = type_support_ref.Deserialize(
+      bool deserialize_ret = subscribe_type_support_ref.Deserialize(
           serialization_type, buffer_array_view, msg_ptr.get());
 
       AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Tcp msg deserialize failed.");
@@ -210,12 +210,12 @@ void UdpChannelBackend::Publish(
                         net::UrlEncode(publish_wrapper.topic_name) + "/" +
                         net::UrlEncode(publish_wrapper.msg_type);
 
-  auto type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
+  auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
 
   // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
   std::string serialization_type(publish_wrapper.ctx_ref.GetSerializationType());
-  if (serialization_type.empty() && type_support_ref.SerializationTypesSupportedNum() > 0) {
-    serialization_type = aimrt::util::ToStdString(type_support_ref.SerializationTypesSupportedList()[0]);
+  if (serialization_type.empty() && publish_type_support_ref.SerializationTypesSupportedNum() > 0) {
+    serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
   }
 
   // msg序列化
@@ -225,7 +225,7 @@ void UdpChannelBackend::Publish(
   if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
     // 没有缓存，序列化一次后放入缓存中
     buffer_array = std::make_shared<aimrt::util::BufferArray>();
-    bool serialize_ret = type_support_ref.Serialize(
+    bool serialize_ret = publish_type_support_ref.Serialize(
         serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
     if (!serialize_ret) {

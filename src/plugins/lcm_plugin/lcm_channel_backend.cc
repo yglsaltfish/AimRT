@@ -460,8 +460,8 @@ void LcmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pu
   } else {
     // 没有缓存，序列化一次后放入缓存中
     buffer_array = std::make_shared<aimrt::util::BufferArray>();
-    auto type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
-    bool serialize_ret = type_support_ref.Serialize(
+    auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
+    bool serialize_ret = publish_type_support_ref.Serialize(
         serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
     if (!serialize_ret) {
