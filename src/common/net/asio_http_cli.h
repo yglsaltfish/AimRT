@@ -313,7 +313,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
               namespace asio = boost::asio;
               namespace http = boost::beast::http;
 
-              auto start_time_point = chrono::system_clock::now();
+              auto start_time_point = chrono::steady_clock::now();
               chrono::nanoseconds cur_duration;
 
               if (first_time_entry_) [[unlikely]] {
@@ -327,7 +327,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
                     asio::use_awaitable);
 
                 // connect
-                cur_duration = chrono::system_clock::now() - start_time_point;
+                cur_duration = chrono::steady_clock::now() - start_time_point;
                 AIMRT_CHECK_ERROR_THROW(cur_duration < timeout, "Timeout.");
 
                 stream_.expires_after(timeout - cur_duration);
@@ -338,7 +338,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
               }
 
               // write
-              cur_duration = chrono::system_clock::now() - start_time_point;
+              cur_duration = chrono::steady_clock::now() - start_time_point;
               AIMRT_CHECK_ERROR_THROW(cur_duration < timeout, "Timeout.");
 
               AIMRT_TRACE(
@@ -351,7 +351,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
               tick_has_data_ = true;
 
               // read
-              cur_duration = chrono::system_clock::now() - start_time_point;
+              cur_duration = chrono::steady_clock::now() - start_time_point;
               AIMRT_CHECK_ERROR_THROW(cur_duration < timeout, "Timeout.");
 
               AIMRT_TRACE(
