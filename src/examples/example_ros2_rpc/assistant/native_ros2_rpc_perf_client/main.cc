@@ -88,7 +88,7 @@ class RosTestRpcPerfClient : public rclcpp::Node {
 
     using ServiceResponseFuture = rclcpp::Client<RosTestRpc>::SharedFuture;
 
-    auto task_start_time = std::chrono::system_clock::now();
+    auto task_start_time = std::chrono::steady_clock::now();
 
     auto result = client_->async_send_request(
         request_,
@@ -100,7 +100,7 @@ class RosTestRpcPerfClient : public rclcpp::Node {
             return;
           }
 
-          auto task_end_time = std::chrono::system_clock::now();
+          auto task_end_time = std::chrono::steady_clock::now();
 
           if (task_end_time < task_start_time) {
             time_vec_.emplace_back(0.0);  // too small to measure
@@ -117,7 +117,7 @@ class RosTestRpcPerfClient : public rclcpp::Node {
                                       int freq_vec) {
     using ServiceResponseFuture = rclcpp::Client<RosTestRpc>::SharedFuture;
 
-    auto task_start_time = std::chrono::system_clock::now();
+    auto task_start_time = std::chrono::steady_clock::now();
     auto result = client_->async_send_request(
         request_,
         [this, task_start_time, ready_promise, freq_vec](ServiceResponseFuture future) {
@@ -128,7 +128,7 @@ class RosTestRpcPerfClient : public rclcpp::Node {
             return;
           }
 
-          auto task_end_time = std::chrono::system_clock::now();
+          auto task_end_time = std::chrono::steady_clock::now();
 
           if (task_end_time < task_start_time) {
             time_vec_.emplace_back(0.0);  // too small to measure
@@ -193,7 +193,7 @@ void FixedFreqStatisticsLoop(const Options &options) {
 
     std::promise<void> promise_;
 
-    auto start_time = std::chrono::system_clock::now();
+    auto start_time = std::chrono::steady_clock::now();
 
     run_flag.store(true);
 
@@ -212,7 +212,7 @@ void FixedFreqStatisticsLoop(const Options &options) {
 
     promise_.get_future().wait();
 
-    auto end_time = std::chrono::system_clock::now();
+    auto end_time = std::chrono::steady_clock::now();
     double total_time = std::chrono::duration<double>(end_time - start_time).count() * 1e3;
 
     // 统计结果
@@ -303,7 +303,7 @@ void BenchStatisticsLoop(const Options &options) {
     }
     std::vector<std::promise<void>> promise_vec(real_parallel);
 
-    auto start_time = std::chrono::system_clock::now();
+    auto start_time = std::chrono::steady_clock::now();
 
     run_flag.store(true);
     for (size_t ii = 0; ii < real_parallel; ++ii) {
@@ -316,7 +316,7 @@ void BenchStatisticsLoop(const Options &options) {
     for (size_t ii = 0; ii < real_parallel; ++ii) {
       promise_vec[ii].get_future().wait();
     }
-    auto end_time = std::chrono::system_clock::now();
+    auto end_time = std::chrono::steady_clock::now();
     double total_time = std::chrono::duration<double>(end_time - start_time).count() * 1e3;
 
     // statistical

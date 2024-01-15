@@ -115,10 +115,10 @@ co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
       count++;
 
       // Sleep for some time
-      auto start_tp = std::chrono::system_clock::now();
+      auto start_tp = std::chrono::steady_clock::now();
       co_await co::ScheduleAfter(
           co::AimRTScheduler(executor), std::chrono::milliseconds(1000));
-      auto end_tp = std::chrono::system_clock::now();
+      auto end_tp = std::chrono::steady_clock::now();
 
       // Get cpuset used by the current thread
       cpu_set_t cur_cpuset;

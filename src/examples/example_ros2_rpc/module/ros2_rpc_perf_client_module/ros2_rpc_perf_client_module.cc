@@ -158,7 +158,7 @@ co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
       real_parallel = ((cur_parallel < options_.parallel) ? cur_parallel : options_.parallel);
     }
 
-    auto start_time = std::chrono::system_clock::now();
+    auto start_time = std::chrono::steady_clock::now();
 
     // 开启几个bench协程
     for (uint32_t ii = 0; ii < real_parallel; ii++) {
@@ -176,7 +176,7 @@ co::Task<void> Ros2RpcPerfClientModule::BenchStatisticsLoop() {
         client_statistics_thread_pool_scheduler,
         bench_scope.complete());
 
-    auto end_time = std::chrono::system_clock::now();
+    auto end_time = std::chrono::steady_clock::now();
     double total_time = std::chrono::duration<double>(end_time - start_time).count() * 1e3;
 
     // 统计结果
@@ -241,7 +241,7 @@ co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
     co::AsyncScope fixedfreq_scope;
     std::atomic_bool fixedfreq_run_flag = true;
 
-    auto start_time = std::chrono::system_clock::now();
+    auto start_time = std::chrono::steady_clock::now();
 
     fixedfreq_scope.spawn(co::On(co::InlineScheduler(), FixedFreqLoop(freq, fixedfreq_run_flag)));
 
@@ -256,7 +256,7 @@ co::Task<void> Ros2RpcPerfClientModule::FixedFreqStatisticsLoop() {
         client_statistics_thread_pool_scheduler,
         fixedfreq_scope.complete());
 
-    auto end_time = std::chrono::system_clock::now();
+    auto end_time = std::chrono::steady_clock::now();
     double total_time = std::chrono::duration<double>(end_time - start_time).count() * 1e3;
 
     // 统计结果
@@ -321,13 +321,13 @@ co::Task<void> Ros2RpcPerfClientModule::BenchLoop(
   while (bench_run_flag) {
     co_await co::Schedule(client_thread_pool_scheduler);
 
-    auto task_start_time = std::chrono::system_clock::now();
+    auto task_start_time = std::chrono::steady_clock::now();
 
     // call rpc
     auto status = co_await proxy_->RosTestRpc(req, rsp);
     co_await co::Schedule(client_thread_pool_scheduler);
 
-    auto task_end_time = std::chrono::system_clock::now();
+    auto task_end_time = std::chrono::steady_clock::now();
 
     AIMRT_CHECK_WARN(status, "Call rpc failed, status: {}", status.ToString());
 
@@ -369,13 +369,13 @@ co::Task<void> Ros2RpcPerfClientModule::FixedFreqLoop(
         client_thread_pool_scheduler,
         client_thread_pool.Now() + std::chrono::nanoseconds(1000000000 / freq));
 
-    auto task_start_time = std::chrono::system_clock::now();
+    auto task_start_time = std::chrono::steady_clock::now();
 
     // call rpc
     auto status = co_await proxy_->RosTestRpc(req, rsp);
     co_await co::Schedule(client_thread_pool_scheduler);
 
-    auto task_end_time = std::chrono::system_clock::now();
+    auto task_end_time = std::chrono::steady_clock::now();
 
     AIMRT_CHECK_WARN(status, "Call rpc failed, status: {}", status.ToString());
 

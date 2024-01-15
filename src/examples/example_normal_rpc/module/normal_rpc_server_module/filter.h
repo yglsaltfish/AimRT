@@ -21,9 +21,9 @@ inline co::Task<aimrt::rpc::Status> DebugLogServerFilter(
 inline co::Task<aimrt::rpc::Status> TimeCostLogServerFilter(
     aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
     const aimrt::rpc::RpcHandle& next) {
-  auto begin_time = std::chrono::system_clock::now();
+  auto begin_time = std::chrono::steady_clock::now();
   const auto& status = co_await next(ctx, req_ptr, rsp_ptr);
-  auto end_time = std::chrono::system_clock::now();
+  auto end_time = std::chrono::steady_clock::now();
 
   AIMRT_INFO("Svr rpc time cost {} us",
              std::chrono::duration_cast<std::chrono::microseconds>(end_time - begin_time).count());
