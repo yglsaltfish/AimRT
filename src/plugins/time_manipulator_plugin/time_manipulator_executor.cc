@@ -144,16 +144,16 @@ void TimeManipulatorExecutor::Execute(Task&& task) {
   bind_executor_ref_.Execute(std::move(task));
 }
 
-std::chrono::steady_clock::time_point TimeManipulatorExecutor::Now() const {
+std::chrono::system_clock::time_point TimeManipulatorExecutor::Now() const {
   assert(state_.load() == State::Start);
 
   std::shared_lock<std::shared_mutex> lck(tick_mutex_);
 
-  return std::chrono::steady_clock::time_point(
+  return std::chrono::system_clock::time_point(
       std::chrono::nanoseconds(current_tick_count_ * dt_count_ + start_time_point_));
 }
 
-void TimeManipulatorExecutor::ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {
+void TimeManipulatorExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
   assert(state_.load() == State::Start);
 
   uint64_t virtual_tp =
@@ -253,7 +253,7 @@ void TimeManipulatorExecutor::TimerLoop() {
                Name(), e.what());
   }
 
-  auto last_loop_time_point = std::chrono::steady_clock::now();
+  auto last_loop_time_point = std::chrono::system_clock::now();
 
   // 记录初始时间
   start_time_point_ = static_cast<uint64_t>(

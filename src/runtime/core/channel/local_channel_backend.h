@@ -6,6 +6,7 @@
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/function.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/channel/channel_backend_base.h"
 #include "util/log_util.h"
 
@@ -58,7 +59,7 @@ class LocalChannelBackend : public ChannelBackendBase {
       std::string_view msg_type) const;
 
   std::tuple<const SubscribeWrapper*, std::string_view> GetSubscribeSerializationType(
-      const aimrt_type_support_base_t* publish_msg_type_support_ptr,
+      aimrt::util::TypeSupportRef publish_msg_type_support_ref,
       std::string_view subscribe_pkg_path,
       std::string_view topic_name,
       std::string_view msg_type) const;

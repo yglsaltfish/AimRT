@@ -1,13 +1,10 @@
 #include "ros2_plugin/ros2_adapter_subscription.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "ros2_plugin/global.h"
 
 namespace aimrt::plugins::ros2_plugin {
 std::shared_ptr<void> Ros2AdapterSubscription::create_message() {
-  return std::shared_ptr<void>(
-      subscribe_wrapper_.msg_type_support->create(),
-      [destory_func(subscribe_wrapper_.msg_type_support->destory)](void* ptr) {
-        destory_func(ptr);
-      });
+  return aimrt::util::TypeSupportRef(subscribe_wrapper_.msg_type_support).CreateSharedPtr();
 }
 
 std::shared_ptr<rclcpp::SerializedMessage>

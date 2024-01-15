@@ -1,4 +1,5 @@
 #include "ros2_plugin/ros2_adapter_rpc_server.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "ros2_plugin/global.h"
 
 namespace aimrt::plugins::ros2_plugin {
@@ -53,13 +54,8 @@ Ros2AdapterServer::Ros2AdapterServer(
 }
 
 std::shared_ptr<void> Ros2AdapterServer::create_request() {
-  AIMRT_TRACE("Create ros2 req, func name '{}'",
-              service_func_wrapper_.func_name);
-  return std::shared_ptr<void>(
-      service_func_wrapper_.req_type_support->create(),
-      [service_func_wrapper_ptr(&service_func_wrapper_)](void* ptr) {
-        service_func_wrapper_ptr->req_type_support->destory(ptr);
-      });
+  AIMRT_TRACE("Create ros2 req, func name '{}'", service_func_wrapper_.func_name);
+  return aimrt::util::TypeSupportRef(service_func_wrapper_.req_type_support).CreateSharedPtr();
 }
 
 std::shared_ptr<rmw_request_id_t> Ros2AdapterServer::create_request_header() {
@@ -85,11 +81,7 @@ void Ros2AdapterServer::handle_request(
       });
 
   // service rsp 创建
-  std::shared_ptr<void> service_rsp_ptr(
-      service_func_wrapper_.rsp_type_support->create(),
-      [service_func_wrapper_ptr(&service_func_wrapper_)](void* ptr) {
-        service_func_wrapper_ptr->rsp_type_support->destory(ptr);
-      });
+  std::shared_ptr<void> service_rsp_ptr = aimrt::util::TypeSupportRef(service_func_wrapper_.rsp_type_support).CreateSharedPtr();
 
   aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
       [this, service_rsp_ptr, ctx_ptr, request, request_header](uint32_t code) {

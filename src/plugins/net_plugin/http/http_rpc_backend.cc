@@ -4,6 +4,7 @@
 
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "net_plugin/global.h"
 
 namespace YAML {
@@ -104,7 +105,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
       [this, &service_func_wrapper](
           const http::request<http::dynamic_body>& req,
           http::response<http::dynamic_body>& rsp,
-          std::chrono::steady_clock::duration timeout)
+          std::chrono::nanoseconds timeout)
       -> asio::awaitable<net::AsioHttpServer::HttpHandleStatus> {
     // ctx 创建
     std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr(
@@ -141,7 +142,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
     // 超时
     ctx_ptr->SetDeadlineNs(static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(
-            (std::chrono::steady_clock::now() + timeout).time_since_epoch())
+            (std::chrono::system_clock::now() + timeout).time_since_epoch())
             .count()));
 
     // service req反序列化
@@ -158,27 +159,19 @@ bool HttpRpcBackend::RegisterServiceFunc(
         .data = buffer_view_vec.data(),
         .len = buffer_view_vec.size()};
 
-    std::shared_ptr<void> service_req_ptr(
-        service_func_wrapper.req_type_support->create(),
-        [&service_func_wrapper](void* ptr) {
-          service_func_wrapper.req_type_support->destory(ptr);
-        });
+    auto service_req_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.req_type_support);
 
-    bool deserialize_ret =
-        service_func_wrapper.req_type_support->deserialize(
-            aimrt::util::ToAimRTStringView(serialization_type),
-            buffer_array_view,
-            service_req_ptr.get());
+    std::shared_ptr<void> service_req_ptr = service_req_type_support_ref.CreateSharedPtr();
 
-    AIMRT_CHECK_ERROR_THROW(deserialize_ret,
-                            "Http req deserialize failed.");
+    bool deserialize_ret = service_req_type_support_ref.Deserialize(
+        serialization_type, buffer_array_view, service_req_ptr.get());
+
+    AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Http req deserialize failed.");
 
     // service rsp创建
-    std::shared_ptr<void> service_rsp_ptr(
-        service_func_wrapper.rsp_type_support->create(),
-        [&service_func_wrapper](void* ptr) {
-          service_func_wrapper.rsp_type_support->destory(ptr);
-        });
+    auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
+
+    std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
 
     // service rpc调用
     auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, timeout);
@@ -196,11 +189,11 @@ bool HttpRpcBackend::RegisterServiceFunc(
          &handle_flag](uint32_t code) {
           aimrt::util::BufferArray buffer_array;
 
+          auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
+
           // service rsp序列化
-          bool serialize_ret =
-              service_func_wrapper.rsp_type_support->serialize(
-                  aimrt::util::ToAimRTStringView(serialization_type),
-                  service_rsp_ptr.get(), buffer_array.NativeHandle());
+          bool serialize_ret = service_rsp_type_support_ref.Serialize(
+              serialization_type, service_rsp_ptr.get(), buffer_array.NativeHandle());
 
           // 序列化失败一般很少见，此处暂时不做处理
           assert(serialize_ret);
@@ -389,10 +382,11 @@ bool HttpRpcBackend::TryInvoke(
 
           aimrt::util::BufferArray buffer_array;
 
+          auto client_req_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_ptr->req_type_support);
+
           // client req序列化
-          bool serialize_ret = client_func_wrapper_ptr->req_type_support->serialize(
-              aimrt::util::ToAimRTStringView(serialization_type),
-              client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
+          bool serialize_ret = client_req_type_support_ref.Serialize(
+              serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
 
           // 序列化失败一般很少见，此处暂时不做处理
           assert(serialize_ret);
@@ -449,11 +443,10 @@ bool HttpRpcBackend::TryInvoke(
               .data = buffer_view_vec.data(),
               .len = buffer_view_vec.size()};
 
-          bool deserialize_ret =
-              client_func_wrapper_ptr->rsp_type_support->deserialize(
-                  aimrt::util::ToAimRTStringView(serialization_type),
-                  buffer_array_view,
-                  client_invoke_wrapper_ptr->rsp_ptr);
+          auto client_rsp_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_ptr->rsp_type_support);
+
+          bool deserialize_ret = client_rsp_type_support_ref.Deserialize(
+              serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
 
           if (!deserialize_ret) {
             // 调用回调

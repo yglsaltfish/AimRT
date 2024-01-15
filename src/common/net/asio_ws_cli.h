@@ -38,7 +38,7 @@ class AsioWebSocketClient
     std::string path = "/";
 
     /// 定时器间隔
-    std::chrono::steady_clock::duration heart_beat_time = std::chrono::seconds(60);
+    std::chrono::nanoseconds heart_beat_time = std::chrono::seconds(60);
 
     /// 包最大尺寸，最大10m
     uint32_t max_recv_size = 1024 * 1024 * 10;
@@ -149,7 +149,7 @@ class AsioWebSocketClient
     std::string host;
     std::string service;
     std::string path;
-    std::chrono::steady_clock::duration heart_beat_time;
+    std::chrono::nanoseconds heart_beat_time;
     uint32_t max_recv_size;
     bool binary_mode;
   };

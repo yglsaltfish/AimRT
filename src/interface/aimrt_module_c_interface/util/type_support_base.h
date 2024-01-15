@@ -14,47 +14,53 @@ typedef struct {
    * @brief Name of type
    *
    */
-  aimrt_string_view_t type_name;
+  aimrt_string_view_t (*type_name)(void* impl);
 
   /**
    * @brief Function to create msg
    * @note
+   * Input 1: Implement pointer
    * Output: Pointer to msg
    */
-  void* (*create)();
+  void* (*create)(void* impl);
 
   /**
    * @brief Function to destory msg
    * @note
-   * Input 1: Pointer to msg
+   * Input 1: Implement pointer
+   * Input 2: Pointer to msg
    */
-  void (*destory)(void* msg);
+  void (*destory)(void* impl, void* msg);
 
   /**
    * @brief Function to copy msg
    * @note
-   * Input 1: Pointer to the msg to be copied from
-   * Input 2: Pointer to the msg to be copied to
+   * Input 1: Implement pointer
+   * Input 2: Pointer to the msg to be copied from
+   * Input 3: Pointer to the msg to be copied to
    */
-  void (*copy)(const void* from, void* to);
+  void (*copy)(void* impl, const void* from, void* to);
 
   /**
    * @brief Function to move msg
    * @note
-   * Input 1: Pointer to the msg to be moved from
-   * Input 2: Pointer to the msg to be moved to
+   * Input 1: Implement pointer
+   * Input 2: Pointer to the msg to be moved from
+   * Input 3: Pointer to the msg to be moved to
    */
-  void (*move)(void* from, void* to);
+  void (*move)(void* impl, void* from, void* to);
 
   /**
    * @brief Function to serialize the msg
    * @note
-   * Input 1: Serialization type, eg: pb/json
-   * Input 2: Pointer to the msg to be serialized
-   * Input 3: Pointer to the buffer array, with allocator
+   * Input 1: Implement pointer
+   * Input 2: Serialization type, eg: pb/json
+   * Input 3: Pointer to the msg to be serialized
+   * Input 4: Pointer to the buffer array, with allocator
    * Output: Serialization result
    */
   bool (*serialize)(
+      void* impl,
       aimrt_string_view_t serialization_type,
       const void* msg,
       aimrt_buffer_array_t* buffer_array);
@@ -62,12 +68,14 @@ typedef struct {
   /**
    * @brief Function to deserialize the msg
    * @note
-   * Input 1: Serialization type, eg: pb/json
-   * Input 2: Buffer array
-   * Input 3: Pointer to the msg to be deserialized
+   * Input 1: Implement pointer
+   * Input 2: Serialization type, eg: pb/json
+   * Input 3: Buffer array
+   * Input 4: Pointer to the msg to be deserialized
    * Output: Deserialization result
    */
   bool (*deserialize)(
+      void* impl,
       aimrt_string_view_t serialization_type,
       aimrt_buffer_array_view_t buffer_array_view,
       void* msg);
@@ -76,19 +84,22 @@ typedef struct {
    * @brief Number of serialization types supported
    *
    */
-  size_t serialization_types_supported_num;
+  size_t (*serialization_types_supported_num)(void* impl);
 
   /**
    * @brief List of serialization types supported
    * @note
    * The length of this array is defined by serialization_types_supported_num
    */
-  const aimrt_string_view_t* serialization_types_supported_list;
+  const aimrt_string_view_t* (*serialization_types_supported_list)(void* impl);
 
   /**
    * @brief For custom type support
    *
    */
-  const void* custom_type_support_ptr;
+  const void* (*custom_type_support_ptr)(void* impl);
+
+  /// Implement pointer
+  void* impl;
 } aimrt_type_support_base_t;
 }

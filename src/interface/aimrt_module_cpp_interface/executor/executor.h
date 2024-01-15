@@ -54,13 +54,13 @@ class ExecutorRef {
     base_ptr_->execute(base_ptr_->impl, task.NativeHandle());
   }
 
-  std::chrono::steady_clock::time_point Now() const {
+  std::chrono::system_clock::time_point Now() const {
     assert(base_ptr_);
-    return std::chrono::steady_clock::time_point(
+    return std::chrono::system_clock::time_point(
         std::chrono::nanoseconds(base_ptr_->now(base_ptr_->impl)));
   }
 
-  void ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {
+  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
     assert(base_ptr_);
 
     if (!SupportTimerSchedule()) [[unlikely]]
@@ -75,7 +75,7 @@ class ExecutorRef {
         task.NativeHandle());
   }
 
-  void ExecuteAfter(std::chrono::steady_clock::duration dt, Task&& task) {
+  void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task) {
     ExecuteAt(Now() + dt, std::move(task));
   }
 

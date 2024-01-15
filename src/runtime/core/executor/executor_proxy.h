@@ -50,7 +50,7 @@ class ExecutorProxy {
         },
         .execute_at_ns = [](void* impl, uint64_t tp, aimrt_function_base_t* task) {
           static_cast<ExecutorBase*>(impl)->ExecuteAt(
-              std::chrono::steady_clock::time_point(std::chrono::nanoseconds(tp)),
+              std::chrono::system_clock::time_point(std::chrono::nanoseconds(tp)),
               ExecutorBase::Task(task));  //
         },
         .impl = impl};

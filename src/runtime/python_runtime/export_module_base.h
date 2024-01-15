@@ -2,13 +2,13 @@
 
 #include "aimrt_module_cpp_interface/module_base.h"
 
-#include "pybind11/functional.h"
 #include "pybind11/pybind11.h"
-#include "pybind11/stl.h"
 
 namespace aimrt::runtime::python_runtime {
 
 inline void ExportModuleInfo(pybind11::object m) {
+  using namespace aimrt;
+
   pybind11::class_<ModuleInfo>(m, "ModuleInfo")
       .def(pybind11::init<>())
       .def_readwrite("name", &ModuleInfo::name)
@@ -42,6 +42,8 @@ class PyModuleBase : public ModuleBase {
 };
 
 inline void ExportModuleBase(pybind11::object m) {
+  using namespace aimrt;
+
   pybind11::class_<ModuleBase, PyModuleBase, std::shared_ptr<ModuleBase>>(m, "ModuleBase")
       .def(pybind11::init<>())
       .def("Info", &ModuleBase::Info)

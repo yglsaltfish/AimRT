@@ -1,5 +1,6 @@
 #include "ros2_plugin/ros2_adapter_rpc_client.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "ros2_plugin/global.h"
 
 namespace aimrt::plugins::ros2_plugin {
@@ -46,11 +47,7 @@ Ros2AdapterClient::Ros2AdapterClient(
 std::shared_ptr<void> Ros2AdapterClient::create_response() {
   AIMRT_TRACE("Create ros2 rsp, func name '{}'",
               client_func_wrapper_.func_name);
-  return std::shared_ptr<void>(
-      client_func_wrapper_.rsp_type_support->create(),
-      [client_func_wrapper_ptr(&client_func_wrapper_)](void* ptr) {
-        client_func_wrapper_ptr->rsp_type_support->destory(ptr);
-      });
+  return aimrt::util::TypeSupportRef(client_func_wrapper_.rsp_type_support).CreateSharedPtr();
 }
 
 std::shared_ptr<rmw_request_id_t> Ros2AdapterClient::create_request_header() {
@@ -73,8 +70,8 @@ void Ros2AdapterClient::handle_response(
   }
 
   auto client_invoke_wrapper_ptr = cb_wrapper->client_invoke_wrapper_ptr;
-  client_func_wrapper_.rsp_type_support->move(
-      response.get(), client_invoke_wrapper_ptr->rsp_ptr);
+  aimrt::util::TypeSupportRef(client_func_wrapper_.rsp_type_support)
+      .Move(response.get(), client_invoke_wrapper_ptr->rsp_ptr);
   client_invoke_wrapper_ptr->callback(
       static_cast<uint32_t>(rpc::Status::RetCode::OK));
 }

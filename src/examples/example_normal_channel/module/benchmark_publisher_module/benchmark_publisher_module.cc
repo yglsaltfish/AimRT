@@ -134,7 +134,7 @@ co::Task<void> BenchmarkPublisherModule::MainLoop() {
         for (send_count = 0; send_count < msg_count_; send_count++) {
           msg.set_seq(send_count);
           uint64_t timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                                   std::chrono::steady_clock::now().time_since_epoch())
+                                   std::chrono::system_clock::now().time_since_epoch())
                                    .count();
           msg.set_timestamp(timestamp);
           if (!run_flag_) break;

@@ -130,24 +130,24 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
         GetTplSubscribeWrapper(subscribe_pkg_path, topic_name, msg_type);
     assert(tpl_subscribe_wrapper_ptr != nullptr);
 
-    void* (*create_func)() = tpl_subscribe_wrapper_ptr->msg_type_support->create;
-    void (*destory_func)(void*) = tpl_subscribe_wrapper_ptr->msg_type_support->destory;
+    auto tpl_subscribe_type_support_ref = aimrt::util::TypeSupportRef(tpl_subscribe_wrapper_ptr->msg_type_support);
 
     // 该pkg下创建的结构体的智能指针，带删除器
-    std::shared_ptr<void> msg_ptr = std::shared_ptr<void>(
-        create_func(), [destory_func](void* ptr) { destory_func(ptr); });
+    std::shared_ptr<void> msg_ptr = tpl_subscribe_type_support_ref.CreateSharedPtr();
 
     if (subscribe_pkg_path == pkg_path) {
       // 在同一个pkg中，直接复制
-      tpl_subscribe_wrapper_ptr->msg_type_support->copy(publish_wrapper.msg_ptr, msg_ptr.get());
+      tpl_subscribe_type_support_ref.Copy(publish_wrapper.msg_ptr, msg_ptr.get());
     } else {
       // 在不同pkg中，需要进行序列化反序列化
       // 在同一个pkg中的不同模块中，对同一个类型结构可以复用，不管它是通过哪种序列化方法/反序列化方法从发布端原始结构转过来的
 
+      auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
+
       // 查询订阅端和发布端是否有同一种序列化方法
       auto [subscribe_wrapper_ptr, serialization_type] =
           GetSubscribeSerializationType(
-              publish_wrapper.msg_type_support,
+              publish_type_support_ref,
               subscribe_pkg_path,
               topic_name,
               msg_type);
@@ -162,9 +162,8 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
         // 没有缓存，序列化一次后放入缓存中
         buffer_array = std::make_shared<aimrt::util::BufferArray>();
-        bool serialize_ret = publish_wrapper.msg_type_support->serialize(
-            aimrt::util::ToAimRTStringView(serialization_type),
-            publish_wrapper.msg_ptr, buffer_array->NativeHandle());
+        bool serialize_ret = publish_type_support_ref.Serialize(
+            serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
         if (!serialize_ret) {
           AIMRT_ERROR(
@@ -180,11 +179,9 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       }
 
       // subscribe反序列化
-      bool deserialize_ret =
-          subscribe_wrapper_ptr->msg_type_support->deserialize(
-              aimrt::util::ToAimRTStringView(serialization_type),
-              *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array->NativeHandle()),
-              msg_ptr.get());
+      auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
+      bool deserialize_ret = subscribe_type_support_ref.Deserialize(
+          serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array->NativeHandle()), msg_ptr.get());
       if (!deserialize_ret) {
         // 反序列化失败
         AIMRT_FATAL(
@@ -262,7 +259,7 @@ const SubscribeWrapper* LocalChannelBackend::GetTplSubscribeWrapper(
 
 std::tuple<const SubscribeWrapper*, std::string_view>
 LocalChannelBackend::GetSubscribeSerializationType(
-    const aimrt_type_support_base_t* publish_msg_type_support_ptr,
+    aimrt::util::TypeSupportRef publish_msg_type_support_ref,
     std::string_view subscribe_pkg_path,
     std::string_view topic_name,
     std::string_view msg_type) const {
@@ -270,6 +267,9 @@ LocalChannelBackend::GetSubscribeSerializationType(
 
   auto find_pkg_itr = subscribe_wrapper_map.find(subscribe_pkg_path);
   if (find_pkg_itr == subscribe_wrapper_map.end()) return {nullptr, ""};
+
+  size_t cur_pmsg_ser_type = publish_msg_type_support_ref.SerializationTypesSupportedNum();
+  const auto* cur_pmsg_ser_list = publish_msg_type_support_ref.SerializationTypesSupportedList();
 
   for (const auto& module_itr : find_pkg_itr->second) {
     auto find_topic_itr = module_itr.second.find(topic_name);
@@ -279,22 +279,19 @@ LocalChannelBackend::GetSubscribeSerializationType(
     if (find_msg_itr == find_topic_itr->second.end()) continue;
 
     auto* cur_subscribe_wrapper_ptr = find_msg_itr->second.get();
-    auto* cur_subscribe_msg_type_support_ptr = cur_subscribe_wrapper_ptr->msg_type_support;
+    auto cur_subscribe_msg_type_support_ref = aimrt::util::TypeSupportRef(cur_subscribe_wrapper_ptr->msg_type_support);
 
-    for (uint32_t ii = 0;
-         ii < cur_subscribe_msg_type_support_ptr->serialization_types_supported_num;
-         ++ii) {
-      std::string_view cur_subscribe_msg_serialization_type =
-          aimrt::util::ToStdStringView(cur_subscribe_msg_type_support_ptr->serialization_types_supported_list[ii]);
+    size_t cur_smsg_ser_num = cur_subscribe_msg_type_support_ref.SerializationTypesSupportedNum();
+    const auto* cur_smsg_ser_list = cur_subscribe_msg_type_support_ref.SerializationTypesSupportedList();
 
-      for (uint32_t jj = 0;
-           jj < publish_msg_type_support_ptr->serialization_types_supported_num;
-           ++jj) {
-        std::string_view cur_publish_msg_serialization_type =
-            aimrt::util::ToStdStringView(publish_msg_type_support_ptr->serialization_types_supported_list[jj]);
+    for (uint32_t ii = 0; ii < cur_smsg_ser_num; ++ii) {
+      std::string_view cur_smsg_ser_type = aimrt::util::ToStdStringView(cur_smsg_ser_list[ii]);
 
-        if (cur_subscribe_msg_serialization_type == cur_publish_msg_serialization_type) {
-          return {cur_subscribe_wrapper_ptr, cur_publish_msg_serialization_type};
+      for (uint32_t jj = 0; jj < cur_pmsg_ser_type; ++jj) {
+        std::string_view cur_pmsg_ser_type = aimrt::util::ToStdStringView(cur_pmsg_ser_list[jj]);
+
+        if (cur_smsg_ser_type == cur_pmsg_ser_type) {
+          return {cur_subscribe_wrapper_ptr, cur_pmsg_ser_type};
         }
       }
     }

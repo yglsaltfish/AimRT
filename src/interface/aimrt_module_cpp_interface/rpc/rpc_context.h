@@ -27,13 +27,13 @@ class ContextRef {
   const aimrt_rpc_context_base_t* NativeHandle() const { return base_ptr_; }
 
   // Timeout manager
-  std::chrono::steady_clock::time_point Deadline() const {
+  std::chrono::system_clock::time_point Deadline() const {
     assert(base_ptr_ && base_ptr_->ops);
-    return std::chrono::steady_clock::time_point(std::chrono::nanoseconds(
+    return std::chrono::system_clock::time_point(std::chrono::nanoseconds(
         base_ptr_->ops->get_deadline_ns(base_ptr_->impl)));
   }
 
-  void SetDeadline(std::chrono::steady_clock::time_point deadline) {
+  void SetDeadline(std::chrono::system_clock::time_point deadline) {
     assert(base_ptr_ && base_ptr_->ops);
     base_ptr_->ops->set_deadline_ns(
         base_ptr_->impl,
@@ -43,12 +43,12 @@ class ContextRef {
                 .count()));
   }
 
-  std::chrono::steady_clock::duration Timeout() const {
-    return Deadline() - std::chrono::steady_clock::now();
+  std::chrono::nanoseconds Timeout() const {
+    return Deadline() - std::chrono::system_clock::now();
   }
 
-  void SetTimeout(std::chrono::steady_clock::duration timeout) {
-    SetDeadline(std::chrono::steady_clock::now() + timeout);
+  void SetTimeout(std::chrono::nanoseconds timeout) {
+    SetDeadline(std::chrono::system_clock::now() + timeout);
   }
 
   // Some frame fields

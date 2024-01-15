@@ -26,12 +26,14 @@ extern "C" {
 typedef struct {
   /**
    * @brief Function to get the deadline timestamp(ns)
+   * @note Nanosecond since 1970-01-01 00:00:00 UTC
    *
    */
   uint64_t (*get_deadline_ns)(void* impl);
 
   /**
    * @brief Function to set the deadline timestamp(ns)
+   * @note Nanosecond since 1970-01-01 00:00:00 UTC
    *
    */
   void (*set_deadline_ns)(void* impl, uint64_t ddl);

@@ -4,6 +4,7 @@
 #include <regex>
 #include <thread>
 
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "dispatcher/shm_dispatcher.h"
 #include "sm_channel_backend.h"
 #include "transmitter/shm_transmitter.h"
@@ -313,9 +314,11 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
           // AIMRT_TRACE("sm channel backend receive data, topic name: {}, msg type: {}, size: {}",
           //              wrapper.topic_name, wrapper.msg_type, size);
 
-          auto get_serialization_type_func = [](const runtime::core::channel::SubscribeWrapper& wrapper) -> std::string_view {
-            if (wrapper.msg_type_support->serialization_types_supported_num) {
-              return aimrt::util::ToStdStringView(wrapper.msg_type_support->serialization_types_supported_list[0]);
+          auto get_serialization_type_func =
+              [](const runtime::core::channel::SubscribeWrapper& wrapper) -> std::string_view {
+            auto type_support_ref = aimrt::util::TypeSupportRef(wrapper.msg_type_support);
+            if (type_support_ref.SerializationTypesSupportedNum()) {
+              return aimrt::util::ToStdStringView(type_support_ref.SerializationTypesSupportedList()[0]);
             }
             return "";
           };
@@ -329,16 +332,12 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
           buffer_array_view.data = &buffer_view;
           buffer_array_view.len = 1;
 
-          void* (*create_func)() = wrapper.msg_type_support->create;
-          void (*destory_func)(void*) = wrapper.msg_type_support->destory;
-          std::shared_ptr<void> msg_ptr = std::shared_ptr<void>(
-              create_func(),
-              [destory_func](void* ptr) { destory_func(ptr); });
+          auto type_support_ref = aimrt::util::TypeSupportRef(wrapper.msg_type_support);
 
-          bool deserialize_ret = wrapper.msg_type_support->deserialize(
-              aimrt::util::ToAimRTStringView(serialization_type),
-              buffer_array_view,
-              msg_ptr.get());
+          std::shared_ptr<void> msg_ptr = type_support_ref.CreateSharedPtr();
+
+          bool deserialize_ret = type_support_ref.Deserialize(
+              serialization_type, buffer_array_view, msg_ptr.get());
 
           if (!deserialize_ret) {
             AIMRT_ERROR("msg deserialization failed in sm channel,serialization_type {}", serialization_type);
@@ -382,8 +381,9 @@ void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pub
   std::shared_ptr<aimrt::util::BufferArray> buffer_array;
 
   auto get_serialization_type_func = [&publish_wrapper]() -> std::string_view {
-    if (publish_wrapper.msg_type_support->serialization_types_supported_num) {
-      return aimrt::util::ToStdStringView(publish_wrapper.msg_type_support->serialization_types_supported_list[0]);
+    auto type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
+    if (type_support_ref.SerializationTypesSupportedNum()) {
+      return aimrt::util::ToStdStringView(type_support_ref.SerializationTypesSupportedList()[0]);
     }
     return "";
   };
@@ -397,9 +397,9 @@ void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pub
   } else {
     // 没有缓存，序列化一次后放入缓存中
     buffer_array = std::make_shared<aimrt::util::BufferArray>();
-    bool serialize_ret = publish_wrapper.msg_type_support->serialize(
-        aimrt::util::ToAimRTStringView(serialization_type),
-        publish_wrapper.msg_ptr, buffer_array->NativeHandle());
+    auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
+    bool serialize_ret = publish_type_support_ref.Serialize(
+        serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
     if (!serialize_ret) {
       AIMRT_ERROR("msg serialization failed in sm channel,serialization_type {}", serialization_type);

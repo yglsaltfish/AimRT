@@ -143,7 +143,7 @@ void TBBThreadExecutor::Execute(Task&& task) {
   }
 }
 
-void TBBThreadExecutor::ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) {
+void TBBThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
   AIMRT_ERROR_THROW("Tbb thread executor '{}' does not support timer schedule.", Name());
 }
 

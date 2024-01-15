@@ -24,16 +24,22 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
 
   static const aimrt_type_support_base_t ts{
-      .type_name = aimrt::util::ToAimRTStringView(msg_type_name),
-      .create = []() -> void* { return new MsgType(); },
-      .destory = [](void* msg) { delete static_cast<MsgType*>(msg); },
-      .copy = [](const void* from, void* to) {
+      .type_name = [](void* impl) -> aimrt_string_view_t {
+        return aimrt::util::ToAimRTStringView(msg_type_name);
+      },
+      .create = [](void* impl) -> void* {
+        return new MsgType();
+      },
+      .destory = [](void* impl, void* msg) {
+        delete static_cast<MsgType*>(msg);  //
+      },
+      .copy = [](void* impl, const void* from, void* to) {
         *static_cast<MsgType*>(to) = *static_cast<const MsgType*>(from);  //
       },
-      .move = [](void* from, void* to) {
+      .move = [](void* impl, void* from, void* to) {
         *static_cast<MsgType*>(to) = std::move(*static_cast<MsgType*>(from));  //
       },
-      .serialize = [](aimrt_string_view_t serialization_type, const void* msg, aimrt_buffer_array_t* buffer_array) -> bool {
+      .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, aimrt_buffer_array_t* buffer_array) -> bool {
         try {
           static const rosidl_message_type_support_t* ts_ptr =
               rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>();
@@ -56,7 +62,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
         }
         return false;
       },
-      .deserialize = [](aimrt_string_view_t serialization_type, aimrt_buffer_array_view_t buffer_array_view, void* msg) -> bool {
+      .deserialize = [](void* impl, aimrt_string_view_t serialization_type, aimrt_buffer_array_view_t buffer_array_view, void* msg) -> bool {
         try {
           static const rosidl_message_type_support_t* ts_ptr =
               rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>();
@@ -105,9 +111,16 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
         }
         return false;
       },
-      .serialization_types_supported_num = sizeof(kChannelRos2SerializationTypesSupportedList) / sizeof(kChannelRos2SerializationTypesSupportedList[0]),
-      .serialization_types_supported_list = kChannelRos2SerializationTypesSupportedList,
-      .custom_type_support_ptr = rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>()};
+      .serialization_types_supported_num = [](void* impl) -> size_t {
+        return sizeof(kChannelRos2SerializationTypesSupportedList) /
+               sizeof(kChannelRos2SerializationTypesSupportedList[0]);
+      },
+      .serialization_types_supported_list = [](void* impl) -> const aimrt_string_view_t* {
+        return kChannelRos2SerializationTypesSupportedList;
+      },
+      .custom_type_support_ptr = [](void* impl) -> const void* {
+        return rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>();
+      }};
   return &ts;
 }
 

@@ -90,7 +90,7 @@ co::Task<void> NormalPublisherModule::MainLoop() {
       count++;
       AIMRT_INFO("Loop count : {} -------------------------", count);
 
-      // publish  event
+      // publish event
       aimrt::protocols::example::ExampleEventMsg msg;
       msg.set_msg("count: " + std::to_string(count));
       msg.set_num(count);

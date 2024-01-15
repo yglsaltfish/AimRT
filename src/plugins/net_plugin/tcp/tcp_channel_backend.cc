@@ -3,6 +3,7 @@
 #include <regex>
 
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "net/url_encode.h"
 #include "net_plugin/global.h"
 
@@ -146,22 +147,16 @@ bool TcpChannelBackend::Subscribe(
       if (msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path) != msg_ptr_map.end())
         continue;
 
+      auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
+
       // 创建消息
-      std::shared_ptr<void> msg_ptr(
-          subscribe_wrapper_ptr->msg_type_support->create(),
-          [subscribe_wrapper_ptr](void* ptr) {
-            subscribe_wrapper_ptr->msg_type_support->destory(ptr);
-          });
+      std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
 
       // 消息反序列化
-      bool deserialize_ret =
-          subscribe_wrapper_ptr->msg_type_support->deserialize(
-              aimrt::util::ToAimRTStringView(serialization_type),
-              buffer_array_view,
-              msg_ptr.get());
+      bool deserialize_ret = subscribe_type_support_ref.Deserialize(
+          serialization_type, buffer_array_view, msg_ptr.get());
 
-      AIMRT_CHECK_ERROR_THROW(deserialize_ret,
-                              "Tcp msg deserialize failed.");
+      AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Tcp msg deserialize failed.");
 
       msg_ptr_map.emplace(subscribe_wrapper_ptr->pkg_path, msg_ptr);
     }
@@ -215,12 +210,12 @@ void TcpChannelBackend::Publish(
                         net::UrlEncode(publish_wrapper.topic_name) + "/" +
                         net::UrlEncode(publish_wrapper.msg_type);
 
+  auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
+
   // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
   std::string serialization_type(publish_wrapper.ctx_ref.GetSerializationType());
-  if (serialization_type.empty() &&
-      publish_wrapper.msg_type_support->serialization_types_supported_num > 0) {
-    serialization_type =
-        aimrt::util::ToStdString(publish_wrapper.msg_type_support->serialization_types_supported_list[0]);
+  if (serialization_type.empty() && publish_type_support_ref.SerializationTypesSupportedNum() > 0) {
+    serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
   }
 
   // msg序列化
@@ -230,9 +225,8 @@ void TcpChannelBackend::Publish(
   if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
     // 没有缓存，序列化一次后放入缓存中
     buffer_array = std::make_shared<aimrt::util::BufferArray>();
-    bool serialize_ret = publish_wrapper.msg_type_support->serialize(
-        aimrt::util::ToAimRTStringView(serialization_type),
-        publish_wrapper.msg_ptr, buffer_array->NativeHandle());
+    bool serialize_ret = publish_type_support_ref.Serialize(
+        serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
 
     if (!serialize_ret) {
       AIMRT_ERROR(

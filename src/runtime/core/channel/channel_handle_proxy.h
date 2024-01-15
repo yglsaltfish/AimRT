@@ -9,6 +9,7 @@
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/channel/channel_backend_manager.h"
 #include "core/channel/context_manager.h"
 #include "util/string_util.h"
@@ -68,7 +69,7 @@ class PublisherProxy {
  private:
   bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) {
     return channel_backend_manager_.RegisterPublishType(PublishTypeWrapper{
-        .msg_type = aimrt::util::ToStdStringView(msg_type_support->type_name),
+        .msg_type = aimrt::util::TypeSupportRef(msg_type_support).TypeName(),
         .pkg_path = pkg_path_,
         .module_name = module_name_,
         .topic_name = topic_name_,
@@ -139,7 +140,7 @@ class SubscriberProxy {
   bool Subscribe(const aimrt_type_support_base_t* msg_type_support,
                  aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
     return channel_backend_manager_.Subscribe(SubscribeWrapper{
-        .msg_type = aimrt::util::ToStdStringView(msg_type_support->type_name),
+        .msg_type = aimrt::util::TypeSupportRef(msg_type_support).TypeName(),
         .pkg_path = pkg_path_,
         .module_name = module_name_,
         .topic_name = topic_name_,

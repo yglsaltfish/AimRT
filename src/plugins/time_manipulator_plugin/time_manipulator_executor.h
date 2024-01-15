@@ -16,7 +16,7 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
  public:
   struct Options {
     std::string bind_executor;
-    std::chrono::steady_clock::duration dt = std::chrono::microseconds(1000);
+    std::chrono::nanoseconds dt = std::chrono::microseconds(1000);
     double init_ratio = 1.0;
     std::vector<size_t> wheel_size = {1000, 600};
     std::string thread_sched_policy;
@@ -47,8 +47,8 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
 
   void Execute(Task&& task) override;
 
-  std::chrono::steady_clock::time_point Now() const override;
-  void ExecuteAt(std::chrono::steady_clock::time_point tp, Task&& task) override;
+  std::chrono::system_clock::time_point Now() const override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) override;
 
   State GetState() const { return state_.load(); }
 
