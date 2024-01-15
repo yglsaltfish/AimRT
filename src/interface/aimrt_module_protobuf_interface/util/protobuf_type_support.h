@@ -23,16 +23,22 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
   static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
 
   static const aimrt_type_support_base_t ts{
-      .type_name = aimrt::util::ToAimRTStringView(msg_type_name),
-      .create = []() -> void* { return new MsgType(); },
-      .destory = [](void* msg) { delete static_cast<MsgType*>(msg); },
-      .copy = [](const void* from, void* to) {
+      .type_name = [](void* impl) -> aimrt_string_view_t {
+        return aimrt::util::ToAimRTStringView(msg_type_name);
+      },
+      .create = [](void* impl) -> void* {
+        return new MsgType();
+      },
+      .destory = [](void* impl, void* msg) {
+        delete static_cast<MsgType*>(msg);  //
+      },
+      .copy = [](void* impl, const void* from, void* to) {
         *static_cast<MsgType*>(to) = *static_cast<const MsgType*>(from);  //
       },
-      .move = [](void* from, void* to) {
+      .move = [](void* impl, void* from, void* to) {
         *static_cast<MsgType*>(to) = std::move(*static_cast<MsgType*>(from));  //
       },
-      .serialize = [](aimrt_string_view_t serialization_type, const void* msg, aimrt_buffer_array_t* buffer_array) -> bool {
+      .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, aimrt_buffer_array_t* buffer_array) -> bool {
         try {
           const MsgType& msg_ref = *static_cast<const MsgType*>(msg);
 
@@ -63,7 +69,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
         }
         return false;
       },
-      .deserialize = [](aimrt_string_view_t serialization_type, aimrt_buffer_array_view_t buffer_array_view, void* msg) -> bool {
+      .deserialize = [](void* impl, aimrt_string_view_t serialization_type, aimrt_buffer_array_view_t buffer_array_view, void* msg) -> bool {
         try {
           if (aimrt::util::ToStdStringView(serialization_type) == "pb") {
             BufferArrayZeroCopyInputStream is(buffer_array_view);
@@ -110,9 +116,16 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
         }
         return false;
       },
-      .serialization_types_supported_num = sizeof(kChannelProtobufSerializationTypesSupportedList) / sizeof(kChannelProtobufSerializationTypesSupportedList[0]),
-      .serialization_types_supported_list = kChannelProtobufSerializationTypesSupportedList,
-      .custom_type_support_ptr = nullptr};
+      .serialization_types_supported_num = [](void* impl) -> size_t {
+        return sizeof(kChannelProtobufSerializationTypesSupportedList) /
+               sizeof(kChannelProtobufSerializationTypesSupportedList[0]);
+      },
+      .serialization_types_supported_list = [](void* impl) -> const aimrt_string_view_t* {
+        return kChannelProtobufSerializationTypesSupportedList;
+      },
+      .custom_type_support_ptr = [](void* impl) -> const void* {
+        return nullptr;
+      }};
   return &ts;
 }
 

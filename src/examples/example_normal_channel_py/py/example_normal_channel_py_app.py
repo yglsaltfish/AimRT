@@ -34,7 +34,7 @@ def main():
         core.Initialize(core_options)
         core.Start()
         core.Shutdown()
-    except RuntimeError as e:
+    except Exception as e:
         print("AimRT run with exception and exit. {e}")
 
     print("AimRT exit.")

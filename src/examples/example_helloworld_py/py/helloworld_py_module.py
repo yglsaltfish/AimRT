@@ -39,7 +39,7 @@ class HelloWorldPyModule(aimrt_py.ModuleBase):
                 aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 
-        except RuntimeError as e:
+        except Exception as e:
             aimrt_py_log.error(self.logger, "Initialize failed. {e}")
             return False
 
@@ -57,7 +57,7 @@ class HelloWorldPyModule(aimrt_py.ModuleBase):
             self.work_executor.ExecuteAfter(datetime.timedelta(seconds=1), test_task)
             self.work_executor.ExecuteAt(datetime.datetime.now() + datetime.timedelta(seconds=2), test_task)
 
-        except RuntimeError as e:
+        except Exception as e:
             aimrt_py_log.error(self.logger, "Initialize failed. {e}")
             return False
 

@@ -1,6 +1,7 @@
 #include "ros2_plugin/ros2_channel_backend.h"
 
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "ros2_plugin/global.h"
 
 #include "rcl/error_handling.h"
@@ -83,8 +84,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
   }
 
   // 只管前缀是ros2类型的消息
-  if (!CheckRosMsg(aimrt::util::ToStdStringView(
-          publish_type_wrapper.msg_type_support->type_name)))
+  if (!CheckRosMsg(aimrt::util::TypeSupportRef(publish_type_wrapper.msg_type_support).TypeName()))
     return true;
 
   ChannelTypeKey type_key{
@@ -121,7 +121,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
           ->get_shared_rcl_node_handle()
           .get(),
       static_cast<const rosidl_message_type_support_t*>(
-          publish_type_wrapper.msg_type_support->custom_type_support_ptr),
+          aimrt::util::TypeSupportRef(publish_type_wrapper.msg_type_support).CustomTypeSupportPtr()),
       ros2_topic_name.c_str(), &publisher_options);
 
   if (ret != RMW_RET_OK) {
@@ -164,8 +164,7 @@ bool Ros2ChannelBackend::Subscribe(
   }
 
   // 只管前缀是ros2类型的消息
-  if (!CheckRosMsg(aimrt::util::ToStdStringView(
-          subscribe_wrapper.msg_type_support->type_name)))
+  if (!CheckRosMsg(aimrt::util::TypeSupportRef(subscribe_wrapper.msg_type_support).TypeName()))
     return true;
 
   ChannelTypeKey type_key{
@@ -205,8 +204,7 @@ bool Ros2ChannelBackend::Subscribe(
             std::make_shared<Ros2AdapterSubscription>(
                 node_base,
                 *static_cast<const rosidl_message_type_support_t*>(
-                    subscribe_wrapper.msg_type_support
-                        ->custom_type_support_ptr),
+                    aimrt::util::TypeSupportRef(subscribe_wrapper.msg_type_support).CustomTypeSupportPtr()),
                 topic_name,
                 // todo: ros2的bug，新版本修复后去掉模板参数
                 options.to_rcl_subscription_options<void>(qos),

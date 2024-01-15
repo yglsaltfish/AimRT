@@ -2,6 +2,10 @@ import aimrt_py
 import aimrt_py_log
 import yaml
 import datetime
+import time
+
+from google.protobuf.json_format import MessageToJson
+import event_pb2
 
 
 class NormalPublisherPyModule(aimrt_py.ModuleBase):
@@ -10,6 +14,14 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
         self.core = aimrt_py.CoreRef()
         self.logger = aimrt_py.LoggerRef()
         self.work_executor = aimrt_py.ExecutorRef()
+
+        self.topic_name = "test_topic"
+        self.channel_frq = 0.5
+        self.publisher = aimrt_py.PublisherRef()
+
+        self.loop_count = 0
+        self.stop_flag = False
+        self.stoped_flag = False
 
     def Info(self):
         info = aimrt_py.ModuleInfo()
@@ -31,7 +43,8 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
                 if(module_cfg_file_path):
                     with open(module_cfg_file_path, 'r') as file:
                         data = yaml.safe_load(file)
-                        aimrt_py_log.info(self.logger, str(data))
+                        self.topic_name = str(data["topic_name"])
+                        self.channel_frq = float(data["channel_frq"])
 
             # executor
             self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
@@ -39,7 +52,13 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
                 aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 
-        except RuntimeError as e:
+            # channel-publisher
+            self.publisher = self.core.GetChannelHandle().GetPublisher(self.topic_name)
+            if(not self.publisher):
+                aimrt_py_log.error(self.logger, "Get publisher for '{}' failed.".format(self.topic_name))
+                return False
+
+        except Exception as e:
             aimrt_py_log.error(self.logger, "Initialize failed. {e}")
             return False
 
@@ -49,19 +68,44 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
         aimrt_py_log.info(self.logger, "Module start")
 
         try:
-            # executor
-            def test_task():
-                aimrt_py_log.info(self.logger, "run test task.")
+            self.work_executor.Execute(self.PublishLoop)
 
-            self.work_executor.Execute(test_task)
-            self.work_executor.ExecuteAfter(datetime.timedelta(seconds=1), test_task)
-            self.work_executor.ExecuteAt(datetime.datetime.now() + datetime.timedelta(seconds=2), test_task)
-
-        except RuntimeError as e:
+        except Exception as e:
             aimrt_py_log.error(self.logger, "Initialize failed. {e}")
             return False
 
         return True
 
     def Shutdown(self):
+        self.stop_flag = True
+
+        while(not self.stoped_flag):
+            time.sleep(1)
+
         aimrt_py_log.info(self.logger, "Module shutdown")
+
+    def PublishLoop(self):
+        if(self.stop_flag):
+            self.stoped_flag = True
+            return
+
+        try:
+            self.loop_count = self.loop_count + 1
+            aimrt_py_log.info(self.logger,
+                              "Loop count : {} -------------------------".format(self.loop_count))
+
+            # publish event
+            event_msg = event_pb2.ExampleEventMsg()
+            event_msg.msg = "count {}".format(self.loop_count)
+            event_msg.num = self.loop_count
+            aimrt_py_log.info(self.logger,
+                              "Publish new pb event, data: {}".format(MessageToJson(event_msg)))
+
+            # next loop
+            self.work_executor.ExecuteAfter(
+                datetime.timedelta(seconds=1 / self.channel_frq),
+                self.PublishLoop)
+
+        except Exception as e:
+            aimrt_py_log.error(self.logger, "PublishLoop failed. {}".format(e))
+            self.stoped_flag = True

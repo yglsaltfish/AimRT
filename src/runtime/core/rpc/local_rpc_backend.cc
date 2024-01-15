@@ -1,6 +1,7 @@
 #include "core/rpc/local_rpc_backend.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/util/thread_tools.h"
 #include "util/string_util.h"
 #include "util/url_parser.h"
@@ -219,11 +220,11 @@ bool LocalRpcBackend::TryInvoke(
   const auto* client_func_wrapper_ptr = get_client_func_wrapper_ptr_func();
 
   aimrt::util::BufferArray buffer_array;
+  auto client_req_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_ptr->req_type_support);
 
   // client req序列化
-  bool serialize_ret = client_func_wrapper_ptr->req_type_support->serialize(
-      aimrt::util::ToAimRTStringView(serialization_type),
-      client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
+  bool serialize_ret = client_req_type_support_ref.Serialize(
+      serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
 
   if (!serialize_ret) {
     // 序列化失败
@@ -238,18 +239,13 @@ bool LocalRpcBackend::TryInvoke(
     return true;
   }
 
-  // service req反序列化
-  std::shared_ptr<void> service_req_ptr(
-      service_func_wrapper_ptr->req_type_support->create(),
-      [service_func_wrapper_ptr](void* ptr) {
-        service_func_wrapper_ptr->req_type_support->destory(ptr);
-      });
+  auto service_req_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper_ptr->req_type_support);
 
-  bool deserialize_ret =
-      service_func_wrapper_ptr->req_type_support->deserialize(
-          aimrt::util::ToAimRTStringView(serialization_type),
-          *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.NativeHandle()),
-          service_req_ptr.get());
+  // service req反序列化
+  std::shared_ptr<void> service_req_ptr = service_req_type_support_ref.CreateSharedPtr();
+
+  bool deserialize_ret = service_req_type_support_ref.Deserialize(
+      serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.NativeHandle()), service_req_ptr.get());
 
   if (!deserialize_ret) {
     // 反序列化失败
@@ -264,12 +260,10 @@ bool LocalRpcBackend::TryInvoke(
     return true;
   }
 
+  auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper_ptr->rsp_type_support);
+
   // service rsp 创建
-  std::shared_ptr<void> service_rsp_ptr(
-      service_func_wrapper_ptr->rsp_type_support->create(),
-      [service_func_wrapper_ptr](void* ptr) {
-        service_func_wrapper_ptr->rsp_type_support->destory(ptr);
-      });
+  std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
 
   // service rpc调用
   aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
@@ -282,11 +276,11 @@ bool LocalRpcBackend::TryInvoke(
        serialization_type{std::move(serialization_type)}](uint32_t code) {
         aimrt::util::BufferArray buffer_array;
 
+        auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper_ptr->rsp_type_support);
+
         // service rsp 序列化
-        bool serialize_ret =
-            service_func_wrapper_ptr->rsp_type_support->serialize(
-                aimrt::util::ToAimRTStringView(serialization_type),
-                service_rsp_ptr.get(), buffer_array.NativeHandle());
+        bool serialize_ret = service_rsp_type_support_ref.Serialize(
+            serialization_type, service_rsp_ptr.get(), buffer_array.NativeHandle());
 
         if (!serialize_ret) {
           // 序列化失败
@@ -303,12 +297,11 @@ bool LocalRpcBackend::TryInvoke(
           return;
         }
 
+        auto client_rsp_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_ptr->rsp_type_support);
+
         // client rsp 反序列化
-        bool deserialize_ret =
-            client_func_wrapper_ptr->rsp_type_support->deserialize(
-                aimrt::util::ToAimRTStringView(serialization_type),
-                *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.NativeHandle()),
-                client_invoke_wrapper_ptr->rsp_ptr);
+        bool deserialize_ret = client_rsp_type_support_ref.Deserialize(
+            serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.NativeHandle()), client_invoke_wrapper_ptr->rsp_ptr);
 
         if (!deserialize_ret) {
           // 反序列化失败
