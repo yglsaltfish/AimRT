@@ -38,11 +38,11 @@ const aimrt_runtime_base_t* AimRTDynlibCreateRuntimeHandle() {
           fprintf(stderr, "aimrt core shutdown failed, %s\n", e.what());
         }  //
       },
-      .register_module = [](void* impl, const aimrt_module_base_t* module) -> bool {
+      .register_module = [](void* impl, aimrt_string_view_t pkg, const aimrt_module_base_t* module) -> bool {
         try {
           static_cast<aimrt::runtime::core::AimRTCore*>(impl)
               ->GetModuleManager()
-              .RegisterModule(module);
+              .RegisterModule(aimrt::util::ToStdString(pkg), module);
           return true;
         } catch (const std::exception& e) {
           fprintf(stderr, "aimrt core register module failed, %s\n", e.what());

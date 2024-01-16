@@ -29,7 +29,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
       .create = [](void* impl) -> void* {
         return new MsgType();
       },
-      .destory = [](void* impl, void* msg) {
+      .destroy = [](void* impl, void* msg) {
         delete static_cast<MsgType*>(msg);  //
       },
       .copy = [](void* impl, const void* from, void* to) {
@@ -125,7 +125,8 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
       },
       .custom_type_support_ptr = [](void* impl) -> const void* {
         return nullptr;
-      }};
+      },
+      .impl = nullptr};
   return &ts;
 }
 

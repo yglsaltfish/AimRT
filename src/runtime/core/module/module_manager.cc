@@ -119,7 +119,8 @@ void ModuleManager::Initialize(YAML::Node options_node) {
   }
 
   // 初始化直接注册的模块
-  for (const auto& module_ptr : registered_module_vec_) {
+  for (const auto& item : registered_module_vec_) {
+    auto module_ptr = item.second;
     assert(module_ptr != nullptr);
     auto info = module_ptr->info(module_ptr->impl);
     const std::string& module_name = aimrt::util::ToStdString(info.name);
@@ -135,7 +136,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
         ModuleWrapper{
             .info = util::ModuleDetailInfo{
                 .name = module_name,
-                .pkg_path = "core",
+                .pkg_path = item.first,
                 .major_version = info.major_version,
                 .minor_version = info.minor_version,
                 .patch_version = info.patch_version,
@@ -242,14 +243,14 @@ void ModuleManager::Shutdown() {
   module_proxy_configurator_ = CoreProxyConfigurator();
 }
 
-void ModuleManager::RegisterModule(const aimrt_module_base_t* module) {
+void ModuleManager::RegisterModule(const std::string& pkg, const aimrt_module_base_t* module) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Function can only be called when state is 'PreInit'.");
 
   AIMRT_CHECK_ERROR_THROW(module != nullptr, "Register invalid module");
 
-  registered_module_vec_.emplace_back(module);
+  registered_module_vec_.emplace_back(pkg, module);
 }
 
 void ModuleManager::RegisterCoreProxyConfigurator(

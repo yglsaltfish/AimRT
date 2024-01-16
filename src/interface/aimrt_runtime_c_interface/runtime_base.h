@@ -24,7 +24,7 @@ typedef struct {
 
   void (*shutdown)(void* impl);
 
-  bool (*register_module)(void* impl, const aimrt_module_base_t* module);
+  bool (*register_module)(void* impl, aimrt_string_view_t pkg, const aimrt_module_base_t* module);
 
   void* impl;
 } aimrt_runtime_base_t;

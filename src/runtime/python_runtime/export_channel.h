@@ -1,6 +1,7 @@
 #pragma once
 
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
+#include "python_runtime/export_type_support_base.h"
 
 #include "pybind11/pybind11.h"
 
@@ -18,13 +19,19 @@ inline void ExportChannelContextRef(pybind11::object m) {
       .def("SetMetaValue", &ContextRef::SetMetaValue);
 }
 
+inline bool PyRegisterPublishType(
+    aimrt::channel::PublisherRef& publisher_ref,
+    const PyTypeSupportBase* msg_type_support) {
+  return publisher_ref.RegisterPublishType(msg_type_support->NativeHandle());
+}
+
 inline void ExportPublisherRef(pybind11::object m) {
   using namespace aimrt::channel;
 
   pybind11::class_<PublisherRef>(m, "PublisherRef")
       .def(pybind11::init<>())
       .def("__bool__", &PublisherRef::operator bool)
-      .def("RegisterPublishType", &PublisherRef::RegisterPublishType)
+      .def("RegisterPublishType", &PyRegisterPublishType)
       .def("Publish", &PublisherRef::Publish)
       .def("GetContextManager", &PublisherRef::GetContextManager);
 }

@@ -29,7 +29,7 @@ inline void PyCoreStart(aimrt::runtime::core::AimRTCore& core) {
 inline void PyCoreRegisterModule(
     aimrt::runtime::core::AimRTCore& core, const aimrt::ModuleBase* module) {
   AIMRT_HL_CHECK_ERROR_THROW(core.GetLogger(), module, "module is null!");
-  core.GetModuleManager().RegisterModule(module->NativeHandle());
+  core.GetModuleManager().RegisterModule("core-py", module->NativeHandle());
 }
 
 inline void ExportCore(pybind11::object m) {

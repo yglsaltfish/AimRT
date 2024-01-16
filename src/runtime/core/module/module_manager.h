@@ -59,7 +59,8 @@ class ModuleManager {
   void Start();
   void Shutdown();
 
-  void RegisterModule(const aimrt_module_base_t* module);
+  void RegisterModule(const std::string& pkg, const aimrt_module_base_t* module);
+  void RegisterModule(const aimrt_module_base_t* module) { RegisterModule("core", module); }
 
   void RegisterCoreProxyConfigurator(CoreProxyConfigurator&& module_proxy_configurator);
 
@@ -89,8 +90,8 @@ class ModuleManager {
 
   CoreProxyConfigurator module_proxy_configurator_;
 
-  // 直接注册的模块
-  std::vector<const aimrt_module_base_t*> registered_module_vec_;
+  // 直接注册的模块（pkg-module）
+  std::vector<std::pair<std::string, const aimrt_module_base_t*>> registered_module_vec_;
 
   // 模块初始化顺序
   std::vector<std::string> module_init_order_;

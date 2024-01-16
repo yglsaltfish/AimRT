@@ -32,9 +32,9 @@ class TypeSupportRef {
     return base_ptr_->create(base_ptr_->impl);
   }
 
-  void Destory(void* msg) const {
+  void Destroy(void* msg) const {
     assert(base_ptr_);
-    base_ptr_->destory(base_ptr_->impl, msg);
+    base_ptr_->destroy(base_ptr_->impl, msg);
   }
 
   std::shared_ptr<void> CreateSharedPtr() {
@@ -42,7 +42,7 @@ class TypeSupportRef {
     return std::shared_ptr<void>(
         base_ptr_->create(base_ptr_->impl),
         [base_ptr{this->base_ptr_}](void* ptr) {
-          base_ptr->destory(base_ptr->impl, ptr);
+          base_ptr->destroy(base_ptr->impl, ptr);
         });
   }
 
