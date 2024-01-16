@@ -37,6 +37,7 @@ void Ros2ChannelBackend::Initialize(
     options_ = options_node.as<Options>();
 
   channel_registry_ptr_ = channel_registry_ptr;
+  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;
 }

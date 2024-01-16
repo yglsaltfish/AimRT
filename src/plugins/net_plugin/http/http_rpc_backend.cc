@@ -108,11 +108,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
           std::chrono::nanoseconds timeout)
       -> asio::awaitable<net::AsioHttpServer::HttpHandleStatus> {
     // ctx 创建
-    std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr(
-        context_manager_ptr_->NewContext(),
-        [context_manager_ptr{context_manager_ptr_}](runtime::core::rpc::ContextImpl* ptr) {
-          context_manager_ptr->DeleteContext(ptr);
-        });
+    std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
 
     // 序列化类型
     std::string serialization_type;

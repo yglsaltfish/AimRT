@@ -152,6 +152,8 @@ void LcmChannelBackend::Initialize(
     }
   }
 
+  context_manager_ptr_ = context_manager_ptr;
+
   options_node = options_;  // for dump options
 }
 
@@ -370,7 +372,7 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
 
   dispatcher_ptr->AddListener(
       dispatcher_attribute,
-      [subscriber_info](const void* data, size_t size) {
+      [subscriber_info, context_manager_ptr{context_manager_ptr_}](const void* data, size_t size) {
         for (auto module_info : subscriber_info->module_info_list) {
           const runtime::core::channel::SubscribeWrapper& wrapper = module_info->subscribe_wrapper;
 
@@ -399,6 +401,11 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
 
           std::shared_ptr<void> msg_ptr = type_support_ref.CreateSharedPtr();
 
+          // context
+          auto ctx_ptr = context_manager_ptr->NewContextSharedPtr();
+          auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
+          ctx_ref.SetSerializationType(serialization_type);
+
           bool deserialize_ret = type_support_ref.Deserialize(
               serialization_type, buffer_array_view, msg_ptr.get());
 
@@ -409,15 +416,17 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
 
           if (subscriber_info->executor.ThreadSafe()) {
             // 直接执行
-            aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
-            wrapper.callback(nullptr,
+            aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
+                [msg_ptr, ctx_ptr]() {});
+            wrapper.callback(ctx_ptr->NativeHandle(),
                              msg_ptr.get(),
                              release_callback.NativeHandle());
           } else {
             // 放入线程池执行
-            subscriber_info->executor.Execute([&wrapper, msg_ptr]() {
-              aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
-              wrapper.callback(nullptr,
+            subscriber_info->executor.Execute([&wrapper, msg_ptr, ctx_ptr]() {
+              aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
+                  [msg_ptr, ctx_ptr]() {});
+              wrapper.callback(ctx_ptr->NativeHandle(),
                                msg_ptr.get(),
                                release_callback.NativeHandle());
             });

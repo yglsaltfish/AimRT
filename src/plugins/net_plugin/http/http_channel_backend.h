@@ -55,13 +55,15 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
+  runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
   std::shared_ptr<common::net::AsioHttpClientPool> http_cli_pool_ptr_;
   std::shared_ptr<common::net::AsioHttpServer> http_svr_ptr_;
 
-  std::unordered_map<std::string,
-                     std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
       http_subscribe_wrapper_map_;
 };
 

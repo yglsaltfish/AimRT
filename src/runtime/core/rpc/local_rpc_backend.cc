@@ -153,8 +153,7 @@ bool LocalRpcBackend::TryInvoke(
     }
 
     if (service_module_name.empty()) {
-      service_module_name =
-          *(service_func_register_index_find_pkg_itr->second.begin());
+      service_module_name = *(service_func_register_index_find_pkg_itr->second.begin());
     } else {
       auto service_func_register_index_find_module_itr =
           service_func_register_index_find_pkg_itr->second.find(service_module_name);

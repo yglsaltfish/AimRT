@@ -40,7 +40,7 @@ class NormalRpcClientPyModule(aimrt_py.ModuleBase):
                 return False
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {e}")
+            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
@@ -58,7 +58,7 @@ class NormalRpcClientPyModule(aimrt_py.ModuleBase):
             self.work_executor.ExecuteAt(datetime.datetime.now() + datetime.timedelta(seconds=2), test_task)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {e}")
+            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True

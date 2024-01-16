@@ -1,14 +1,12 @@
 import aimrt_py
 import aimrt_py_log
+import aimrt_py_pb_chn
 import yaml
 import datetime
 import time
-import ctypes
 
 from google.protobuf.json_format import MessageToJson
 import event_pb2
-
-import aimrt_py_pb_chn
 
 
 class NormalPublisherPyModule(aimrt_py.ModuleBase):
@@ -61,11 +59,10 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
                 aimrt_py_log.error(self.logger, "Get publisher for '{}' failed.".format(self.topic_name))
                 return False
 
-            # ts = aimrt_py_pb_chn.ProtobufTypeSupport(event_pb2.ExampleEventMsg)
-            # self.publisher.RegisterPublishType(ts)
+            aimrt_py_pb_chn.RegisterPublishType(self.publisher, event_pb2.ExampleEventMsg)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {e}")
+            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
@@ -77,7 +74,7 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
             self.work_executor.Execute(self.PublishLoop)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {e}")
+            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
@@ -107,10 +104,7 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
             aimrt_py_log.info(self.logger,
                               "Publish new pb event, data: {}".format(MessageToJson(event_msg)))
 
-            self.publisher.Publish(
-                event_pb2.__name__, 
-                aimrt_py.ChannelContextRef(), 
-                ctypes.c_void_p(id(event_msg)))
+            aimrt_py_pb_chn.Publish(self.publisher, event_msg)
 
             # next loop
             self.work_executor.ExecuteAfter(
