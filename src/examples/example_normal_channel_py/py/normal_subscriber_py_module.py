@@ -1,7 +1,10 @@
 import aimrt_py
 import aimrt_py_log
+import aimrt_py_pb_chn
 import yaml
-import datetime
+
+from google.protobuf.json_format import MessageToJson
+import event_pb2
 
 
 class NormalSubscriberPyModule(aimrt_py.ModuleBase):
@@ -9,7 +12,9 @@ class NormalSubscriberPyModule(aimrt_py.ModuleBase):
         super().__init__()
         self.core = aimrt_py.CoreRef()
         self.logger = aimrt_py.LoggerRef()
-        self.work_executor = aimrt_py.ExecutorRef()
+
+        self.topic_name = "test_topic"
+        self.subscriber = aimrt_py.SubscriberRef()
 
     def Info(self):
         info = aimrt_py.ModuleInfo()
@@ -31,33 +36,27 @@ class NormalSubscriberPyModule(aimrt_py.ModuleBase):
                 if(module_cfg_file_path):
                     with open(module_cfg_file_path, 'r') as file:
                         data = yaml.safe_load(file)
-                        aimrt_py_log.info(self.logger, str(data))
+                        self.topic_name = str(data["topic_name"])
 
-            # executor
-            self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
-            if(not self.work_executor):
-                aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
+            # channel-subscriber
+            self.subscriber = self.core.GetChannelHandle().GetSubscriber(self.topic_name)
+            if(not self.subscriber):
+                aimrt_py_log.error(self.logger, "Get subscriber for '{}' failed.".format(self.topic_name))
                 return False
 
+            def EventHandle(msg):
+                aimrt_py_log.info(self.logger, "Get new pb event, data: {}".format(MessageToJson(msg)))
+
+            aimrt_py_pb_chn.Subscribe(self.subscriber, event_pb2.ExampleEventMsg, EventHandle)
+
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {e}")
+            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
 
     def Start(self):
         aimrt_py_log.info(self.logger, "Module start")
-
-        try:
-            # executor
-            def test_task():
-                aimrt_py_log.info(self.logger, "run test task.")
-
-            self.work_executor.Execute(test_task)
-
-        except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {e}")
-            return False
 
         return True
 

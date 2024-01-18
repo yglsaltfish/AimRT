@@ -20,6 +20,10 @@ class ContextManager {
   ContextImpl* NewContext();
   void DeleteContext(ContextImpl* ctx_ptr);
 
+  std::shared_ptr<ContextImpl> NewContextSharedPtr() {
+    return std::shared_ptr<ContextImpl>(NewContext(), [this](ContextImpl* ptr) { DeleteContext(ptr); });
+  }
+
  private:
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 };

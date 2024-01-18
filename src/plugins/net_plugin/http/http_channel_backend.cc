@@ -54,6 +54,7 @@ void HttpChannelBackend::Initialize(
     options_ = options_node.as<Options>();
 
   channel_registry_ptr_ = channel_registry_ptr;
+  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;
 }
@@ -133,6 +134,12 @@ bool HttpChannelBackend::Subscribe(
     rsp.keep_alive(req.keep_alive());
     rsp.prepare_payload();
 
+    // context
+    auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
+    auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
+
+    ctx_ref.SetSerializationType(serialization_type);
+
     // 获取消息buf
     const auto& req_beast_buf = req.body().data();
     std::vector<aimrt_buffer_view_t> buffer_view_vec;
@@ -171,8 +178,9 @@ bool HttpChannelBackend::Subscribe(
     for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
       auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
       std::shared_ptr<void> msg_ptr = finditr->second;
-      aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
-      subscribe_wrapper_ptr->callback(nullptr, msg_ptr.get(), release_callback.NativeHandle());
+      aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
+          [msg_ptr, ctx_ptr]() {});
+      subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
     }
 
     co_return net::AsioHttpServer::HttpHandleStatus::OK;

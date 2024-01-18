@@ -30,7 +30,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
       .create = [](void* impl) -> void* {
         return new MsgType();
       },
-      .destory = [](void* impl, void* msg) {
+      .destroy = [](void* impl, void* msg) {
         delete static_cast<MsgType*>(msg);  //
       },
       .copy = [](void* impl, const void* from, void* to) {
@@ -120,7 +120,8 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
       },
       .custom_type_support_ptr = [](void* impl) -> const void* {
         return rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>();
-      }};
+      },
+      .impl = nullptr};
   return &ts;
 }
 

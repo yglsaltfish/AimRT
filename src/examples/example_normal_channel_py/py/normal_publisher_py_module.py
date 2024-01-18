@@ -1,5 +1,6 @@
 import aimrt_py
 import aimrt_py_log
+import aimrt_py_pb_chn
 import yaml
 import datetime
 import time
@@ -58,8 +59,10 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
                 aimrt_py_log.error(self.logger, "Get publisher for '{}' failed.".format(self.topic_name))
                 return False
 
+            aimrt_py_pb_chn.RegisterPublishType(self.publisher, event_pb2.ExampleEventMsg)
+
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {e}")
+            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
@@ -71,7 +74,7 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
             self.work_executor.Execute(self.PublishLoop)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {e}")
+            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
@@ -100,6 +103,8 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
             event_msg.num = self.loop_count
             aimrt_py_log.info(self.logger,
                               "Publish new pb event, data: {}".format(MessageToJson(event_msg)))
+
+            aimrt_py_pb_chn.Publish(self.publisher, event_msg)
 
             # next loop
             self.work_executor.ExecuteAfter(

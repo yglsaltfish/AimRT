@@ -15,26 +15,19 @@ class ServiceBase {
   friend class RpcHandleRef;
 
  public:
+  ServiceBase() = default;
+  virtual ~ServiceBase() = default;
+
+  ServiceBase(const ServiceBase&) = delete;
+  ServiceBase& operator=(const ServiceBase&) = delete;
+
   template <typename T>
     requires std::constructible_from<RpcFilter, T>
   void RegisterFilter(T&& filter) {
     filter_mgr_.RegisterFilter((T &&) filter);
   }
 
- protected:
-  struct ServiceFuncWrapper {
-    const void* custom_type_support_ptr;
-    const aimrt_type_support_base_t* req_type_support;
-    const aimrt_type_support_base_t* rsp_type_support;
-    aimrt::util::Function<aimrt_function_service_func_ops_t> service_func;
-  };
-
- protected:
-  ServiceBase() = default;
-  virtual ~ServiceBase() = default;
-
-  ServiceBase(const ServiceBase&) = delete;
-  ServiceBase& operator=(const ServiceBase&) = delete;
+  auto& GetFilterManager() { return filter_mgr_; }
 
   void RegisterServiceFunc(
       std::string_view func_name,
@@ -52,6 +45,13 @@ class ServiceBase {
   }
 
  protected:
+  struct ServiceFuncWrapper {
+    const void* custom_type_support_ptr;
+    const aimrt_type_support_base_t* req_type_support;
+    const aimrt_type_support_base_t* rsp_type_support;
+    aimrt::util::Function<aimrt_function_service_func_ops_t> service_func;
+  };
+
   std::unordered_map<std::string_view, ServiceFuncWrapper> service_func_wrapper_map_;
   FilterManager filter_mgr_;
 };
@@ -158,19 +158,20 @@ class RpcHandleRef {
 
 class ProxyBase {
  public:
-  template <typename T>
-    requires std::constructible_from<RpcFilter, T>
-  void RegisterFilter(T&& filter) {
-    filter_mgr_.RegisterFilter((T &&) filter);
-  }
-
- protected:
   explicit ProxyBase(RpcHandleRef rpc_handle_ref)
       : rpc_handle_ref_(rpc_handle_ref) {}
   virtual ~ProxyBase() = default;
 
   ProxyBase(const ProxyBase&) = delete;
   ProxyBase& operator=(const ProxyBase&) = delete;
+
+  template <typename T>
+    requires std::constructible_from<RpcFilter, T>
+  void RegisterFilter(T&& filter) {
+    filter_mgr_.RegisterFilter((T &&) filter);
+  }
+
+  auto& GetFilterManager() { return filter_mgr_; }
 
  protected:
   RpcHandleRef rpc_handle_ref_;

@@ -60,6 +60,7 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
+  runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
   std::shared_ptr<common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;

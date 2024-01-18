@@ -59,6 +59,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
+  runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<rclcpp::Node> ros2_node_ptr_;
 

@@ -5,6 +5,8 @@
 #include "python_runtime/export_executor.h"
 #include "python_runtime/export_logger.h"
 #include "python_runtime/export_module_base.h"
+#include "python_runtime/export_rpc.h"
+#include "python_runtime/export_type_support.h"
 
 #include "pybind11/pybind11.h"
 
@@ -15,6 +17,8 @@ PYBIND11_MODULE(aimrt_py, m) {
 
   ExportCoreOptions(m);
   ExportCore(m);
+
+  ExportTypeSupport(m);
 
   ExportModuleInfo(m);
   ExportModuleBase(m);
@@ -28,8 +32,12 @@ PYBIND11_MODULE(aimrt_py, m) {
   ExportExecutorManagerRef(m);
   ExportExecutorRef(m);
 
-  ExportChannelContextRef(m);
   ExportPublisherRef(m);
   ExportSubscriberRef(m);
   ExportChannelHandleRef(m);
+
+  ExportRpcStatus(m);
+  ExportRpcContextRef(m);
+  ExportRpcServiceBase(m);
+  ExportRpcHandleRef(m);
 }

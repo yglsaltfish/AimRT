@@ -135,9 +135,15 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
     // 该pkg下创建的结构体的智能指针，带删除器
     std::shared_ptr<void> msg_ptr = tpl_subscribe_type_support_ref.CreateSharedPtr();
 
+    // context
+    auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
+    auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
+
     if (subscribe_pkg_path == pkg_path) {
       // 在同一个pkg中，直接复制
       tpl_subscribe_type_support_ref.Copy(publish_wrapper.msg_ptr, msg_ptr.get());
+
+      ctx_ref.SetSerializationType(publish_wrapper.ctx_ref.GetSerializationType());
     } else {
       // 在不同pkg中，需要进行序列化反序列化
       // 在同一个pkg中的不同模块中，对同一个类型结构可以复用，不管它是通过哪种序列化方法/反序列化方法从发布端原始结构转过来的
@@ -154,6 +160,8 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
 
       // 本pkg中没有同一种序列化方法，应该不可能出现
       assert(subscribe_wrapper_ptr != nullptr && !serialization_type.empty());
+
+      ctx_ref.SetSerializationType(serialization_type);
 
       // msg序列化
       std::shared_ptr<aimrt::util::BufferArray> buffer_array;
@@ -212,16 +220,17 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       const auto* subscribe_wrapper_ptr = get_subscribe_wrapper_ptr_func();
       assert(subscribe_wrapper_ptr != nullptr);
 
-      // TODO: context
       if (subscribe_executor_ref_) {
         subscribe_executor_ref_.Execute(
-            [subscribe_wrapper_ptr, msg_ptr]() {
-              aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
-              subscribe_wrapper_ptr->callback(nullptr, msg_ptr.get(), release_callback.NativeHandle());
+            [subscribe_wrapper_ptr, msg_ptr, ctx_ptr]() {
+              aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
+                  [msg_ptr, ctx_ptr]() {});
+              subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
             });
       } else {
-        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback([msg_ptr]() {});
-        subscribe_wrapper_ptr->callback(nullptr, msg_ptr.get(), release_callback.NativeHandle());
+        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
+            [msg_ptr, ctx_ptr]() {});
+        subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
       }
     }
   }

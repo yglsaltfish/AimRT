@@ -20,7 +20,7 @@ inline void ExportModuleInfo(pybind11::object m) {
       .def_readwrite("description", &ModuleInfo::description);
 }
 
-class PyModuleBase : public ModuleBase {
+class PyModuleBaseAdapter : public ModuleBase {
  public:
   using ModuleBase::ModuleBase;
 
@@ -44,7 +44,7 @@ class PyModuleBase : public ModuleBase {
 inline void ExportModuleBase(pybind11::object m) {
   using namespace aimrt;
 
-  pybind11::class_<ModuleBase, PyModuleBase, std::shared_ptr<ModuleBase>>(m, "ModuleBase")
+  pybind11::class_<ModuleBase, PyModuleBaseAdapter, std::shared_ptr<ModuleBase>>(m, "ModuleBase")
       .def(pybind11::init<>())
       .def("Info", &ModuleBase::Info)
       .def("Initialize", &ModuleBase::Initialize)

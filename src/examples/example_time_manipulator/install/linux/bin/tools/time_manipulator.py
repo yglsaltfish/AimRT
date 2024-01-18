@@ -88,7 +88,7 @@ class URLApp:
                     f"Sent POST request to {url} with json_data {json_data}, response: {response.status} {response.reason}")
                 conn.close()
             except Exception as e:
-                print(f"Error sending request: {e}")
+                print(f"Error sending request: {}".format(e))
 
 
 if __name__ == "__main__":

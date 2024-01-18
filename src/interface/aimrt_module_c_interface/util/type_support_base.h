@@ -25,12 +25,12 @@ typedef struct {
   void* (*create)(void* impl);
 
   /**
-   * @brief Function to destory msg
+   * @brief Function to destroy msg
    * @note
    * Input 1: Implement pointer
    * Input 2: Pointer to msg
    */
-  void (*destory)(void* impl, void* msg);
+  void (*destroy)(void* impl, void* msg);
 
   /**
    * @brief Function to copy msg

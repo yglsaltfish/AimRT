@@ -74,11 +74,7 @@ void Ros2AdapterServer::handle_request(
               request_header->sequence_number);
 
   // ctx 创建
-  std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr(
-      context_manager_ptr_->NewContext(),
-      [context_manager_ptr{context_manager_ptr_}](runtime::core::rpc::ContextImpl* ptr) {
-        context_manager_ptr->DeleteContext(ptr);
-      });
+  std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
 
   // service rsp 创建
   std::shared_ptr<void> service_rsp_ptr = aimrt::util::TypeSupportRef(service_func_wrapper_.rsp_type_support).CreateSharedPtr();

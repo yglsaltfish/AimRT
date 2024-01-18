@@ -31,7 +31,7 @@ def main():
         core.Start()
         core.Shutdown()
     except Exception as e:
-        print("AimRT run with exception and exit. {e}")
+        print("AimRT run with exception and exit. {}".format(e))
 
     print("AimRT exit.")
 

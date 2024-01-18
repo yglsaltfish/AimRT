@@ -79,6 +79,8 @@ class SmChannelBackend : public runtime::core::channel::ChannelBackendBase {
   Options options_;
   std::atomic<State> state_ = State::PreInit;
 
+  runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
+
   executor::ExecutorRef sub_default_executor_ref_;                            // default executor
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;  // can get executor by name
 

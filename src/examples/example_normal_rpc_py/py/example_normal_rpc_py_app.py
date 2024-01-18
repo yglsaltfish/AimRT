@@ -1,7 +1,7 @@
 import argparse
 import aimrt_py
 import normal_rpc_client_py_module
-import normal_rpc_server_pymodule
+import normal_rpc_server_py_module
 
 
 def main():
@@ -28,14 +28,14 @@ def main():
         rpc_client_module = normal_rpc_client_py_module.NormalRpcClientPyModule()
         core.RegisterModule(rpc_client_module)
 
-        rpc_server_module = normal_rpc_server_pymodule.NormalRpcServerPymodule()
+        rpc_server_module = normal_rpc_server_py_module.NormalRpcServerPymodule()
         core.RegisterModule(rpc_server_module)
 
         core.Initialize(core_options)
         core.Start()
         core.Shutdown()
     except Exception as e:
-        print("AimRT run with exception and exit. {e}")
+        print("AimRT run with exception and exit. {}".format(e))
 
     print("AimRT exit.")
 
