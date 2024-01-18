@@ -11,7 +11,7 @@ bool NormalRpcServerModule::Initialize(aimrt::CoreRef core) noexcept {
 
   try {
     // 注册rpc服务
-    service_ptr_ = std::make_shared<HardwareServiceImpl>();
+    service_ptr_ = std::make_shared<ExampleServiceImpl>();
 
     // Register filter
     service_ptr_->RegisterFilter(DebugLogServerFilter);

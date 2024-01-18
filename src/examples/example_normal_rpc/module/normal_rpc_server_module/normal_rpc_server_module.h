@@ -24,7 +24,7 @@ class NormalRpcServerModule : public aimrt::ModuleBase {
 
  private:
   aimrt::CoreRef core_;
-  std::shared_ptr<HardwareServiceImpl> service_ptr_;
+  std::shared_ptr<ExampleServiceImpl> service_ptr_;
 };
 
 }  // namespace aimrt::examples::example_normal_rpc::normal_rpc_server_module

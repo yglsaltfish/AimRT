@@ -4,10 +4,10 @@
 
 namespace aimrt::examples::example_normal_rpc::normal_rpc_server_module {
 
-class HardwareServiceImpl : public aimrt::protocols::example::ExampleService {
+class ExampleServiceImpl : public aimrt::protocols::example::ExampleService {
  public:
-  HardwareServiceImpl() = default;
-  ~HardwareServiceImpl() override = default;
+  ExampleServiceImpl() = default;
+  ~ExampleServiceImpl() override = default;
 
   co::Task<aimrt::rpc::Status> GetFooData(
       aimrt::rpc::ContextRef ctx,

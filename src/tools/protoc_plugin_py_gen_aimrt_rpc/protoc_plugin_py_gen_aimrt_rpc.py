@@ -37,7 +37,7 @@ class {{service_name}} : public aimrt::rpc::ServiceBase {
     return {{rpc_func_name}}(ctx_ref, req, rsp);
   }"""
 
-    t_hfile_one_service_proxy_class: str = """
+    t_hfile_one_service_proxy_class: str = r"""
 class {{service_name}}Proxy : public aimrt::rpc::ProxyBase {
  public:
   explicit {{service_name}}Proxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
@@ -214,8 +214,7 @@ bool {{service_name}}Proxy::RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_hand
             package_name: str = proto_file.package
             namespace_begin: str = self.gen_namespace_begin_str(package_name)
             namespace_end: str = self.gen_namespace_end_str(package_name)
-            cc_file_name: str = file_name.replace(
-                '.proto', '.aimrt_rpc.pb.cc')
+            cc_file_name: str = file_name.replace('.proto', '.aimrt_rpc.pb.cc')
             h_file_name: str = file_name.replace('.proto', '.aimrt_rpc.pb.h')
 
             hfile_service_class: str = ""
@@ -343,8 +342,7 @@ bool {{service_name}}Proxy::RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_hand
 
 if __name__ == '__main__':
     # Load the request from stdin
-    request: CodeGeneratorRequest = CodeGeneratorRequest.FromString(
-        sys.stdin.buffer.read())
+    request: CodeGeneratorRequest = CodeGeneratorRequest.FromString(sys.stdin.buffer.read())
 
     aimrt_code_generator: AimRTCodeGenerator = AimRTCodeGenerator()
 
