@@ -3,12 +3,12 @@ include(FetchContent)
 message(STATUS "get protobuf ...")
 
 set(protobuf_DOWNLOAD_URL
-    "https://github.com/protocolbuffers/protobuf/archive/v3.20.3.tar.gz"
+    "https://github.com/protocolbuffers/protobuf/archive/v3.21.12.tar.gz"
     CACHE STRING "")
 
 FetchContent_Declare(
   protobuf
-  URL ${protobuf_DOWNLOAD_URL} SOURCE_SUBDIR cmake
+  URL ${protobuf_DOWNLOAD_URL}
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   OVERRIDE_FIND_PACKAGE)
 

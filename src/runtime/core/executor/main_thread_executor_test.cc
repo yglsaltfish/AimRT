@@ -24,7 +24,7 @@ TEST_F(MainThreadExecutorTest, execute) {
 
   main_thread_executor_.Initialize(options_node);
   EXPECT_EQ(main_thread_executor_.Type(), "tbb_thread");
-  EXPECT_EQ(main_thread_executor_.Name(), "main_thread");
+  EXPECT_EQ(main_thread_executor_.Name(), "aimrt_main");
   EXPECT_EQ(main_thread_executor_.ThreadSafe(), true);
 
   std::thread timer_thread([&]() {
