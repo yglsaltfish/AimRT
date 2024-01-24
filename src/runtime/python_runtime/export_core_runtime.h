@@ -14,9 +14,7 @@ inline void ExportCoreOptions(pybind11::object m) {
       .def(pybind11::init<>())
       .def_readwrite("cfg_file_path", &AimRTCore::Options::cfg_file_path)
       .def_readwrite("dump_cfg_file", &AimRTCore::Options::dump_cfg_file)
-      .def_readwrite("dump_cfg_file_path", &AimRTCore::Options::dump_cfg_file_path)
-      .def_readwrite("register_signal", &AimRTCore::Options::register_signal)
-      .def_readwrite("auto_set_to_global", &AimRTCore::Options::auto_set_to_global);
+      .def_readwrite("dump_cfg_file_path", &AimRTCore::Options::dump_cfg_file_path);
 }
 
 inline void PyCoreStart(aimrt::runtime::core::AimRTCore& core) {

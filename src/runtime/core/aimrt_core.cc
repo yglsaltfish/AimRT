@@ -1,12 +1,9 @@
 #include "core/aimrt_core.h"
 
-#include <csignal>
 #include <fstream>
 #include <iostream>
 
 namespace aimrt::runtime::core {
-
-AimRTCore* AimRTCore::global_core_ptr_ = nullptr;
 
 AimRTCore::AimRTCore()
     : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
@@ -18,20 +15,15 @@ AimRTCore::~AimRTCore() {
     AIMRT_INFO("AimRTCore destruct get exception, {}", e.what());
   }
 
-  signal_handle_vec_.clear();
   for (uint32_t ii = 0; ii < static_cast<uint32_t>(State::MaxStateNum); ++ii) {
     hook_task_vec_array_[ii].clear();
   }
-
-  UnSetGlobal();
 }
 
 void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PreInit);
 
   options_ = options;
-
-  if (options_.auto_set_to_global) SetGlobal();
 
   // init configurator
   EnterState(State::PreInitConfigurator);
@@ -118,11 +110,6 @@ void AimRTCore::Initialize(const Options& options) {
   if (options_.dump_cfg_file)
     DumpCfgFile(options_.dump_cfg_file_path);
 
-  // register signal handle
-  RegisterSignalHandle(std::set<int>{SIGINT, SIGTERM}, [this](auto) { Shutdown(); });
-  if (options_.register_signal)
-    RegisterSignalToSystem();
-
   EnterState(State::PostInit);
 }
 
@@ -206,10 +193,6 @@ void AimRTCore::SetCoreLogger() {
   };
 }
 
-aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_name) {
-  return GetExecutorManager().GetExecutor(executor_name);
-}
-
 void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy) {
   proxy.SetConfigurator(configurator_manager_.GetConfiguratorProxy(info).NativeHandle());
   proxy.SetAllocator(allocator_manager_.GetAllocatorProxy(info).NativeHandle());
@@ -235,32 +218,6 @@ void AimRTCore::DumpCfgFile(const std::string& path) {
               << dump_node << "\n\n"
               << std::endl;
   }
-}
-
-void AimRTCore::RegisterSignalToSystem() {
-  std::set<int> signals;
-  for (auto& itr : signal_handle_vec_) {
-    signals.insert(itr.first.begin(), itr.first.end());
-  }
-
-  for (auto sig : signals) {
-    signal(sig, HandleGlobalSignal);
-  }
-}
-
-void AimRTCore::HandleGlobalSignal(int sig) {
-  AimRTCore* core_ptr = GetGlobalAimRTCore();
-
-  if (core_ptr) {
-    core_ptr->HandleSignal(sig);
-
-    return;
-  }
-
-  AIMRT_HL_WARN(core_ptr->GetLogger(),
-                "Global AimRTCore pointer is null when handle sig '{}'", sig);
-
-  raise(sig);
 }
 
 }  // namespace aimrt::runtime::core
