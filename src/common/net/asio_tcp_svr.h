@@ -435,7 +435,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
                 }
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "Tcp svr session timer get exception and exit, remote addr {}, exception info: {}",
                   RemoteAddr(), e.what());
             }
@@ -477,7 +477,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
                 break;
             }
           } catch (const std::exception& e) {
-            AIMRT_WARN(
+            AIMRT_TRACE(
                 "Tcp svr session stop get exception at step {}, remote addr {}, exception info: {}",
                 RemoteAddr(), stop_step, e.what());
             ++stop_step;

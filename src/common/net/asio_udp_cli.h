@@ -176,7 +176,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
                 }
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "udp cli session timer get exception and exit, exception info: {}",
                   e.what());
             }
@@ -215,7 +215,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
                 break;
             }
           } catch (const std::exception& e) {
-            AIMRT_WARN(
+            AIMRT_TRACE(
                 "udp cli session stop get exception at step {}, exception info: {}",
                 stop_step, e.what());
             ++stop_step;
@@ -236,7 +236,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
                 break;
             }
           } catch (const std::exception& e) {
-            AIMRT_WARN(
+            AIMRT_TRACE(
                 "udp cli session mgr stop get exception at step {}, exception info: {}",
                 stop_step, e.what());
             ++stop_step;

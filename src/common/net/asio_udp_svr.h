@@ -301,7 +301,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
                 }
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "udp svr session timer get exception and exit, addr {}, exception info: {}",
                   util::SSToString(remote_ep_), e.what());
             }
@@ -331,7 +331,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
                 break;
             }
           } catch (const std::exception& e) {
-            AIMRT_WARN(
+            AIMRT_TRACE(
                 "udp svr session mgr stop get exception at step {}, exception info: {}",
                 stop_step, e.what());
             ++stop_step;

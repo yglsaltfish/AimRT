@@ -316,7 +316,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   const auto& rsp = BadRequestHandle(req, bad_req_check_ret);
                   close_connect_flag_ = rsp.need_eof();
 
-                  AIMRT_TRACE(
+                  AIMRT_WARN(
                       "Http svr session get bad request, remote addr {}, err msg: {}, close_connect_flag: {}",
                       RemoteAddr(), bad_req_check_ret.data(), close_connect_flag_);
                   size_t write_data_size = co_await http::async_write(
@@ -332,7 +332,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   const auto& rsp = BadRequestHandle(req, "Can not parse url");
                   close_connect_flag_ = rsp.need_eof();
 
-                  AIMRT_TRACE(
+                  AIMRT_WARN(
                       "Http svr session can not parse url: {}, remote addr {}, close_connect_flag: {}",
                       RemoteAddr(), req.target().data(), close_connect_flag_);
                   size_t write_data_size = co_await http::async_write(
@@ -354,7 +354,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   const auto& rsp = NotFoundHandle(req, url_struct->path);
                   close_connect_flag_ = rsp.need_eof();
 
-                  AIMRT_TRACE(
+                  AIMRT_WARN(
                       "Http svr session get 404, path: '{}', remote addr {}, close_connect_flag: {}",
                       url_struct->path, RemoteAddr(), close_connect_flag_);
                   size_t write_data_size = co_await http::async_write(
@@ -375,7 +375,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   const auto& rsp = NotFoundHandle(req, url_struct->path);
                   close_connect_flag_ = rsp.need_eof();
 
-                  AIMRT_TRACE(
+                  AIMRT_WARN(
                       "Http svr session get 404, path: '{}', remote addr {}, close_connect_flag: {}",
                       url_struct->path, RemoteAddr(), close_connect_flag_);
                   size_t write_data_size = co_await http::async_write(
@@ -389,7 +389,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   const auto& rsp = ServerErrorHandle(req, ec.message());
                   close_connect_flag_ = rsp.need_eof();
 
-                  AIMRT_TRACE(
+                  AIMRT_WARN(
                       "Http svr session get server error, err msg: {}, remote addr {}, close_connect_flag: {}",
                       ec.message(), RemoteAddr(), close_connect_flag_);
                   size_t write_data_size = co_await http::async_write(
@@ -473,7 +473,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 }
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "Http svr session timer get exception and exit, remote addr {}, exception info: {}",
                   RemoteAddr(), e.what());
             }
@@ -522,7 +522,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 break;
             }
           } catch (const std::exception& e) {
-            AIMRT_WARN(
+            AIMRT_TRACE(
                 "Http svr session stop get exception at step {}, remote addr {}, exception info: {}",
                 stop_step, RemoteAddr(), e.what());
             ++stop_step;
