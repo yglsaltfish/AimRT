@@ -39,8 +39,7 @@ typedef aimrt_function_rpc_callback_ops_t aimrt_function_client_callback_ops_t;
  * Input 1: Rpc invoke context
  * Input 2: Const pointer to req
  * Input 3: Pointer to rsp
- * Input 4: Rpc result callback, which ops type is
- *   aimrt_function_service_callback_ops_t
+ * Input 4: Rpc result callback, which ops type is 'aimrt_function_service_callback_ops_t'
  */
 typedef struct {
   void (*invoker)(
@@ -102,8 +101,7 @@ typedef struct {
    * Input 3: Rpc invoke context
    * Input 4: Const pointer to req
    * Input 5: Pointer to rsp
-   * Input 5: Rpc Invoke callback, which ops type is
-   *   aimrt_function_client_callback_ops_t
+   * Input 5: Rpc Invoke callback, which ops type is 'aimrt_function_client_callback_ops_t'
    */
   void (*invoke)(
       void* impl,

@@ -51,8 +51,7 @@ typedef struct {
  *     aimrt_function_base_t* release_callback)
  * Input 1: Const pointer to channel context
  * Input 2: Const pointer to msg
- * Input 3: Release callback, which ops type is
- *   aimrt_function_subscriber_release_callback_ops_t
+ * Input 3: Release callback, which ops type is 'aimrt_function_subscriber_release_callback_ops_t'
  */
 typedef struct {
   void (*invoker)(
@@ -113,8 +112,7 @@ typedef struct {
    * @note
    * Input 1: Implement pointer to subscriber handle
    * Input 2: Msg type support
-   * Input 3: Msg callback, which ops type is
-   *   aimrt_function_subscriber_callback_ops_t
+   * Input 3: Msg callback, which ops type is 'aimrt_function_subscriber_callback_ops_t'
    */
   bool (*subscribe)(
       void* impl,
