@@ -41,14 +41,6 @@ class ParameterServiceImpl : public aimrt::protocols::parameter_plugin::Paramete
       ::aimrt::protocols::parameter_plugin::LoadParameterRsp& rsp) override;
 
  private:
-  static void SetPbParameter(
-      const std::shared_ptr<aimrt::runtime::core::parameter::Parameter>& aimrt_parameter,
-      ::aimrt::protocols::parameter_plugin::ParameterValue* pb_parameter);
-
-  static std::shared_ptr<aimrt::runtime::core::parameter::Parameter> GetPbParameter(
-      const ::aimrt::protocols::parameter_plugin::ParameterValue& pb_parameter);
-
- private:
   enum class ErrorCode : uint32_t {
     SUC = 0,
     INVALID_MODULE_NAME = 1,
