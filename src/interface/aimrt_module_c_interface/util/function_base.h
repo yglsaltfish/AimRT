@@ -20,12 +20,9 @@ typedef struct {
    * @brief Const pointer to an operate struct
    * @note
    * An operate struct has 3 necessary members:
-   *   1. invoker: Function to invoke the closure, the signature form of it is
-   * the signature form the closure
-   *   2. relocator: Function to relocator the closure, signature form:
-   * void(*relocator)(void* from, void* to);
-   *   3. destroyer: Function to destroyer the closure, signature form:
-   * void(*destroyer)(void* object);
+   * 1. invoker: Function to invoke the closure, the signature form of it is the signature form the closure
+   * 2. relocator: Function to relocator the closure, signature form: void(*relocator)(void* from, void* to);
+   * 3. destroyer: Function to destroyer the closure, signature form: void(*destroyer)(void* object);
    *
    * eg:
    * typedef struct {

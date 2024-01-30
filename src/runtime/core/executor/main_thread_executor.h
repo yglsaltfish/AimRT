@@ -13,6 +13,7 @@ namespace aimrt::runtime::core::executor {
 class MainThreadExecutor {
  public:
   struct Options {
+    std::string name = "aimrt_main";
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
   };
@@ -38,7 +39,7 @@ class MainThreadExecutor {
   void Shutdown();
 
   std::string_view Type() const { return "tbb_thread"; }
-  std::string_view Name() const { return "main_thread"; }
+  std::string_view Name() const { return name_; }
 
   bool ThreadSafe() const { return true; }
   bool IsInCurrentExecutor() const {
@@ -87,6 +88,7 @@ class MainThreadExecutor {
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
+  std::string name_;
   const std::thread::id thread_id_;
 
   tbb::concurrent_bounded_queue<Task> qu_;

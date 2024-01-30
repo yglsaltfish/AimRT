@@ -9,6 +9,7 @@ struct convert<aimrt::runtime::core::executor::MainThreadExecutor::Options> {
   static Node encode(const Options& rhs) {
     Node node;
 
+    node["name"] = rhs.name;
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
 
@@ -17,6 +18,9 @@ struct convert<aimrt::runtime::core::executor::MainThreadExecutor::Options> {
 
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
+
+    if (node["name"])
+      rhs.name = node["name"].as<std::string>();
 
     if (node["thread_sched_policy"])
       rhs.thread_sched_policy = node["thread_sched_policy"].as<std::string>();
@@ -38,6 +42,8 @@ void MainThreadExecutor::Initialize(YAML::Node options_node) {
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
+
+  name_ = options_.name;
 
   try {
     util::SetNameForCurrentThread(Name());

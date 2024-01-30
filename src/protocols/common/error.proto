@@ -3,6 +3,6 @@ syntax = "proto3";
 package aimrt.protocols.common;
 
 message Error {
-  int32 code = 1;
+  int64 code = 1;
   string msg = 2;
 }

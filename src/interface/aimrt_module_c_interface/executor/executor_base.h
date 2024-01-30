@@ -44,7 +44,7 @@ typedef struct {
    * @brief Function to execute task
    * @note
    * Input 1: Implement pointer to executor handle
-   * Input 2: Task, which ops type is aimrt_function_executor_task_ops_t
+   * Input 2: Task, which ops type is 'aimrt_function_executor_task_ops_t'
    */
   void (*execute)(void* impl, aimrt_function_base_t* task);
 
@@ -61,7 +61,7 @@ typedef struct {
    * @note
    * Input 1: Implement pointer to executor handle
    * Input 2: Timestamp, nanosecond since 1970-01-01 00:00:00 UTC
-   * Input 2: Task, which ops type is aimrt_function_executor_task_ops_t
+   * Input 2: Task, which ops type is 'aimrt_function_executor_task_ops_t'
    */
   void (*execute_at_ns)(
       void* impl, uint64_t tp, aimrt_function_base_t* task);

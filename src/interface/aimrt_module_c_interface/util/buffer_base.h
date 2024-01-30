@@ -61,8 +61,7 @@ struct aimrt_buffer_array_allocator_t {
    * @brief Function to allocate a new buffer for a buffer array
    * @note
    * 1. The length of buffer_array will increase by 1 after allocate
-   * 2. The reserve function will be called if the capacity of buffer_array is
-   * too small
+   * 2. The reserve function will be called if the capacity of buffer_array is too small
    *
    * Parameter definition:
    * Input 1: Pointer to impl
@@ -77,8 +76,7 @@ struct aimrt_buffer_array_allocator_t {
    * @brief Function to release the buffer array
    * @note
    * 1. The value of buffer_array->data will be NULL after release
-   * 2. The value of buffer_array->len and buffer_array->capacity will be zero
-   * after release
+   * 2. The value of buffer_array->len and buffer_array->capacity will be zero after release
    *
    * Parameter definition:
    * Input 1: Pointer to impl

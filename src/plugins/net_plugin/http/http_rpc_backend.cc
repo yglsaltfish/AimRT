@@ -210,7 +210,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
               size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
 
-              memcpy(buf.data(),
+              memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
                      static_cast<char*>(data[buffer_array_pos].data) + buffer_pos,
                      cur_copy_size);
 
@@ -362,6 +362,12 @@ bool HttpRpcBackend::TryInvoke(
           req.set(http::field::host, url_op->host);
           req.set(http::field::user_agent, "aimrt");
 
+          auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
+          if (timeout <= std::chrono::nanoseconds(0))
+            timeout = std::chrono::seconds(5);
+          req.set(http::field::timeout,
+                  std::to_string(std::chrono::duration_cast<std::chrono::seconds>(timeout).count()));
+
           std::string serialization_type(
               client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE));
           if (serialization_type == "json") {
@@ -421,7 +427,7 @@ bool HttpRpcBackend::TryInvoke(
           req.prepare_payload();
           req.keep_alive(true);
 
-          auto rsp = co_await client_ptr->HttpSendRecvCo<http::dynamic_body, http::dynamic_body>(req);
+          auto rsp = co_await client_ptr->HttpSendRecvCo<http::dynamic_body, http::dynamic_body>(req, timeout);
 
           // 检查rsp header等参数（TODO）
 

@@ -12,28 +12,6 @@
 
 namespace aimrt::runtime::core::parameter {
 
-class Parameter {
- public:
-  Parameter()
-      : view_(aimrt_parameter_view_t{.type = aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_NULL}) {}
-  ~Parameter() = default;
-
-  Parameter(const Parameter&) = delete;
-  Parameter& operator=(const Parameter&) = delete;
-
-  bool SetData(aimrt_parameter_view_t parameter_view);
-
-  aimrt_parameter_view_t GetView() const { return view_; }
-
-  bool IsArray() const { return !(array_data_.empty()); }
-
-  bool IsNull() const { return view_.type == aimrt_parameter_type_t::AIMRT_PARAMETER_TYPE_NULL; }
-
- private:
-  aimrt_parameter_view_t view_;
-  std::vector<uint8_t> array_data_;
-};
-
 class ParameterHandle {
  public:
   ParameterHandle()
@@ -46,8 +24,11 @@ class ParameterHandle {
   void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  std::shared_ptr<Parameter> GetParameter(std::string_view key);
-  void SetParameter(std::string_view key, const std::shared_ptr<Parameter>& parameter_ptr);
+  std::shared_ptr<const std::string> GetParameter(std::string_view key);
+  void SetParameter(std::string_view key, const std::shared_ptr<std::string>& value_ptr);
+  void SetParameter(std::string_view key, const std::string& value) {
+    SetParameter(key, std::make_shared<std::string>(value));
+  }
   std::vector<std::string> ListParameter() const;
 
  private:
@@ -66,11 +47,12 @@ class ParameterHandle {
 
   // TODO: 编译器支持后可以换成std::atomic<std::shared_ptr<Parameter>
   struct ParameterWrap {
-    explicit ParameterWrap(const std::shared_ptr<Parameter>& input_ptr)
-        : ptr(input_ptr) {}
-    std::shared_ptr<Parameter> ptr;
+    explicit ParameterWrap(const std::shared_ptr<std::string>& input_ptr) : ptr(input_ptr) {}
+
+    std::shared_ptr<std::string> ptr;
     mutable std::mutex mu;
   };
+
   using ParameterMap = tbb::concurrent_hash_map<std::string, ParameterWrap, StringHashCompare>;
   ParameterMap parameter_map_;
 };

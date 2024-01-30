@@ -266,7 +266,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
                 break;
             }
           } catch (const std::exception& e) {
-            AIMRT_WARN(
+            AIMRT_TRACE(
                 "Http cli session stop get exception at step {}, remote addr {}, exception info: {}",
                 stop_step, RemoteAddr(), e.what());
             ++stop_step;
@@ -287,7 +287,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
                 break;
             }
           } catch (const std::exception& e) {
-            AIMRT_WARN(
+            AIMRT_TRACE(
                 "Http cli session mgr stop get exception at step {}, remote addr {}, exception info: {}",
                 stop_step, RemoteAddr(), e.what());
             ++stop_step;

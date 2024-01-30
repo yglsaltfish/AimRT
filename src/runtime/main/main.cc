@@ -1,3 +1,4 @@
+#include <csignal>
 #include <iostream>
 
 #include "gflags/gflags.h"
@@ -5,33 +6,50 @@
 #include "core/aimrt_core.h"
 
 DEFINE_string(cfg_file_path, "", "config file path");
+
 DEFINE_bool(dump_cfg_file, false, "dump config file");
 DEFINE_string(dump_cfg_file_path, "", "dump config file path");
 
+DEFINE_bool(register_signal, true, "register handle for sigint and sigterm");
+
 using namespace aimrt::runtime::core;
+
+AimRTCore* global_core_ptr_ = nullptr;
+
+void SignalHandler(int sig) {
+  if (global_core_ptr_ && (sig == SIGINT || sig == SIGTERM)) {
+    global_core_ptr_->Shutdown();
+    return;
+  }
+
+  raise(sig);
+};
 
 int32_t main(int32_t argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  std::cout << "AimRT start with cfg file: " << FLAGS_cfg_file_path
-            << std::endl;
+  if (FLAGS_register_signal) {
+    signal(SIGINT, SignalHandler);
+    signal(SIGTERM, SignalHandler);
+  }
 
-  AimRTCore::Options options;
-  options.cfg_file_path = FLAGS_cfg_file_path;
-  options.dump_cfg_file = FLAGS_dump_cfg_file;
-  options.dump_cfg_file_path = FLAGS_dump_cfg_file_path;
-  options.register_signal = true;
-  options.auto_set_to_global = true;
+  std::cout << "AimRT start." << std::endl;
 
   try {
     AimRTCore core;
+    global_core_ptr_ = &core;
 
+    AimRTCore::Options options;
+    options.cfg_file_path = FLAGS_cfg_file_path;
+    options.dump_cfg_file = FLAGS_dump_cfg_file;
+    options.dump_cfg_file_path = FLAGS_dump_cfg_file_path;
     core.Initialize(options);
 
     core.Start();
 
     core.Shutdown();
 
+    global_core_ptr_ = nullptr;
   } catch (const std::exception& e) {
     std::cout << "AimRT run with exception and exit. " << e.what()
               << std::endl;

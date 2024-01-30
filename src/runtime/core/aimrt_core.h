@@ -24,10 +24,6 @@ class AimRTCore {
 
     bool dump_cfg_file = false;
     std::string dump_cfg_file_path;
-
-    bool register_signal = false;
-
-    bool auto_set_to_global = false;
   };
 
   enum class State : uint32_t {
@@ -75,7 +71,6 @@ class AimRTCore {
   };
 
   using HookTask = std::function<void()>;
-  using SignalHandle = std::function<void(int)>;
 
  public:
   AimRTCore();
@@ -95,18 +90,6 @@ class AimRTCore {
   void RegisterHookFunc(State state, Args&&... args) {
     hook_task_vec_array_[static_cast<uint32_t>(state)]
         .emplace_back(std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-    requires std::constructible_from<SignalHandle, Args...>
-  void RegisterSignalHandle(const std::set<int>& sigs, Args&&... args) {
-    signal_handle_vec_.emplace_back(sigs, std::forward<Args>(args)...);
-  }
-
-  void HandleSignal(int sig) {
-    for (const auto& itr : signal_handle_vec_) {
-      if (itr.first.find(sig) != itr.first.end()) itr.second(sig);
-    }
   }
 
   executor::MainThreadExecutor& GetMainThreadExecutor() { return main_thread_executor_; }
@@ -139,37 +122,25 @@ class AimRTCore {
   module::ModuleManager& GetModuleManager() { return module_manager_; }
   const module::ModuleManager& GetModuleManager() const { return module_manager_; }
 
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
-
-  void SetGlobal() {
-    assert(global_core_ptr_ == nullptr);
-    global_core_ptr_ = this;
-  }
-
-  void UnSetGlobal() {
-    if (global_core_ptr_ == this) global_core_ptr_ = nullptr;
-  }
-
-  static AimRTCore* GetGlobalAimRTCore() { return global_core_ptr_; }
+  const auto& GetLogger() const { return *logger_ptr_; }
 
  private:
   void EnterState(State state) {
     state_ = state;
-    for (const auto& func : hook_task_vec_array_[static_cast<uint32_t>(state)])
+    for (const auto& func : hook_task_vec_array_[static_cast<uint32_t>(state)]) {
       func();
+    }
   }
 
   void SetCoreLogger();
 
-  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
+  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name) {
+    return GetExecutorManager().GetExecutor(executor_name);
+  }
 
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
 
   void DumpCfgFile(const std::string& path = "");
-
-  void RegisterSignalToSystem();
-
-  static void HandleGlobalSignal(int sig);
 
  private:
   Options options_;
@@ -178,8 +149,6 @@ class AimRTCore {
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   std::vector<HookTask> hook_task_vec_array_[static_cast<uint32_t>(State::MaxStateNum)];
-
-  std::vector<std::pair<std::set<int>, SignalHandle>> signal_handle_vec_;
 
   executor::MainThreadExecutor main_thread_executor_;
 
@@ -192,8 +161,6 @@ class AimRTCore {
   channel::ChannelManager channel_manager_;
   parameter::ParameterManager parameter_manager_;
   module::ModuleManager module_manager_;
-
-  static AimRTCore* global_core_ptr_;
 };
 
 }  // namespace aimrt::runtime::core

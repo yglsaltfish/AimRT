@@ -420,7 +420,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
                 }
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "WebSocket svr session timer get exception and exit, remote addr {}, exception info: {}",
                   RemoteAddr(), e.what());
             }
@@ -474,7 +474,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
                 break;
             }
           } catch (const std::exception& e) {
-            AIMRT_WARN(
+            AIMRT_TRACE(
                 "WebSocket svr session stop get exception at step {}, remote addr {}, exception info: {}",
                 RemoteAddr(), stop_step, e.what());
             ++stop_step;
