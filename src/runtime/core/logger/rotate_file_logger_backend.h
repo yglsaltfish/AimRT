@@ -14,6 +14,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
     std::string filename = "app.log";
     uint32_t max_file_size_m = 16;
     uint32_t max_file_num = 0;
+    std::string log_executor_name = "";
   };
 
  public:
@@ -25,8 +26,9 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   void Initialize(YAML::Node options_node) override;
   void Shutdown() override { run_flag_.store(false); }
 
-  void SetLogExecutor(executor::ExecutorRef log_executor) {
-    log_executor_ = log_executor;
+  void RegisterGetExecutorFunc(
+      const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
+    get_executor_func_ = get_executor_func;
   }
 
   void Log(const LogDataWrapper& log_data_wrapper,
@@ -39,6 +41,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
 
  private:
   Options options_;
+  std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   executor::ExecutorRef log_executor_;
 
   std::string base_file_name_;  // 基础文件路径

@@ -9,6 +9,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
  public:
   struct Options {
     bool print_color = true;
+    std::string log_executor_name = "";
   };
 
  public:
@@ -20,8 +21,9 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
   void Initialize(YAML::Node options_node) override;
   void Shutdown() override { run_flag_.store(false); }
 
-  void SetLogExecutor(aimrt::executor::ExecutorRef log_executor) {
-    log_executor_ = log_executor;
+  void RegisterGetExecutorFunc(
+      const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
+    get_executor_func_ = get_executor_func;
   }
 
   void Log(const LogDataWrapper& log_data_wrapper,
@@ -29,6 +31,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
 
  private:
   Options options_;
+  std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef log_executor_;
   std::atomic_bool run_flag_ = false;
 };

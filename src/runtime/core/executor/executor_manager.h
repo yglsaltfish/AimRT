@@ -61,6 +61,10 @@ class ExecutorManager {
 
   aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
 
+  void SetUsedExecutorName(std::string_view executor_name) {
+    used_executor_names_.emplace(executor_name);
+  }
+
   const std::vector<std::unique_ptr<ExecutorBase>>& GetAllExecutors() const {
     return executor_vec_;
   }
@@ -75,6 +79,8 @@ class ExecutorManager {
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   std::unordered_map<std::string, ExecutorGenFunc> executor_gen_func_map_;
+
+  std::set<std::string> used_executor_names_;
 
   std::vector<std::unique_ptr<ExecutorBase>> executor_vec_;
 

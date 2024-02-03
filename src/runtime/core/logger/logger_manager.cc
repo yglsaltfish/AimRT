@@ -56,9 +56,6 @@ struct convert<aimrt::runtime::core::logger::LoggerManager::Options> {
 namespace aimrt::runtime::core::logger {
 
 void LoggerManager::Initialize(YAML::Node options_node) {
-  AIMRT_CHECK_ERROR_THROW(log_executor_,
-                          "Log executor is not set before initialize.");
-
   RegisterConsoleLoggerBackend();
   RegisterRotateFileLoggerBackend();
 
@@ -106,14 +103,17 @@ void LoggerManager::Shutdown() {
   }
 
   // logger_backend不能清，可能会有未完成的日志任务
+
+  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
 
-void LoggerManager::SetLogExecutor(executor::ExecutorRef log_executor) {
+void LoggerManager::RegisterGetExecutorFunc(
+    const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Function can only be called when state is 'PreInit'.");
 
-  log_executor_ = log_executor;
+  get_executor_func_ = get_executor_func;
 }
 
 void LoggerManager::RegisterLoggerBackend(
@@ -177,7 +177,7 @@ void LoggerManager::RegisterConsoleLoggerBackend() {
   std::unique_ptr<LoggerBackendBase> ptr =
       std::make_unique<ConsoleLoggerBackend>();
 
-  static_cast<ConsoleLoggerBackend*>(ptr.get())->SetLogExecutor(log_executor_);
+  static_cast<ConsoleLoggerBackend*>(ptr.get())->RegisterGetExecutorFunc(get_executor_func_);
 
   RegisterLoggerBackend(std::move(ptr));
 }
@@ -186,8 +186,7 @@ void LoggerManager::RegisterRotateFileLoggerBackend() {
   std::unique_ptr<LoggerBackendBase> ptr =
       std::make_unique<RotateFileLoggerBackend>();
 
-  static_cast<RotateFileLoggerBackend*>(ptr.get())->SetLogExecutor(
-      log_executor_);
+  static_cast<RotateFileLoggerBackend*>(ptr.get())->RegisterGetExecutorFunc(get_executor_func_);
 
   RegisterLoggerBackend(std::move(ptr));
 }

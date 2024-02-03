@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "core/logger/log_level_tool.h"
+#include "util/exception.h"
 #include "util/format.h"
 #include "util/time_util.h"
 
@@ -87,6 +88,7 @@ struct convert<aimrt::runtime::core::logger::ConsoleLoggerBackend::Options> {
   static Node encode(const Options& rhs) {
     Node node;
     node["color"] = rhs.print_color;
+    node["log_executor_name"] = rhs.log_executor_name;
 
     return node;
   }
@@ -95,6 +97,7 @@ struct convert<aimrt::runtime::core::logger::ConsoleLoggerBackend::Options> {
     if (!node.IsMap()) return false;
 
     if (node["color"]) rhs.print_color = node["color"].as<bool>();
+    if (node["log_executor_name"]) rhs.log_executor_name = node["log_executor_name"].as<std::string>();
 
     return true;
   }
@@ -110,6 +113,17 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
 #if defined(_WIN32)
   if (options_.print_color) set_console_window();
 #endif
+
+  log_executor_ = get_executor_func_(options_.log_executor_name);
+  if (!log_executor_) {
+    throw aimrt::common::util::AimRTException(
+        "Invalid log executor name: " + options_.log_executor_name);
+  }
+
+  if (!log_executor_.ThreadSafe()) {
+    throw aimrt::common::util::AimRTException(
+        "Log executor must be thread safe. Log executor name: " + options_.log_executor_name);
+  }
 
   options_node = options_;
 
