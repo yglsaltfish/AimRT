@@ -55,22 +55,23 @@ void AimRTCore::Initialize(const Options& options) {
   AIMRT_INFO("Allocator init complete.");
   EnterState(State::PostInitAllocator);
 
+  // init executor
+  EnterState(State::PreInitExecutor);
+  executor_manager_.SetLogger(logger_ptr_);
+  executor_manager_.SetUsedExecutorName(main_thread_executor_.Name());
+  executor_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("executor"));
+  AIMRT_INFO("Executor init complete.");
+  EnterState(State::PostInitExecutor);
+
   // init log
   EnterState(State::PreInitLog);
   logger_manager_.SetLogger(logger_ptr_);
-  logger_manager_.SetLogExecutor(
-      aimrt::executor::ExecutorRef(main_thread_executor_.NativeHandle()));
+  logger_manager_.RegisterGetExecutorFunc(
+      std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
   SetCoreLogger();
   AIMRT_INFO("Logger init complete.");
   EnterState(State::PostInitLog);
-
-  // init executor
-  EnterState(State::PreInitExecutor);
-  executor_manager_.SetLogger(logger_ptr_);
-  executor_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("executor"));
-  AIMRT_INFO("Executor init complete.");
-  EnterState(State::PostInitExecutor);
 
   // init rpc
   EnterState(State::PreInitRpc);
@@ -119,8 +120,8 @@ void AimRTCore::Start() {
   configurator_manager_.Start();
   plugin_manager_.Start();
   allocator_manager_.Start();
-  logger_manager_.Start();
   executor_manager_.Start();
+  logger_manager_.Start();
   rpc_manager_.Start();
   channel_manager_.Start();
   parameter_manager_.Start();
@@ -143,8 +144,8 @@ void AimRTCore::Shutdown() {
     parameter_manager_.Shutdown();
     channel_manager_.Shutdown();
     rpc_manager_.Shutdown();
-    executor_manager_.Shutdown();
     logger_manager_.Shutdown();
+    executor_manager_.Shutdown();
     allocator_manager_.Shutdown();
     plugin_manager_.Shutdown();
     configurator_manager_.Shutdown();
@@ -158,6 +159,13 @@ void AimRTCore::Shutdown() {
     main_thread_executor_.Execute(std::move(stop_work));
   } else {
     stop_work();
+  }
+}
+
+void AimRTCore::EnterState(State state) {
+  state_ = state;
+  for (const auto& func : hook_task_vec_array_[static_cast<uint32_t>(state)]) {
+    func();
   }
 }
 
@@ -193,11 +201,17 @@ void AimRTCore::SetCoreLogger() {
   };
 }
 
+aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_name) {
+  if (executor_name.empty() || executor_name == main_thread_executor_.Name())
+    return aimrt::executor::ExecutorRef(main_thread_executor_.NativeHandle());
+  return GetExecutorManager().GetExecutor(executor_name);
+}
+
 void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy) {
   proxy.SetConfigurator(configurator_manager_.GetConfiguratorProxy(info).NativeHandle());
   proxy.SetAllocator(allocator_manager_.GetAllocatorProxy(info).NativeHandle());
-  proxy.SetLogger(logger_manager_.GetLoggerProxy(info).NativeHandle());
   proxy.SetExecutorManager(executor_manager_.GetExecutorManagerProxy(info).NativeHandle());
+  proxy.SetLogger(logger_manager_.GetLoggerProxy(info).NativeHandle());
   proxy.SetRpcHandle(rpc_manager_.GetRpcHandleProxy(info).NativeHandle());
   proxy.SetChannelHandle(channel_manager_.GetChannelHandleProxy(info).NativeHandle());
   proxy.SetParameterHandle(parameter_manager_.GetParameterHandleProxy(info).NativeHandle());

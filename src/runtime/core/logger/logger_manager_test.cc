@@ -33,15 +33,10 @@ class LoggerManagerTest : public ::testing::Test {
 
     executor_manager_.Initialize(thread_options_node);
 
-    util::ModuleDetailInfo detail_info = {
-        .name = "logger_test",
-    };
-
-    auto executor_manager = executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle();
-
-    logger_manager_.SetLogExecutor(
-        aimrt::executor::ExecutorRef{executor_manager->get_executor(
-            executor_manager->impl, aimrt::util::ToAimRTStringView("work_thread_pool"))});
+    logger_manager_.RegisterGetExecutorFunc(
+        [this](std::string_view name) {
+          return executor_manager_.GetExecutor(name);
+        });
 
     // register the mocked backend, register can only in PreInit state.
     std::unique_ptr<LoggerBackendBase> mocked_backend_ptr = std::make_unique<LoggerBackendMock>();
@@ -66,12 +61,14 @@ class LoggerManagerTest : public ::testing::Test {
           - type: console # 控制台日志
             options:
               color: true # 是否彩色打印
+              log_executor_name: work_thread_pool
           - type: rotate_file # 文件日志
             options:
               path: ./ # 日志文件路径
               filename: logger_manager_test.log # 日志文件名称
               max_file_size_m: 4 # 日志文件最大尺寸，单位m
               max_file_num: 10 # 最大日志文件数量，0代表无限
+              log_executor_name: work_thread_pool
           - type: mocked_backend
       )str");
     logger_manager_.Initialize(logger_manager_options_node);

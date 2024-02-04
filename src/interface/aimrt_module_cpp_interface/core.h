@@ -37,13 +37,13 @@ class CoreRef {
   }
 
   /**
-   * @brief Get logger handle
+   * @brief Get allocator handle
    *
-   * @return aimrt::logger::LoggerRef
+   * @return allocator::AllocatorRef
    */
-  aimrt::logger::LoggerRef GetLogger() const {
+  allocator::AllocatorRef GetAllocator() const {
     assert(base_ptr_);
-    return aimrt::logger::LoggerRef(base_ptr_->logger(base_ptr_->impl));
+    return allocator::AllocatorRef(base_ptr_->allocator_handle(base_ptr_->impl));
   }
 
   /**
@@ -54,6 +54,16 @@ class CoreRef {
   executor::ExecutorManagerRef GetExecutorManager() const {
     assert(base_ptr_);
     return executor::ExecutorManagerRef(base_ptr_->executor_manager(base_ptr_->impl));
+  }
+
+  /**
+   * @brief Get logger handle
+   *
+   * @return aimrt::logger::LoggerRef
+   */
+  aimrt::logger::LoggerRef GetLogger() const {
+    assert(base_ptr_);
+    return aimrt::logger::LoggerRef(base_ptr_->logger(base_ptr_->impl));
   }
 
   /**
@@ -74,16 +84,6 @@ class CoreRef {
   channel::ChannelHandleRef GetChannelHandle() const {
     assert(base_ptr_);
     return channel::ChannelHandleRef(base_ptr_->channel_handle(base_ptr_->impl));
-  }
-
-  /**
-   * @brief Get allocator handle
-   *
-   * @return allocator::AllocatorRef
-   */
-  allocator::AllocatorRef GetAllocator() const {
-    assert(base_ptr_);
-    return allocator::AllocatorRef(base_ptr_->allocator_handle(base_ptr_->impl));
   }
 
   /**

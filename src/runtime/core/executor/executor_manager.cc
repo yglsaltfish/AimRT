@@ -62,7 +62,8 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
   // 生成executor
   for (auto& executor_options : options_.executors_options) {
     AIMRT_CHECK_ERROR_THROW(
-        executor_proxy_map_.find(executor_options.name) == executor_proxy_map_.end(),
+        (executor_proxy_map_.find(executor_options.name) == executor_proxy_map_.end()) &&
+            (used_executor_names_.find(executor_options.name) == used_executor_names_.end()),
         "Duplicate executor name '{}'.", executor_options.name);
 
     auto finditr = executor_gen_func_map_.find(executor_options.type);

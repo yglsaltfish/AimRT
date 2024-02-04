@@ -41,11 +41,11 @@ class AimRTCore {
     PreInitAllocator,
     PostInitAllocator,
 
-    PreInitLog,
-    PostInitLog,
-
     PreInitExecutor,
     PostInitExecutor,
+
+    PreInitLog,
+    PostInitLog,
 
     PreInitRpc,
     PostInitRpc,
@@ -92,54 +92,43 @@ class AimRTCore {
         .emplace_back(std::forward<Args>(args)...);
   }
 
-  executor::MainThreadExecutor& GetMainThreadExecutor() { return main_thread_executor_; }
-  const executor::MainThreadExecutor& GetMainThreadExecutor() const { return main_thread_executor_; }
+  auto& GetMainThreadExecutor() { return main_thread_executor_; }
+  const auto& GetMainThreadExecutor() const { return main_thread_executor_; }
 
-  configurator::ConfiguratorManager& GetConfiguratorManager() { return configurator_manager_; }
-  const configurator::ConfiguratorManager& GetConfiguratorManager() const { return configurator_manager_; }
+  auto& GetConfiguratorManager() { return configurator_manager_; }
+  const auto& GetConfiguratorManager() const { return configurator_manager_; }
 
-  plugin::PluginManager& GetPluginManager() { return plugin_manager_; }
-  const plugin::PluginManager& GetPluginManager() const { return plugin_manager_; }
+  auto& GetPluginManager() { return plugin_manager_; }
+  const auto& GetPluginManager() const { return plugin_manager_; }
 
-  allocator::AllocatorManager& GetAllocatorManager() { return allocator_manager_; }
-  const allocator::AllocatorManager& GetAllocatorManager() const { return allocator_manager_; }
+  auto& GetAllocatorManager() { return allocator_manager_; }
+  const auto& GetAllocatorManager() const { return allocator_manager_; }
 
-  logger::LoggerManager& GetLoggerManager() { return logger_manager_; }
-  const logger::LoggerManager& GetLoggerManager() const { return logger_manager_; }
+  auto& GetExecutorManager() { return executor_manager_; }
+  const auto& GetExecutorManager() const { return executor_manager_; }
 
-  executor::ExecutorManager& GetExecutorManager() { return executor_manager_; }
-  const executor::ExecutorManager& GetExecutorManager() const { return executor_manager_; }
+  auto& GetLoggerManager() { return logger_manager_; }
+  const auto& GetLoggerManager() const { return logger_manager_; }
 
-  rpc::RpcManager& GetRpcManager() { return rpc_manager_; }
-  const rpc::RpcManager& GetRpcManager() const { return rpc_manager_; }
+  auto& GetRpcManager() { return rpc_manager_; }
+  const auto& GetRpcManager() const { return rpc_manager_; }
 
-  channel::ChannelManager& GetChannelManager() { return channel_manager_; }
-  const channel::ChannelManager& GetChannelManager() const { return channel_manager_; }
+  auto& GetChannelManager() { return channel_manager_; }
+  const auto& GetChannelManager() const { return channel_manager_; }
 
-  parameter::ParameterManager& GetParameterManager() { return parameter_manager_; }
-  const parameter::ParameterManager& GetParameterManager() const { return parameter_manager_; }
+  auto& GetParameterManager() { return parameter_manager_; }
+  const auto& GetParameterManager() const { return parameter_manager_; }
 
-  module::ModuleManager& GetModuleManager() { return module_manager_; }
-  const module::ModuleManager& GetModuleManager() const { return module_manager_; }
+  auto& GetModuleManager() { return module_manager_; }
+  const auto& GetModuleManager() const { return module_manager_; }
 
   const auto& GetLogger() const { return *logger_ptr_; }
 
  private:
-  void EnterState(State state) {
-    state_ = state;
-    for (const auto& func : hook_task_vec_array_[static_cast<uint32_t>(state)]) {
-      func();
-    }
-  }
-
+  void EnterState(State state);
   void SetCoreLogger();
-
-  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name) {
-    return GetExecutorManager().GetExecutor(executor_name);
-  }
-
+  aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
-
   void DumpCfgFile(const std::string& path = "");
 
  private:
@@ -155,8 +144,8 @@ class AimRTCore {
   configurator::ConfiguratorManager configurator_manager_;
   plugin::PluginManager plugin_manager_;
   allocator::AllocatorManager allocator_manager_;
-  logger::LoggerManager logger_manager_;
   executor::ExecutorManager executor_manager_;
+  logger::LoggerManager logger_manager_;
   rpc::RpcManager rpc_manager_;
   channel::ChannelManager channel_manager_;
   parameter::ParameterManager parameter_manager_;
