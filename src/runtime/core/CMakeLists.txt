@@ -26,7 +26,7 @@ target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 target_include_directories(
   ${CUR_TARGET_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-         $<INSTALL_INTERFACE:include>)
+         $<INSTALL_INTERFACE:include/aimrt>)
 
 # Set head files of target
 target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES ${head_files})
@@ -52,7 +52,7 @@ install(
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
           FILE_SET HEADERS
-          DESTINATION include/${CUR_DIR})
+          DESTINATION include/aimrt/${CUR_DIR})
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)
