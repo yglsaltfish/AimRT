@@ -28,22 +28,32 @@ class AimRTCodeGenerator(object):
         def {{rpc_func_name}}AdapterFunc(ctx_ref, req_str):
             serialization_type = ctx_ref.GetSerializationType()
 
-            req = rpc_pb2.{{simple_rpc_req_name}}()
-            if(serialization_type == "pb"):
-                req.ParseFromString(req_str.encode('utf-8'))
-            elif(serialization_type == "json"):
-                google.protobuf.json_format.Parse(req_str, req)
-            else:
-                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_INVALID_SERIALIZATION_TYPE), "")
+            try:
+                req = rpc_pb2.{{simple_rpc_req_name}}()
+                if(serialization_type == "pb"):
+                    req.ParseFromString(req_str)
+                elif(serialization_type == "json"):
+                    google.protobuf.json_format.Parse(req_str, req)
+                else:
+                    return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_INVALID_SERIALIZATION_TYPE), "")
+            except Exception as e:
+                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_DESERIALIZATION_FAILDE), "")
 
-            st, rsp = self.{{rpc_func_name}}(ctx_ref, req)
-            rsp_str = ""
-            if(serialization_type == "pb"):
-                rsp_str = rsp.SerializeToString()
-            elif(serialization_type == "json"):
-                rsp_str = google.protobuf.json_format.MessageToJson(rsp)
-            else:
-                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_INVALID_SERIALIZATION_TYPE), "")
+            try:
+                st, rsp = self.{{rpc_func_name}}(ctx_ref, req)
+            except Exception as e:
+                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_HANDLE_FAILDE), "")
+
+            try:
+                rsp_str = ""
+                if(serialization_type == "pb"):
+                    rsp_str = rsp.SerializeToString()
+                elif(serialization_type == "json"):
+                    rsp_str = google.protobuf.json_format.MessageToJson(rsp)
+                else:
+                    return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_INVALID_SERIALIZATION_TYPE), "")
+            except Exception as e:
+                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_SERIALIZATION_FAILDE), "")
 
             return (st, rsp_str)
 
@@ -73,23 +83,30 @@ class {{service_name}}(aimrt_py.ServiceBase):
         serialization_type = ctx_ref.GetSerializationType()
 
         rsp = rpc_pb2.{{simple_rpc_rsp_name}}()
-        req_str = ""
-        if(serialization_type == "pb"):
-            req_str = req.SerializeToString()
-        elif(serialization_type == "json"):
-            req_str = google.protobuf.json_format.MessageToJson(req)
-        else:
-            return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_INVALID_SERIALIZATION_TYPE), rsp)
+
+        try:
+            req_str = ""
+            if(serialization_type == "pb"):
+                req_str = req.SerializeToString()
+            elif(serialization_type == "json"):
+                req_str = google.protobuf.json_format.MessageToJson(req)
+            else:
+                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_INVALID_SERIALIZATION_TYPE), rsp)
+        except Exception as e:
+            return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_SERIALIZATION_FAILDE), rsp)
 
         status, rsp_str = self.rpc_handle_ref.Invoke("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
                                                      ctx_ref, req_str)
 
-        if(serialization_type == "pb"):
-            rsp.ParseFromString(rsp_str.encode('utf-8'))
-        elif(serialization_type == "json"):
-            google.protobuf.json_format.Parse(rsp_str, rsp)
-        else:
-            return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_INVALID_SERIALIZATION_TYPE), rsp)
+        try:
+            if(serialization_type == "pb"):
+                rsp.ParseFromString(rsp_str)
+            elif(serialization_type == "json"):
+                google.protobuf.json_format.Parse(rsp_str, rsp)
+            else:
+                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_INVALID_SERIALIZATION_TYPE), rsp)
+        except Exception as e:
+            return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_DESERIALIZATION_FAILDE), rsp)
 
         return (status, rsp)
 """

@@ -42,17 +42,20 @@ install(
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)
-  find_package(example_interfaces REQUIRED)
-  find_package(test_msgs REQUIRED)
 
-  add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
+  find_package(example_interfaces QUIET)
+  find_package(test_msgs QUIET)
 
-  target_link_libraries(
-    ${CUR_TARGET_NAME}_test
-    PRIVATE test_msgs::test_msgs__rosidl_typesupport_cpp #
-            test_msgs::test_msgs__rosidl_typesupport_fastrtps_cpp #
-            test_msgs::test_msgs__rosidl_typesupport_introspection_cpp #
-            example_interfaces::example_interfaces__rosidl_typesupport_cpp #
-            example_interfaces::example_interfaces__rosidl_typesupport_fastrtps_cpp #
-            example_interfaces::example_interfaces__rosidl_typesupport_introspection_cpp)
+  if(example_interfaces_FOUND AND test_msgs_FOUND)
+    add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
+
+    target_link_libraries(
+      ${CUR_TARGET_NAME}_test
+      PRIVATE test_msgs::test_msgs__rosidl_typesupport_cpp #
+              test_msgs::test_msgs__rosidl_typesupport_fastrtps_cpp #
+              test_msgs::test_msgs__rosidl_typesupport_introspection_cpp #
+              example_interfaces::example_interfaces__rosidl_typesupport_cpp #
+              example_interfaces::example_interfaces__rosidl_typesupport_fastrtps_cpp #
+              example_interfaces::example_interfaces__rosidl_typesupport_introspection_cpp)
+  endif()
 endif()

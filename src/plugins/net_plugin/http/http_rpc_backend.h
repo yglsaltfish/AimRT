@@ -52,7 +52,7 @@ class HttpRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
     if (func_name.substr(0, 3) == "pb:") return func_name.substr(3);
 
-    return "";
+    return func_name;
   }
 
  private:
