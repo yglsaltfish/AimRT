@@ -109,8 +109,7 @@ void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
     }
     AIMRT_ERROR("Rpc call address '{}' is invalid, func name '{}'.", to_addr,
                 client_invoke_wrapper_ptr->func_name);
-    client_invoke_wrapper_ptr->callback(
-        static_cast<uint32_t>(aimrt::rpc::Status::RetCode::CLI_INVALID_ADDR));
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
     return;
   }
 
@@ -125,8 +124,7 @@ void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
 
   AIMRT_ERROR("Rpc call found no backend to handle, func name '{}'.",
               client_invoke_wrapper_ptr->func_name);
-  client_invoke_wrapper_ptr->callback(
-      static_cast<uint32_t>(aimrt::rpc::Status::RetCode::CLI_NO_BACKEND_TO_HANDLE));
+  client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE);
 }
 
 }  // namespace aimrt::runtime::core::rpc

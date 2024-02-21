@@ -7,7 +7,9 @@
  */
 #pragma once
 
-#include <boost/asio.hpp>
+#include <bit>
+#include <cinttypes>
+#include <cstring>
 
 namespace aimrt::common::net {
 

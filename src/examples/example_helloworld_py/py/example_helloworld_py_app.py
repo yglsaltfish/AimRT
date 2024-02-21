@@ -50,13 +50,11 @@ def main():
     parser.add_argument('--cfg_file_path', type=str, default="", help='config file path')
     parser.add_argument('--dump_cfg_file', type=bool, default=False, help='dump config file')
     parser.add_argument('--dump_cfg_file_path', type=str, default="", help='dump config file path')
-    parser.add_argument('--register_signal', type=bool, default=True, help='register handle for sigint and sigterm')
 
     args = parser.parse_args()
 
-    if(args.register_signal):
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     print("AimRT start.")
 

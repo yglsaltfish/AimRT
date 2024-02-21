@@ -21,7 +21,7 @@ add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
 target_include_directories(
   ${CUR_TARGET_NAME}
   INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-            $<INSTALL_INTERFACE:include>)
+            $<INSTALL_INTERFACE:include/aimrt>)
 
 # Set head files of target
 target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES ${head_files})
@@ -37,7 +37,7 @@ install(
   TARGETS ${CUR_TARGET_NAME}
   EXPORT ${INSTALL_CONFIG_NAME}
   FILE_SET HEADERS
-  DESTINATION include/${CUR_DIR})
+  DESTINATION include/aimrt/${CUR_DIR})
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)

@@ -2,7 +2,7 @@ set_namespace()
 
 add_subdirectory(util)
 
-if(AIMRT_BUILD_RUNTIME)
+if(AIMRT_BUILD_NET_PLUGIN)
   add_subdirectory(net)
 endif()
 

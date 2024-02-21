@@ -103,6 +103,8 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
+
+    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep), "{} is already in use.", util::SSToString(options_.ep));
   }
 
   void Start() {
@@ -253,6 +255,16 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   static constexpr size_t HEAD_SIZE = 6;
   static constexpr char HEAD_BYTE_1 = 'Y';
   static constexpr char HEAD_BYTE_2 = 'T';
+
+  static bool CheckListenAddr(const Tcp::endpoint& ep) {
+    try {
+      IOCtx io;
+      Tcp::acceptor acceptor(io, ep);
+      return true;
+    } catch (...) {
+      return false;
+    }
+  }
 
   struct SessionOptions {
     explicit SessionOptions(const Options& options)

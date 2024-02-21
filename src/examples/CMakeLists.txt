@@ -56,7 +56,7 @@ if(AIMRT_BUILD_PYTHON_RUNTIME)
   add_subdirectory(example_helloworld_py)
 endif()
 
-if(AIMRT_BUILD_WITH_PROTOBUF)
+if(AIMRT_BUILD_PYTHON_RUNTIME AND AIMRT_BUILD_WITH_PROTOBUF)
   add_subdirectory(example_normal_channel_py)
   add_subdirectory(example_normal_rpc_py)
 endif()

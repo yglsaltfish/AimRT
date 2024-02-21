@@ -40,7 +40,7 @@ inline void ExportPublisherRef(pybind11::object m) {
 inline bool PySubscribe(
     aimrt::channel::SubscriberRef& subscriber_ref,
     std::shared_ptr<const PyTypeSupport> msg_type_support,
-    std::function<void(std::string_view, const std::string&)>&& callback) {
+    std::function<void(std::string_view, const pybind11::bytes&)>&& callback) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(msg_type_support);
 
@@ -51,9 +51,18 @@ inline bool PySubscribe(
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
         aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(release_callback_base);
+
         const std::string& msg_buf = *static_cast<const std::string*>(msg_ptr);
         auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr);
-        callback(ctx_ref.GetSerializationType(), msg_buf);
+
+        auto msg_buf_bytes = pybind11::bytes(msg_buf);
+
+        callback(ctx_ref.GetSerializationType(), msg_buf_bytes);
+
+        pybind11::gil_scoped_acquire acquire;
+        msg_buf_bytes.release();
+        pybind11::gil_scoped_release release;
+
         release_callback();
       });
 }

@@ -25,8 +25,7 @@ target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 # Set include path of target
 target_include_directories(
   ${CUR_TARGET_NAME}
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-         $<INSTALL_INTERFACE:include>)
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
 
 # Set head files of target
 target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES ${head_files})
@@ -38,16 +37,6 @@ target_link_libraries(
   PUBLIC aimrt::interface::aimrt_module_cpp_interface
          aimrt::interface::aimrt_module_protobuf_interface
          aimrt::protocols::example_aimrt_rpc_gencode)
-
-# Set installation of target
-set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
-install(
-  TARGETS ${CUR_TARGET_NAME}
-  EXPORT ${INSTALL_CONFIG_NAME}
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-          FILE_SET HEADERS
-          DESTINATION include/${CUR_DIR})
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)

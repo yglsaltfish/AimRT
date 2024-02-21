@@ -130,8 +130,7 @@ bool LocalRpcBackend::TryInvoke(
         AIMRT_WARN("Can not find service func '{}' in module '{}'. Addr: {}",
                    func_name, service_module_name, to_addr);
 
-        client_invoke_wrapper_ptr->callback(
-            static_cast<uint32_t>(aimrt::rpc::Status::RetCode::CLI_INVALID_ADDR));
+        client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
 
         return true;
       }
@@ -146,8 +145,7 @@ bool LocalRpcBackend::TryInvoke(
       AIMRT_WARN("Can not find service func '{}' in pkg '{}'. Addr: {}",
                  func_name, service_pkg_path, to_addr);
 
-      client_invoke_wrapper_ptr->callback(
-          static_cast<uint32_t>(aimrt::rpc::Status::RetCode::CLI_INVALID_ADDR));
+      client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
 
       return true;
     }
@@ -163,8 +161,7 @@ bool LocalRpcBackend::TryInvoke(
         AIMRT_WARN("Can not find service func '{}' in pkg '{}' module '{}'. Addr: {}",
                    func_name, service_pkg_path, service_module_name, to_addr);
 
-        client_invoke_wrapper_ptr->callback(
-            static_cast<uint32_t>(aimrt::rpc::Status::RetCode::CLI_INVALID_ADDR));
+        client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
 
         return true;
       }
@@ -232,8 +229,7 @@ bool LocalRpcBackend::TryInvoke(
         "pkg_path: {}, module_name: {}, func_name: {}",
         serialization_type, pkg_path, module_name, func_name);
 
-    client_invoke_wrapper_ptr->callback(
-        static_cast<uint32_t>(aimrt::rpc::Status::RetCode::CLI_SERIALIZATION_FAILDE));
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILDE);
 
     return true;
   }
@@ -253,8 +249,7 @@ bool LocalRpcBackend::TryInvoke(
         "pkg_path: {}, module_name: {}, func_name: {}",
         serialization_type, pkg_path, module_name, func_name);
 
-    client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(
-        aimrt::rpc::Status::RetCode::CLI_DESERIALIZATION_FAILDE));
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILDE);
 
     return true;
   }
@@ -290,8 +285,7 @@ bool LocalRpcBackend::TryInvoke(
               service_func_wrapper_ptr->module_name,
               service_func_wrapper_ptr->func_name);
 
-          client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(
-              aimrt::rpc::Status::RetCode::SVR_SERIALIZATION_FAILDE));
+          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILDE);
 
           return;
         }
@@ -311,8 +305,7 @@ bool LocalRpcBackend::TryInvoke(
               service_func_wrapper_ptr->module_name,
               service_func_wrapper_ptr->func_name);
 
-          client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(
-              aimrt::rpc::Status::RetCode::SVR_DESERIALIZATION_FAILDE));
+          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILDE);
 
           return;
         }

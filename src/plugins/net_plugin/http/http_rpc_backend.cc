@@ -170,6 +170,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
     std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
 
     // service rpc调用
+    uint32_t ret_code = 0;
     auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, timeout);
     std::atomic_bool handle_flag = false;
 
@@ -182,51 +183,57 @@ bool HttpRpcBackend::RegisterServiceFunc(
          service_rsp_ptr,
          serialization_type{std::move(serialization_type)},
          sig_timer_ptr,
-         &handle_flag](uint32_t code) {
-          aimrt::util::BufferArray buffer_array;
+         &handle_flag,
+         &ret_code](uint32_t code) {
+          if (code) [[unlikely]] {
+            ret_code = code;
 
-          auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
+          } else {
+            aimrt::util::BufferArray buffer_array;
 
-          // service rsp序列化
-          bool serialize_ret = service_rsp_type_support_ref.Serialize(
-              serialization_type, service_rsp_ptr.get(), buffer_array.NativeHandle());
+            auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
 
-          // 序列化失败一般很少见，此处暂时不做处理
-          assert(serialize_ret);
+            // service rsp序列化
+            bool serialize_ret = service_rsp_type_support_ref.Serialize(
+                serialization_type, service_rsp_ptr.get(), buffer_array.NativeHandle());
 
-          // 填http rsp包，直接复制过去
-          size_t rsp_size = buffer_array.BufferSize();
-          auto rsp_beast_buf = rsp.body().prepare(rsp_size);
+            // 序列化失败一般很少见，此处暂时不做处理
+            assert(serialize_ret);
 
-          auto data = buffer_array.NativeHandle()->data;
-          auto buffer_array_pos = 0;
-          size_t buffer_pos = 0;
+            // 填http rsp包，直接复制过去
+            size_t rsp_size = buffer_array.BufferSize();
+            auto rsp_beast_buf = rsp.body().prepare(rsp_size);
 
-          for (auto buf : boost::beast::buffers_range_ref(rsp_beast_buf)) {
-            size_t cur_beast_buf_pos = 0;
-            while (cur_beast_buf_pos < buf.size()) {
-              size_t cur_beast_buffer_size = buf.size() - cur_beast_buf_pos;
-              size_t cur_buffer_size = data[buffer_array_pos].len - buffer_pos;
+            auto data = buffer_array.NativeHandle()->data;
+            auto buffer_array_pos = 0;
+            size_t buffer_pos = 0;
 
-              size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
+            for (auto buf : boost::beast::buffers_range_ref(rsp_beast_buf)) {
+              size_t cur_beast_buf_pos = 0;
+              while (cur_beast_buf_pos < buf.size()) {
+                size_t cur_beast_buffer_size = buf.size() - cur_beast_buf_pos;
+                size_t cur_buffer_size = data[buffer_array_pos].len - buffer_pos;
 
-              memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
-                     static_cast<char*>(data[buffer_array_pos].data) + buffer_pos,
-                     cur_copy_size);
+                size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
 
-              buffer_pos += cur_copy_size;
-              if (buffer_pos == data[buffer_array_pos].len) {
-                ++buffer_array_pos;
-                buffer_pos = 0;
+                memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
+                       static_cast<char*>(data[buffer_array_pos].data) + buffer_pos,
+                       cur_copy_size);
+
+                buffer_pos += cur_copy_size;
+                if (buffer_pos == data[buffer_array_pos].len) {
+                  ++buffer_array_pos;
+                  buffer_pos = 0;
+                }
+
+                cur_beast_buf_pos += cur_copy_size;
               }
-
-              cur_beast_buf_pos += cur_copy_size;
             }
-          }
-          rsp.body().commit(rsp_size);
+            rsp.body().commit(rsp_size);
 
-          rsp.keep_alive(req.keep_alive());
-          rsp.prepare_payload();
+            rsp.keep_alive(req.keep_alive());
+            rsp.prepare_payload();
+          }
 
           handle_flag.store(true);
 
@@ -246,13 +253,12 @@ bool HttpRpcBackend::RegisterServiceFunc(
         co_await sig_timer_ptr->async_wait(asio::use_awaitable);
         if (!handle_flag.load()) finish_flag = false;
       } catch (const std::exception& e) {
-        AIMRT_TRACE(
-            "rpc cli session recv sig timer canceled, exception info: {}",
-            e.what());
+        AIMRT_TRACE("rpc cli session recv sig timer canceled, exception info: {}", e.what());
       }
     }
 
     AIMRT_CHECK_ERROR_THROW(finish_flag, "Local processing timeout.");
+    AIMRT_CHECK_ERROR_THROW(ret_code == 0, "Handle rpc failed, code: {}.", ret_code);
 
     co_return net::AsioHttpServer::HttpHandleStatus::OK;
   };
@@ -316,8 +322,7 @@ bool HttpRpcBackend::TryInvoke(
   // 协议为http，需要由http后端处理。之后只能使用callback报错，不能返回false
   auto url_op = aimrt::common::util::ParseUrl(to_addr);
   if (!url_op) {
-    client_invoke_wrapper_ptr->callback(
-        static_cast<uint32_t>(rpc::Status::RetCode::CLI_INVALID_ADDR));
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
     return true;
   }
 
@@ -377,8 +382,7 @@ bool HttpRpcBackend::TryInvoke(
           } else if (serialization_type == "ros2") {
             req.set(http::field::content_type, "application/ros2");
           } else {
-            client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(
-                rpc::Status::RetCode::CLI_INVALID_SERIALIZATION_TYPE));
+            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE);
             co_return;
           }
 
@@ -452,12 +456,11 @@ bool HttpRpcBackend::TryInvoke(
 
           if (!deserialize_ret) {
             // 调用回调
-            client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(
-                rpc::Status::RetCode::CLI_DESERIALIZATION_FAILDE));
+            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILDE);
             co_return;
           }
 
-          client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(rpc::Status::RetCode::OK));
+          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_OK);
 
           co_return;
         } catch (const std::exception& e) {
@@ -465,8 +468,7 @@ bool HttpRpcBackend::TryInvoke(
         }
 
         // TODO
-        client_invoke_wrapper_ptr->callback(
-            static_cast<uint32_t>(rpc::Status::RetCode::CLI_UNKNOWN));
+        client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
         co_return;
       },
       asio::detached);

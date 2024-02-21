@@ -134,7 +134,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}Service::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp) {
-  co_return aimrt::rpc::Status(aimrt::rpc::Status::RetCode::SVR_NOT_IMPLEMENTED);
+  co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
 }
 
 bool {{srv_filename}}Proxy::RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {

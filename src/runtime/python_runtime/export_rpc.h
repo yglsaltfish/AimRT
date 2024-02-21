@@ -17,29 +17,30 @@ namespace aimrt::runtime::python_runtime {
 inline void ExportRpcStatus(pybind11::object m) {
   using namespace aimrt::rpc;
 
-  pybind11::enum_<Status::RetCode>(m, "RpcStatusRetCode")
-      .value("OK", Status::RetCode::OK)
-      .value("UNKNOWN", Status::RetCode::UNKNOWN)
-      .value("TIMEOUT", Status::RetCode::TIMEOUT)
-      .value("SVR_UNKNOWN", Status::RetCode::SVR_UNKNOWN)
-      .value("SVR_NOT_IMPLEMENTED", Status::RetCode::SVR_NOT_IMPLEMENTED)
-      .value("SVR_NOT_FOUND", Status::RetCode::SVR_NOT_FOUND)
-      .value("SVR_INVALID_SERIALIZATION_TYPE", Status::RetCode::SVR_INVALID_SERIALIZATION_TYPE)
-      .value("SVR_SERIALIZATION_FAILDE", Status::RetCode::SVR_SERIALIZATION_FAILDE)
-      .value("SVR_INVALID_DESERIALIZATION_TYPE", Status::RetCode::SVR_INVALID_DESERIALIZATION_TYPE)
-      .value("SVR_DESERIALIZATION_FAILDE", Status::RetCode::SVR_DESERIALIZATION_FAILDE)
-      .value("CLI_UNKNOWN", Status::RetCode::CLI_UNKNOWN)
-      .value("CLI_INVALID_ADDR", Status::RetCode::CLI_INVALID_ADDR)
-      .value("CLI_INVALID_SERIALIZATION_TYPE", Status::RetCode::CLI_INVALID_SERIALIZATION_TYPE)
-      .value("CLI_SERIALIZATION_FAILDE", Status::RetCode::CLI_SERIALIZATION_FAILDE)
-      .value("CLI_INVALID_DESERIALIZATION_TYPE", Status::RetCode::CLI_INVALID_DESERIALIZATION_TYPE)
-      .value("CLI_DESERIALIZATION_FAILDE", Status::RetCode::CLI_DESERIALIZATION_FAILDE)
-      .value("CLI_NO_BACKEND_TO_HANDLE", Status::RetCode::CLI_NO_BACKEND_TO_HANDLE)
-      .value("CLI_SEND_REQ_FAILED", Status::RetCode::CLI_SEND_REQ_FAILED);
+  pybind11::enum_<aimrt_rpc_status_code_t>(m, "RpcStatusRetCode")
+      .value("OK", AIMRT_RPC_STATUS_OK)
+      .value("UNKNOWN", AIMRT_RPC_STATUS_UNKNOWN)
+      .value("TIMEOUT", AIMRT_RPC_STATUS_TIMEOUT)
+      .value("SVR_UNKNOWN", AIMRT_RPC_STATUS_SVR_UNKNOWN)
+      .value("SVR_NOT_IMPLEMENTED", AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED)
+      .value("SVR_NOT_FOUND", AIMRT_RPC_STATUS_SVR_NOT_FOUND)
+      .value("SVR_INVALID_SERIALIZATION_TYPE", AIMRT_RPC_STATUS_SVR_INVALID_SERIALIZATION_TYPE)
+      .value("SVR_SERIALIZATION_FAILDE", AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILDE)
+      .value("SVR_INVALID_DESERIALIZATION_TYPE", AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE)
+      .value("SVR_DESERIALIZATION_FAILDE", AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILDE)
+      .value("SVR_HANDLE_FAILDE", AIMRT_RPC_STATUS_SVR_HANDLE_FAILDE)
+      .value("CLI_UNKNOWN", AIMRT_RPC_STATUS_CLI_UNKNOWN)
+      .value("CLI_INVALID_ADDR", AIMRT_RPC_STATUS_CLI_INVALID_ADDR)
+      .value("CLI_INVALID_SERIALIZATION_TYPE", AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE)
+      .value("CLI_SERIALIZATION_FAILDE", AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILDE)
+      .value("CLI_INVALID_DESERIALIZATION_TYPE", AIMRT_RPC_STATUS_CLI_INVALID_DESERIALIZATION_TYPE)
+      .value("CLI_DESERIALIZATION_FAILDE", AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILDE)
+      .value("CLI_NO_BACKEND_TO_HANDLE", AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE)
+      .value("CLI_SEND_REQ_FAILED", AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED);
 
   pybind11::class_<Status>(m, "RpcStatus")
       .def(pybind11::init<>())
-      .def(pybind11::init<Status::RetCode>())
+      .def(pybind11::init<aimrt_rpc_status_code_t>())
       .def(pybind11::init<uint32_t>())
       .def("OK", &Status::OK)
       .def("__bool__", &Status::operator bool)
@@ -81,7 +82,7 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
     std::string_view func_name,
     std::shared_ptr<const PyTypeSupport> req_type_support,
     std::shared_ptr<const PyTypeSupport> rsp_type_support,
-    std::function<std::tuple<aimrt::rpc::Status, std::string>(aimrt::rpc::ContextRef, const std::string&)>&& service_func) {
+    std::function<std::tuple<aimrt::rpc::Status, std::string>(aimrt::rpc::ContextRef, const pybind11::bytes&)>&& service_func) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
@@ -89,16 +90,27 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
   aimrt::util::Function<aimrt_function_service_func_ops_t> aimrt_service_func(
       [service_ptr{&service}, service_func{std::move(service_func)}](
           const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* callback) {
-        static const aimrt::rpc::RpcHandle h =
+        aimrt::rpc::RpcHandle h =
             [&service_func](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
             -> aimrt::co::Task<aimrt::rpc::Status> {
-          const std::string& req_buf = *static_cast<const std::string*>(req_ptr);
-          std::string& rsp_buf = *static_cast<std::string*>(rsp_ptr);
+          try {
+            const std::string& req_buf = *static_cast<const std::string*>(req_ptr);
+            std::string& rsp_buf = *static_cast<std::string*>(rsp_ptr);
 
-          auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf);
-          rsp_buf = std::move(rsp_buf_tmp);
+            auto req_buf_bytes = pybind11::bytes(req_buf);
 
-          co_return status;
+            auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
+
+            pybind11::gil_scoped_acquire acquire;
+            req_buf_bytes.release();
+            pybind11::gil_scoped_release release;
+
+            rsp_buf = std::move(rsp_buf_tmp);
+
+            co_return status;
+          } catch (const std::exception& e) {
+            co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_HANDLE_FAILDE);
+          }
         };
 
         aimrt::util::Function<aimrt_function_service_callback_ops_t> f(callback);
@@ -145,7 +157,7 @@ inline bool PyRpcHandleRefRegisterClientFunc(
       rsp_type_support->NativeHandle());
 }
 
-inline std::tuple<aimrt::rpc::Status, std::string> PyRpcHandleRefInvoke(
+inline std::tuple<aimrt::rpc::Status, pybind11::bytes> PyRpcHandleRefInvoke(
     aimrt::rpc::RpcHandleRef& rpc_handle_ref,
     std::string_view func_name,
     aimrt::rpc::ContextRef ctx_ref,
@@ -172,7 +184,7 @@ inline std::tuple<aimrt::rpc::Status, std::string> PyRpcHandleRefInvoke(
 
   pybind11::gil_scoped_acquire acquire;
 
-  return {aimrt::rpc::Status(fu.get()), rsp_buf};
+  return {aimrt::rpc::Status(fu.get()), pybind11::bytes(rsp_buf)};
 }
 
 inline PyRpcContext PyRpcHandleRefNewContextSharedPtr(aimrt::rpc::RpcHandleRef& rpc_handle_ref) {

@@ -144,7 +144,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
     {{rpc_rsp_name}}& rsp) {
-  co_return aimrt::rpc::Status(aimrt::rpc::Status::RetCode::SVR_NOT_IMPLEMENTED);
+  co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
 })str";
 
   constexpr static std::string_view t_ccfile_one_service_class = R"str(

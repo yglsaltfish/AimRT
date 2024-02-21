@@ -53,6 +53,9 @@ class ConfiguratorManager {
   const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
+  std::string ReplaceEnvVars(const std::string& input);
+
+ private:
   std::filesystem::path cfg_file_path_;
   Options options_;
   std::atomic<State> state_ = State::PreInit;

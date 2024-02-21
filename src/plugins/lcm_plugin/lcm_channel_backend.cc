@@ -252,7 +252,7 @@ bool LcmChannelBackend::RegisterPublishType(const runtime::core::channel::Publis
       return false;
     }
 
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     AIMRT_ERROR("check sm plugin publish topic regex error: {}", e.what());
     return false;
   }
@@ -335,7 +335,7 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
       }
       subscriber_info->executor = get_executor_func_(options_.sub_default_executor);
     }
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     AIMRT_ERROR("check sm plugin subscribe topic regex error: {}", e.what());
     return false;
   }

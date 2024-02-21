@@ -21,7 +21,7 @@ add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
 target_include_directories(
   ${CUR_TARGET_NAME}
   INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-            $<INSTALL_INTERFACE:include>)
+            $<INSTALL_INTERFACE:include/aimrt>)
 
 # Set head files of target
 target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES ${head_files})
@@ -38,21 +38,24 @@ install(
   TARGETS ${CUR_TARGET_NAME}
   EXPORT ${INSTALL_CONFIG_NAME}
   FILE_SET HEADERS
-  DESTINATION include/${CUR_DIR})
+  DESTINATION include/aimrt/${CUR_DIR})
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)
-  find_package(example_interfaces REQUIRED)
-  find_package(test_msgs REQUIRED)
 
-  add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
+  find_package(example_interfaces QUIET)
+  find_package(test_msgs QUIET)
 
-  target_link_libraries(
-    ${CUR_TARGET_NAME}_test
-    PRIVATE test_msgs::test_msgs__rosidl_typesupport_cpp #
-            test_msgs::test_msgs__rosidl_typesupport_fastrtps_cpp #
-            test_msgs::test_msgs__rosidl_typesupport_introspection_cpp #
-            example_interfaces::example_interfaces__rosidl_typesupport_cpp #
-            example_interfaces::example_interfaces__rosidl_typesupport_fastrtps_cpp #
-            example_interfaces::example_interfaces__rosidl_typesupport_introspection_cpp)
+  if(example_interfaces_FOUND AND test_msgs_FOUND)
+    add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
+
+    target_link_libraries(
+      ${CUR_TARGET_NAME}_test
+      PRIVATE test_msgs::test_msgs__rosidl_typesupport_cpp #
+              test_msgs::test_msgs__rosidl_typesupport_fastrtps_cpp #
+              test_msgs::test_msgs__rosidl_typesupport_introspection_cpp #
+              example_interfaces::example_interfaces__rosidl_typesupport_cpp #
+              example_interfaces::example_interfaces__rosidl_typesupport_fastrtps_cpp #
+              example_interfaces::example_interfaces__rosidl_typesupport_introspection_cpp)
+  endif()
 endif()

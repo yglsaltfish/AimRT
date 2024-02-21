@@ -3,44 +3,20 @@
 #include <cinttypes>
 #include <string>
 
+#include "aimrt_module_c_interface/rpc/rpc_status_base.h"
+
 namespace aimrt::rpc {
 
 class Status {
  public:
-  enum class RetCode : uint32_t {
-    OK = 0,
-    UNKNOWN,
-    TIMEOUT,
-
-    // svr side
-    SVR_UNKNOWN = 1000,
-    SVR_NOT_IMPLEMENTED,
-    SVR_NOT_FOUND,
-    SVR_INVALID_SERIALIZATION_TYPE,
-    SVR_SERIALIZATION_FAILDE,
-    SVR_INVALID_DESERIALIZATION_TYPE,
-    SVR_DESERIALIZATION_FAILDE,
-
-    // cli side
-    CLI_UNKNOWN = 2000,
-    CLI_INVALID_ADDR,
-    CLI_INVALID_SERIALIZATION_TYPE,
-    CLI_SERIALIZATION_FAILDE,
-    CLI_INVALID_DESERIALIZATION_TYPE,
-    CLI_DESERIALIZATION_FAILDE,
-    CLI_NO_BACKEND_TO_HANDLE,
-    CLI_SEND_REQ_FAILED,
-  };
-
- public:
   Status() = default;
   ~Status() = default;
 
-  explicit Status(Status::RetCode code) : code_(static_cast<uint32_t>(code)) {}
+  explicit Status(aimrt_rpc_status_code_t code) : code_(code) {}
   explicit Status(uint32_t code) : code_(code) {}
 
   bool OK() const {
-    return code_ == static_cast<uint32_t>(Status::RetCode::OK);
+    return code_ == aimrt_rpc_status_code_t::AIMRT_RPC_STATUS_OK;
   }
 
   operator bool() const { return OK(); }
@@ -52,7 +28,7 @@ class Status {
   }
 
  private:
-  uint32_t code_ = static_cast<uint32_t>(Status::RetCode::OK);
+  uint32_t code_ = aimrt_rpc_status_code_t::AIMRT_RPC_STATUS_OK;
 };
 
 }  // namespace aimrt::rpc
