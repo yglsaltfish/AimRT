@@ -24,7 +24,7 @@ if(NOT yaml-cpp_POPULATED)
       OFF
       CACHE BOOL "")
   set(YAML_CPP_INSTALL
-      ON
+      OFF
       CACHE BOOL "")
   set(YAML_CPP_FORMAT_SOURCE
       OFF

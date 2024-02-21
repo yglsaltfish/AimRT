@@ -12,24 +12,24 @@ from google.protobuf.descriptor_pb2 import FileDescriptorProto
 class AimRTCodeGenerator(object):
     t_pyfile_one_service_func: str = r"""
     def {{rpc_func_name}}(self, ctx_ref, req):
-        return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_NOT_IMPLEMENTED), rpc_pb2.{{simple_rpc_rsp_name}}())
+        return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_NOT_IMPLEMENTED), {{file_name}}.{{simple_rpc_rsp_name}}())
 """
 
     t_pyfile_one_service_register_func: str = r"""
         # {{rpc_func_name}}
         {{simple_rpc_req_name}}_aimrt_ts = aimrt_py.TypeSupport()
-        {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + rpc_pb2.{{simple_rpc_req_name}}.DESCRIPTOR.full_name)
+        {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + {{file_name}}.{{simple_rpc_req_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_req_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         {{simple_rpc_rsp_name}}_aimrt_ts = aimrt_py.TypeSupport()
-        {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + rpc_pb2.{{simple_rpc_rsp_name}}.DESCRIPTOR.full_name)
+        {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + {{file_name}}.{{simple_rpc_rsp_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_rsp_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         def {{rpc_func_name}}AdapterFunc(ctx_ref, req_str):
             serialization_type = ctx_ref.GetSerializationType()
 
             try:
-                req = rpc_pb2.{{simple_rpc_req_name}}()
+                req = {{file_name}}.{{simple_rpc_req_name}}()
                 if(serialization_type == "pb"):
                     req.ParseFromString(req_str)
                 elif(serialization_type == "json"):
@@ -82,7 +82,7 @@ class {{service_name}}(aimrt_py.ServiceBase):
 
         serialization_type = ctx_ref.GetSerializationType()
 
-        rsp = rpc_pb2.{{simple_rpc_rsp_name}}()
+        rsp = {{file_name}}.{{simple_rpc_rsp_name}}()
 
         try:
             req_str = ""
@@ -114,11 +114,11 @@ class {{service_name}}(aimrt_py.ServiceBase):
     t_pyfile_one_service_proxy_register_func: str = r"""
         # {{rpc_func_name}}
         {{simple_rpc_req_name}}_aimrt_ts = aimrt_py.TypeSupport()
-        {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + rpc_pb2.{{simple_rpc_req_name}}.DESCRIPTOR.full_name)
+        {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + {{file_name}}.{{simple_rpc_req_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_req_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         {{simple_rpc_rsp_name}}_aimrt_ts = aimrt_py.TypeSupport()
-        {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + rpc_pb2.{{simple_rpc_rsp_name}}.DESCRIPTOR.full_name)
+        {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + {{file_name}}.{{simple_rpc_rsp_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_rsp_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         ret = rpc_handle.RegisterClientFunc("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",

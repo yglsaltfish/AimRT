@@ -322,8 +322,7 @@ bool HttpRpcBackend::TryInvoke(
   // 协议为http，需要由http后端处理。之后只能使用callback报错，不能返回false
   auto url_op = aimrt::common::util::ParseUrl(to_addr);
   if (!url_op) {
-    client_invoke_wrapper_ptr->callback(
-        static_cast<uint32_t>(rpc::Status::RetCode::CLI_INVALID_ADDR));
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
     return true;
   }
 
@@ -383,8 +382,7 @@ bool HttpRpcBackend::TryInvoke(
           } else if (serialization_type == "ros2") {
             req.set(http::field::content_type, "application/ros2");
           } else {
-            client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(
-                rpc::Status::RetCode::CLI_INVALID_SERIALIZATION_TYPE));
+            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE);
             co_return;
           }
 
@@ -458,12 +456,11 @@ bool HttpRpcBackend::TryInvoke(
 
           if (!deserialize_ret) {
             // 调用回调
-            client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(
-                rpc::Status::RetCode::CLI_DESERIALIZATION_FAILDE));
+            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILDE);
             co_return;
           }
 
-          client_invoke_wrapper_ptr->callback(static_cast<uint32_t>(rpc::Status::RetCode::OK));
+          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_OK);
 
           co_return;
         } catch (const std::exception& e) {
@@ -471,8 +468,7 @@ bool HttpRpcBackend::TryInvoke(
         }
 
         // TODO
-        client_invoke_wrapper_ptr->callback(
-            static_cast<uint32_t>(rpc::Status::RetCode::CLI_UNKNOWN));
+        client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
         co_return;
       },
       asio::detached);

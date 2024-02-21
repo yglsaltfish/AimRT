@@ -104,6 +104,8 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
+
+    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep), "{} is already in use.", util::SSToString(options_.ep));
   }
 
   void Start() {
@@ -250,6 +252,16 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   bool IsRunning() const { return state_.load() == State::Start; }
 
  private:
+  static bool CheckListenAddr(const Tcp::endpoint& ep) {
+    try {
+      IOCtx io;
+      Tcp::acceptor acceptor(io, ep);
+      return true;
+    } catch (...) {
+      return false;
+    }
+  }
+
   struct SessionOptions {
     explicit SessionOptions(const Options& options)
         : max_no_data_duration(options.max_no_data_duration),

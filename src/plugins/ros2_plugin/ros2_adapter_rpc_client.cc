@@ -72,8 +72,7 @@ void Ros2AdapterClient::handle_response(
   auto client_invoke_wrapper_ptr = cb_wrapper->client_invoke_wrapper_ptr;
   aimrt::util::TypeSupportRef(client_func_wrapper_.rsp_type_support)
       .Move(response.get(), client_invoke_wrapper_ptr->rsp_ptr);
-  client_invoke_wrapper_ptr->callback(
-      static_cast<uint32_t>(rpc::Status::RetCode::OK));
+  client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_OK);
 }
 
 void Ros2AdapterClient::Invoke(
@@ -91,8 +90,7 @@ void Ros2AdapterClient::Invoke(
                client_invoke_wrapper_ptr->func_name,
                rcl_get_error_string().str);
     rcl_reset_error();
-    client_invoke_wrapper_ptr->callback(
-        static_cast<uint32_t>(rpc::Status::RetCode::CLI_SEND_REQ_FAILED));
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED);
     return;
   }
   pending_requests_.try_emplace(

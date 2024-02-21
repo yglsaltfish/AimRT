@@ -17,30 +17,30 @@ namespace aimrt::runtime::python_runtime {
 inline void ExportRpcStatus(pybind11::object m) {
   using namespace aimrt::rpc;
 
-  pybind11::enum_<Status::RetCode>(m, "RpcStatusRetCode")
-      .value("OK", Status::RetCode::OK)
-      .value("UNKNOWN", Status::RetCode::UNKNOWN)
-      .value("TIMEOUT", Status::RetCode::TIMEOUT)
-      .value("SVR_UNKNOWN", Status::RetCode::SVR_UNKNOWN)
-      .value("SVR_NOT_IMPLEMENTED", Status::RetCode::SVR_NOT_IMPLEMENTED)
-      .value("SVR_NOT_FOUND", Status::RetCode::SVR_NOT_FOUND)
-      .value("SVR_INVALID_SERIALIZATION_TYPE", Status::RetCode::SVR_INVALID_SERIALIZATION_TYPE)
-      .value("SVR_SERIALIZATION_FAILDE", Status::RetCode::SVR_SERIALIZATION_FAILDE)
-      .value("SVR_INVALID_DESERIALIZATION_TYPE", Status::RetCode::SVR_INVALID_DESERIALIZATION_TYPE)
-      .value("SVR_DESERIALIZATION_FAILDE", Status::RetCode::SVR_DESERIALIZATION_FAILDE)
-      .value("SVR_HANDLE_FAILDE", Status::RetCode::SVR_HANDLE_FAILDE)
-      .value("CLI_UNKNOWN", Status::RetCode::CLI_UNKNOWN)
-      .value("CLI_INVALID_ADDR", Status::RetCode::CLI_INVALID_ADDR)
-      .value("CLI_INVALID_SERIALIZATION_TYPE", Status::RetCode::CLI_INVALID_SERIALIZATION_TYPE)
-      .value("CLI_SERIALIZATION_FAILDE", Status::RetCode::CLI_SERIALIZATION_FAILDE)
-      .value("CLI_INVALID_DESERIALIZATION_TYPE", Status::RetCode::CLI_INVALID_DESERIALIZATION_TYPE)
-      .value("CLI_DESERIALIZATION_FAILDE", Status::RetCode::CLI_DESERIALIZATION_FAILDE)
-      .value("CLI_NO_BACKEND_TO_HANDLE", Status::RetCode::CLI_NO_BACKEND_TO_HANDLE)
-      .value("CLI_SEND_REQ_FAILED", Status::RetCode::CLI_SEND_REQ_FAILED);
+  pybind11::enum_<aimrt_rpc_status_code_t>(m, "RpcStatusRetCode")
+      .value("OK", AIMRT_RPC_STATUS_OK)
+      .value("UNKNOWN", AIMRT_RPC_STATUS_UNKNOWN)
+      .value("TIMEOUT", AIMRT_RPC_STATUS_TIMEOUT)
+      .value("SVR_UNKNOWN", AIMRT_RPC_STATUS_SVR_UNKNOWN)
+      .value("SVR_NOT_IMPLEMENTED", AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED)
+      .value("SVR_NOT_FOUND", AIMRT_RPC_STATUS_SVR_NOT_FOUND)
+      .value("SVR_INVALID_SERIALIZATION_TYPE", AIMRT_RPC_STATUS_SVR_INVALID_SERIALIZATION_TYPE)
+      .value("SVR_SERIALIZATION_FAILDE", AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILDE)
+      .value("SVR_INVALID_DESERIALIZATION_TYPE", AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE)
+      .value("SVR_DESERIALIZATION_FAILDE", AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILDE)
+      .value("SVR_HANDLE_FAILDE", AIMRT_RPC_STATUS_SVR_HANDLE_FAILDE)
+      .value("CLI_UNKNOWN", AIMRT_RPC_STATUS_CLI_UNKNOWN)
+      .value("CLI_INVALID_ADDR", AIMRT_RPC_STATUS_CLI_INVALID_ADDR)
+      .value("CLI_INVALID_SERIALIZATION_TYPE", AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE)
+      .value("CLI_SERIALIZATION_FAILDE", AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILDE)
+      .value("CLI_INVALID_DESERIALIZATION_TYPE", AIMRT_RPC_STATUS_CLI_INVALID_DESERIALIZATION_TYPE)
+      .value("CLI_DESERIALIZATION_FAILDE", AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILDE)
+      .value("CLI_NO_BACKEND_TO_HANDLE", AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE)
+      .value("CLI_SEND_REQ_FAILED", AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED);
 
   pybind11::class_<Status>(m, "RpcStatus")
       .def(pybind11::init<>())
-      .def(pybind11::init<Status::RetCode>())
+      .def(pybind11::init<aimrt_rpc_status_code_t>())
       .def(pybind11::init<uint32_t>())
       .def("OK", &Status::OK)
       .def("__bool__", &Status::operator bool)
@@ -90,7 +90,7 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
   aimrt::util::Function<aimrt_function_service_func_ops_t> aimrt_service_func(
       [service_ptr{&service}, service_func{std::move(service_func)}](
           const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* callback) {
-        static const aimrt::rpc::RpcHandle h =
+        aimrt::rpc::RpcHandle h =
             [&service_func](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
             -> aimrt::co::Task<aimrt::rpc::Status> {
           try {
@@ -109,7 +109,7 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
 
             co_return status;
           } catch (const std::exception& e) {
-            co_return aimrt::rpc::Status(aimrt::rpc::Status::RetCode::SVR_HANDLE_FAILDE);
+            co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_HANDLE_FAILDE);
           }
         };
 

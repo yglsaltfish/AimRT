@@ -20,16 +20,20 @@ def Subscribe(subscriber, protobuf_type, callback):
     aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
     def handle_callback(serialization_type, msg_buf):
-        if(serialization_type == "pb"):
-            msg = protobuf_type()
-            msg.ParseFromString(msg_buf.encode('utf-8'))
-            callback(msg)
-            return
+        try:
+            if(serialization_type == "pb"):
+                msg = protobuf_type()
+                msg.ParseFromString(msg_buf)
+                callback(msg)
+                return
 
-        if(serialization_type == "json"):
-            msg = protobuf_type()
-            google.protobuf.json_format.Parse(msg_buf, msg)
-            callback(msg)
+            if(serialization_type == "json"):
+                msg = protobuf_type()
+                google.protobuf.json_format.Parse(msg_buf, msg)
+                callback(msg)
+                return
+        except Exception as e:
+            print("AimRT channel handle get exception, {}".format(e))
             return
 
     subscriber.Subscribe(aimrt_ts, handle_callback)

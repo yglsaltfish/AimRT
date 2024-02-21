@@ -118,6 +118,8 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
+
+    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep), "{} is already in use.", util::SSToString(options_.ep));
   }
 
   void Start() {
@@ -243,6 +245,16 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
+  static bool CheckListenAddr(const Tcp::endpoint& ep) {
+    try {
+      IOCtx io;
+      Tcp::acceptor acceptor(io, ep);
+      return true;
+    } catch (...) {
+      return false;
+    }
+  }
+
   struct SessionOptions {
     explicit SessionOptions(const Options& options)
         : doc_root(options.doc_root),
@@ -439,7 +451,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 AIMRT_TRACE("Http svr session async write {} bytes to {}",
                             write_data_size, RemoteAddr());
               }
-            } catch (std::exception& e) {
+            } catch (const std::exception& e) {
               AIMRT_TRACE(
                   "Http svr session get exception and exit, remote addr {}, exception info: {}",
                   RemoteAddr(), e.what());
