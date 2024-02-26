@@ -12,24 +12,24 @@ from google.protobuf.descriptor_pb2 import FileDescriptorProto
 class AimRTCodeGenerator(object):
     t_pyfile_one_service_func: str = r"""
     def {{rpc_func_name}}(self, ctx_ref, req):
-        return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_NOT_IMPLEMENTED), {{file_name}}.{{simple_rpc_rsp_name}}())
+        return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_NOT_IMPLEMENTED), {{full_rpc_rsp_py_name}}())
 """
 
     t_pyfile_one_service_register_func: str = r"""
         # {{rpc_func_name}}
         {{simple_rpc_req_name}}_aimrt_ts = aimrt_py.TypeSupport()
-        {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + {{file_name}}.{{simple_rpc_req_name}}.DESCRIPTOR.full_name)
+        {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + {{full_rpc_req_py_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_req_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         {{simple_rpc_rsp_name}}_aimrt_ts = aimrt_py.TypeSupport()
-        {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + {{file_name}}.{{simple_rpc_rsp_name}}.DESCRIPTOR.full_name)
+        {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + {{full_rpc_rsp_py_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_rsp_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         def {{rpc_func_name}}AdapterFunc(ctx_ref, req_str):
             serialization_type = ctx_ref.GetSerializationType()
 
             try:
-                req = {{file_name}}.{{simple_rpc_req_name}}()
+                req = {{full_rpc_req_py_name}}()
                 if(serialization_type == "pb"):
                     req.ParseFromString(req_str)
                 elif(serialization_type == "json"):
@@ -82,7 +82,7 @@ class {{service_name}}(aimrt_py.ServiceBase):
 
         serialization_type = ctx_ref.GetSerializationType()
 
-        rsp = {{file_name}}.{{simple_rpc_rsp_name}}()
+        rsp = {{full_rpc_rsp_py_name}}()
 
         try:
             req_str = ""
@@ -114,11 +114,11 @@ class {{service_name}}(aimrt_py.ServiceBase):
     t_pyfile_one_service_proxy_register_func: str = r"""
         # {{rpc_func_name}}
         {{simple_rpc_req_name}}_aimrt_ts = aimrt_py.TypeSupport()
-        {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + {{file_name}}.{{simple_rpc_req_name}}.DESCRIPTOR.full_name)
+        {{simple_rpc_req_name}}_aimrt_ts.SetTypeName("pb:" + {{full_rpc_req_py_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_req_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         {{simple_rpc_rsp_name}}_aimrt_ts = aimrt_py.TypeSupport()
-        {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + {{file_name}}.{{simple_rpc_rsp_name}}.DESCRIPTOR.full_name)
+        {{simple_rpc_rsp_name}}_aimrt_ts.SetTypeName("pb:" + {{full_rpc_rsp_py_name}}.DESCRIPTOR.full_name)
         {{simple_rpc_rsp_name}}_aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
         ret = rpc_handle.RegisterClientFunc("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
@@ -142,7 +142,8 @@ class {{service_name}}Proxy:
 
 import aimrt_py
 import google.protobuf
-import {{file_name}}
+import {{py_package_name}}
+{{pyfile_import_dependency_py_package}}
 
 {{pyfile_service_class}}
 {{pyfile_service_proxy_class}}
@@ -154,14 +155,34 @@ import {{file_name}}
 
     def generate(self, request: CodeGeneratorRequest) -> CodeGeneratorResponse:
         """Generate code for the given request"""
+
+        # create message type py name dict
+        message_type_py_name_dict = {}
+        for proto_file in request.proto_file:
+            file_name: str = proto_file.name
+            package_name: str = proto_file.package
+            py_package_name: str = file_name.replace('.proto', '_pb2').replace("/", ".")
+
+            for message_type in proto_file.message_type:
+                message_type_full_name = "." + package_name + "." + message_type.name
+                message_type_py_name = py_package_name + "." + message_type.name
+                message_type_py_name_dict[message_type_full_name] = message_type_py_name
+
+        # Generate code for each file
         response: CodeGeneratorResponse = CodeGeneratorResponse()
         for proto_file in request.proto_file:
             if len(proto_file.service) == 0:
                 continue
-            # Generate code for each file
+
             file_name: str = proto_file.name
             package_name: str = proto_file.package
-            py_file_name: str = file_name.replace('.proto', '_aimrt_rpc_pb2.py')
+            py_package_name: str = file_name.replace('.proto', '_pb2').replace("/", ".")
+            aimrt_rpc_py_file_name: str = file_name.replace('.proto', '_aimrt_rpc_pb2.py')
+
+            pyfile_import_dependency_py_package: str = ""
+            for dependency_proto_file in proto_file.dependency:
+                import_dependency_py_package: str = "import " + dependency_proto_file.replace('.proto', '_pb2')
+                pyfile_import_dependency_py_package = pyfile_import_dependency_py_package + import_dependency_py_package + "\n"
 
             pyfile_service_class: str = ""
             pyfile_service_proxy_class: str = ""
@@ -188,31 +209,41 @@ import {{file_name}}
                         pyfile_service_proxy_func += "\n"
                         pyfile_service_proxy_register_func += "\n"
 
-                    rpc_func_name = method.name
-                    simple_rpc_req_name = self.gen_simple_name_str(method.input_type)
-                    simple_rpc_rsp_name = self.gen_simple_name_str(method.output_type)
+                    rpc_func_name: str = method.name
+                    simple_rpc_req_name: str = self.gen_simple_name_str(method.input_type)
+                    simple_rpc_rsp_name: str = self.gen_simple_name_str(method.output_type)
+                    full_rpc_req_py_name: str = message_type_py_name_dict[method.input_type]
+                    full_rpc_rsp_py_name: str = message_type_py_name_dict[method.output_type]
 
                     pyfile_one_service_register_func: str = self.t_pyfile_one_service_register_func \
                         .replace("{{simple_rpc_req_name}}", simple_rpc_req_name) \
                         .replace("{{simple_rpc_rsp_name}}", simple_rpc_rsp_name) \
+                        .replace("{{full_rpc_req_py_name}}", full_rpc_req_py_name) \
+                        .replace("{{full_rpc_rsp_py_name}}", full_rpc_rsp_py_name) \
                         .replace("{{rpc_func_name}}", rpc_func_name)
                     pyfile_service_register_func += pyfile_one_service_register_func
 
                     pyfile_one_service_func: str = self.t_pyfile_one_service_func \
                         .replace("{{simple_rpc_req_name}}", simple_rpc_req_name) \
                         .replace("{{simple_rpc_rsp_name}}", simple_rpc_rsp_name) \
+                        .replace("{{full_rpc_req_py_name}}", full_rpc_req_py_name) \
+                        .replace("{{full_rpc_rsp_py_name}}", full_rpc_rsp_py_name) \
                         .replace("{{rpc_func_name}}", rpc_func_name)
                     pyfile_service_func += pyfile_one_service_func
 
                     pyfile_one_service_proxy_func: str = self.t_pyfile_one_service_proxy_func \
                         .replace("{{simple_rpc_req_name}}", simple_rpc_req_name) \
                         .replace("{{simple_rpc_rsp_name}}", simple_rpc_rsp_name) \
+                        .replace("{{full_rpc_req_py_name}}", full_rpc_req_py_name) \
+                        .replace("{{full_rpc_rsp_py_name}}", full_rpc_rsp_py_name) \
                         .replace("{{rpc_func_name}}", rpc_func_name)
                     pyfile_service_proxy_func += pyfile_one_service_proxy_func
 
                     pyfile_one_service_proxy_register_func: str = self.t_pyfile_one_service_proxy_register_func \
                         .replace("{{simple_rpc_req_name}}", simple_rpc_req_name) \
                         .replace("{{simple_rpc_rsp_name}}", simple_rpc_rsp_name) \
+                        .replace("{{full_rpc_req_py_name}}", full_rpc_req_py_name) \
+                        .replace("{{full_rpc_rsp_py_name}}", full_rpc_rsp_py_name) \
                         .replace("{{rpc_func_name}}", rpc_func_name)
                     pyfile_service_proxy_register_func += pyfile_one_service_proxy_register_func
 
@@ -230,11 +261,12 @@ import {{file_name}}
 
             # pyfile
             pyfile: CodeGeneratorResponse.File = CodeGeneratorResponse.File()
-            pyfile.name = py_file_name
+            pyfile.name = aimrt_rpc_py_file_name
             pyfile.content = self.t_pyfile \
+                .replace("{{pyfile_import_dependency_py_package}}", pyfile_import_dependency_py_package) \
                 .replace("{{pyfile_service_class}}", pyfile_service_class) \
                 .replace("{{pyfile_service_proxy_class}}", pyfile_service_proxy_class) \
-                .replace("{{file_name}}", file_name.replace('.proto', '_pb2')) \
+                .replace("{{py_package_name}}", py_package_name) \
                 .replace("{{package_name}}", package_name)
             response.file.append(pyfile)
 
