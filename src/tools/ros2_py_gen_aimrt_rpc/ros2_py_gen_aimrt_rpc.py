@@ -191,20 +191,20 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}Proxy::{{srv_filename}}(
 if __name__ == '__main__':
     pkg_name = ""
     srv_file = ""
-    ouput_path = ""
+    output_path = ""
     for arg in sys.argv:
         kv = arg.split('=')
         if (kv[0] == '--pkg_name'):
             pkg_name = kv[1]
         elif (kv[0] == '--srv_file'):
             srv_file = kv[1]
-        elif (kv[0] == '--ouput_path'):
-            ouput_path = kv[1]
+        elif (kv[0] == '--output_path'):
+            output_path = kv[1]
 
     (path, file) = os.path.split(srv_file)
     (filename, ext) = os.path.splitext(file)
-    cc_file_path = os.path.join(ouput_path, filename + ".aimrt_rpc.srv.cc")
-    h_file_path = os.path.join(ouput_path, filename + ".aimrt_rpc.srv.h")
+    cc_file_path = os.path.join(output_path, filename + ".aimrt_rpc.srv.cc")
+    h_file_path = os.path.join(output_path, filename + ".aimrt_rpc.srv.h")
 
     # cc file
     f_cc_file = open(cc_file_path, 'w')
