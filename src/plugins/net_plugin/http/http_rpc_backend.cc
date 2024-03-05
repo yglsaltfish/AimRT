@@ -413,7 +413,7 @@ bool HttpRpcBackend::TryInvoke(
 
               size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
 
-              memcpy(buf.data(),
+              memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
                      static_cast<char*>(data[buffer_array_pos].data) + buffer_pos,
                      cur_copy_size);
 
@@ -441,7 +441,7 @@ bool HttpRpcBackend::TryInvoke(
 
           for (auto const buf : boost::beast::buffers_range_ref(rsp_beast_buf)) {
             buffer_view_vec.emplace_back(aimrt_buffer_view_t{
-                .data = const_cast<void*>(buf.data()),
+                .data = buf.data(),
                 .len = buf.size()});
           }
 
