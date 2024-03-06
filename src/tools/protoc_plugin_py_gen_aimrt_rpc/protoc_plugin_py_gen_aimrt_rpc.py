@@ -207,8 +207,6 @@ bool {{service_name}}Proxy::RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_hand
         """Generate code for the given request"""
         response: CodeGeneratorResponse = CodeGeneratorResponse()
         for proto_file in request.proto_file:
-            if len(proto_file.service) == 0:
-                continue
             # Generate code for each file
             file_name: str = proto_file.name
             package_name: str = proto_file.package
