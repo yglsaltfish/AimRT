@@ -4,8 +4,8 @@
 
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
-#include "net/url_encode.h"
 #include "net_plugin/global.h"
+#include "util/url_encode.h"
 
 namespace YAML {
 template <>
@@ -74,12 +74,12 @@ void UdpChannelBackend::Shutdown() {
 
 bool UdpChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
-  namespace net = aimrt::common::net;
+  namespace util = aimrt::common::util;
 
   // 检查path
   std::string pattern = std::string("/channel/") +
-                        net::UrlEncode(publish_type_wrapper.topic_name) + "/" +
-                        net::UrlEncode(publish_type_wrapper.msg_type);
+                        util::UrlEncode(publish_type_wrapper.topic_name) + "/" +
+                        util::UrlEncode(publish_type_wrapper.msg_type);
 
   if (pattern.size() > 255) {
     AIMRT_ERROR("Too long uri: {}", pattern);
@@ -96,11 +96,11 @@ bool UdpChannelBackend::Subscribe(
     return false;
   }
 
-  namespace net = aimrt::common::net;
+  namespace util = aimrt::common::util;
 
   std::string pattern = std::string("/channel/") +
-                        net::UrlEncode(subscribe_wrapper.topic_name) + "/" +
-                        net::UrlEncode(subscribe_wrapper.msg_type);
+                        util::UrlEncode(subscribe_wrapper.topic_name) + "/" +
+                        util::UrlEncode(subscribe_wrapper.msg_type);
 
   auto find_itr = udp_subscribe_wrapper_map_.find(pattern);
   if (find_itr != udp_subscribe_wrapper_map_.end()) {
@@ -190,6 +190,7 @@ void UdpChannelBackend::Publish(
   assert(state_.load() == State::Start);
 
   namespace net = aimrt::common::net;
+  namespace util = aimrt::common::util;
 
   std::string_view msg_type = publish_wrapper.msg_type;
   std::string_view pkg_path = publish_wrapper.pkg_path;
@@ -215,8 +216,8 @@ void UdpChannelBackend::Publish(
 
   // 确定path
   std::string pattern = std::string("/channel/") +
-                        net::UrlEncode(publish_wrapper.topic_name) + "/" +
-                        net::UrlEncode(publish_wrapper.msg_type);
+                        util::UrlEncode(publish_wrapper.topic_name) + "/" +
+                        util::UrlEncode(publish_wrapper.msg_type);
 
   auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
 

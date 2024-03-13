@@ -29,7 +29,7 @@ class PluginManager {
     Shutdown,
   };
 
-  using PluginInitFunc = std::function<void(AimRTCorePluginBase*)>;
+  using PluginInitFunc = std::function<bool(AimRTCorePluginBase*)>;
 
  public:
   PluginManager()

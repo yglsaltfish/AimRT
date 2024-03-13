@@ -91,7 +91,8 @@ void PluginManager::Initialize(YAML::Node options_node) {
         plugin_options.name, plugin_name, plugin_options.path);
 
     // 初始化插件
-    plugin_init_func_(plugin_ptr);
+    bool ret = plugin_init_func_(plugin_ptr);
+    AIMRT_CHECK_ERROR_THROW(ret, "Init plugin '{}' failed.", plugin_options.path);
 
     plugin_loader_vec_.emplace_back(std::move(plugin_loader_ptr));
     AIMRT_INFO("Load plugin '{}' succeeded.", plugin_options.path);

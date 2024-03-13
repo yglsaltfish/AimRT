@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "net/url_encode.h"
+#include "util/url_encode.h"
 
-namespace aimrt::common::net {
+namespace aimrt::common::util {
 
 TEST(URL_ENCODE_TEST, UrlEncode_test) {
   struct TestCase {
@@ -76,4 +76,4 @@ TEST(URL_ENCODE_TEST, UrlDecode_test) {
   }
 }
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::common::util

@@ -138,7 +138,7 @@ bool RotateFileLoggerBackend::OpenNewFile() {
 
   ofs_.open(base_file_name_, std::ios::app);
   if (!ofs_.is_open()) {
-    fprintf(stderr, "open log file %s failed.", base_file_name_.c_str());
+    fprintf(stderr, "open log file %s failed.\n", base_file_name_.c_str());
     return false;
   }
 

@@ -89,7 +89,7 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     plugin_options_node = options_;
     return true;
   } catch (const std::exception& e) {
-    fprintf(stderr, "Initialize failed, %s\n", e.what());
+    AIMRT_ERROR("Initialize failed, {}", e.what());
   }
 
   return false;
@@ -105,7 +105,7 @@ void Ros2Plugin::Shutdown() noexcept {
 
     ros2_thread_ptr_->join();
   } catch (const std::exception& e) {
-    fprintf(stderr, "Shutdown failed, %s\n", e.what());
+    AIMRT_ERROR("Shutdown failed, {}", e.what());
   }
 }
 

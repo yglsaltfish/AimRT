@@ -1,5 +1,7 @@
 #include "ros2_plugin/ros2_channel_backend.h"
 
+#include <regex>
+
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "ros2_plugin/global.h"
@@ -14,10 +16,44 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
   static Node encode(const Options& rhs) {
     Node node;
 
+    node["pub_topics_options"] = YAML::Node();
+    for (const auto& pub_topic_options : rhs.pub_topics_options) {
+      Node pub_topic_options_node;
+      pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
+      pub_topic_options_node["enable"] = pub_topic_options.enable;
+      node["pub_topics_options"].push_back(pub_topic_options_node);
+    }
+
+    node["sub_topics_options"] = YAML::Node();
+    for (const auto& sub_topic_options : rhs.sub_topics_options) {
+      Node sub_topic_options_node;
+      sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
+      node["sub_topics_options"].push_back(sub_topic_options_node);
+    }
+
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
+    if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
+      for (auto& pub_topic_options_node : node["pub_topics_options"]) {
+        auto pub_topic_options = Options::PubTopicOptions{
+            .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
+            .enable = pub_topic_options_node["enable"].as<bool>()};
+
+        rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
+      }
+    }
+
+    if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
+      for (auto& sub_topic_options_node : node["sub_topics_options"]) {
+        auto sub_topic_options = Options::SubTopicOptions{
+            .topic_name = sub_topic_options_node["topic_name"].as<std::string>()};
+
+        rhs.sub_topics_options.emplace_back(std::move(sub_topic_options));
+      }
+    }
+
     return true;
   }
 };
@@ -230,8 +266,27 @@ void Ros2ChannelBackend::Publish(
     const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
   assert(state_.load() == State::Start);
 
+  std::string_view topic_name = publish_wrapper.topic_name;
+
   // 只管前缀是ros2类型的消息
   if (!CheckRosMsg(publish_wrapper.msg_type)) return;
+
+  bool enable = true;
+
+  for (auto& pub_topic_options : options_.pub_topics_options) {
+    try {
+      if (std::regex_match(topic_name.begin(), topic_name.end(),
+                           std::regex(pub_topic_options.topic_name, std::regex::ECMAScript))) {
+        enable = pub_topic_options.enable;
+        break;
+      }
+    } catch (const std::exception& e) {
+      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                 pub_topic_options.topic_name, topic_name, e.what());
+    }
+  }
+
+  if (!enable) return;
 
   ChannelTypeKey type_key{
       publish_wrapper.pkg_path,
