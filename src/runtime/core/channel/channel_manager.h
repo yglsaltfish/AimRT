@@ -12,8 +12,6 @@
 #include "core/util/module_detail_info.h"
 #include "util/log_util.h"
 
-#include "tbb/concurrent_hash_map.h"
-
 namespace aimrt::runtime::core::channel {
 
 class ChannelManager {

@@ -3,6 +3,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "util/string_util.h"
+
 #include <boost/asio.hpp>
 
 #include "net_plugin/global.h"
@@ -45,10 +47,10 @@ class MsgHandleRegistry {
 
       uint8_t uri_size = static_cast<const uint8_t*>(buf_data)[0];
       AIMRT_CHECK_ERROR_THROW(buf_size > uri_size + 1,
-                              "Invalid msg, buf size: {}, uri size",
+                              "Invalid msg, buf size: {}, uri size: {}",
                               buf_size, uri_size);
 
-      std::string uri = std::string(static_cast<const char*>(buf_data) + 1, uri_size);
+      std::string_view uri = std::string_view(static_cast<const char*>(buf_data) + 1, uri_size);
       auto finditr = msg_handle_map_.find(uri);
       if (finditr == msg_handle_map_.end()) {
         AIMRT_WARN("Unregisted uri: {}", uri);
@@ -63,7 +65,7 @@ class MsgHandleRegistry {
     }
   }
 
-  std::unordered_map<std::string, MsgHandleFunc> msg_handle_map_;
+  std::unordered_map<std::string, MsgHandleFunc, aimrt::common::util::StringHash, std::equal_to<>> msg_handle_map_;
 };
 
 }  // namespace aimrt::plugins::net_plugin

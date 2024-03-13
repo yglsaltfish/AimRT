@@ -16,6 +16,10 @@ if(AIMRT_BUILD_WITH_ROS2 AND AIMRT_BUILD_ROS2_PLUGIN)
   add_subdirectory(ros2_plugin)
 endif()
 
+if(AIMRT_BUILD_MQTT_PLUGIN)
+  add_subdirectory(mqtt_plugin)
+endif()
+
 if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
   add_subdirectory(record_playback_plugin)
 endif()

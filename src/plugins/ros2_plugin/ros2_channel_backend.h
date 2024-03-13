@@ -19,7 +19,20 @@ namespace aimrt::plugins::ros2_plugin {
 // todo：暂时只支持cdr序列化
 class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
-  struct Options {};
+  struct Options {
+    struct PubTopicOptions {
+      std::string topic_name;
+      bool enable;
+    };
+
+    std::vector<PubTopicOptions> pub_topics_options;
+
+    struct SubTopicOptions {
+      std::string topic_name;
+    };
+
+    std::vector<SubTopicOptions> sub_topics_options;
+  };
 
  public:
   Ros2ChannelBackend() = default;

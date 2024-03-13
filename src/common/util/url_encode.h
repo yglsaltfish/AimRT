@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-namespace aimrt::common::net {
+namespace aimrt::common::util {
 
 inline unsigned char ToHex(unsigned char x, bool up) {
   return x > 9 ? x + (up ? 55 : 87) : x + 48;
@@ -73,4 +73,4 @@ inline std::string UrlDecode(std::string_view str) {
   return ret_str;
 }
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::common::util

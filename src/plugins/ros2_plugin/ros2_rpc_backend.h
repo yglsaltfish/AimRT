@@ -11,7 +11,18 @@ namespace aimrt::plugins::ros2_plugin {
 
 class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
  public:
-  struct Options {};
+  struct Options {
+    struct ClientOptions {
+      std::string func_name;
+      bool enable;
+    };
+    std::vector<ClientOptions> clients_options;
+
+    struct ServerOptions {
+      std::string func_name;
+    };
+    std::vector<ServerOptions> servers_options;
+  };
 
  public:
   Ros2RpcBackend() = default;

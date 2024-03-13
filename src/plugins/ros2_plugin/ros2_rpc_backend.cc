@@ -1,6 +1,8 @@
 #include "ros2_plugin/ros2_rpc_backend.h"
 #include "ros2_plugin/global.h"
 
+#include <regex>
+
 namespace YAML {
 template <>
 struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
@@ -9,10 +11,44 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
   static Node encode(const Options& rhs) {
     Node node;
 
+    node["clients_options"] = YAML::Node();
+    for (const auto& client_options : rhs.clients_options) {
+      Node client_options_node;
+      client_options_node["func_name"] = client_options.func_name;
+      client_options_node["enable"] = client_options.enable;
+      node["clients_options"].push_back(client_options_node);
+    }
+
+    node["servers_options"] = YAML::Node();
+    for (const auto& server_options : rhs.servers_options) {
+      Node server_options_node;
+      server_options_node["func_name"] = server_options.func_name;
+      node["servers_options"].push_back(server_options_node);
+    }
+
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
+    if (node["clients_options"] && node["clients_options"].IsSequence()) {
+      for (auto& client_options_node : node["clients_options"]) {
+        auto client_options = Options::ClientOptions{
+            .func_name = client_options_node["func_name"].as<std::string>(),
+            .enable = client_options_node["enable"].as<bool>()};
+
+        rhs.clients_options.emplace_back(std::move(client_options));
+      }
+    }
+
+    if (node["servers_options"] && node["servers_options"].IsSequence()) {
+      for (auto& server_options_node : node["servers_options"]) {
+        auto server_options = Options::ServerOptions{
+            .func_name = server_options_node["func_name"].as<std::string>()};
+
+        rhs.servers_options.emplace_back(std::move(server_options));
+      }
+    }
+
     return true;
   }
 };
@@ -138,6 +174,36 @@ bool Ros2RpcBackend::TryInvoke(
 
   // 只管前缀是ros2类型的消息
   if (!CheckRosFunc(client_invoke_wrapper_ptr->func_name)) return false;
+
+  std::string_view func_name = client_invoke_wrapper_ptr->func_name;
+
+  auto real_func_name = GetRealRosFuncName(func_name);
+
+  // 检查ctx
+  std::string_view to_addr =
+      client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
+
+  if (to_addr.empty()) {
+    to_addr = "ros2://";
+    for (auto& client_options : options_.clients_options) {
+      try {
+        if (std::regex_match(real_func_name.begin(), real_func_name.end(),
+                             std::regex(client_options.func_name, std::regex::ECMAScript))) {
+          if (!client_options.enable) to_addr = "";
+          break;
+        }
+      } catch (const std::exception& e) {
+        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                   client_options.func_name, real_func_name, e.what());
+      }
+    }
+  }
+
+  if (to_addr.empty()) return false;
+
+  auto pos = to_addr.find("://");
+  if (pos == std::string_view::npos) return false;
+  if (to_addr.substr(0, pos) != "ros2") return false;
 
   auto finditr =
       ros2_adapter_client_map_.find(client_invoke_wrapper_ptr->func_name);

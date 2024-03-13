@@ -36,7 +36,7 @@ void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PreInitPlugin);
   plugin_manager_.SetLogger(logger_ptr_);
   plugin_manager_.RegisterPluginInitFunc(
-      [this](AimRTCorePluginBase* plugin_ptr) { plugin_ptr->Initialize(this); });
+      [this](AimRTCorePluginBase* plugin_ptr) { return plugin_ptr->Initialize(this); });
   plugin_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("plugin"));
   AIMRT_INFO("Plugin init complete.");
   EnterState(State::PostInitPlugin);

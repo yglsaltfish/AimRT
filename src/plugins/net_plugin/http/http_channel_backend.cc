@@ -2,8 +2,8 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 
-#include "net/url_encode.h"
 #include "net_plugin/global.h"
+#include "util/url_encode.h"
 
 namespace YAML {
 template <>
@@ -85,10 +85,11 @@ bool HttpChannelBackend::Subscribe(
   namespace asio = boost::asio;
   namespace http = boost::beast::http;
   namespace net = aimrt::common::net;
+  namespace util = aimrt::common::util;
 
   std::string pattern = std::string("/channel/") +
-                        net::UrlEncode(subscribe_wrapper.topic_name) + "/" +
-                        net::UrlEncode(subscribe_wrapper.msg_type);
+                        util::UrlEncode(subscribe_wrapper.topic_name) + "/" +
+                        util::UrlEncode(subscribe_wrapper.msg_type);
 
   auto find_itr = http_subscribe_wrapper_map_.find(pattern);
   if (find_itr != http_subscribe_wrapper_map_.end()) {
@@ -201,6 +202,7 @@ void HttpChannelBackend::Publish(
   namespace asio = boost::asio;
   namespace http = boost::beast::http;
   namespace net = aimrt::common::net;
+  namespace util = aimrt::common::util;
 
   std::string_view msg_type = publish_wrapper.msg_type;
   std::string_view pkg_path = publish_wrapper.pkg_path;
@@ -226,8 +228,8 @@ void HttpChannelBackend::Publish(
 
   // 确定path
   std::string pattern = std::string("/channel/") +
-                        net::UrlEncode(publish_wrapper.topic_name) + "/" +
-                        net::UrlEncode(publish_wrapper.msg_type);
+                        util::UrlEncode(publish_wrapper.topic_name) + "/" +
+                        util::UrlEncode(publish_wrapper.msg_type);
 
   // http req
   auto req_ptr = std::make_shared<http::request<http::dynamic_body>>(

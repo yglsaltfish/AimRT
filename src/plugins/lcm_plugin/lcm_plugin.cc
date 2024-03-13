@@ -44,7 +44,7 @@ bool LcmPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     return true;
   } catch (const std::exception& e) {
-    fprintf(stderr, "Initialize failed, %s\n", e.what());
+    AIMRT_ERROR("Initialize failed, {}", e.what());
   }
 
   return false;
@@ -54,7 +54,7 @@ void LcmPlugin::Shutdown() noexcept {
   try {
     if (!init_flag_) return;
   } catch (const std::exception& e) {
-    fprintf(stderr, "Shutdown failed, %s\n", e.what());
+    AIMRT_ERROR("Shutdown failed, {}", e.what());
   }
 }
 
