@@ -344,6 +344,7 @@ void MqttChannelBackend::Publish(
   pubmsg.qos = qos;
   pubmsg.retained = 0;
 
+  AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
   int rc = MQTTClient_publishMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
   AIMRT_CHECK_WARN(rc == MQTTCLIENT_SUCCESS,
                    "Publist mqtt msg failed, topic: {}, code: {}",
