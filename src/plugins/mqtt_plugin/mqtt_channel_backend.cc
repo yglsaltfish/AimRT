@@ -172,73 +172,78 @@ bool MqttChannelBackend::Subscribe(
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
   auto handle = [this, subscribe_wrapper_vec_ptr](MQTTClient_message* message) {
-    auto msg_buf_str = std::string_view(static_cast<const char*>(message->payload), message->payloadlen);
+    try {
+      auto msg_buf_str = std::string_view(static_cast<const char*>(message->payload), message->payloadlen);
 
-    // 1 byte uri len : n byte uri : 1 byte serialization type len : m byte
-    // serialization type : buf.len-2-n-m byte data
+      // 1 byte serialization type len : m byte
+      // serialization type : buf.len-1-n byte data
 
-    const void* buf_data = msg_buf_str.data();
-    size_t buf_size = msg_buf_str.size();
-    uint8_t uri_size = static_cast<const uint8_t*>(buf_data)[0];
+      const void* buf_data = msg_buf_str.data();
+      size_t buf_size = msg_buf_str.size();
 
-    // 获取序列化类型
-    uint8_t serialization_type_size = static_cast<const uint8_t*>(buf_data)[1 + uri_size];
-    std::string serialization_type =
-        std::string(static_cast<const char*>(buf_data) + 2 + uri_size, serialization_type_size);
+      size_t cur_pos = 0;
 
-    // context
-    auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
-    auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
+      // serialization_type
+      AIMRT_CHECK_ERROR_THROW(buf_size - cur_pos > 1, "Invalid msg, buf size: {}", buf_size);
+      uint8_t serialization_type_size = static_cast<const uint8_t*>(buf_data)[cur_pos];
+      cur_pos += 1;
 
-    ctx_ref.SetSerializationType(serialization_type);
+      AIMRT_CHECK_ERROR_THROW(buf_size - cur_pos > serialization_type_size,
+                              "Invalid msg, buf size: {}, serialization type size: {}",
+                              buf_size, serialization_type_size);
+      std::string serialization_type = std::string(static_cast<const char*>(buf_data) + cur_pos, serialization_type_size);
+      cur_pos += serialization_type_size;
 
-    // 获取消息buf
-    uint32_t offset = 2 + uri_size + serialization_type_size;
-    const uint8_t* msg_buf = static_cast<const uint8_t*>(buf_data) + offset;
-    uint32_t msg_buf_size = buf_size - offset;
+      // context
+      auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
+      auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
 
-    aimrt_buffer_view_t buffer_view{
-        .data = msg_buf,
-        .len = msg_buf_size};
+      ctx_ref.SetSerializationType(serialization_type);
 
-    aimrt_buffer_array_view_t buffer_array_view{
-        .data = &buffer_view,
-        .len = 1};
+      // 获取消息buf
+      aimrt_buffer_view_t buffer_view{.data = static_cast<const char*>(buf_data) + cur_pos,
+                                      .len = buf_size - cur_pos};
 
-    // 每个lib统一一次性发布。lib_name:msg_ptr
-    std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
-    for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-      if (msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path) != msg_ptr_map.end())
-        continue;
+      aimrt_buffer_array_view_t buffer_array_view{
+          .data = &buffer_view,
+          .len = 1};
 
-      auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
+      // 每个lib统一一次性发布。lib_name:msg_ptr
+      std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
+      for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
+        if (msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path) != msg_ptr_map.end())
+          continue;
 
-      // 创建消息
-      std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
+        auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
 
-      // 消息反序列化
-      bool deserialize_ret = subscribe_type_support_ref.Deserialize(
-          serialization_type, buffer_array_view, msg_ptr.get());
+        // 创建消息
+        std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
 
-      AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Mqtt msg deserialize failed.");
+        // 消息反序列化
+        bool deserialize_ret = subscribe_type_support_ref.Deserialize(
+            serialization_type, buffer_array_view, msg_ptr.get());
 
-      msg_ptr_map.emplace(subscribe_wrapper_ptr->pkg_path, msg_ptr);
-    }
+        AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Mqtt msg deserialize failed.");
 
-    // 调用注册的subscribe方法
-    for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-      auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
-      std::shared_ptr<void> msg_ptr = finditr->second;
-      aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
-          [msg_ptr, ctx_ptr]() {});
-      subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
+        msg_ptr_map.emplace(subscribe_wrapper_ptr->pkg_path, msg_ptr);
+      }
+
+      // 调用注册的subscribe方法
+      for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
+        auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
+        std::shared_ptr<void> msg_ptr = finditr->second;
+        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
+            [msg_ptr, ctx_ptr]() {});
+        subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
+      }
+    } catch (const std::exception& e) {
+      AIMRT_WARN("Handle mqtt rpc msg failed, exception info: {}", e.what());
     }
   };
 
-  msg_handle_registry_ptr_->RegisterMsgHandle(
-      subscribe_wrapper.topic_name, pattern, std::move(handle));
+  msg_handle_registry_ptr_->RegisterMsgHandle(pattern, std::move(handle));
 
-  sub_info_vec_.emplace_back(MqttSubInfo{std::string(topic_name), qos});
+  sub_info_vec_.emplace_back(MqttSubInfo{pattern, qos});
 
   AIMRT_INFO("Register mqtt handle for channel, uri '{}'", pattern);
 
@@ -276,9 +281,9 @@ void MqttChannelBackend::Publish(
   if (!enable) return;
 
   // 确定path
-  std::string pattern = std::string("/channel/") +
-                        util::UrlEncode(publish_wrapper.topic_name) + "/" +
-                        util::UrlEncode(publish_wrapper.msg_type);
+  std::string mqtt_pub_topic = std::string("/channel/") +
+                               util::UrlEncode(publish_wrapper.topic_name) + "/" +
+                               util::UrlEncode(publish_wrapper.msg_type);
 
   auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
 
@@ -312,24 +317,24 @@ void MqttChannelBackend::Publish(
   }
 
   // 填内容，直接复制过去
-  size_t msg_size = buffer_array->BufferSize();
-  uint32_t head_size = 1 + pattern.size() + 1 + serialization_type.size();
-
-  std::vector<uint8_t> msg_buf_vec(head_size + msg_size);
-  uint8_t* msg_buf = msg_buf_vec.data();
-
-  msg_buf[0] = static_cast<uint8_t>(pattern.size());
-  memcpy(msg_buf + 1, pattern.c_str(), pattern.size());
-
-  msg_buf[1 + pattern.size()] = static_cast<uint8_t>(serialization_type.size());
-  memcpy(msg_buf + 2 + pattern.size(),
-         serialization_type.c_str(), serialization_type.size());
-
   auto buffer_array_data = buffer_array->Data();
   const size_t buffer_array_len = buffer_array->Size();
+  size_t msg_size = buffer_array->BufferSize();
+
+  std::vector<uint8_t> msg_buf_vec(1 + serialization_type.size() + msg_size);
+
   size_t cur_pos = 0;
+
+  // 1 byte serialization_type size | n0 byte serialization_type
+  size_t serialization_type_size = serialization_type.size();
+  msg_buf_vec[cur_pos] = static_cast<uint8_t>(serialization_type_size);
+  cur_pos += 1;
+  memcpy(msg_buf_vec.data() + cur_pos, serialization_type.data(), serialization_type_size);
+  cur_pos += serialization_type_size;
+
+  // data
   for (size_t ii = 0; ii < buffer_array_len; ++ii) {
-    memcpy(msg_buf + head_size + cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
+    memcpy(msg_buf_vec.data() + cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
     cur_pos += buffer_array_data[ii].len;
   }
 
@@ -339,10 +344,10 @@ void MqttChannelBackend::Publish(
   pubmsg.qos = qos;
   pubmsg.retained = 0;
 
-  int rc = MQTTClient_publishMessage(client_, topic_name.data(), &pubmsg, NULL);
+  int rc = MQTTClient_publishMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
   AIMRT_CHECK_WARN(rc == MQTTCLIENT_SUCCESS,
                    "Publist mqtt msg failed, topic: {}, code: {}",
-                   topic_name, rc);
+                   mqtt_pub_topic, rc);
 
   return;
 }

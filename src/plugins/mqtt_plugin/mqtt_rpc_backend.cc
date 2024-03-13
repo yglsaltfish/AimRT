@@ -111,7 +111,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
 
   sub_info_vec_.emplace_back(share_mqtt_sub_topic);
 
-  msg_handle_registry_ptr_->RegisterRpcHandle(
+  msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic,
       [this, &service_func_wrapper](MQTTClient_message* message) {
         try {
@@ -279,7 +279,7 @@ bool MqttRpcBackend::RegisterClientFunc(
 
   sub_info_vec_.emplace_back(mqtt_sub_topic);
 
-  msg_handle_registry_ptr_->RegisterRpcHandle(
+  msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic,
       [this](MQTTClient_message* message) {
         std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper> client_invoke_wrapper_ptr;
