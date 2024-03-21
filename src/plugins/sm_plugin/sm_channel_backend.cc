@@ -391,8 +391,6 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
 }
 
 void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
-  static int count = 0;
-
   uint64_t msg_hash = std::hash<std::string>{}(
       std::string(publish_wrapper.topic_name) + std::string(publish_wrapper.msg_type));
 
