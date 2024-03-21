@@ -220,6 +220,8 @@ bool SmChannelBackend::RegisterPublishType(const runtime::core::channel::Publish
 
   publisher_map_.emplace(msg_hash, transmitter_ptr);
 
+  AIMRT_INFO("sm backend register publish type for topic '{}' success.", publish_type_wrapper.topic_name);
+
   return true;
 }
 
@@ -242,8 +244,8 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
               return module_info->module_name == subscribe_wrapper.module_name &&
                      module_info->pkg_path == subscribe_wrapper.pkg_path;
             })) {
-      std::cerr << "Subscribe topic '" << subscribe_wrapper.topic_name << "' type '"
-                << subscribe_wrapper.msg_type << "' has been registered." << std::endl;
+      AIMRT_ERROR("Subscribe topic '{}', type '{}' has been registered by sm plugin.",
+                  subscribe_wrapper.topic_name, subscribe_wrapper.msg_type);
       return false;
     }
     subscriber_info = subscriber_info_map_[msg_hash];  // exist, get it
@@ -370,6 +372,8 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
         }
       });
 
+  AIMRT_INFO("sm plugin backend add listener for topic '{}' success. sm dispatcher executor: '{}', channel executor: '{}'",
+             subscribe_wrapper.topic_name, dispatcher_executor, subscriber_info->executor.Name());
   return true;
 }
 

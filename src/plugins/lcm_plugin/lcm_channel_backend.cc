@@ -348,7 +348,7 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
               return module_info->module_name == subscribe_wrapper.module_name &&
                      module_info->pkg_path == subscribe_wrapper.pkg_path;
             })) {
-      AIMRT_ERROR("Subscribe topic '{}' type '{}' has been registered.",
+      AIMRT_ERROR("Subscribe topic '{}', type '{}' has been registered by lcm plugin.",
                   subscribe_wrapper.topic_name, subscribe_wrapper.msg_type);
       return false;
     }
@@ -483,7 +483,7 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
         }
       });
 
-  AIMRT_INFO("lcm backend add listener for topic '{}' success. lcm url: '{}', lcm dispatcher executor: '{}', channel executor: '{}'",
+  AIMRT_INFO("lcm plugin backend add listener for topic '{}' success. lcm url: '{}', lcm dispatcher executor: '{}', channel executor: '{}'",
              subscribe_wrapper.topic_name, (subscriber_info->lcm_url.empty() ? "default" : subscriber_info->lcm_url),
              dispatcher_executor, subscriber_info->executor.Name());
 
