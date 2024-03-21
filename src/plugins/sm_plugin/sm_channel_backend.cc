@@ -231,6 +231,19 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
     return false;
   }
 
+  bool is_config = false;
+  // 遍历是否配置了订阅列表
+  for (auto& sub_topic_option : options_.sub_topic_options) {
+    if (sub_topic_option.topic_name == subscribe_wrapper.topic_name) {
+      is_config = true;
+    }
+  }
+
+  if (!is_config) {
+    AIMRT_INFO("subscribe topic '{}' is not configured in sm plugin.", subscribe_wrapper.topic_name);
+    return true;
+  }
+
   DisPatcherBasePtr dispatcher_ptr = nullptr;
   SubscriberInfoPtr subscriber_info = nullptr;
   uint64_t msg_hash = std::hash<std::string>{}(std::string(subscribe_wrapper.topic_name) + std::string(subscribe_wrapper.msg_type));

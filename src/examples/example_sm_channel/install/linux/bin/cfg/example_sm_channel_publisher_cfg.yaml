@@ -24,20 +24,12 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 4 # 线程数，不指定则默认单线程
-      - name: sm_default_thread_pool # 线程池
-        type: asio_thread
-        options:
-          thread_num: 4 # 线程数，不指定则默认单线程
   channel: # 消息队列相关配置
     backends: # 消息队列后端配置
       - type: sm
         options:
-          sub_default_executor: sm_default_thread_pool # 默认执行器
-          sub_topic_options:
-            - topic_name: subscribe_topic_name # 支持正则表达式，所有topic
-              # executor: sm_default_thread_pool # 执行器
           passable_pub_topics:
-            - publish_topic_name
+            - test_topic
           # unpassable_pub_topics: 
           #   - '^[\w/#+-]+$'
             
@@ -51,6 +43,5 @@ aimrt:
 
 # 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
 NormalPublisherModule:
-  publish_topic_name: publish_topic_name
-  subscribe_topic_name: subscribe_topic_name
+  topic_name: test_topic
   channel_frq: 0.5 # 发布频率，次/s

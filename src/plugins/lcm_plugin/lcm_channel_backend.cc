@@ -334,10 +334,22 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
     return false;
   }
 
-  uint64_t msg_hash = std::hash<std::string>{}(std::string(subscribe_wrapper.topic_name) + std::string(subscribe_wrapper.msg_type));
+  bool is_config = false;
+  // 遍历是否配置了订阅列表
+  for (auto& sub_topic_option : options_.sub_topic_options) {
+    if (sub_topic_option.topic_name == subscribe_wrapper.topic_name) {
+      is_config = true;
+    }
+  }
+
+  if (!is_config) {
+    AIMRT_INFO("subscribe topic '{}' is not configured in lcm plugin.", subscribe_wrapper.topic_name);
+    return true;
+  }
 
   LcmDispatcherPtr dispatcher_ptr = nullptr;
   SubscriberInfoPtr subscriber_info = nullptr;
+  uint64_t msg_hash = std::hash<std::string>{}(std::string(subscribe_wrapper.topic_name) + std::string(subscribe_wrapper.msg_type));
 
   if (subscriber_info_map_.count(msg_hash) > 0) {
     // 遍历 subscriber_info_map_ 的 module_info_list，如果已经存在相同的内容，则不再添加

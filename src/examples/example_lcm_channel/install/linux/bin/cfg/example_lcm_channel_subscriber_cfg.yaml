@@ -34,17 +34,10 @@ aimrt:
         options:
           sub_default_executor: lcm_default_thread_pool # 默认执行器
           sub_topic_options:
-            - topic_name: publish_topic_name # 支持正则表达式，所有topic
-              lcm_url: "udpm://239.255.76.67:7667?ttl=0"
+            - topic_name: test_topic # 支持正则表达式，所有topic
+              # lcm_url: "udpm://239.255.76.67:7667?ttl=0"
               # executor: lcm_default_thread_pool # 执行器
               # lcm_dispatcher_executor: lcm_default_thread_pool
-          pub_topic_options:
-            - topic_name: '^[\w/#+-]+$' # 支持正则表达式，所有topic
-              # lcm_url: udpm://239.255.76.67:17667?ttl=0
-          passable_pub_topics:
-            - subscribe_topic_name
-          # unpassable_pub_topics:
-          #   - '^[\w/#+-]+$'
 
   module: # 模块配置
     pkgs: # 要加载的动态库配置
@@ -56,6 +49,4 @@ aimrt:
 
 # 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
 NormalSubscriberModule:
-  publish_topic_name: subscribe_topic_name
-  subscribe_topic_name: publish_topic_name
-  channel_frq: 0.5 # 发布频率，次/s
+  topic_name: test_topic

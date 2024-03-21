@@ -105,7 +105,7 @@
             - '/def'
     ```
     - type: 后端类型，必须为sm
-    - passable_pub_topics: 可发布topic配置，支持正则表达式，如上配置表示可发布所有topic，也可配置为具体的topic名称，**支持为空，如果为空则表示可发布任何topic**。
-    - unpassable_pub_topics: 不可发布topic配置，支持正则表达式，也可配置为具体的topic名称如上配置表示不可发布`/abc`、`/def`的topic，**不支持为空**。
+    - passable_pub_topics: 可发布topic配置，支持正则表达式，如上配置表示可发布所有topic，也可配置为具体的topic名称，**支持为空，如果为空则表示不发布任何topic**。
+    - unpassable_pub_topics: 不可发布topic配置，支持正则表达式，也可配置为具体的topic名称如上配置表示不可发布`/abc`、`/def`的topic，**支持为空**。
 
 
