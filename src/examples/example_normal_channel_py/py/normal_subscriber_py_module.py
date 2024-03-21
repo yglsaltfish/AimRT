@@ -31,16 +31,16 @@ class NormalSubscriberPyModule(aimrt_py.ModuleBase):
         try:
             # configure
             configurator = self.core.GetConfigurator()
-            if(configurator):
+            if (configurator):
                 module_cfg_file_path = configurator.GetConfigFilePath()
-                if(module_cfg_file_path):
+                if (module_cfg_file_path):
                     with open(module_cfg_file_path, 'r') as file:
                         data = yaml.safe_load(file)
                         self.topic_name = str(data["topic_name"])
 
             # channel-subscriber
             self.subscriber = self.core.GetChannelHandle().GetSubscriber(self.topic_name)
-            if(not self.subscriber):
+            if (not self.subscriber):
                 aimrt_py_log.error(self.logger, "Get subscriber for '{}' failed.".format(self.topic_name))
                 return False
 

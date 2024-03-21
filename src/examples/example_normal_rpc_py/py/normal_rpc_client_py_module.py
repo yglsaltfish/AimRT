@@ -41,23 +41,23 @@ class NormalRpcClientPyModule(aimrt_py.ModuleBase):
         try:
             # configure
             configurator = self.core.GetConfigurator()
-            if(configurator):
+            if (configurator):
                 module_cfg_file_path = configurator.GetConfigFilePath()
-                if(module_cfg_file_path):
+                if (module_cfg_file_path):
                     with open(module_cfg_file_path, 'r') as file:
                         data = yaml.safe_load(file)
                         self.rpc_frq = float(data["rpc_frq"])
 
             # executor
             self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
-            if(not self.work_executor):
+            if (not self.work_executor):
                 aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 
             # rpc-client
             self.rpc_handle = self.core.GetRpcHandle()
             ret = rpc_aimrt_rpc_pb2.ExampleServiceProxy.RegisterClientFunc(self.rpc_handle)
-            if(not ret):
+            if (not ret):
                 aimrt_py_log.error(self.logger, "Register client failed.")
                 return False
 
@@ -84,13 +84,13 @@ class NormalRpcClientPyModule(aimrt_py.ModuleBase):
     def Shutdown(self):
         self.stop_flag = True
 
-        while(not self.stoped_flag):
+        while (not self.stoped_flag):
             time.sleep(1)
 
         aimrt_py_log.info(self.logger, "Module shutdown")
 
     def ClientLoop(self):
-        if(self.stop_flag):
+        if (self.stop_flag):
             self.stoped_flag = True
             return
 
@@ -110,7 +110,7 @@ class NormalRpcClientPyModule(aimrt_py.ModuleBase):
             ctx_ref = aimrt_py.RpcContextRef(ctx)
             status, rsp = self.proxy.GetFooData(ctx_ref, req)
 
-            if(status):
+            if (status):
                 aimrt_py_log.info(
                     self.logger, "Client get rpc ret, status: {}, rsp: {}".format(
                         status.ToString(), MessageToJson(rsp)))
