@@ -27,6 +27,12 @@ aimrt:
   channel: # 消息队列相关配置
     backends: # 消息队列后端配置
       - type: sm
+        options:
+          passable_pub_topics:
+            - test_topic
+          # unpassable_pub_topics: 
+          #   - '^[\w/#+-]+$'
+            
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_channel_alpha_pkg.so # so/dll地址

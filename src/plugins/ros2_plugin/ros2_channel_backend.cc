@@ -124,6 +124,26 @@ bool Ros2ChannelBackend::RegisterPublishType(
   if (!CheckRosMsg(aimrt::util::TypeSupportRef(publish_type_wrapper.msg_type_support).TypeName()))
     return true;
 
+  bool enable = false;
+  std::string_view topic_name = publish_type_wrapper.topic_name;
+  for (auto& pub_topic_options : options_.pub_topics_options) {
+    try {
+      if (std::regex_match(topic_name.begin(), topic_name.end(),
+                           std::regex(pub_topic_options.topic_name, std::regex::ECMAScript))) {
+        enable = pub_topic_options.enable;
+        break;
+      }
+    } catch (const std::exception& e) {
+      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                 pub_topic_options.topic_name, topic_name, e.what());
+    }
+  }
+
+  if (!enable) {
+    AIMRT_INFO("publish topic '{}' is unpassable publish by ros plugin.", topic_name);
+    return true;
+  }
+
   ChannelTypeKey type_key{
       publish_type_wrapper.pkg_path,
       publish_type_wrapper.module_name,
@@ -190,6 +210,8 @@ bool Ros2ChannelBackend::RegisterPublishType(
       std::make_unique<rmw_gid_t>(std::move(rmw_gid))));
   publisher_gid_view_set_.emplace(PublisherGidView{publisher_gid_ref});
 
+  AIMRT_INFO("ros backend register publish type for topic '{}' success.", publish_type_wrapper.topic_name);
+
   return true;
 }
 
@@ -203,6 +225,20 @@ bool Ros2ChannelBackend::Subscribe(
   // 只管前缀是ros2类型的消息
   if (!CheckRosMsg(aimrt::util::TypeSupportRef(subscribe_wrapper.msg_type_support).TypeName()))
     return true;
+
+  bool subscribe = false;
+  for (auto& opt : options_.sub_topics_options) {
+    if (opt.topic_name == subscribe_wrapper.topic_name) {
+      subscribe = true;
+      break;
+    }
+  }
+
+  // 如果 sub_topics_options 为空，则不订阅
+  if (!subscribe) {
+    AIMRT_INFO("subscribe topic '{}' is unpassable subscribe by ros plugin.", subscribe_wrapper.topic_name);
+    return true;
+  }
 
   ChannelTypeKey type_key{
       subscribe_wrapper.pkg_path,
@@ -259,6 +295,8 @@ bool Ros2ChannelBackend::Subscribe(
 
   auto emplace_ret = subscribe_wrapper_map_.emplace(type_key, subscriber);
 
+  AIMRT_INFO("subscribe topic '{}' success,", subscribe_wrapper.topic_name);
+
   return true;
 }
 
@@ -271,8 +309,7 @@ void Ros2ChannelBackend::Publish(
   // 只管前缀是ros2类型的消息
   if (!CheckRosMsg(publish_wrapper.msg_type)) return;
 
-  bool enable = true;
-
+  bool enable = false;
   for (auto& pub_topic_options : options_.pub_topics_options) {
     try {
       if (std::regex_match(topic_name.begin(), topic_name.end(),

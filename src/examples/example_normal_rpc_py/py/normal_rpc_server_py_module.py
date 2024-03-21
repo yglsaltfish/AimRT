@@ -55,7 +55,7 @@ class NormalRpcServerPymodule(aimrt_py.ModuleBase):
             # rpc-server
             self.service = ExampleServiceImpl(self.logger)
             ret = self.core.GetRpcHandle().RegisterService(self.service)
-            if(not ret):
+            if (not ret):
                 aimrt_py_log.error(self.logger, "Register service failed.")
                 return False
 

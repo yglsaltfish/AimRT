@@ -20,6 +20,10 @@ aimrt:
           max_file_num: 10 # 最大日志文件数量，0代表无限
   executor: # 执行器配置
     executors: # 当前先支持thread型，未来可根据加载的网络模块提供更多类型
+      - name: work_thread_pool # 线程池
+        type: asio_thread
+        options:
+          thread_num: 4 # 线程数，不指定则默认单线程
       - name: lcm_default_thread_pool # 线程池
         type: asio_thread
         options:
@@ -30,9 +34,10 @@ aimrt:
         options:
           sub_default_executor: lcm_default_thread_pool # 默认执行器
           sub_topic_options:
-            - topic_name: '^[\w/#+-]+$' # 支持正则表达式，所有topic
-              executor: lcm_default_thread_pool # 执行器
-              # lcm_url: udpm://239.255.76.67:17667?ttl=0
+            - topic_name: test_topic # 支持正则表达式，所有topic
+              # lcm_url: "udpm://239.255.76.67:7667?ttl=0"
+              # executor: lcm_default_thread_pool # 执行器
+              # lcm_dispatcher_executor: lcm_default_thread_pool
 
   module: # 模块配置
     pkgs: # 要加载的动态库配置

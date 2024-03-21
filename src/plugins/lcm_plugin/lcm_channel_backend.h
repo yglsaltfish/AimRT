@@ -20,6 +20,7 @@ class LcmChannelBackend : public runtime::core::channel::ChannelBackendBase {
     std::string topic_name;                                  // subscriber topic name
     std::string executor;                                    // subscriber callback executor name
     std::string lcm_url;                                     // lcm url
+    std::string lcm_dispatcher_executor;                     // lcm dispatcher executor name
     int32_t priority = std::numeric_limits<int32_t>::max();  // priority, number is bigger, priority is lower, must be >= 0
   };
 
@@ -52,6 +53,7 @@ class LcmChannelBackend : public runtime::core::channel::ChannelBackendBase {
     std::string topic_name;                                   // subscriber topic name
     std::string msg_type;                                     // subscriber message type
     executor::ExecutorRef executor;                           // subscriber callback executor ref
+    std::string lcm_dispatcher_executor;                      // lcm dispatcher executor ref
     int32_t priority = std::numeric_limits<int32_t>::min();   // priority, number is bigger, priority is lower
     std::list<std::shared_ptr<ModuleInfo>> module_info_list;  // subscriber module info list
   };

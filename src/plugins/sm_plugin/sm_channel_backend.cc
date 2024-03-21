@@ -100,21 +100,18 @@ void SmChannelBackend::Initialize(
     options_ = options_node.as<Options>();
 
   // subscriber options
-  if (!options_.sub_topic_options.empty()) {
-    // 如果存在 sub_topic_options 配置，但是没有 sub_default_executor 配置，则报错
-    AIMRT_CHECK_ERROR_THROW((!options_.sub_default_executor.empty()),
-                            "sub_topic_options is not empty, but sub_default_executor is empty.");
-
-    sub_default_executor_ref_ = get_executor_func_(options_.sub_default_executor);
-    if (!sub_default_executor_ref_) {
-      AIMRT_ERROR("Default executor '{}' is not registered.", options_.sub_default_executor);
-    }
-
-    for (auto& sub_topic_option : options_.sub_topic_options) {
-      if (!sub_topic_option.executor.empty()) {
-        // 校验 executor 是否存在，如果不存在，则报错
-        AIMRT_CHECK_ERROR_THROW((get_executor_func_(sub_topic_option.executor)),
-                                "Executor '{}' is not registered.", sub_topic_option.executor);
+  for (auto& sub_topic_option : options_.sub_topic_options) {
+    if (!sub_topic_option.executor.empty()) {
+      // 校验 executor 是否存在，如果不存在，则报错
+      AIMRT_CHECK_ERROR_THROW((get_executor_func_(sub_topic_option.executor)),
+                              "Executor '{}' is not registered.", sub_topic_option.executor);
+    } else {
+      // 如果 订阅者没有指定 executor，需要校验默认的 executor 是否存在
+      AIMRT_CHECK_ERROR_THROW((!options_.sub_default_executor.empty()),
+                              "Subscribed topic '{}' has no executor set and no default executor set.", sub_topic_option.topic_name);
+      if (!sub_default_executor_ref_) {
+        sub_default_executor_ref_ = get_executor_func_(options_.sub_default_executor);
+        AIMRT_CHECK_ERROR_THROW(sub_default_executor_ref_, "Default Executor '{}' is not registered.", options_.sub_default_executor);
       }
     }
   }
@@ -170,18 +167,14 @@ bool SmChannelBackend::RegisterPublishType(const runtime::core::channel::Publish
   }
 
   try {
-    // topic需要符合规则，需要允许通行的topic才能注册，如果不允许通行，则不允许注册，属于预期内配置，返回true
-    for (auto& unpassable_pub_topic : options_.unpassable_pub_topics) {
-      std::regex pattern(unpassable_pub_topic);
-      if (std::regex_match(std::string(publish_type_wrapper.topic_name), pattern)) {
-        AIMRT_TRACE("topic '{}' is unpassable publish by sm plugin.", publish_type_wrapper.topic_name);
-        return true;
-      }
+    // 如果 options_.passable_pub_topics 没有配置，则默认为不通行
+    if (options_.passable_pub_topics.empty()) {
+      AIMRT_INFO("publish topic '{}' is unpassable publish by sm plugin.", publish_type_wrapper.topic_name);
+      return true;
     }
 
-    bool passable = (options_.passable_pub_topics.empty() ? true : false);
+    bool passable = false;
     for (auto& passable_pub_topic : options_.passable_pub_topics) {
-      // 如果正则表达式是空的，则默认为通行
       std::regex pattern(passable_pub_topic);
       if ((passable_pub_topic.empty()) || (std::regex_match(std::string(publish_type_wrapper.topic_name), pattern))) {
         passable = true;
@@ -189,8 +182,17 @@ bool SmChannelBackend::RegisterPublishType(const runtime::core::channel::Publish
       }
     }
 
+    // topic需要符合规则，需要允许通行的topic才能注册，如果不允许通行，则不允许注册，属于预期内配置，返回true
+    for (auto& unpassable_pub_topic : options_.unpassable_pub_topics) {
+      std::regex pattern(unpassable_pub_topic);
+      if (std::regex_match(std::string(publish_type_wrapper.topic_name), pattern)) {
+        passable = false;
+        break;
+      }
+    }
+
     if (!passable) {
-      AIMRT_TRACE("topic '{}' is unpassable publish by sm plugin.", publish_type_wrapper.topic_name);
+      AIMRT_INFO("publish topic '{}' is unpassable publish by sm plugin.", publish_type_wrapper.topic_name);
       return true;
     }
   } catch (const std::exception& e) {
@@ -218,6 +220,8 @@ bool SmChannelBackend::RegisterPublishType(const runtime::core::channel::Publish
 
   publisher_map_.emplace(msg_hash, transmitter_ptr);
 
+  AIMRT_INFO("sm backend register publish type for topic '{}' success.", publish_type_wrapper.topic_name);
+
   return true;
 }
 
@@ -225,6 +229,19 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
   if (state_.load() != State::Init) {
     AIMRT_ERROR("Subscribe can only be called when state is 'Init'.");
     return false;
+  }
+
+  bool is_config = false;
+  // 遍历是否配置了订阅列表
+  for (auto& sub_topic_option : options_.sub_topic_options) {
+    if (sub_topic_option.topic_name == subscribe_wrapper.topic_name) {
+      is_config = true;
+    }
+  }
+
+  if (!is_config) {
+    AIMRT_INFO("subscribe topic '{}' is not configured in sm plugin.", subscribe_wrapper.topic_name);
+    return true;
   }
 
   DisPatcherBasePtr dispatcher_ptr = nullptr;
@@ -240,8 +257,8 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
               return module_info->module_name == subscribe_wrapper.module_name &&
                      module_info->pkg_path == subscribe_wrapper.pkg_path;
             })) {
-      std::cerr << "Subscribe topic '" << subscribe_wrapper.topic_name << "' type '"
-                << subscribe_wrapper.msg_type << "' has been registered." << std::endl;
+      AIMRT_ERROR("Subscribe topic '{}', type '{}' has been registered by sm plugin.",
+                  subscribe_wrapper.topic_name, subscribe_wrapper.msg_type);
       return false;
     }
     subscriber_info = subscriber_info_map_[msg_hash];  // exist, get it
@@ -256,6 +273,12 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
   std::shared_ptr<ModuleInfo> module_info = std::make_shared<ModuleInfo>(subscribe_wrapper);
   subscriber_info->module_info_list.push_back(module_info);
 
+  // 如果没有配置 sub_topic_options，则默认为不订阅共享内存的 topic
+  if (options_.sub_topic_options.empty()) {
+    AIMRT_INFO("subscribe topic '{}' is unpassable subscribe by sm plugin.", subscribe_wrapper.topic_name);
+    return true;
+  }
+
   try {
     auto& ops = options_.sub_topic_options;
     // 倒序遍历 options_ 中的 sub_topic_options, 优先级高的 executor 优先级高
@@ -268,22 +291,13 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
             subscriber_info->priority > op->priority) {
           subscriber_info->priority = op->priority;
           if (op->executor.empty()) {
-            subscriber_info->executor = get_executor_func_(options_.sub_default_executor);
+            subscriber_info->executor = sub_default_executor_ref_;
           } else {
             subscriber_info->executor = get_executor_func_(op->executor);
           }
         }
       }
     }
-
-    if (ops.size() == 0) {
-      if (options_.sub_default_executor.empty()) {
-        AIMRT_ERROR("sm plugin must config default executor in Subscribe");
-        return false;
-      }
-      subscriber_info->executor = get_executor_func_(options_.sub_default_executor);
-    }
-
   } catch (const std::exception& e) {
     AIMRT_ERROR("check sm plugin subscribe topic regex error: {}", e.what());
     return false;
@@ -371,12 +385,12 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
         }
       });
 
+  AIMRT_INFO("sm plugin backend add listener for topic '{}' success. sm dispatcher executor: '{}', channel executor: '{}'",
+             subscribe_wrapper.topic_name, dispatcher_executor, subscriber_info->executor.Name());
   return true;
 }
 
 void SmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
-  static int count = 0;
-
   uint64_t msg_hash = std::hash<std::string>{}(
       std::string(publish_wrapper.topic_name) + std::string(publish_wrapper.msg_type));
 

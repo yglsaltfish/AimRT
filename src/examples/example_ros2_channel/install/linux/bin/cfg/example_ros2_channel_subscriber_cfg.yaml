@@ -26,6 +26,9 @@ aimrt:
   channel: # 消息队列相关配置
     backends: # 消息队列后端配置
       - type: ros2 # ros2后端
+        options:
+          sub_topics_options:
+            - topic_name: test_topic
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libros2_channel_beta_pkg.so # so/dll地址

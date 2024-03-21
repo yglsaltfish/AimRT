@@ -26,16 +26,16 @@ class HelloWorldPyModule(aimrt_py.ModuleBase):
         try:
             # configure
             configurator = self.core.GetConfigurator()
-            if(configurator):
+            if (configurator):
                 module_cfg_file_path = configurator.GetConfigFilePath()
-                if(module_cfg_file_path):
+                if (module_cfg_file_path):
                     with open(module_cfg_file_path, 'r') as file:
                         data = yaml.safe_load(file)
                         aimrt_py_log.info(self.logger, str(data))
 
             # executor
             self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
-            if(not self.work_executor):
+            if (not self.work_executor):
                 aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 

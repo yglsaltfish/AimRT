@@ -20,6 +20,10 @@ aimrt:
           max_file_num: 10 # 最大日志文件数量，0代表无限
   executor: # 执行器配置
     executors: # 当前先支持thread型，未来可根据加载的网络模块提供更多类型
+      - name: work_thread_pool # 线程池
+        type: asio_thread
+        options:
+          thread_num: 4 # 线程数，不指定则默认单线程
       - name: sm_default_thread_pool # 线程池
         type: asio_thread
         options:
@@ -30,7 +34,8 @@ aimrt:
         options:
           sub_default_executor: sm_default_thread_pool # 默认执行器
           sub_topic_options:
-            - topic_name: '^[\w/#+-]+$' # 支持正则表达式，所有topic
+            - topic_name: test_topic # 支持正则表达式，所有topic
+              executor: sm_default_thread_pool # 执行器
 
   module: # 模块配置
     pkgs: # 要加载的动态库配置

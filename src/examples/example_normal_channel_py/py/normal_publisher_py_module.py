@@ -39,9 +39,9 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
         try:
             # configure
             configurator = self.core.GetConfigurator()
-            if(configurator):
+            if (configurator):
                 module_cfg_file_path = configurator.GetConfigFilePath()
-                if(module_cfg_file_path):
+                if (module_cfg_file_path):
                     with open(module_cfg_file_path, 'r') as file:
                         data = yaml.safe_load(file)
                         self.topic_name = str(data["topic_name"])
@@ -49,13 +49,13 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
 
             # executor
             self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
-            if(not self.work_executor):
+            if (not self.work_executor):
                 aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 
             # channel-publisher
             self.publisher = self.core.GetChannelHandle().GetPublisher(self.topic_name)
-            if(not self.publisher):
+            if (not self.publisher):
                 aimrt_py_log.error(self.logger, "Get publisher for '{}' failed.".format(self.topic_name))
                 return False
 
@@ -82,13 +82,13 @@ class NormalPublisherPyModule(aimrt_py.ModuleBase):
     def Shutdown(self):
         self.stop_flag = True
 
-        while(not self.stoped_flag):
+        while (not self.stoped_flag):
             time.sleep(1)
 
         aimrt_py_log.info(self.logger, "Module shutdown")
 
     def PublishLoop(self):
-        if(self.stop_flag):
+        if (self.stop_flag):
             self.stoped_flag = True
             return
 
