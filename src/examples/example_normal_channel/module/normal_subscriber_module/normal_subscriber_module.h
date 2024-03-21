@@ -1,5 +1,8 @@
 #pragma once
 
+#include <atomic>
+
+#include "aimrt_module_cpp_interface/co/async_scope.h"
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -25,13 +28,22 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
  private:
   aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
 
+  co::Task<void> MainLoop();
+
   co::Task<void> EventHandle(
       const aimrt::protocols::example::ExampleEventMsg& data);
 
  private:
   aimrt::CoreRef core_;
+  aimrt::executor::ExecutorRef executor_;
 
-  std::string topic_name_ = "test_topic";
+  co::AsyncScope scope_;
+  std::atomic_bool run_flag_ = true;
+
+  std::string publish_topic_name_ = "subscribe_test_topic";
+  std::string subscribe_topic_name_ = "publish_test_topic";
+  double channel_frq_ = 0.5;
+  aimrt::channel::PublisherRef publisher_;
   aimrt::channel::SubscriberRef subscriber_;
 };
 

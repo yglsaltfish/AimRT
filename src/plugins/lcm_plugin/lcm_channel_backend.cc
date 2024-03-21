@@ -27,6 +27,7 @@ struct convert<aimrt::plugins::lcm_plugin::LcmChannelBackend::Options> {
         topic_options_node["executor"] = sub_topic_option.executor;
         topic_options_node["priority"] = sub_topic_option.priority;
         topic_options_node["lcm_url"] = sub_topic_option.lcm_url;
+        topic_options_node["lcm_dispatcher_executor"] = sub_topic_option.lcm_dispatcher_executor;
         node["sub_topic_options"].push_back(topic_options_node);
       }
     }
@@ -67,6 +68,11 @@ struct convert<aimrt::plugins::lcm_plugin::LcmChannelBackend::Options> {
           options.lcm_url = sub_topic_option["lcm_url"].as<std::string>();  // exist, get it
         } else {
           options.lcm_url = "";  // not exist, use default lcm url
+        }
+
+        // 如果存在 lcm_dispatcher_executor 则赋值
+        if (sub_topic_option["lcm_dispatcher_executor"]) {
+          options.lcm_dispatcher_executor = sub_topic_option["lcm_dispatcher_executor"].as<std::string>();
         }
 
         // 如果存在 priority 则赋值
@@ -129,25 +135,68 @@ void LcmChannelBackend::Initialize(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "share memory channel backend can only be initialized once.");
 
-  if (options_node && !options_node.IsNull())
+  if (options_node && !options_node.IsNull()) {
     options_ = options_node.as<Options>();
+  }
 
   // subscriber options
-  if (!options_.sub_topic_options.empty()) {
-    // 如果存在 sub_topic_options 配置，但是没有 sub_default_executor 配置，则报错
-    AIMRT_CHECK_ERROR_THROW((!options_.sub_default_executor.empty()),
-                            "sub_topic_options is not empty, but sub_default_executor is empty.");
+  const auto default_lcm_url = LcmManager::GetInstance().GetDefaultLcmUrl();
 
-    sub_default_executor_ref_ = get_executor_func_(options_.sub_default_executor);
-    if (!sub_default_executor_ref_) {
-      AIMRT_ERROR("Default executor '{}' is not registered.", options_.sub_default_executor);
+  for (auto& pub_topic_option : options_.pub_topic_options) {
+    if (pub_topic_option.lcm_url.empty()) {
+      pub_topic_option.lcm_url = default_lcm_url;
+    }
+  }
+
+  // 记录 lcm_url:lcm_dispatcher_executor
+  std::map<std::string, std::string> lcm_info_map;
+  for (auto& sub_topic_option : options_.sub_topic_options) {
+    // 如果 sub_topic_option.lcm_url 为空，则使用默认值
+    if (sub_topic_option.lcm_url.empty()) {
+      sub_topic_option.lcm_url = default_lcm_url;
     }
 
-    for (auto& sub_topic_option : options_.sub_topic_options) {
-      if (!sub_topic_option.executor.empty()) {
-        // 校验 executor 是否存在，如果不存在，则报错
-        AIMRT_CHECK_ERROR_THROW((get_executor_func_(sub_topic_option.executor)),
-                                "Executor '{}' is not registered.", sub_topic_option.executor);
+    // 如果用户配置了 executor
+    if (!sub_topic_option.executor.empty()) {
+      // 校验 executor 是否存在，如果不存在，则报错
+      AIMRT_CHECK_ERROR_THROW((get_executor_func_(sub_topic_option.executor)),
+                              "Executor '{}' is not registered.", sub_topic_option.executor);
+      // 如果用户没有配置 lcm_dispatcher_executor，则尝试使用 executor 作为lcm dispatcher 的 executor
+      if (sub_topic_option.lcm_dispatcher_executor.empty()) {
+        sub_topic_option.lcm_dispatcher_executor = sub_topic_option.executor;
+      }
+    } else {
+      // 如果 订阅者没有指定 executor，需要校验默认的 executor 是否存在
+      AIMRT_CHECK_ERROR_THROW((!options_.sub_default_executor.empty()),
+                              "Subscribed topic '{}' has no executor set and no default executor set.", sub_topic_option.topic_name);
+      if (!sub_default_executor_ref_) {
+        sub_default_executor_ref_ = get_executor_func_(options_.sub_default_executor);
+        AIMRT_CHECK_ERROR_THROW(sub_default_executor_ref_, "Default Executor '{}' is not registered.", options_.sub_default_executor);
+      }
+
+      // 如果用户没有配置 lcm_dispatcher_executor，则尝试使用默认的 executor 作为lcm dispatcher 的 executor
+      if (sub_topic_option.lcm_dispatcher_executor.empty()) {
+        sub_topic_option.lcm_dispatcher_executor = options_.sub_default_executor;
+      }
+    }
+
+    // lcm url 去除 '?ttl=' 与后面字符串
+    std::string lcm_url = sub_topic_option.lcm_url;
+    auto pos = lcm_url.find("?");
+    if (pos != std::string::npos) {
+      lcm_url = lcm_url.substr(0, pos);
+    }
+
+    if (lcm_info_map.find(lcm_url) == lcm_info_map.end()) {
+      lcm_info_map[lcm_url] = sub_topic_option.lcm_dispatcher_executor;
+      AIMRT_CHECK_ERROR_THROW((get_executor_func_(sub_topic_option.lcm_dispatcher_executor)),
+                              "Lcm dispatcher executor '{}' is not registered.", sub_topic_option.lcm_dispatcher_executor);
+    } else {
+      // 如果出现同样的 lcm url，则需要保证 lcm_dispatcher_executor 一致
+      if (lcm_info_map[lcm_url] != sub_topic_option.lcm_dispatcher_executor) {
+        AIMRT_ERROR("topic '{}', lcm url '{}' has different lcm_dispatcher_executor, '{}' and '{}'.",
+                    sub_topic_option.topic_name, lcm_url, lcm_info_map[lcm_url], sub_topic_option.lcm_dispatcher_executor);
+        return;
       }
     }
   }
@@ -202,20 +251,17 @@ bool LcmChannelBackend::RegisterPublishType(const runtime::core::channel::Publis
   }
 
   LcmPtr lcm = nullptr;
+  std::string lcm_url = "";
 
   try {
-    // topic需要符合规则，需要允许通行的topic才能注册，如果不允许通行，则不允许注册，属于预期内配置，返回true
-    for (auto& unpassable_pub_topic : options_.unpassable_pub_topics) {
-      std::regex pattern(unpassable_pub_topic);
-      if (std::regex_match(std::string(publish_type_wrapper.topic_name), pattern)) {
-        AIMRT_TRACE("topic '{}' is unpassable publish by sm plugin.", publish_type_wrapper.topic_name);
-        return true;
-      }
+    // 如果 options_.passable_pub_topics 没有配置，则默认为不通行
+    if (options_.passable_pub_topics.empty()) {
+      AIMRT_INFO("publish topic '{}' is unpassable publish by lcm plugin.", publish_type_wrapper.topic_name);
+      return true;
     }
 
-    bool passable = (options_.passable_pub_topics.empty() ? true : false);
+    bool passable = false;
     for (auto& passable_pub_topic : options_.passable_pub_topics) {
-      // 如果正则表达式是空的，则默认为通行
       std::regex pattern(passable_pub_topic);
       if ((passable_pub_topic.empty()) || (std::regex_match(std::string(publish_type_wrapper.topic_name), pattern))) {
         passable = true;
@@ -223,12 +269,20 @@ bool LcmChannelBackend::RegisterPublishType(const runtime::core::channel::Publis
       }
     }
 
+    // topic需要符合规则，需要允许通行的topic才能注册，如果不允许通行，则不允许注册，属于预期内配置，返回true
+    for (auto& unpassable_pub_topic : options_.unpassable_pub_topics) {
+      std::regex pattern(unpassable_pub_topic);
+      if (std::regex_match(std::string(publish_type_wrapper.topic_name), pattern)) {
+        passable = false;
+        break;
+      }
+    }
+
     if (!passable) {
-      AIMRT_TRACE("topic '{}' is unpassable publish by sm plugin.", publish_type_wrapper.topic_name);
+      AIMRT_INFO("publish topic '{}' is unpassable publish by lcm plugin.", publish_type_wrapper.topic_name);
       return true;
     }
 
-    std::string lcm_url = "";
     auto& ops = options_.pub_topic_options;
     int32_t last_priority = std::numeric_limits<int32_t>::min();
     // 倒序遍历 options_ 中的 pub_topic_options, 优先级高的 lcm_url 优先级高
@@ -253,7 +307,7 @@ bool LcmChannelBackend::RegisterPublishType(const runtime::core::channel::Publis
     }
 
   } catch (const std::exception& e) {
-    AIMRT_ERROR("check sm plugin publish topic regex error: {}", e.what());
+    AIMRT_ERROR("check lcm plugin publish topic regex error: {}", e.what());
     return false;
   }
 
@@ -267,6 +321,9 @@ bool LcmChannelBackend::RegisterPublishType(const runtime::core::channel::Publis
   }
 
   publisher_map_.emplace(msg_hash, lcm);
+
+  AIMRT_INFO("lcm backend register publish type for topic '{}' success. lcm url: '{}'",
+             publish_type_wrapper.topic_name, lcm_url);
 
   return true;
 }
@@ -307,6 +364,12 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
   std::shared_ptr<ModuleInfo> module_info = std::make_shared<ModuleInfo>(subscribe_wrapper);
   subscriber_info->module_info_list.push_back(module_info);
 
+  // 如果没有配置 sub_topic_options，则默认为不订阅共享内存的 topic
+  if (options_.sub_topic_options.empty()) {
+    AIMRT_INFO("subscribe topic '{}' is unpassable subscribe by lcm plugin.", subscribe_wrapper.topic_name);
+    return true;
+  }
+
   try {
     auto& ops = options_.sub_topic_options;
     // 倒序遍历 options_ 中的 sub_topic_options, 优先级高的 executor、lcm_url 优先级高
@@ -319,34 +382,21 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
             subscriber_info->priority > op->priority) {
           subscriber_info->lcm_url = op->lcm_url;
           subscriber_info->priority = op->priority;
+          subscriber_info->lcm_dispatcher_executor = op->lcm_dispatcher_executor;
           if (op->executor.empty()) {
-            subscriber_info->executor = get_executor_func_(options_.sub_default_executor);
+            subscriber_info->executor = sub_default_executor_ref_;
           } else {
             subscriber_info->executor = get_executor_func_(op->executor);
           }
         }
       }
     }
-
-    if (ops.size() == 0) {
-      if (options_.sub_default_executor.empty()) {
-        AIMRT_ERROR("lcm plugin must config default executor in Subscribe");
-        return false;
-      }
-      subscriber_info->executor = get_executor_func_(options_.sub_default_executor);
-    }
   } catch (const std::exception& e) {
-    AIMRT_ERROR("check sm plugin subscribe topic regex error: {}", e.what());
+    AIMRT_ERROR("check lcm plugin subscribe topic regex error: {}", e.what());
     return false;
   }
 
-  std::string dispatcher_executor = options_.sub_default_executor;
-  // 如果没有设置 lcm_url，则使用默认的 executor 去执行dispatcher
-  // 如果指定了 lcm_url，但没有指定 executor，则使用默认的 executor 去执行dispatcher
-  if (!subscriber_info->lcm_url.empty()) {
-    dispatcher_executor = subscriber_info->executor.Name();
-  }
-
+  std::string dispatcher_executor = subscriber_info->lcm_dispatcher_executor;
   uint64_t dispatcher_key = std::hash<std::string>{}(dispatcher_executor);
   if (dispatcher_map_.count(dispatcher_key) != 0) {
     auto& pair = dispatcher_map_[dispatcher_key];
@@ -354,7 +404,6 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
   } else {
     dispatcher_ptr = std::make_shared<LcmDispatcher>();
     dispatcher_map_.emplace(dispatcher_key, std::make_pair(get_executor_func_(dispatcher_executor), dispatcher_ptr));
-    AIMRT_TRACE("lcm channel backend create lcm dispatcher, executor: {}", dispatcher_executor);
   }
 
   if (dispatcher_ptr == nullptr) {
@@ -376,8 +425,8 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
         for (auto module_info : subscriber_info->module_info_list) {
           const runtime::core::channel::SubscribeWrapper& wrapper = module_info->subscribe_wrapper;
 
-          // AIMRT_TRACE("lcm channel backend receive data, topic name: {}, msg type: {}, size: {}",
-          //              wrapper.topic_name, wrapper.msg_type, size);
+          AIMRT_TRACE("lcm channel backend receive data, topic name: {}, msg type: {}, size: {}",
+                      wrapper.topic_name, wrapper.msg_type, size);
 
           auto get_serialization_type_func =
               [](const runtime::core::channel::SubscribeWrapper& wrapper) -> std::string_view {
@@ -433,6 +482,10 @@ bool LcmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper
           }
         }
       });
+
+  AIMRT_INFO("lcm backend add listener for topic '{}' success. lcm url: '{}', lcm dispatcher executor: '{}', channel executor: '{}'",
+             subscribe_wrapper.topic_name, (subscriber_info->lcm_url.empty() ? "default" : subscriber_info->lcm_url),
+             dispatcher_executor, subscriber_info->executor.Name());
 
   return true;
 }

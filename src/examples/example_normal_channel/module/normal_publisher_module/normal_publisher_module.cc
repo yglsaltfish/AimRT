@@ -9,8 +9,6 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "event.pb.h"
-
 namespace aimrt::examples::example_normal_channel::normal_publisher_module {
 
 bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
@@ -22,7 +20,8 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
     if (configurator) {
       YAML::Node cfg_node =
           YAML::LoadFile(std::string(configurator.GetConfigFilePath()));
-      topic_name_ = cfg_node["topic_name"].as<std::string>();
+      publish_topic_name_ = cfg_node["publish_topic_name"].as<std::string>();
+      subscribe_topic_name_ = cfg_node["subscribe_topic_name"].as<std::string>();
       channel_frq_ = cfg_node["channel_frq"].as<double>();
     }
 
@@ -32,12 +31,21 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
                             "Get executor 'work_thread_pool' failed.");
 
     // Register publish type
-    publisher_ = core_.GetChannelHandle().GetPublisher(topic_name_);
-    AIMRT_CHECK_ERROR_THROW(publisher_, "Get publisher for topic '{}' failed.", topic_name_);
+    publisher_ = core_.GetChannelHandle().GetPublisher(publish_topic_name_);
+    AIMRT_CHECK_ERROR_THROW(publisher_, "Get publisher for topic '{}' failed.", publish_topic_name_);
 
     bool ret = aimrt::channel::RegisterPublishType<
         aimrt::protocols::example::ExampleEventMsg>(publisher_);
     AIMRT_CHECK_ERROR_THROW(ret, "Register publish type failed.");
+
+    // 订阅事件
+    subscriber_ = core_.GetChannelHandle().GetSubscriber(subscribe_topic_name_);
+    AIMRT_CHECK_ERROR_THROW(
+        subscriber_, "Get subscriber for topic '{}' failed.", subscribe_topic_name_);
+
+    ret = aimrt::channel::SubscribeCo<aimrt::protocols::example::ExampleEventMsg>(
+        subscriber_, std::bind(&NormalPublisherModule::EventHandle, this, std::placeholders::_1));
+    AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed.");
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Init failed, {}", e.what());
@@ -103,6 +111,13 @@ co::Task<void> NormalPublisherModule::MainLoop() {
   } catch (const std::exception& e) {
     AIMRT_ERROR("Exit MainLoop with exception, {}", e.what());
   }
+
+  co_return;
+}
+
+co::Task<void> NormalPublisherModule::EventHandle(
+    const aimrt::protocols::example::ExampleEventMsg& data) {
+  AIMRT_INFO("Get new pb event, data: {}", aimrt::Pb2CompactJson(data));
 
   co_return;
 }
