@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 
-#include "net/asio_tools.h"
-#include "net/asio_udp_cli.h"
-#include "net/asio_udp_svr.h"
+#include "net_plugin/util/asio_tools.h"
+#include "net_plugin/util/asio_udp_cli.h"
+#include "net_plugin/util/asio_udp_svr.h"
 #include "util/string_util.h"
 
-namespace aimrt::common::net {
+namespace aimrt::plugins::net_plugin {
 
 namespace asio = boost::asio;
 
-inline util::SimpleLogger &GetLogger() {
-  static util::SimpleLogger logger;
+inline aimrt::common::util::SimpleLogger &GetLogger() {
+  static aimrt::common::util::SimpleLogger logger;
   return logger;
 }
 
@@ -46,7 +46,7 @@ TEST(NET_TEST, UDP_base) {
               static_cast<const char *>(msg_buf_ptr->data().data()),
               msg_buf_ptr->size());
           AIMRT_INFO("svr get a msg from {}, size: {}, data: {}",
-                     util::SSToString(ep), msg_buf_ptr->size(), result_str);
+                     aimrt::common::util::SSToString(ep), msg_buf_ptr->size(), result_str);
         });
     udp_svr_ptr->Initialize(AsioUdpServer::Options{});
 
@@ -82,4 +82,4 @@ TEST(NET_TEST, UDP_base) {
   t_cli.join();
 }
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::plugins::net_plugin

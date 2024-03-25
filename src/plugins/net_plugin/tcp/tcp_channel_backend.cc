@@ -189,7 +189,6 @@ void TcpChannelBackend::Publish(
     const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
   assert(state_.load() == State::Start);
 
-  namespace net = aimrt::common::net;
   namespace util = aimrt::common::util;
 
   std::string_view msg_type = publish_wrapper.msg_type;
@@ -280,7 +279,7 @@ void TcpChannelBackend::Publish(
         *io_ptr_,
         [this, publish_add, msg_buf_ptr]() -> boost::asio::awaitable<void> {
           auto v = common::util::SplitToVec<std::string>(publish_add, ":");
-          net::AsioTcpClient::Options client_options{
+          AsioTcpClient::Options client_options{
               .svr_ep = {boost::asio::ip::make_address(v[0].c_str()),
                          static_cast<uint16_t>(atoi(v[1].c_str()))}};
 

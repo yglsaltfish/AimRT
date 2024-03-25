@@ -96,8 +96,6 @@ auto WrapAimRTLoggerRef(aimrt::logger::LoggerRef logger_ref)
 
 bool NetPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
   try {
-    using namespace aimrt::common::net;
-
     core_ptr_ = core_ptr;
 
     YAML::Node plugin_options_node = core_ptr_->GetPluginManager().GetPluginOptionsNode(Name());

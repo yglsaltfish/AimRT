@@ -84,7 +84,6 @@ bool HttpChannelBackend::Subscribe(
 
   namespace asio = boost::asio;
   namespace http = boost::beast::http;
-  namespace net = aimrt::common::net;
   namespace util = aimrt::common::util;
 
   std::string pattern = std::string("/channel/") +
@@ -104,12 +103,12 @@ bool HttpChannelBackend::Subscribe(
 
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
-  net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
+  AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
       [this, subscribe_wrapper_vec_ptr](
           const http::request<http::dynamic_body>& req,
           http::response<http::dynamic_body>& rsp,
           std::chrono::nanoseconds timeout)
-      -> asio::awaitable<net::AsioHttpServer::HttpHandleStatus> {
+      -> asio::awaitable<AsioHttpServer::HttpHandleStatus> {
     // 获取序列化类型
     std::string serialization_type;
     auto req_content_type_itr = req.find(http::field::content_type);
@@ -184,7 +183,7 @@ bool HttpChannelBackend::Subscribe(
       subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
     }
 
-    co_return net::AsioHttpServer::HttpHandleStatus::OK;
+    co_return AsioHttpServer::HttpHandleStatus::OK;
   };
 
   http_svr_ptr_->RegisterHttpHandleFunc<http::dynamic_body>(
@@ -201,7 +200,6 @@ void HttpChannelBackend::Publish(
 
   namespace asio = boost::asio;
   namespace http = boost::beast::http;
-  namespace net = aimrt::common::net;
   namespace util = aimrt::common::util;
 
   std::string_view msg_type = publish_wrapper.msg_type;
@@ -316,7 +314,7 @@ void HttpChannelBackend::Publish(
         *io_ptr_,
         [this, &publish_add, req_ptr]() -> asio::awaitable<void> {
           auto url_op = aimrt::common::util::ParseUrl(publish_add);
-          net::AsioHttpClient::Options cli_options{
+          AsioHttpClient::Options cli_options{
               .host = std::string(url_op->host),
               .service = std::string(url_op->service)};
 

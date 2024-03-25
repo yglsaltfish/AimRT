@@ -13,7 +13,7 @@
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::common::net {
+namespace aimrt::plugins::net_plugin {
 
 class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketServer> {
  public:
@@ -23,6 +23,9 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   using Strand = boost::asio::strand<IOCtx::executor_type>;
   using Timer = boost::asio::steady_timer;
   using Streambuf = boost::asio::streambuf;
+
+  template <class T>
+  using Awaitable = boost::asio::awaitable<T>;
 
   // todo
   using MsgHandle =
@@ -72,14 +75,14 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
         acceptor_(mgr_strand_),
         acceptor_timer_(mgr_strand_),
         mgr_timer_(mgr_strand_),
-        logger_ptr_(std::make_shared<util::LoggerWrapper>()) {}
+        logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
 
   ~AsioWebSocketServer() = default;
 
   AsioWebSocketServer(const AsioWebSocketServer&) = delete;
   AsioWebSocketServer& operator=(const AsioWebSocketServer&) = delete;
 
-  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -100,12 +103,13 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
-        "AsioHttpClientPool can only be initialized once.");
+        "Function can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
 
-    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep), "{} is already in use.", util::SSToString(options_.ep));
+    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep),
+                            "{} is already in use.", aimrt::common::util::SSToString(options_.ep));
   }
 
   void Start() {
@@ -116,7 +120,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     auto self = shared_from_this();
     boost::asio::co_spawn(
         mgr_strand_,
-        [this, self]() -> boost::asio::awaitable<void> {
+        [this, self]() -> Awaitable<void> {
           acceptor_.open(options_.ep.protocol());
           acceptor_.set_option(Tcp::acceptor::reuse_address(true));
           acceptor_.bind(options_.ep);
@@ -156,7 +160,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
     boost::asio::co_spawn(
         mgr_strand_,
-        [this, self]() -> boost::asio::awaitable<void> {
+        [this, self]() -> Awaitable<void> {
           while (state_.load() == State::Start) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
@@ -236,7 +240,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
       auto finditr = session_ptr_map_.find(ep);
       if (finditr == session_ptr_map_.end()) {
         AIMRT_WARN("WebSocket svr can not find endpoint {} in session map",
-                   util::SSToString(ep));
+                   aimrt::common::util::SSToString(ep));
         return;
       }
 
@@ -247,7 +251,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     });
   }
 
-  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool IsRunning() const { return state_.load() == State::Start; }
 
@@ -276,7 +280,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   class Session : public std::enable_shared_from_this<Session> {
    public:
     Session(const std::shared_ptr<IOCtx>& io_ptr,
-            const std::shared_ptr<util::LoggerWrapper>& logger_ptr,
+            const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr,
             const std::shared_ptr<MsgHandle>& msg_handle_ptr)
         : io_ptr_(io_ptr),
           session_socket_strand_(boost::asio::make_strand(*io_ptr)),
@@ -295,7 +299,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
-          "Session can only be initialized once.");
+          "Function can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
     }
@@ -305,7 +309,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
           "Function can only be called when state is 'Init'.");
 
-      remote_addr_ = util::SSToString(stream_.next_layer().socket().remote_endpoint());
+      remote_addr_ = aimrt::common::util::SSToString(stream_.next_layer().socket().remote_endpoint());
       AIMRT_TRACE("WebSocket svr accept a new connect from {}.", RemoteAddr());
 
       auto self = shared_from_this();
@@ -313,7 +317,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
       // 建立连接
       boost::asio::co_spawn(
           session_socket_strand_,
-          [this, self]() -> boost::asio::awaitable<void> {
+          [this, self]() -> Awaitable<void> {
             try {
               namespace http = boost::beast::http;
               namespace websocket = boost::beast::websocket;
@@ -334,7 +338,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
               // 发送协程
               boost::asio::co_spawn(
                   session_socket_strand_,
-                  [this, self]() -> boost::asio::awaitable<void> {
+                  [this, self]() -> Awaitable<void> {
                     try {
                       while (state_.load() == SessionState::Start) {
                         while (!data_list.empty()) {
@@ -372,7 +376,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
               // 接收协程
               boost::asio::co_spawn(
                   session_socket_strand_,
-                  [this, self]() -> boost::asio::awaitable<void> {
+                  [this, self]() -> Awaitable<void> {
                     try {
                       while (state_.load() == SessionState::Start) {
                         auto msg_buf = std::make_shared<Streambuf>();
@@ -413,7 +417,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
       // 定时器协程
       boost::asio::co_spawn(
           session_mgr_strand_,
-          [this, self]() -> boost::asio::awaitable<void> {
+          [this, self]() -> Awaitable<void> {
             try {
               while (state_.load() == SessionState::Start) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
@@ -531,7 +535,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           });
     }
 
-    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+    const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     Tcp::socket& Socket() { return stream_.next_layer().socket(); }
 
@@ -556,7 +560,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     Timer timer_;
 
     // 日志打印句柄
-    std::shared_ptr<util::LoggerWrapper> logger_ptr_;
+    std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
     // msg处理句柄
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
@@ -589,7 +593,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   Timer mgr_timer_;         // 管理session池的定时器
 
   // 日志打印句柄
-  std::shared_ptr<util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   // msg处理句柄
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
@@ -605,4 +609,4 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::plugins::net_plugin

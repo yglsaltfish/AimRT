@@ -27,8 +27,7 @@ class MsgHandleRegistry {
     msg_handle_map_.emplace(topic, std::forward<Args>(args)...);
   }
 
-  void HandleServerMsg(std::string_view topic,
-                       MQTTClient_message* message) const {
+  void HandleServerMsg(std::string_view topic, MQTTClient_message* message) const {
     AIMRT_TRACE("Mqtt recv msg, topic: {}", topic);
     try {
       auto find_topic_itr = msg_handle_map_.find(topic);
@@ -47,7 +46,6 @@ class MsgHandleRegistry {
 
  private:
   using UriMsgHandleMap = std::unordered_map<std::string, MsgHandleFunc, aimrt::common::util::StringHash, std::equal_to<>>;
-
   UriMsgHandleMap msg_handle_map_;
 };
 

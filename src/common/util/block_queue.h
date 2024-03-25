@@ -19,6 +19,9 @@ class BlockQueue {
   BlockQueue() = default;
   ~BlockQueue() { Stop(); }
 
+  BlockQueue(const BlockQueue &) = delete;
+  BlockQueue &operator=(const BlockQueue &) = delete;
+
   /// 添加元素
   void Enqueue(const T &item) {
     std::unique_lock<std::mutex> lck(mutex_);

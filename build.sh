@@ -45,3 +45,14 @@ if [ -d install ]; then
 fi
 
 make install
+
+# clear install dir. TODO: move to cmake
+cd install
+
+rm include/MQTT*
+rm -rf lib/cmake/eclipse-paho-mqtt-c
+rm -rf lib/libpaho-mqtt*
+rm -rf share/doc/Eclipse*
+
+rm -rf include/lcm
+rm lib/liblcm.*

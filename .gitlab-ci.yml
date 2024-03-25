@@ -102,20 +102,20 @@ variables:
       pip install setuptools &&
       pip install pyyaml &&
       ./build.sh \
-      -Dboost_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/boost-1.82.0.tar.xz \
-      -Dfmt_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/fmt-9.1.0.tar.gz \
-      -Dlcm_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/lcm-1.5.0.tar.gz \
-      -Dgflags_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/gflags-2.2.2.tar.gz \
-      -Dgoogletest_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/googletest-1.13.0.tar.gz \
-      -Dprotobuf_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/protobuf-3.21.12.tar.gz \
-      -Dyaml-cpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/yaml-cpp-0.8.0.tar.gz \
-      -Djsoncpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/jsoncpp-1.9.5.tar.gz \
-      -Dsqlite_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/sqlite-amalgamation-3420000.zip \
-      -Dstdexec_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/stdexec-nvhpc-23.09.rc4.tar.gz \
-      -Dlibunifex_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz \
-      -Dtbb_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/oneTBB-2021.11.0.tar.gz \
-      -Dpybind11_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/pybind11-2.11.1.tar.gz \
-      -Dpaho_mqtt_c_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/paho.mqtt.c-1.3.13.tar.gz
+      -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz \
+      -Dfmt_DOWNLOAD_URL=https://file.agibot.com/third_party/fmt-9.1.0.tar.gz \
+      -Dlcm_DOWNLOAD_URL=https://file.agibot.com/third_party/lcm-1.5.0.tar.gz \
+      -Dgflags_DOWNLOAD_URL=https://file.agibot.com/third_party/gflags-2.2.2.tar.gz \
+      -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz \
+      -Dprotobuf_DOWNLOAD_URL=https://file.agibot.com/third_party/protobuf-3.21.12.tar.gz \
+      -Dyaml-cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/yaml-cpp-0.8.0.tar.gz \
+      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.5.tar.gz \
+      -Dsqlite_DOWNLOAD_URL=https://file.agibot.com/third_party/sqlite-amalgamation-3420000.zip \
+      -Dstdexec_DOWNLOAD_URL=https://file.agibot.com/third_party/stdexec-nvhpc-23.09.rc4.tar.gz \
+      -Dlibunifex_DOWNLOAD_URL=https://file.agibot.com/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz \
+      -Dtbb_DOWNLOAD_URL=https://file.agibot.com/third_party/oneTBB-2021.12.0-rc2.tar.gz \
+      -Dpybind11_DOWNLOAD_URL=https://file.agibot.com/third_party/pybind11-2.11.1.tar.gz \
+      -Dpaho_mqtt_c_DOWNLOAD_URL=https://file.agibot.com/third_party/paho.mqtt.c-1.3.13.tar.gz
 
     description: "The build command of this project."
 
@@ -127,20 +127,20 @@ variables:
       pip install setuptools &&
       pip install pyyaml &&
       ./test.sh \
-      -Dboost_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/boost-1.82.0.tar.xz \
-      -Dfmt_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/fmt-9.1.0.tar.gz \
-      -Dlcm_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/lcm-1.5.0.tar.gz \
-      -Dgflags_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/gflags-2.2.2.tar.gz \
-      -Dgoogletest_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/googletest-1.13.0.tar.gz \
-      -Dprotobuf_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/protobuf-3.21.12.tar.gz \
-      -Dyaml-cpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/yaml-cpp-0.8.0.tar.gz \
-      -Djsoncpp_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/jsoncpp-1.9.5.tar.gz \
-      -Dsqlite_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/sqlite-amalgamation-3420000.zip \
-      -Dstdexec_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/stdexec-nvhpc-23.09.rc4.tar.gz \
-      -Dlibunifex_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz \
-      -Dtbb_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/oneTBB-2021.11.0.tar.gz \
-      -Dpybind11_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/pybind11-2.11.1.tar.gz \
-      -Dpaho_mqtt_c_DOWNLOAD_URL=http://192.168.22.31:8084/third_party/paho.mqtt.c-1.3.13.tar.gz
+      -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz \
+      -Dfmt_DOWNLOAD_URL=https://file.agibot.com/third_party/fmt-9.1.0.tar.gz \
+      -Dlcm_DOWNLOAD_URL=https://file.agibot.com/third_party/lcm-1.5.0.tar.gz \
+      -Dgflags_DOWNLOAD_URL=https://file.agibot.com/third_party/gflags-2.2.2.tar.gz \
+      -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz \
+      -Dprotobuf_DOWNLOAD_URL=https://file.agibot.com/third_party/protobuf-3.21.12.tar.gz \
+      -Dyaml-cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/yaml-cpp-0.8.0.tar.gz \
+      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.5.tar.gz \
+      -Dsqlite_DOWNLOAD_URL=https://file.agibot.com/third_party/sqlite-amalgamation-3420000.zip \
+      -Dstdexec_DOWNLOAD_URL=https://file.agibot.com/third_party/stdexec-nvhpc-23.09.rc4.tar.gz \
+      -Dlibunifex_DOWNLOAD_URL=https://file.agibot.com/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz \
+      -Dtbb_DOWNLOAD_URL=https://file.agibot.com/third_party/oneTBB-2021.12.0-rc2.tar.gz  \
+      -Dpybind11_DOWNLOAD_URL=https://file.agibot.com/third_party/pybind11-2.11.1.tar.gz \
+      -Dpaho_mqtt_c_DOWNLOAD_URL=https://file.agibot.com/third_party/paho.mqtt.c-1.3.13.tar.gz
 
     description: "The test command of this project."
 

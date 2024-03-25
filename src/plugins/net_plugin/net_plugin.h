@@ -5,14 +5,14 @@
 #include <thread>
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
-#include "net/asio_http_cli.h"
-#include "net/asio_http_svr.h"
-#include "net/asio_tcp_cli.h"
-#include "net/asio_tcp_svr.h"
-#include "net/asio_tools.h"
-#include "net/asio_udp_cli.h"
-#include "net/asio_udp_svr.h"
 #include "net_plugin/msg_handle_registry.h"
+#include "net_plugin/util/asio_http_cli.h"
+#include "net_plugin/util/asio_http_svr.h"
+#include "net_plugin/util/asio_tcp_cli.h"
+#include "net_plugin/util/asio_tcp_svr.h"
+#include "net_plugin/util/asio_tools.h"
+#include "net_plugin/util/asio_udp_cli.h"
+#include "net_plugin/util/asio_udp_svr.h"
 
 namespace aimrt::plugins::net_plugin {
 
@@ -64,18 +64,18 @@ class NetPlugin : public AimRTCorePluginBase {
 
   bool init_flag_ = false;
 
-  std::shared_ptr<common::net::AsioExecutor> asio_executor_ptr_;
+  std::shared_ptr<AsioExecutor> asio_executor_ptr_;
 
-  std::shared_ptr<common::net::AsioHttpClientPool> http_cli_pool_ptr_;
-  std::shared_ptr<common::net::AsioHttpServer> http_svr_ptr_;
+  std::shared_ptr<AsioHttpClientPool> http_cli_pool_ptr_;
+  std::shared_ptr<AsioHttpServer> http_svr_ptr_;
 
-  std::shared_ptr<common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;
+  std::shared_ptr<AsioTcpClientPool> tcp_cli_pool_ptr_;
   std::shared_ptr<MsgHandleRegistry<boost::asio::ip::tcp::endpoint>> tcp_msg_handle_registry_ptr_;
-  std::shared_ptr<common::net::AsioTcpServer> tcp_svr_ptr_;
+  std::shared_ptr<AsioTcpServer> tcp_svr_ptr_;
 
-  std::shared_ptr<common::net::AsioUdpClientPool> udp_cli_pool_ptr_;
+  std::shared_ptr<AsioUdpClientPool> udp_cli_pool_ptr_;
   std::shared_ptr<MsgHandleRegistry<boost::asio::ip::udp::endpoint>> udp_msg_handle_registry_ptr_;
-  std::shared_ptr<common::net::AsioUdpServer> udp_svr_ptr_;
+  std::shared_ptr<AsioUdpServer> udp_svr_ptr_;
 };
 
 }  // namespace aimrt::plugins::net_plugin

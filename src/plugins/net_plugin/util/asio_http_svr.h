@@ -9,12 +9,12 @@
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 
-#include "net/http_dispatcher.h"
+#include "net_plugin/util/http_dispatcher.h"
 #include "util/log_util.h"
 #include "util/string_util.h"
 #include "util/url_parser.h"
 
-namespace aimrt::common::net {
+namespace aimrt::plugins::net_plugin {
 
 class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
  public:
@@ -22,6 +22,9 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   using Tcp = boost::asio::ip::tcp;
   using Strand = boost::asio::strand<IOCtx::executor_type>;
   using Timer = boost::asio::steady_timer;
+
+  template <class T>
+  using Awaitable = boost::asio::awaitable<T>;
 
   template <class Body>
   using Request = boost::beast::http::request<Body>;
@@ -38,7 +41,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   };
 
   template <typename RspBodyType>
-  using HttpHandle = std::function<boost::asio::awaitable<HttpHandleStatus>(
+  using HttpHandle = std::function<Awaitable<HttpHandleStatus>(
       const Request<ReqBodyType>&,
       Response<RspBodyType>&,
       std::chrono::nanoseconds)>;
@@ -84,7 +87,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
         acceptor_(mgr_strand_),
         acceptor_timer_(mgr_strand_),
         mgr_timer_(mgr_strand_),
-        logger_ptr_(std::make_shared<util::LoggerWrapper>()),
+        logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()),
         http_dispatcher_ptr_(std::make_shared<Session::Dispatcher>()) {}
 
   ~AsioHttpServer() = default;
@@ -92,7 +95,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   AsioHttpServer(const AsioHttpServer&) = delete;
   AsioHttpServer& operator=(const AsioHttpServer&) = delete;
 
-  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -114,12 +117,13 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
-        "AsioHttpClientPool can only be initialized once.");
+        "Function can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
 
-    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep), "{} is already in use.", util::SSToString(options_.ep));
+    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep),
+                            "{} is already in use.", aimrt::common::util::SSToString(options_.ep));
   }
 
   void Start() {
@@ -130,7 +134,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     auto self = this->shared_from_this();
     boost::asio::co_spawn(
         mgr_strand_,
-        [this, self]() -> boost::asio::awaitable<void> {
+        [this, self]() -> Awaitable<void> {
           acceptor_.open(options_.ep.protocol());
           acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
           acceptor_.bind(options_.ep);
@@ -153,7 +157,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                                               boost::asio::use_awaitable);
               AIMRT_TRACE(
                   "Http svr accept a new connection, remote addr is {}",
-                  util::SSToString(session_ptr->Socket().remote_endpoint()));
+                  aimrt::common::util::SSToString(session_ptr->Socket().remote_endpoint()));
               session_ptr->Start();
 
               session_ptr_list_.emplace_back(session_ptr);
@@ -173,7 +177,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
     boost::asio::co_spawn(
         mgr_strand_,
-        [this, self]() -> boost::asio::awaitable<void> {
+        [this, self]() -> Awaitable<void> {
           while (state_.load() == State::Start) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
@@ -242,7 +246,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     });
   }
 
-  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   static bool CheckListenAddr(const Tcp::endpoint& ep) {
@@ -267,10 +271,10 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   class Session : public std::enable_shared_from_this<Session> {
    public:
     using Dispatcher =
-        HttpDispatcher<boost::asio::awaitable<void>(const std::shared_ptr<Session>&, const Request<ReqBodyType>&)>;
+        HttpDispatcher<Awaitable<void>(const std::shared_ptr<Session>&, const Request<ReqBodyType>&)>;
 
     Session(const std::shared_ptr<IOCtx>& io_ptr,
-            const std::shared_ptr<util::LoggerWrapper>& logger_ptr,
+            const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr,
             const std::shared_ptr<Dispatcher>& http_dispatcher_ptr)
         : io_ptr_(io_ptr),
           session_socket_strand_(boost::asio::make_strand(*io_ptr)),
@@ -288,7 +292,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
-          "Session can only be initialized once.");
+          "Function can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
     }
@@ -298,14 +302,14 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
           std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
           "Function can only be called when state is 'Init'.");
 
-      remote_addr_ = util::SSToString(stream_.socket().remote_endpoint());
+      remote_addr_ = aimrt::common::util::SSToString(stream_.socket().remote_endpoint());
 
       auto self = this->shared_from_this();
 
       // 请求处理协程
       boost::asio::co_spawn(
           session_socket_strand_,
-          [this, self]() -> boost::asio::awaitable<void> {
+          [this, self]() -> Awaitable<void> {
             try {
               namespace http = boost::beast::http;
 
@@ -339,7 +343,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 }
 
                 // 检查url
-                auto url_struct = util::ParseUrl(req.target());
+                auto url_struct = aimrt::common::util::ParseUrl(req.target());
                 if (!url_struct) {
                   const auto& rsp = BadRequestHandle(req, "Can not parse url");
                   close_connect_flag_ = rsp.need_eof();
@@ -466,7 +470,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
       // 定时器协程
       boost::asio::co_spawn(
           session_mgr_strand_,
-          [this, self]() -> boost::asio::awaitable<void> {
+          [this, self]() -> Awaitable<void> {
             try {
               while (state_.load() == SessionState::Start) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
@@ -477,9 +481,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 } else {
                   AIMRT_TRACE(
                       "Http svr session exit due to timeout({}ms), remote addr {}.",
-                      std::chrono::duration_cast<std::chrono::milliseconds>(
-                          session_options_ptr_->max_no_data_duration)
-                          .count(),
+                      std::chrono::duration_cast<std::chrono::milliseconds>(session_options_ptr_->max_no_data_duration).count(),
                       RemoteAddr());
                   break;
                 }
@@ -564,7 +566,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
       });
     }
 
-    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+    const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     Tcp::socket& Socket() { return stream_.socket(); }
 
@@ -576,7 +578,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     static Dispatcher::HttpHandle GenHttpDispatcherHandle(HttpHandle<RspBodyType>&& handle) {
       return [handle{std::move(handle)}](
                  const std::shared_ptr<Session>& session_ptr,
-                 const Request<ReqBodyType>& req) -> boost::asio::awaitable<void> {
+                 const Request<ReqBodyType>& req) -> Awaitable<void> {
         Response<RspBodyType> handle_rsp{boost::beast::http::status::ok, req.version()};
         HttpHandleStatus handle_status;
 
@@ -584,7 +586,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
         auto req_timeout_itr = req.find(boost::beast::http::field::timeout);
         if (req_timeout_itr != req.end()) {
           auto timeout_str = req_timeout_itr->value();
-          if (util::IsDigitStr(timeout_str))
+          if (aimrt::common::util::IsDigitStr(timeout_str))
             handle_timeout = std::chrono::seconds(atoi(timeout_str.data()));
         }
 
@@ -592,7 +594,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
         try {
           handle_status = co_await boost::asio::co_spawn(
               *(session_ptr->io_ptr_),
-              [&]() -> boost::asio::awaitable<AsioHttpServer::HttpHandleStatus> {
+              [&]() -> Awaitable<AsioHttpServer::HttpHandleStatus> {
                 return handle(req, handle_rsp, handle_timeout);
               },
               boost::asio::use_awaitable);
@@ -767,7 +769,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     Timer timer_;
 
     // 日志打印句柄
-    std::shared_ptr<util::LoggerWrapper> logger_ptr_;
+    std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
     // Dispatcher
     std::shared_ptr<Dispatcher> http_dispatcher_ptr_;
@@ -800,7 +802,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   Timer mgr_timer_;         // 管理session池的定时器
 
   // 日志打印句柄
-  std::shared_ptr<util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   // Dispatcher
   std::shared_ptr<Session::Dispatcher> http_dispatcher_ptr_;
@@ -816,4 +818,4 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   std::list<std::shared_ptr<Session>> session_ptr_list_;  // session池
 };
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::plugins::net_plugin

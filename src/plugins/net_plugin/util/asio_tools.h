@@ -8,7 +8,7 @@
 
 #include <boost/asio.hpp>
 
-namespace aimrt::common::net {
+namespace aimrt::plugins::net_plugin {
 
 /**
  * @brief asio执行工具
@@ -43,8 +43,8 @@ class AsioExecutor {
    * @param[in] start_func
    */
   void RegisterSvrStartFunc(std::function<void()>&& start_func) {
-    if (start_flag_)
-      throw std::runtime_error("RegisterSvrStartFunc should not be called after start.");
+    if (state_.load() != State::PreStart) [[unlikely]]
+      throw std::runtime_error("Function can only be called when state is 'PreStart'.");
 
     start_func_vec_.emplace_back(std::move(start_func));
   }
@@ -55,8 +55,8 @@ class AsioExecutor {
    * @param[in] stop_func
    */
   void RegisterSvrStopFunc(std::function<void()>&& stop_func) {
-    if (stop_flag_)
-      throw std::runtime_error("RegisterSvrStopFunc should not be called after stop.");
+    if (state_.load() != State::PreStart) [[unlikely]]
+      throw std::runtime_error("Function can only be called when state is 'PreStart'.");
 
     stop_func_vec_.emplace_back(std::move(stop_func));
   }
@@ -77,7 +77,8 @@ class AsioExecutor {
    * @note 异步，会调用注册的start方法并启动指定数量的线程
    */
   void Start() {
-    if (std::atomic_exchange(&start_flag_, true)) return;
+    if (std::atomic_exchange(&state_, State::Start) != State::PreStart) [[unlikely]]
+      throw std::runtime_error("Function can only be called when state is 'PreStart'.");
 
     std::for_each(start_func_vec_.begin(), start_func_vec_.end(),
                   [](const std::function<void()>& f) {
@@ -104,9 +105,6 @@ class AsioExecutor {
    * @note 阻塞直到所有线程退出
    */
   void Join() {
-    if (!start_flag_)
-      throw std::runtime_error("Join should be called after start.");
-
     for (auto itr = threads_.begin(); itr != threads_.end();) {
       if (itr->joinable()) itr->join();
       threads_.erase(itr++);
@@ -118,7 +116,8 @@ class AsioExecutor {
    * @note 异步，会调用注册的stop方法
    */
   void Shutdown() {
-    if (std::atomic_exchange(&stop_flag_, true)) return;
+    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown) [[unlikely]]
+      return;
 
     // 并不需要调用io_.stop()。当io_上所有任务都运行完毕后，会自动停止
     std::for_each(stop_func_vec_.rbegin(), stop_func_vec_.rend(),
@@ -136,8 +135,8 @@ class AsioExecutor {
    *
    */
   void EnableStopSignal() {
-    if (start_flag_)
-      throw std::runtime_error("EnableStopSignal should not be called after start.");
+    if (state_.load() != State::PreStart) [[unlikely]]
+      throw std::runtime_error("Function can only be called when state is 'PreStart'.");
 
     auto sig_ptr = std::make_shared<boost::asio::signal_set>(*io_ptr_, SIGINT, SIGTERM);
 
@@ -154,22 +153,28 @@ class AsioExecutor {
   }
 
   /**
-   * @brief 获取io
+   * @brief 获取io_ctx
    * @return io_context
    */
-  const std::shared_ptr<boost::asio::io_context>& IO() { return io_ptr_; }
+  auto IO() const { return io_ptr_; }
 
   /**
    * @brief 获取线程数
-   *
    * @return const uint32_t
    */
   const uint32_t ThreadsNum() const { return threads_num_; }
 
  private:
+  enum class State : uint32_t {
+    PreStart,
+    Start,
+    Shutdown,
+  };
+
   const uint32_t threads_num_;
-  std::atomic_bool start_flag_ = false;
-  std::atomic_bool stop_flag_ = false;
+
+  std::atomic<State> state_ = State::PreStart;
+
   std::shared_ptr<boost::asio::io_context> io_ptr_;
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard_;
   std::list<std::thread> threads_;
@@ -177,4 +182,4 @@ class AsioExecutor {
   std::vector<std::function<void()>> stop_func_vec_;
 };
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::plugins::net_plugin

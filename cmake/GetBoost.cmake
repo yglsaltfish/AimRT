@@ -14,17 +14,11 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(boost)
 if(NOT boost_POPULATED)
-  FetchContent_Populate(boost)
-
   set(BOOST_INCLUDE_LIBRARIES beast asio)
+
   set(Boost_USE_STATIC_LIBS
       ON
       CACHE BOOL "")
 
-  # set(BOOST_SKIP_INSTALL_RULES OFF CACHE BOOL "")
-  file(READ ${boost_SOURCE_DIR}/tools/cmake/include/BoostRoot.cmake TMP_VAR)
-  string(REPLACE "set(BOOST_SKIP_INSTALL_RULES ON)" "set(BOOST_SKIP_INSTALL_RULES OFF)" TMP_OUT_VAR "${TMP_VAR}")
-  file(WRITE ${boost_SOURCE_DIR}/tools/cmake/include/BoostRoot.cmake "${TMP_OUT_VAR}")
-
-  add_subdirectory(${boost_SOURCE_DIR} ${boost_BINARY_DIR})
+  FetchContent_MakeAvailable(boost)
 endif()
