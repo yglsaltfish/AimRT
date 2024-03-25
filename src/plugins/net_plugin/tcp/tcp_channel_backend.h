@@ -3,9 +3,9 @@
 #include <set>
 
 #include "core/channel/channel_backend_base.h"
-#include "net/asio_tcp_cli.h"
-#include "net/asio_tcp_svr.h"
 #include "net_plugin/msg_handle_registry.h"
+#include "net_plugin/util/asio_tcp_cli.h"
+#include "net_plugin/util/asio_tcp_svr.h"
 
 namespace aimrt::plugins::net_plugin {
 
@@ -25,8 +25,8 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   TcpChannelBackend(
       const std::shared_ptr<boost::asio::io_context>& io_ptr,
-      const std::shared_ptr<common::net::AsioTcpClientPool>& tcp_cli_pool_ptr,
-      const std::shared_ptr<common::net::AsioTcpServer>& tcp_svr_ptr,
+      const std::shared_ptr<AsioTcpClientPool>& tcp_cli_pool_ptr,
+      const std::shared_ptr<AsioTcpServer>& tcp_svr_ptr,
       const std::shared_ptr<TcpMsgHandleRegistry>& msg_handle_registry_ptr)
       : io_ptr_(io_ptr),
         tcp_cli_pool_ptr_(tcp_cli_pool_ptr),
@@ -63,8 +63,8 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
-  std::shared_ptr<common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;
-  std::shared_ptr<common::net::AsioTcpServer> tcp_svr_ptr_;
+  std::shared_ptr<AsioTcpClientPool> tcp_cli_pool_ptr_;
+  std::shared_ptr<AsioTcpServer> tcp_svr_ptr_;
   std::shared_ptr<TcpMsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::unordered_map<std::string,

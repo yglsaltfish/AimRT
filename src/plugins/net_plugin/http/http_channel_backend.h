@@ -3,8 +3,8 @@
 #include <set>
 
 #include "core/channel/channel_backend_base.h"
-#include "net/asio_http_cli.h"
-#include "net/asio_http_svr.h"
+#include "net_plugin/util/asio_http_cli.h"
+#include "net_plugin/util/asio_http_svr.h"
 
 namespace aimrt::plugins::net_plugin {
 
@@ -22,8 +22,8 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   HttpChannelBackend(
       const std::shared_ptr<boost::asio::io_context>& io_ptr,
-      const std::shared_ptr<common::net::AsioHttpClientPool>& http_cli_pool_ptr,
-      const std::shared_ptr<common::net::AsioHttpServer>& http_svr_ptr)
+      const std::shared_ptr<AsioHttpClientPool>& http_cli_pool_ptr,
+      const std::shared_ptr<AsioHttpServer>& http_svr_ptr)
       : io_ptr_(io_ptr),
         http_cli_pool_ptr_(http_cli_pool_ptr),
         http_svr_ptr_(http_svr_ptr) {}
@@ -58,8 +58,8 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
-  std::shared_ptr<common::net::AsioHttpClientPool> http_cli_pool_ptr_;
-  std::shared_ptr<common::net::AsioHttpServer> http_svr_ptr_;
+  std::shared_ptr<AsioHttpClientPool> http_cli_pool_ptr_;
+  std::shared_ptr<AsioHttpServer> http_svr_ptr_;
 
   std::unordered_map<
       std::string,

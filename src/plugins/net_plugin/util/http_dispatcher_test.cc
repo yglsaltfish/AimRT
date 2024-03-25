@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "net/http_dispatcher.h"
+#include "net_plugin/util/http_dispatcher.h"
 
-namespace aimrt::common::net {
+namespace aimrt::plugins::net_plugin {
 
 TEST(HTTP_DISPATCHER_TEST, HttpDispatcher_CASE1) {
   using TestHttpDispatcher = HttpDispatcher<std::string(void)>;
@@ -217,4 +217,4 @@ TEST(HTTP_DISPATCHER_TEST, HttpDispatcher_CASE3) {
   }
 }
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::plugins::net_plugin

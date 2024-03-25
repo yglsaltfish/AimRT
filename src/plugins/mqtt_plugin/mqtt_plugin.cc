@@ -91,7 +91,7 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
             AIMRT_WARN("Failed to connect mqtt broker, return code {}", rc);
           }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
       }
     });
 

@@ -31,7 +31,15 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          aimrt::common::net)
+          Boost::beast)
+
+# Set compile definitions of target
+target_compile_definitions(${CUR_TARGET_NAME} INTERFACE BOOST_ASIO_NO_DEPRECATED)
+
+# Set compile options of target
+if(WIN32)
+  target_compile_options(${CUR_TARGET_NAME} INTERFACE /bigobj)
+endif()
 
 # Set installation of target
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})

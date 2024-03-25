@@ -1,17 +1,17 @@
 #include <gtest/gtest.h>
 
-#include "net/asio_http_cli.h"
-#include "net/asio_http_svr.h"
-#include "net/asio_tools.h"
+#include "net_plugin/util/asio_http_cli.h"
+#include "net_plugin/util/asio_http_svr.h"
+#include "net_plugin/util/asio_tools.h"
 #include "util/string_util.h"
 
-namespace aimrt::common::net {
+namespace aimrt::plugins::net_plugin {
 
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
 
-inline util::SimpleLogger& GetLogger() {
-  static util::SimpleLogger logger;
+inline aimrt::common::util::SimpleLogger& GetLogger() {
+  static aimrt::common::util::SimpleLogger logger;
   return logger;
 }
 
@@ -62,11 +62,11 @@ TEST(NET_TEST, Http_base) {
       req.set(http::field::host, "127.0.0.1");
       req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
-      AIMRT_INFO("req:\n{}", util::SSToString(req));
+      AIMRT_INFO("req:\n{}", aimrt::common::util::SSToString(req));
 
       auto rsp = co_await client_ptr->HttpSendRecvCo(req);
 
-      AIMRT_INFO("rsp:\n{}", util::SSToString(rsp));
+      AIMRT_INFO("rsp:\n{}", aimrt::common::util::SSToString(rsp));
 
       // check rsp
       EXPECT_EQ(rsp.result_int(), 404);
@@ -178,11 +178,11 @@ TEST(NET_TEST, Http_multi_server) {
       req.set(http::field::host, "127.0.0.1");
       req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
-      AIMRT_INFO("req:\n{}", util::SSToString(req));
+      AIMRT_INFO("req:\n{}", aimrt::common::util::SSToString(req));
 
       auto rsp = co_await client_ptr->HttpSendRecvCo(req);
 
-      AIMRT_INFO("rsp:\n{}", util::SSToString(rsp));
+      AIMRT_INFO("rsp:\n{}", aimrt::common::util::SSToString(rsp));
 
       // check rsp
       EXPECT_EQ(rsp.result_int(), 404);
@@ -260,11 +260,11 @@ TEST(NET_TEST, Http_server_restart) {
       req.set(http::field::host, "127.0.0.1");
       req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
-      AIMRT_INFO("req:\n{}", util::SSToString(req));
+      AIMRT_INFO("req:\n{}", aimrt::common::util::SSToString(req));
 
       auto rsp = co_await http_cli_ptr->HttpSendRecvCo(req);
 
-      AIMRT_INFO("rsp:\n{}", util::SSToString(rsp));
+      AIMRT_INFO("rsp:\n{}", aimrt::common::util::SSToString(rsp));
 
       // check rsp
       EXPECT_EQ(rsp.result_int(), 404);
@@ -386,7 +386,7 @@ TEST(NET_TEST, Http_server_handle) {
          http::response<http::string_body>& rsp,
          std::chrono::nanoseconds timeout)
       -> asio::awaitable<AsioHttpServer::HttpHandleStatus> {
-    AIMRT_INFO("handle req:\n{}", util::SSToString(req));
+    AIMRT_INFO("handle req:\n{}", aimrt::common::util::SSToString(req));
 
     rsp = http::response<http::string_body>{http::status::ok, req.version()};
     rsp.set(http::field::server, BOOST_BEAST_VERSION_STRING);
@@ -395,7 +395,7 @@ TEST(NET_TEST, Http_server_handle) {
     rsp.body() = "echo: " + boost::beast::buffers_to_string(req.body().data());
     rsp.prepare_payload();
 
-    AIMRT_INFO("handle rsp:\n{}", util::SSToString(rsp));
+    AIMRT_INFO("handle rsp:\n{}", aimrt::common::util::SSToString(rsp));
 
     co_return AsioHttpServer::HttpHandleStatus::OK;
   };
@@ -428,11 +428,11 @@ TEST(NET_TEST, Http_server_handle) {
       req.keep_alive(false);
       req.prepare_payload();
 
-      AIMRT_INFO("req:\n{}", util::SSToString(req));
+      AIMRT_INFO("req:\n{}", aimrt::common::util::SSToString(req));
 
       auto rsp = co_await http_cli_ptr->HttpSendRecvCo(req);
 
-      AIMRT_INFO("rsp:\n{}", util::SSToString(rsp));
+      AIMRT_INFO("rsp:\n{}", aimrt::common::util::SSToString(rsp));
 
       // check rsp
       EXPECT_EQ(rsp.result_int(), 200);
@@ -470,4 +470,4 @@ TEST(NET_TEST, Http_server_handle) {
   t_cli.join();
 }
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::plugins::net_plugin

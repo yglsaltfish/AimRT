@@ -34,8 +34,8 @@
   - 订阅请求包使用的topic：`$share/aimrt/aimrt_rpc_req/${func_name}`
   - 发布回包使用的topic：`aimrt_rpc_rsp/${client_id}/${func_name}`
 - Client端
-  - 发布请求包使用的topic：`aimrt_rpc_rsp/${client_id}/${func_name}`
-  - 订阅回包使用的topic：`aimrt_rpc_req/${func_name}`
+  - 发布请求包使用的topic：`aimrt_rpc_req/${func_name}`
+  - 订阅回包使用的topic：`aimrt_rpc_rsp/${client_id}/${func_name}`
 
 其中`${client_id}`是Client端需要保证在同一个Mqtt broker环境下全局唯一的一个值，一般使用在Mqtt broker处注册的client_id。`${func_name}`是url编码后的aimrt rpc方法名称。Server端订阅使用共享订阅，保证只有一个服务端处理请求。此项特性需要支持Mqtt5.0协议的Broker。
 

@@ -13,7 +13,7 @@
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::common::net {
+namespace aimrt::plugins::net_plugin {
 
 class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
  public:
@@ -22,6 +22,9 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   using Strand = boost::asio::strand<IOCtx::executor_type>;
   using Timer = boost::asio::steady_timer;
   using Streambuf = boost::asio::streambuf;
+
+  template <class T>
+  using Awaitable = boost::asio::awaitable<T>;
 
   using MsgHandle =
       std::function<void(const Udp::endpoint&, const std::shared_ptr<Streambuf>&)>;
@@ -67,14 +70,14 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
         mgr_timer_(mgr_strand_),
         socket_strand_(boost::asio::make_strand(*io_ptr_)),
         sock_(socket_strand_),
-        logger_ptr_(std::make_shared<util::LoggerWrapper>()) {}
+        logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
 
   ~AsioUdpServer() = default;
 
   AsioUdpServer(const AsioUdpServer&) = delete;
   AsioUdpServer& operator=(const AsioUdpServer&) = delete;
 
-  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -99,7 +102,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
-        "AsioHttpClientPool can only be initialized once.");
+        "Function can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
@@ -113,7 +116,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     auto self = shared_from_this();
     boost::asio::co_spawn(
         mgr_strand_,
-        [this, self]() -> boost::asio::awaitable<void> {
+        [this, self]() -> Awaitable<void> {
           sock_.open(options_.ep.protocol());
           sock_.bind(options_.ep);
 
@@ -132,7 +135,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
                   msg_buf->prepare(options_.max_package_size), remote_ep,
                   boost::asio::use_awaitable);
               AIMRT_TRACE("udp svr session async read {} bytes from {}",
-                          read_data_size, util::SSToString(remote_ep));
+                          read_data_size, aimrt::common::util::SSToString(remote_ep));
               msg_buf->commit(read_data_size);
 
               std::shared_ptr<Session> session_ptr;
@@ -165,7 +168,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
     boost::asio::co_spawn(
         mgr_strand_,
-        [this, self]() -> boost::asio::awaitable<void> {
+        [this, self]() -> Awaitable<void> {
           while (state_.load() == State::Start) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
@@ -238,7 +241,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     });
   }
 
-  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   struct SessionOptions {
@@ -251,7 +254,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   class Session : public std::enable_shared_from_this<Session> {
    public:
     Session(const std::shared_ptr<IOCtx>& io_ptr,
-            const std::shared_ptr<util::LoggerWrapper>& logger_ptr,
+            const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr,
             const std::shared_ptr<MsgHandle>& msg_handle_ptr)
         : io_ptr_(io_ptr),
           session_mgr_strand_(boost::asio::make_strand(*io_ptr_)),
@@ -267,7 +270,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
-          "Session can only be initialized once.");
+          "Function can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
     }
@@ -282,7 +285,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
       // 定时器协程
       boost::asio::co_spawn(
           session_mgr_strand_,
-          [this, self]() -> boost::asio::awaitable<void> {
+          [this, self]() -> Awaitable<void> {
             try {
               while (state_.load() == SessionState::Start) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
@@ -293,17 +296,15 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
                 } else {
                   AIMRT_WARN(
                       "udp svr session exit due to timeout({}ms), addr {}.",
-                      std::chrono::duration_cast<std::chrono::milliseconds>(
-                          session_options_ptr_->max_no_data_duration)
-                          .count(),
-                      util::SSToString(remote_ep_));
+                      std::chrono::duration_cast<std::chrono::milliseconds>(session_options_ptr_->max_no_data_duration).count(),
+                      aimrt::common::util::SSToString(remote_ep_));
                   break;
                 }
               }
             } catch (const std::exception& e) {
               AIMRT_TRACE(
                   "udp svr session timer get exception and exit, addr {}, exception info: {}",
-                  util::SSToString(remote_ep_), e.what());
+                  aimrt::common::util::SSToString(remote_ep_), e.what());
             }
 
             Shutdown();
@@ -351,7 +352,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
           });
     }
 
-    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+    const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     bool IsRunning() const { return state_.load() == SessionState::Start; }
 
@@ -369,7 +370,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     Timer timer_;
 
     // 日志打印句柄
-    std::shared_ptr<util::LoggerWrapper> logger_ptr_;
+    std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
     // msg处理句柄
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
@@ -402,7 +403,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   Udp::socket sock_;
 
   // 日志打印句柄
-  std::shared_ptr<util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   // msg处理句柄
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
@@ -418,4 +419,4 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   std::unordered_map<Udp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::plugins::net_plugin

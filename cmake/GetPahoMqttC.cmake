@@ -17,6 +17,10 @@ if(NOT paho_mqtt_c_POPULATED)
       OFF
       CACHE BOOL "")
 
+  set(PAHO_ENABLE_CPACK
+      OFF
+      CACHE BOOL "")
+
   set(PAHO_WITH_SSL
       ON
       CACHE BOOL "")

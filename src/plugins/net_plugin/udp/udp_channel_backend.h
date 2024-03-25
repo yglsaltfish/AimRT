@@ -3,9 +3,9 @@
 #include <set>
 
 #include "core/channel/channel_backend_base.h"
-#include "net/asio_udp_cli.h"
-#include "net/asio_udp_svr.h"
 #include "net_plugin/msg_handle_registry.h"
+#include "net_plugin/util/asio_udp_cli.h"
+#include "net_plugin/util/asio_udp_svr.h"
 
 namespace aimrt::plugins::net_plugin {
 
@@ -25,8 +25,8 @@ class UdpChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   UdpChannelBackend(
       const std::shared_ptr<boost::asio::io_context>& io_ptr,
-      const std::shared_ptr<common::net::AsioUdpClientPool>& udp_cli_pool_ptr,
-      const std::shared_ptr<common::net::AsioUdpServer>& udp_svr_ptr,
+      const std::shared_ptr<AsioUdpClientPool>& udp_cli_pool_ptr,
+      const std::shared_ptr<AsioUdpServer>& udp_svr_ptr,
       const std::shared_ptr<UdpMsgHandleRegistry>& msg_handle_registry_ptr)
       : io_ptr_(io_ptr),
         udp_cli_pool_ptr_(udp_cli_pool_ptr),
@@ -63,8 +63,8 @@ class UdpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
-  std::shared_ptr<common::net::AsioUdpClientPool> udp_cli_pool_ptr_;
-  std::shared_ptr<common::net::AsioUdpServer> udp_svr_ptr_;
+  std::shared_ptr<AsioUdpClientPool> udp_cli_pool_ptr_;
+  std::shared_ptr<AsioUdpServer> udp_svr_ptr_;
   std::shared_ptr<UdpMsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::unordered_map<std::string,

@@ -5,6 +5,7 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "mqtt_plugin/global.h"
+#include "util/buffer_util.h"
 #include "util/url_encode.h"
 
 namespace YAML {
@@ -125,6 +126,8 @@ bool MqttChannelBackend::RegisterPublishType(
     return false;
   }
 
+  AIMRT_INFO("Register publish type to mqtt channel, url: {}", pattern);
+
   return true;
 }
 
@@ -141,16 +144,16 @@ bool MqttChannelBackend::Subscribe(
 
   int qos = 2;
 
-  for (auto& pub_topic_options : options_.pub_topics_options) {
+  for (auto& sub_topic_options : options_.sub_topics_options) {
     try {
       if (std::regex_match(topic_name.begin(), topic_name.end(),
-                           std::regex(pub_topic_options.topic_name, std::regex::ECMAScript))) {
-        qos = pub_topic_options.qos;
+                           std::regex(sub_topic_options.topic_name, std::regex::ECMAScript))) {
+        qos = sub_topic_options.qos;
         break;
       }
     } catch (const std::exception& e) {
       AIMRT_WARN("Subscribe get exception, expr: {}, string: {}, exception info: {}",
-                 pub_topic_options.topic_name, topic_name, e.what());
+                 sub_topic_options.topic_name, topic_name, e.what());
     }
   }
 
@@ -173,36 +176,18 @@ bool MqttChannelBackend::Subscribe(
 
   auto handle = [this, subscribe_wrapper_vec_ptr](MQTTClient_message* message) {
     try {
-      auto msg_buf_str = std::string_view(static_cast<const char*>(message->payload), message->payloadlen);
-
-      // 1 byte serialization type len : m byte
-      // serialization type : buf.len-1-n byte data
-
-      const void* buf_data = msg_buf_str.data();
-      size_t buf_size = msg_buf_str.size();
-
-      size_t cur_pos = 0;
-
-      // serialization_type
-      AIMRT_CHECK_ERROR_THROW(buf_size - cur_pos > 1, "Invalid msg, buf size: {}", buf_size);
-      uint8_t serialization_type_size = static_cast<const uint8_t*>(buf_data)[cur_pos];
-      cur_pos += 1;
-
-      AIMRT_CHECK_ERROR_THROW(buf_size - cur_pos > serialization_type_size,
-                              "Invalid msg, buf size: {}, serialization type size: {}",
-                              buf_size, serialization_type_size);
-      std::string serialization_type = std::string(static_cast<const char*>(buf_data) + cur_pos, serialization_type_size);
-      cur_pos += serialization_type_size;
-
-      // context
       auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
       auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
 
+      util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
+
+      std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
       ctx_ref.SetSerializationType(serialization_type);
 
-      // 获取消息buf
-      aimrt_buffer_view_t buffer_view{.data = static_cast<const char*>(buf_data) + cur_pos,
-                                      .len = buf_size - cur_pos};
+      auto remaining_buf = buf_oper.GetRemainingBuffer();
+      aimrt_buffer_view_t buffer_view{
+          .data = remaining_buf.data(),
+          .len = remaining_buf.size()};
 
       aimrt_buffer_array_view_t buffer_array_view{
           .data = &buffer_view,
@@ -321,21 +306,16 @@ void MqttChannelBackend::Publish(
   const size_t buffer_array_len = buffer_array->Size();
   size_t msg_size = buffer_array->BufferSize();
 
-  std::vector<uint8_t> msg_buf_vec(1 + serialization_type.size() + msg_size);
+  std::vector<char> msg_buf_vec(1 + serialization_type.size() + msg_size);
 
-  size_t cur_pos = 0;
+  util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
 
-  // 1 byte serialization_type size | n0 byte serialization_type
-  size_t serialization_type_size = serialization_type.size();
-  msg_buf_vec[cur_pos] = static_cast<uint8_t>(serialization_type_size);
-  cur_pos += 1;
-  memcpy(msg_buf_vec.data() + cur_pos, serialization_type.data(), serialization_type_size);
-  cur_pos += serialization_type_size;
+  buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
 
-  // data
   for (size_t ii = 0; ii < buffer_array_len; ++ii) {
-    memcpy(msg_buf_vec.data() + cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
-    cur_pos += buffer_array_data[ii].len;
+    buf_oper.SetBuffer(
+        static_cast<const char*>(buffer_array_data[ii].data),
+        buffer_array_data[ii].len);
   }
 
   MQTTClient_message pubmsg = MQTTClient_message_initializer;

@@ -9,11 +9,11 @@
 
 #include <boost/asio.hpp>
 
-#include "net/net_util.h"
+#include "util/buffer_util.h"
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::common::net {
+namespace aimrt::plugins::net_plugin {
 
 class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
  public:
@@ -22,6 +22,9 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   using Strand = boost::asio::strand<IOCtx::executor_type>;
   using Timer = boost::asio::steady_timer;
   using Streambuf = boost::asio::streambuf;
+
+  template <class T>
+  using Awaitable = boost::asio::awaitable<T>;
 
   using MsgHandle =
       std::function<void(const Tcp::endpoint&, const std::shared_ptr<Streambuf>&)>;
@@ -67,14 +70,14 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
         acceptor_(mgr_strand_),
         acceptor_timer_(mgr_strand_),
         mgr_timer_(mgr_strand_),
-        logger_ptr_(std::make_shared<util::LoggerWrapper>()) {}
+        logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
 
   ~AsioTcpServer() = default;
 
   AsioTcpServer(const AsioTcpServer&) = delete;
   AsioTcpServer& operator=(const AsioTcpServer&) = delete;
 
-  void SetLogger(const std::shared_ptr<util::LoggerWrapper>& logger_ptr) {
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -99,12 +102,13 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
-        "AsioTcpClient can only be initialized once.");
+        "Function can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
 
-    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep), "{} is already in use.", util::SSToString(options_.ep));
+    AIMRT_CHECK_ERROR_THROW(CheckListenAddr(options_.ep),
+                            "{} is already in use.", aimrt::common::util::SSToString(options_.ep));
   }
 
   void Start() {
@@ -115,7 +119,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     auto self = shared_from_this();
     boost::asio::co_spawn(
         mgr_strand_,
-        [this, self]() -> boost::asio::awaitable<void> {
+        [this, self]() -> Awaitable<void> {
           acceptor_.open(options_.ep.protocol());
           acceptor_.set_option(Tcp::acceptor::reuse_address(true));
           acceptor_.bind(options_.ep);
@@ -136,6 +140,9 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
               co_await acceptor_.async_accept(session_ptr->Socket(),
                                               boost::asio::use_awaitable);
+              AIMRT_TRACE(
+                  "Tcp svr accept a new connection, remote addr is {}",
+                  aimrt::common::util::SSToString(session_ptr->Socket().remote_endpoint()));
               session_ptr->Start();
 
               session_ptr_map_.emplace(session_ptr->Socket().remote_endpoint(), session_ptr);
@@ -155,7 +162,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
     boost::asio::co_spawn(
         mgr_strand_,
-        [this, self]() -> boost::asio::awaitable<void> {
+        [this, self]() -> Awaitable<void> {
           while (state_.load() == State::Start) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
@@ -235,7 +242,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
       auto finditr = session_ptr_map_.find(ep);
       if (finditr == session_ptr_map_.end()) {
         AIMRT_WARN("Tcp svr can not find endpoint {} in session map",
-                   util::SSToString(ep));
+                   aimrt::common::util::SSToString(ep));
         return;
       }
 
@@ -246,7 +253,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     });
   }
 
-  const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool IsRunning() const { return state_.load() == State::Start; }
 
@@ -278,7 +285,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   class Session : public std::enable_shared_from_this<Session> {
    public:
     Session(const std::shared_ptr<IOCtx>& io_ptr,
-            const std::shared_ptr<util::LoggerWrapper>& logger_ptr,
+            const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr,
             const std::shared_ptr<MsgHandle>& msg_handle_ptr)
         : io_ptr_(io_ptr),
           session_socket_strand_(boost::asio::make_strand(*io_ptr)),
@@ -297,7 +304,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     void Initialize(const std::shared_ptr<const SessionOptions>& session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
-          "Session can only be initialized once.");
+          "Function can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
     }
@@ -307,15 +314,14 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
           "Function can only be called when state is 'Init'.");
 
-      remote_addr_ = util::SSToString(sock_.remote_endpoint());
-      AIMRT_TRACE("Tcp svr accept a new connect from {}.", RemoteAddr());
+      remote_addr_ = aimrt::common::util::SSToString(sock_.remote_endpoint());
 
       auto self = shared_from_this();
 
       // 发送协程
       boost::asio::co_spawn(
           session_socket_strand_,
-          [this, self]() -> boost::asio::awaitable<void> {
+          [this, self]() -> Awaitable<void> {
             try {
               while (state_.load() == SessionState::Start) {
                 while (!data_list.empty()) {
@@ -330,8 +336,8 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
                   for (auto& itr : tmp_data_list) {
                     head_buf[ct * HEAD_SIZE] = HEAD_BYTE_1;
                     head_buf[ct * HEAD_SIZE + 1] = HEAD_BYTE_2;
-                    SetBufFromUint32(&head_buf[ct * HEAD_SIZE + 2],
-                                     static_cast<uint32_t>(itr->size()));
+                    aimrt::common::util::SetBufFromUint32(&head_buf[ct * HEAD_SIZE + 2],
+                                                          static_cast<uint32_t>(itr->size()));
                     data_buf_vec.emplace_back(
                         boost::asio::const_buffer(&head_buf[ct * HEAD_SIZE], HEAD_SIZE));
                     ++ct;
@@ -370,7 +376,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
       // 接收协程
       boost::asio::co_spawn(
           session_socket_strand_,
-          [this, self]() -> boost::asio::awaitable<void> {
+          [this, self]() -> Awaitable<void> {
             try {
               std::vector<char> head_buf(HEAD_SIZE);
               boost::asio::mutable_buffer asio_head_buf(head_buf.data(), HEAD_SIZE);
@@ -392,7 +398,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
                     static_cast<uint8_t>(head_buf[0]),
                     static_cast<uint8_t>(head_buf[1]));
 
-                uint32_t msg_len = GetUint32FromBuf(&head_buf[2]);
+                uint32_t msg_len = aimrt::common::util::GetUint32FromBuf(&head_buf[2]);
 
                 AIMRT_CHECK_ERROR_THROW(
                     msg_len <= session_options_ptr_->max_recv_size,
@@ -428,7 +434,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
       // 定时器协程
       boost::asio::co_spawn(
           session_mgr_strand_,
-          [this, self]() -> boost::asio::awaitable<void> {
+          [this, self]() -> Awaitable<void> {
             try {
               while (state_.load() == SessionState::Start) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
@@ -439,9 +445,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
                 } else {
                   AIMRT_TRACE(
                       "Tcp svr session exit due to timeout({}ms), remote addr {}.",
-                      std::chrono::duration_cast<std::chrono::milliseconds>(
-                          session_options_ptr_->max_no_data_duration)
-                          .count(),
+                      std::chrono::duration_cast<std::chrono::milliseconds>(session_options_ptr_->max_no_data_duration).count(),
                       RemoteAddr());
                   break;
                 }
@@ -534,7 +538,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           });
     }
 
-    const util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+    const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
     Tcp::socket& Socket() { return sock_; }
 
@@ -559,7 +563,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     Timer timer_;
 
     // 日志打印句柄
-    std::shared_ptr<util::LoggerWrapper> logger_ptr_;
+    std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
     // msg处理句柄
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
@@ -592,7 +596,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   Timer mgr_timer_;         // 管理session池的定时器
 
   // 日志打印句柄
-  std::shared_ptr<util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   // msg处理句柄
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
@@ -608,4 +612,4 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
-}  // namespace aimrt::common::net
+}  // namespace aimrt::plugins::net_plugin

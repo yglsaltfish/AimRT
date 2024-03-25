@@ -14,11 +14,18 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(gflags)
 if(NOT gflags_POPULATED)
+  FetchContent_Populate(gflags)
+
   set(BUILD_TESTING
       OFF
       CACHE BOOL "")
 
-  FetchContent_MakeAvailable(gflags)
+  file(READ ${gflags_SOURCE_DIR}/CMakeLists.txt TMP_VAR)
+  string(REPLACE "  set (PKGCONFIG_INSTALL_DIR " "# set (PKGCONFIG_INSTALL_DIR " TMP_VAR "${TMP_VAR}")
+  file(WRITE ${gflags_SOURCE_DIR}/CMakeLists.txt "${TMP_VAR}")
+
+  add_subdirectory(${gflags_SOURCE_DIR} ${gflags_BINARY_DIR})
+
 endif()
 
 # import targets:
