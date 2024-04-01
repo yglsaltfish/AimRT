@@ -177,7 +177,7 @@ void BenchmarkSubscriberModule::Shutdown() noexcept {
 }
 
 co::Task<void> BenchmarkSubscriberModule::BenchmarkSignalHandle(const aimrt::protocols::example::BenchmarkSignal& data) {
-  AIMRT_INFO("Get new pb event, data: {}", aimrt::Pb2CompactJson(data));
+  AIMRT_INFO("Receive new pb event, data: {}", aimrt::Pb2CompactJson(data));
 
   for (auto& topic : data.topic_info()) {
     if (topic.status() == aimrt::protocols::example::BenchmarkStatus::Start) {

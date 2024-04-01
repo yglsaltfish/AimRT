@@ -26,6 +26,12 @@ aimrt:
         options:
           subscriber_use_inline_executor: false # 订阅端是否使用inline执行器
           subscriber_executor: work_thread_pool # 订阅端回调的执行器，仅在subscriber_use_inline_executor=false时生效
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
   module: # 模块配置
     modules: # 模块
       - name: NormalPublisherPyModule # 模块Name接口返回的名称

@@ -37,6 +37,9 @@ aimrt:
           pub_topics_options:
             - topic_name: "(.*)" # 支持正则表达式，所有topic
               server_url_list: ["127.0.0.1:50040"]
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [udp]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_channel_alpha_pkg.so # so/dll地址

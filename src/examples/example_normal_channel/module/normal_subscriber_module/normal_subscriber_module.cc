@@ -43,7 +43,7 @@ void NormalSubscriberModule::Shutdown() noexcept {}
 
 co::Task<void> NormalSubscriberModule::EventHandle(
     const aimrt::protocols::example::ExampleEventMsg& data) {
-  AIMRT_INFO("Get new pb event, data: {}", aimrt::Pb2CompactJson(data));
+  AIMRT_INFO("Receive new pb event, data: {}", aimrt::Pb2CompactJson(data));
 
   co_return;
 }

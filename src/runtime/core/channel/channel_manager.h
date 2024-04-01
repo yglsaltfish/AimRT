@@ -22,6 +22,18 @@ class ChannelManager {
       YAML::Node options;
     };
     std::vector<BackendOptions> backends_options;
+
+    struct PubTopicOptions {
+      std::string topic_name;
+      std::vector<std::string> enable_backends;
+    };
+    std::vector<PubTopicOptions> pub_topics_options;
+
+    struct SubTopicOptions {
+      std::string topic_name;
+      std::vector<std::string> enable_backends;
+    };
+    std::vector<SubTopicOptions> sub_topics_options;
   };
 
   enum class State : uint32_t {
@@ -83,15 +95,19 @@ class ChannelManager {
     ChannelHandleProxyWrap(
         std::string_view input_pkg_path,
         std::string_view input_module_name,
+        common::util::LoggerWrapper& logger,
         ChannelBackendManager& channel_backend_manager,
-        ContextManager& context_manager)
+        ContextManager& context_manager,
+        std::atomic_bool& channel_handle_proxy_start_flag)
         : pkg_path(input_pkg_path),
           module_name(input_module_name),
           channel_handle_proxy(
               pkg_path,
               module_name,
+              logger,
               channel_backend_manager,
               context_manager,
+              channel_handle_proxy_start_flag,
               publisher_proxy_map,
               subscriber_proxy_map) {}
 
@@ -103,6 +119,7 @@ class ChannelManager {
     ChannelHandleProxy channel_handle_proxy;
   };
 
+  std::atomic_bool channel_handle_proxy_start_flag_ = false;
   std::unordered_map<std::string, std::unique_ptr<ChannelHandleProxyWrap>> channel_handle_proxy_wrap_map_;
 
   // 信息查询类变量

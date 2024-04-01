@@ -29,7 +29,7 @@ bool Ros2SubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
     bool ret = aimrt::channel::Subscribe<example_ros2::msg::RosTestMsg>(
         subscriber_,
         [this](const std::shared_ptr<const example_ros2::msg::RosTestMsg>& msg) {
-          AIMRT_INFO("Get new ros event, data:\n{}", example_ros2::msg::to_yaml(*msg));
+          AIMRT_INFO("Receive new ros event, data:\n{}", example_ros2::msg::to_yaml(*msg));
           return;
         });
     AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed.");

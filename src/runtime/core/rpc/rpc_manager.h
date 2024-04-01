@@ -25,6 +25,18 @@ class RpcManager {
       YAML::Node options;
     };
     std::vector<BackendOptions> backends_options;
+
+    struct ClientOptions {
+      std::string func_name;
+      std::vector<std::string> enable_backends;
+    };
+    std::vector<ClientOptions> clients_options;
+
+    struct ServerOptions {
+      std::string func_name;
+      std::vector<std::string> enable_backends;
+    };
+    std::vector<ServerOptions> servers_options;
   };
 
   enum class State : uint32_t {

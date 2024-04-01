@@ -12,9 +12,8 @@
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/channel/channel_backend_manager.h"
 #include "core/channel/context_manager.h"
+#include "util/log_util.h"
 #include "util/string_util.h"
-
-#include "tbb/concurrent_hash_map.h"
 
 namespace aimrt::runtime::core::channel {
 
@@ -171,38 +170,33 @@ class SubscriberProxy {
 
 class ChannelHandleProxy {
  public:
-  struct StringHashCompare {
-    using is_transparent = void;
-
-    bool equal(const std::string& lhs, const std::string& rhs) const { return lhs == rhs; }
-    bool equal(const std::string& lhs, std::string_view rhs) const { return lhs == rhs; }
-    bool equal(std::string_view lhs, const std::string& rhs) const { return lhs == rhs; }
-
-    std::size_t hash(const std::string& k) const { return std::hash<std::string_view>{}(k); }
-    std::size_t hash(std::string_view k) const { return std::hash<std::string_view>{}(k); }
-  };
-
-  using PublisherProxyMap = tbb::concurrent_hash_map<
+  using PublisherProxyMap = std::unordered_map<
       std::string,
       std::unique_ptr<PublisherProxy>,
-      StringHashCompare>;
+      aimrt::common::util::StringHash,
+      std::equal_to<>>;
 
-  using SubscriberProxyMap = tbb::concurrent_hash_map<
+  using SubscriberProxyMap = std::unordered_map<
       std::string,
       std::unique_ptr<SubscriberProxy>,
-      StringHashCompare>;
+      aimrt::common::util::StringHash,
+      std::equal_to<>>;
 
   ChannelHandleProxy(std::string_view pkg_path,
                      std::string_view module_name,
+                     common::util::LoggerWrapper& logger,
                      ChannelBackendManager& channel_backend_manager,
                      ContextManager& context_manager,
+                     std::atomic_bool& start_flag,
                      PublisherProxyMap& publisher_proxy_map,
                      SubscriberProxyMap& subscriber_proxy_map)
       : pkg_path_(pkg_path),
         module_name_(module_name),
+        logger_(logger),
         channel_backend_manager_(channel_backend_manager),
         context_manager_(context_manager),
         context_manager_proxy_(context_manager_),
+        start_flag_(start_flag),
         publisher_proxy_map_(publisher_proxy_map),
         subscriber_proxy_map_(subscriber_proxy_map),
         base_(GenBase(this)) {}
@@ -214,48 +208,60 @@ class ChannelHandleProxy {
 
   const aimrt_channel_handle_base_t* NativeHandle() const { return &base_; }
 
- private:
-  PublisherProxy& GetPublisher(std::string_view topic) {
-    PublisherProxyMap::const_accessor ac;
-    bool find_ret = publisher_proxy_map_.find(ac, topic);
-    if (find_ret) return *(ac->second);
+  const common::util::LoggerWrapper& GetLogger() const { return logger_; }
 
-    publisher_proxy_map_.emplace(
-        ac,
+ private:
+  PublisherProxy* GetPublisher(std::string_view topic) {
+    auto find_itr = publisher_proxy_map_.find(topic);
+    if (find_itr != publisher_proxy_map_.end()) {
+      return find_itr->second.get();
+    }
+
+    if (start_flag_.load()) {
+      AIMRT_WARN("Can not get new publisher for topic '{}' after start.", topic);
+      return nullptr;
+    }
+
+    auto emplace_ret = publisher_proxy_map_.emplace(
         topic,
         std::make_unique<PublisherProxy>(
             pkg_path_, module_name_, topic, channel_backend_manager_, context_manager_));
 
-    return *(ac->second);
+    return emplace_ret.first->second.get();
   }
 
-  SubscriberProxy& GetSubscriber(std::string_view topic) {
-    SubscriberProxyMap::const_accessor ac;
-    bool find_ret = subscriber_proxy_map_.find(ac, topic);
-    if (find_ret) return *(ac->second);
+  SubscriberProxy* GetSubscriber(std::string_view topic) {
+    auto find_itr = subscriber_proxy_map_.find(topic);
+    if (find_itr != subscriber_proxy_map_.end()) {
+      return find_itr->second.get();
+    }
 
-    subscriber_proxy_map_.emplace(
-        ac,
+    if (start_flag_.load()) {
+      AIMRT_WARN("Can not get new subscriber for topic '{}' after start.", topic);
+      return nullptr;
+    }
+
+    auto emplace_ret = subscriber_proxy_map_.emplace(
         topic,
         std::make_unique<SubscriberProxy>(
             pkg_path_, module_name_, topic, channel_backend_manager_));
 
-    return *(ac->second);
+    return emplace_ret.first->second.get();
   }
 
   static aimrt_channel_handle_base_t GenBase(void* impl) {
     return aimrt_channel_handle_base_t{
         .get_publisher = [](void* impl, aimrt_string_view_t topic)
             -> const aimrt_channel_publisher_base_t* {
-          return static_cast<ChannelHandleProxy*>(impl)
-              ->GetPublisher(aimrt::util::ToStdStringView(topic))
-              .NativeHandle();
+          auto publisher_ptr =
+              static_cast<ChannelHandleProxy*>(impl)->GetPublisher(aimrt::util::ToStdStringView(topic));
+          return publisher_ptr ? publisher_ptr->NativeHandle() : nullptr;
         },
         .get_subscriber = [](void* impl, aimrt_string_view_t topic)
             -> const aimrt_channel_subscriber_base_t* {
-          return static_cast<ChannelHandleProxy*>(impl)
-              ->GetSubscriber(aimrt::util::ToStdStringView(topic))
-              .NativeHandle();
+          auto subscriber_ptr =
+              static_cast<ChannelHandleProxy*>(impl)->GetSubscriber(aimrt::util::ToStdStringView(topic));
+          return subscriber_ptr ? subscriber_ptr->NativeHandle() : nullptr;
         },
         .get_context_manager = [](void* impl) -> const aimrt_channel_context_manager_base_t* {
           return static_cast<ChannelHandleProxy*>(impl)->context_manager_proxy_.NativeHandle();
@@ -266,9 +272,15 @@ class ChannelHandleProxy {
  private:
   const std::string_view pkg_path_;
   const std::string_view module_name_;
+
+  common::util::LoggerWrapper& logger_;
+
   ChannelBackendManager& channel_backend_manager_;
+
   ContextManager& context_manager_;
   ChannelContextManagerProxy context_manager_proxy_;
+
+  std::atomic_bool& start_flag_;
   PublisherProxyMap& publisher_proxy_map_;
   SubscriberProxyMap& subscriber_proxy_map_;
 

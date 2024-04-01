@@ -35,6 +35,9 @@ aimrt:
           pub_topics_options:
             - topic_name: test_topic
               enable: true
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [ros2]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libros2_channel_alpha_pkg.so # so/dll地址

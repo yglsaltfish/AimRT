@@ -45,7 +45,7 @@ class NormalSubscriberPyModule(aimrt_py.ModuleBase):
                 return False
 
             def EventHandle(msg):
-                aimrt_py_log.info(self.logger, "Get new pb event, data: {}".format(MessageToJson(msg)))
+                aimrt_py_log.info(self.logger, "Receive new pb event, data: {}".format(MessageToJson(msg)))
 
             aimrt_py_pb_chn.Subscribe(self.subscriber, event_pb2.ExampleEventMsg, EventHandle)
 

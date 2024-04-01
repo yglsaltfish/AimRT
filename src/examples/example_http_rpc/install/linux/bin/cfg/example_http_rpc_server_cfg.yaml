@@ -27,6 +27,9 @@ aimrt:
   rpc: # rpc相关配置
     backends: # rpc后端配置
       - type: http # http rpc后端
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [http]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_rpc_beta_pkg.so # so/dll地址

@@ -28,6 +28,11 @@ class RpcBackendManager {
   void Start();
   void Shutdown();
 
+  void SetClientsBackendsRules(
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+  void SetServersBackendsRules(
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+
   void RegisterRpcBackend(RpcBackendBase* rpc_backend_ptr);
 
   bool RegisterServiceFunc(ServiceFuncWrapper&& service_func_wrapper);
@@ -40,6 +45,11 @@ class RpcBackendManager {
   const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
+  std::vector<RpcBackendBase*> GetBackendsByRules(
+      std::string_view func_name,
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+
+ private:
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
@@ -47,5 +57,14 @@ class RpcBackendManager {
 
   std::vector<RpcBackendBase*> rpc_backend_index_vec_;
   std::unordered_map<std::string_view, RpcBackendBase*> rpc_backend_index_map_;
+
+  std::vector<std::pair<std::string, std::vector<std::string>>> clients_backends_rules_;
+  std::vector<std::pair<std::string, std::vector<std::string>>> servers_backends_rules_;
+  std::unordered_map<
+      std::string,
+      std::vector<RpcBackendBase*>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      clients_backend_index_map_;
 };
 }  // namespace aimrt::runtime::core::rpc

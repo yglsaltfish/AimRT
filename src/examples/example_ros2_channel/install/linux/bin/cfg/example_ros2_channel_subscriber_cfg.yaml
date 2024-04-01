@@ -29,6 +29,9 @@ aimrt:
         options:
           sub_topics_options:
             - topic_name: test_topic
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [ros2]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libros2_channel_beta_pkg.so # so/dll地址

@@ -29,7 +29,9 @@ aimrt:
   channel: # 消息队列相关配置
     backends: # 消息队列后端配置
       - type: sm
- 
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [sm]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_channel_omega_pkg.so # so/dll地址

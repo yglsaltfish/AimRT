@@ -4,7 +4,7 @@ aimrt:
   plugin:
     plugins:
       - name: mqtt_plugin
-        path: ./libmqtt_plugin.so
+        path: ./mqtt_plugin.dll
         options:
           broker_addr: tcp://127.0.0.1:1883
           client_id: example_mqtt_rpc_client
@@ -31,9 +31,12 @@ aimrt:
     backends: # rpc后端配置
       - type: mqtt
         options:
-          clients_options:
+          clients_options: # 规则优先级由上向下递减
             - func_name: "(.*)" # 支持正则表达式，所有func
               enable: true
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [mqtt]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./normal_rpc_alpha_pkg.dll # so/dll地址
