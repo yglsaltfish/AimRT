@@ -23,6 +23,12 @@ aimrt:
   rpc: # rpc相关配置
     backends: # rpc后端配置
       - type: local # 本地rpc后端配置
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
   module: # 模块配置
     modules: # 模块
       - name: NormalRpcClientPyModule # 模块Name接口返回的名称

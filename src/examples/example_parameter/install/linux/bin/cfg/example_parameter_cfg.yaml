@@ -34,6 +34,9 @@ aimrt:
   rpc:
     backends:
       - type: http
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [http]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libparameter_pkg.so # so/dll地址

@@ -152,7 +152,7 @@ bool MqttChannelBackend::Subscribe(
         break;
       }
     } catch (const std::exception& e) {
-      AIMRT_WARN("Subscribe get exception, expr: {}, string: {}, exception info: {}",
+      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
                  sub_topic_options.topic_name, topic_name, e.what());
     }
   }

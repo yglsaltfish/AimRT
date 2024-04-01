@@ -1,4 +1,8 @@
 #include "core/channel/channel_backend_manager.h"
+
+#include <regex>
+#include <vector>
+
 #include "util/stl_tool.h"
 
 namespace aimrt::runtime::core::channel {
@@ -34,6 +38,24 @@ void ChannelBackendManager::Shutdown() {
   channel_backend_index_vec_.clear();
 }
 
+void ChannelBackendManager::SetPubTopicsBackendsRules(
+    const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
+
+  pub_topics_backends_rules_ = rules;
+}
+
+void ChannelBackendManager::SetSubTopicsBackendsRules(
+    const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
+
+  sub_topics_backends_rules_ = rules;
+}
+
 void ChannelBackendManager::RegisterChannelBackend(
     ChannelBackendBase* channel_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
@@ -54,12 +76,20 @@ bool ChannelBackendManager::RegisterPublishType(
       std::make_unique<PublishTypeWrapper>(std::move(publish_type_wrapper));
   const auto& publish_type_wrapper_ref = *publish_type_wrapper_ptr;
 
-  if (!channel_registry_ptr_->RegisterPublishType(
-          std::move(publish_type_wrapper_ptr)))
+  if (!channel_registry_ptr_->RegisterPublishType(std::move(publish_type_wrapper_ptr)))
     return false;
 
+  std::string_view topic_name = publish_type_wrapper_ref.topic_name;
+
+  auto backend_itr = pub_topics_backend_index_map_.find(topic_name);
+  if (backend_itr == pub_topics_backend_index_map_.end()) {
+    auto backend_ptr_vec = GetBackendsByRules(topic_name, pub_topics_backends_rules_);
+    auto emplace_ret = pub_topics_backend_index_map_.emplace(topic_name, std::move(backend_ptr_vec));
+    backend_itr = emplace_ret.first;
+  }
+
   bool ret = true;
-  for (auto& itr : channel_backend_index_vec_) {
+  for (auto& itr : backend_itr->second) {
     ret &= itr->RegisterPublishType(publish_type_wrapper_ref);
   }
   return ret;
@@ -78,8 +108,12 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
   if (!channel_registry_ptr_->Subscribe(std::move(subscribe_wrapper_ptr)))
     return false;
 
+  std::string_view topic_name = subscribe_wrapper_ref.topic_name;
+
+  auto backend_ptr_vec = GetBackendsByRules(topic_name, sub_topics_backends_rules_);
+
   bool ret = true;
-  for (auto& itr : channel_backend_index_vec_) {
+  for (auto& itr : backend_ptr_vec) {
     ret &= itr->Subscribe(subscribe_wrapper_ref);
   }
   return ret;
@@ -87,6 +121,8 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
 
 void ChannelBackendManager::Publish(const PublishWrapper& publish_wrapper) {
   assert(state_.load() == State::Start);
+
+  std::string_view topic_name = publish_wrapper.topic_name;
 
   const auto* publish_type_wrapper_ptr =
       channel_registry_ptr_->GetPublishTypeWrapper(
@@ -103,11 +139,54 @@ void ChannelBackendManager::Publish(const PublishWrapper& publish_wrapper) {
 
   publish_wrapper.msg_type_support = publish_type_wrapper_ptr->msg_type_support;
 
-  for (auto& itr : channel_backend_index_vec_) {
+  auto find_itr = pub_topics_backend_index_map_.find(topic_name);
+
+  assert(find_itr != pub_topics_backend_index_map_.end());
+
+  for (auto& itr : find_itr->second) {
     AIMRT_TRACE("Publish msg '{}' to channel backend '{}'",
                 publish_wrapper.msg_type, itr->Name());
     itr->Publish(publish_wrapper);
   }
+}
+
+std::vector<ChannelBackendBase*> ChannelBackendManager::GetBackendsByRules(
+    std::string_view topic_name,
+    const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
+  std::vector<std::string> backend_names;
+  for (const auto& item : rules) {
+    const auto& topic_regex = item.first;
+    const auto& enable_backends = item.second;
+
+    try {
+      if (std::regex_match(topic_name.begin(), topic_name.end(), std::regex(topic_regex, std::regex::ECMAScript))) {
+        for (const auto& enable_backend : enable_backends) {
+          if (std::find(backend_names.begin(), backend_names.end(), enable_backend) == backend_names.end()) {
+            backend_names.emplace_back(enable_backend);
+          }
+        }
+      }
+    } catch (const std::exception& e) {
+      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                 topic_regex, topic_name, e.what());
+    }
+  }
+
+  std::vector<ChannelBackendBase*> backend_ptr_vec;
+
+  for (const auto& backend_name : backend_names) {
+    auto itr = std::find_if(
+        channel_backend_index_vec_.begin(), channel_backend_index_vec_.end(),
+        [&backend_name](const ChannelBackendBase* backend_ptr) -> bool {
+          return backend_ptr->Name() == backend_name;
+        });
+
+    assert(itr != channel_backend_index_vec_.end());
+
+    backend_ptr_vec.emplace_back(*itr);
+  }
+
+  return backend_ptr_vec;
 }
 
 }  // namespace aimrt::runtime::core::channel

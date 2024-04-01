@@ -25,6 +25,9 @@ aimrt:
   rpc: # rpc相关配置
     backends: # rpc后端配置
       - type: mqtt
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [mqtt]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_rpc_beta_pkg.so # so/dll地址

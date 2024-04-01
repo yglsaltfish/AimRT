@@ -35,6 +35,9 @@ aimrt:
             - topic_name: "(.*)" # 支持正则表达式，所有topic
               qos: 1
               enable: true
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [mqtt]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./normal_channel_alpha_pkg.dll # so/dll地址

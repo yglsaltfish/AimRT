@@ -38,7 +38,9 @@ aimrt:
               # lcm_url: "udpm://239.255.76.67:7667?ttl=0"
               # executor: lcm_default_thread_pool # 执行器
               # lcm_dispatcher_executor: lcm_default_thread_pool
-
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [lcm]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_channel_beta_pkg.so # so/dll地址

@@ -186,7 +186,7 @@ inline bool IsLeapYear(uint32_t year) {
  * @return uint32_t
  */
 inline uint32_t GetMonthDayCount(uint32_t year, uint32_t month) {
-  const static uint32_t month_day_count[] = {
+  static constexpr uint32_t month_day_count[] = {
       31,  // Jan
       28,  // Feb
       31,  // Mar

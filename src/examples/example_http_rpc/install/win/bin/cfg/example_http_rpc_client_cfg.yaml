@@ -4,7 +4,7 @@ aimrt:
   plugin:
     plugins:
       - name: net_plugin
-        path: ./libnet_plugin.so
+        path: ./net_plugin.dll
         options:
           thread_num: 4
           http_options:
@@ -33,9 +33,12 @@ aimrt:
     backends: # rpc后端配置
       - type: http # http rpc后端
         options:
-          clients_options:
+          clients_options: # 规则优先级由上向下递减
             - func_name: "(.*)" # 支持正则表达式，所有func
               server_url: http://127.0.0.1:50080
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [http]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./normal_rpc_alpha_pkg.dll # so/dll地址

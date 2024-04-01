@@ -36,7 +36,9 @@ aimrt:
           sub_topic_options:
             - topic_name: test_topic # 支持正则表达式，所有topic
               executor: sm_default_thread_pool # 执行器
-
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [sm]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_channel_beta_pkg.so # so/dll地址

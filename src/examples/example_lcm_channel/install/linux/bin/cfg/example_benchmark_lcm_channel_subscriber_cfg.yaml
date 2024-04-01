@@ -38,7 +38,9 @@ aimrt:
           sub_default_executor: lcm_default_thread_pool # 默认执行器
           sub_topic_options:
             - topic_name: '^[\w/#+-]+$' # 支持正则表达式，所有topic
-
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [lcm]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_channel_delta_pkg.so # so/dll地址

@@ -31,6 +31,9 @@ aimrt:
   rpc: # rpc相关配置
     backends: # rpc后端配置
       - type: ros2 # ros2 rpc后端
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [ros2]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./ros2_rpc_alpha_pkg.dll # so/dll地址

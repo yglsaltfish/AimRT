@@ -4,7 +4,7 @@ aimrt:
   plugin:
     plugins:
       - name: net_plugin
-        path: ./libnet_plugin.so
+        path: ./net_plugin.dll
         options:
           thread_num: 4
           http_options:
@@ -36,6 +36,9 @@ aimrt:
           pub_topics_options:
             - topic_name: "(.*)" # 支持正则表达式，所有topic
               server_url_list: ["http://127.0.0.1:50080"]
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [http]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./normal_channel_alpha_pkg.dll # so/dll地址

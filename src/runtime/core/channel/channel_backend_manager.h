@@ -31,6 +31,11 @@ class ChannelBackendManager {
   void Start();
   void Shutdown();
 
+  void SetPubTopicsBackendsRules(
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+  void SetSubTopicsBackendsRules(
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+
   void RegisterChannelBackend(ChannelBackendBase* channel_backend_ptr);
 
   bool RegisterPublishType(PublishTypeWrapper&& publish_type_wrapper);
@@ -43,12 +48,26 @@ class ChannelBackendManager {
   const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
+  std::vector<ChannelBackendBase*> GetBackendsByRules(
+      std::string_view topic_name,
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+
+ private:
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
   ChannelRegistry* channel_registry_ptr_;
 
   std::vector<ChannelBackendBase*> channel_backend_index_vec_;
+
+  std::vector<std::pair<std::string, std::vector<std::string>>> pub_topics_backends_rules_;
+  std::vector<std::pair<std::string, std::vector<std::string>>> sub_topics_backends_rules_;
+  std::unordered_map<
+      std::string,
+      std::vector<ChannelBackendBase*>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      pub_topics_backend_index_map_;
 };
 
 }  // namespace aimrt::runtime::core::channel

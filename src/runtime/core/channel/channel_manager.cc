@@ -18,6 +18,22 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
       node["backends"].push_back(backend_options_node);
     }
 
+    node["pub_topics_options"] = YAML::Node();
+    for (const auto& pub_topic_options : rhs.pub_topics_options) {
+      Node pub_topic_options_node;
+      pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
+      pub_topic_options_node["enable_backends"] = pub_topic_options.enable_backends;
+      node["pub_topics_options"].push_back(pub_topic_options_node);
+    }
+
+    node["sub_topics_options"] = YAML::Node();
+    for (const auto& sub_topic_options : rhs.sub_topics_options) {
+      Node sub_topic_options_node;
+      sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
+      sub_topic_options_node["enable_backends"] = sub_topic_options.enable_backends;
+      node["sub_topics_options"].push_back(sub_topic_options_node);
+    }
+
     return node;
   }
 
@@ -33,6 +49,26 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
           backend_options.options = backend_options_node["options"];
 
         rhs.backends_options.emplace_back(std::move(backend_options));
+      }
+    }
+
+    if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
+      for (auto& pub_topic_options_node : node["pub_topics_options"]) {
+        auto pub_topic_options = Options::PubTopicOptions{
+            .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
+            .enable_backends = pub_topic_options_node["enable_backends"].as<std::vector<std::string>>()};
+
+        rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
+      }
+    }
+
+    if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
+      for (auto& sub_topic_options_node : node["sub_topics_options"]) {
+        auto sub_topic_options = Options::SubTopicOptions{
+            .topic_name = sub_topic_options_node["topic_name"].as<std::string>(),
+            .enable_backends = sub_topic_options_node["enable_backends"].as<std::vector<std::string>>()};
+
+        rhs.sub_topics_options.emplace_back(std::move(sub_topic_options));
       }
     }
 
@@ -82,6 +118,34 @@ void ChannelManager::Initialize(YAML::Node options_node) {
     channel_backend_name_vec_.emplace_back((*finditr)->Name());
   }
 
+  // 设置backends rules
+  std::vector<std::pair<std::string, std::vector<std::string>>> pub_topics_backends_rules;
+  for (auto& item : options_.pub_topics_options) {
+    for (auto& backend_name : item.enable_backends) {
+      AIMRT_CHECK_ERROR_THROW(
+          std::find(channel_backend_name_vec_.begin(), channel_backend_name_vec_.end(), backend_name) != channel_backend_name_vec_.end(),
+          "Invalid channel backend type '{}' for pub topic '{}'",
+          backend_name, item.topic_name);
+    }
+
+    pub_topics_backends_rules.emplace_back(item.topic_name, item.enable_backends);
+  }
+  channel_backend_manager_.SetPubTopicsBackendsRules(pub_topics_backends_rules);
+
+  std::vector<std::pair<std::string, std::vector<std::string>>> sub_topics_backends_rules;
+  for (auto& item : options_.sub_topics_options) {
+    for (auto& backend_name : item.enable_backends) {
+      AIMRT_CHECK_ERROR_THROW(
+          std::find(channel_backend_name_vec_.begin(), channel_backend_name_vec_.end(), backend_name) != channel_backend_name_vec_.end(),
+          "Invalid channel backend type '{}' for sub topic '{}'",
+          backend_name, item.topic_name);
+    }
+
+    sub_topics_backends_rules.emplace_back(item.topic_name, item.enable_backends);
+  }
+  channel_backend_manager_.SetSubTopicsBackendsRules(sub_topics_backends_rules);
+
+  // 初始化backend manager
   channel_backend_manager_.Initialize(channel_registry_ptr_.get());
 
   AIMRT_TRACE("Channel manager init success, backends list: {}",
@@ -96,6 +160,7 @@ void ChannelManager::Start() {
       "Function can only be called when state is 'Init'.");
 
   channel_backend_manager_.Start();
+  channel_handle_proxy_start_flag_.store(true);
 }
 
 void ChannelManager::Shutdown() {
@@ -147,8 +212,10 @@ ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
       std::make_unique<ChannelHandleProxyWrap>(
           module_info.pkg_path,
           module_info.name,
+          *logger_ptr_,
           channel_backend_manager_,
-          *context_manager_ptr_));
+          *context_manager_ptr_,
+          channel_handle_proxy_start_flag_));
 
   return emplace_ret.first->second->channel_handle_proxy;
 }

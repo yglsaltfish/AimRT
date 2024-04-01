@@ -34,6 +34,9 @@ aimrt:
           clients_options: # 规则优先级由上向下递减
             - func_name: "(.*)" # 支持正则表达式，所有func
               enable: true
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [mqtt]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libnormal_rpc_alpha_pkg.so # so/dll地址

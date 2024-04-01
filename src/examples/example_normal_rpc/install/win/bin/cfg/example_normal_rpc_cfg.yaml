@@ -23,6 +23,12 @@ aimrt:
   rpc: # rpc相关配置
     backends: # rpc后端配置
       - type: local # 本地rpc后端配置
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./normal_rpc_alpha_pkg.dll # so/dll地址

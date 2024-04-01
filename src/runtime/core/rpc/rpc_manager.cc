@@ -18,6 +18,22 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
       node["backends"].push_back(backend_options_node);
     }
 
+    node["clients_options"] = YAML::Node();
+    for (const auto& client_options : rhs.clients_options) {
+      Node client_options_node;
+      client_options_node["func_name"] = client_options.func_name;
+      client_options_node["enable_backends"] = client_options.enable_backends;
+      node["clients_options"].push_back(client_options_node);
+    }
+
+    node["servers_options"] = YAML::Node();
+    for (const auto& server_options : rhs.servers_options) {
+      Node server_options_node;
+      server_options_node["func_name"] = server_options.func_name;
+      server_options_node["enable_backends"] = server_options.enable_backends;
+      node["servers_options"].push_back(server_options_node);
+    }
+
     return node;
   }
 
@@ -33,6 +49,26 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
           backend_options.options = backend_options_node["options"];
 
         rhs.backends_options.emplace_back(std::move(backend_options));
+      }
+    }
+
+    if (node["clients_options"] && node["clients_options"].IsSequence()) {
+      for (auto& client_options_node : node["clients_options"]) {
+        auto client_options = Options::ClientOptions{
+            .func_name = client_options_node["func_name"].as<std::string>(),
+            .enable_backends = client_options_node["enable_backends"].as<std::vector<std::string>>()};
+
+        rhs.clients_options.emplace_back(std::move(client_options));
+      }
+    }
+
+    if (node["servers_options"] && node["servers_options"].IsSequence()) {
+      for (auto& server_options_node : node["servers_options"]) {
+        auto server_options = Options::ServerOptions{
+            .func_name = server_options_node["func_name"].as<std::string>(),
+            .enable_backends = server_options_node["enable_backends"].as<std::vector<std::string>>()};
+
+        rhs.servers_options.emplace_back(std::move(server_options));
       }
     }
 
@@ -82,6 +118,34 @@ void RpcManager::Initialize(YAML::Node options_node) {
     rpc_backend_name_vec_.emplace_back((*finditr)->Name());
   }
 
+  // 设置backends rules
+  std::vector<std::pair<std::string, std::vector<std::string>>> client_backends_rules;
+  for (auto& item : options_.clients_options) {
+    for (auto& backend_name : item.enable_backends) {
+      AIMRT_CHECK_ERROR_THROW(
+          std::find(rpc_backend_name_vec_.begin(), rpc_backend_name_vec_.end(), backend_name) != rpc_backend_name_vec_.end(),
+          "Invalid rpc backend type '{}' for func '{}'",
+          backend_name, item.func_name);
+    }
+
+    client_backends_rules.emplace_back(item.func_name, item.enable_backends);
+  }
+  rpc_backend_manager_.SetClientsBackendsRules(client_backends_rules);
+
+  std::vector<std::pair<std::string, std::vector<std::string>>> server_backends_rules;
+  for (auto& item : options_.servers_options) {
+    for (auto& backend_name : item.enable_backends) {
+      AIMRT_CHECK_ERROR_THROW(
+          std::find(rpc_backend_name_vec_.begin(), rpc_backend_name_vec_.end(), backend_name) != rpc_backend_name_vec_.end(),
+          "Invalid rpc backend type '{}' for func '{}'",
+          backend_name, item.func_name);
+    }
+
+    server_backends_rules.emplace_back(item.func_name, item.enable_backends);
+  }
+  rpc_backend_manager_.SetServersBackendsRules(server_backends_rules);
+
+  // 初始化backend manager
   rpc_backend_manager_.Initialize(rpc_registry_ptr_.get());
 
   AIMRT_TRACE("Rpc manager init success, backends list: {}",
