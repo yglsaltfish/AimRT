@@ -71,7 +71,7 @@ class {{service_name}}Proxy : public aimrt::rpc::ProxyBase {
   {
     aimrt::util::Function<aimrt_function_service_func_ops_t> callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* callback) {
-          static const aimrt::rpc::RpcHandle h =
+          const aimrt::rpc::RpcHandle h =
               [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr) -> aimrt::co::Task<aimrt::rpc::Status> {
             return {{rpc_func_name}}(
                 ctx_ref,
@@ -126,7 +126,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}Proxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
     {{rpc_rsp_name}}& rsp) {
-  static const aimrt::rpc::RpcHandle h =
+  const aimrt::rpc::RpcHandle h =
       [rpc_handle_ref{rpc_handle_ref_}](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
       -> aimrt::co::Task<aimrt::rpc::Status> {
     co_return co_await aimrt::co::AsyncWrapper<aimrt::rpc::Status>(
