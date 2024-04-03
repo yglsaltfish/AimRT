@@ -8,7 +8,8 @@ namespace aimrt::runtime::core::module {
 
 class CoreProxy {
  public:
-  CoreProxy() : base_(GenBase(this)) {}
+  explicit CoreProxy(aimrt_module_info_t module_info)
+      : module_info_(module_info), base_(GenBase(this)) {}
   ~CoreProxy() = default;
 
   CoreProxy(const CoreProxy&) = delete;
@@ -47,6 +48,9 @@ class CoreProxy {
  private:
   static aimrt_core_base_t GenBase(void* impl) {
     return aimrt_core_base_t{
+        .info = [](void* impl) -> aimrt_module_info_t {
+          return static_cast<CoreProxy*>(impl)->module_info_;
+        },
         .configurator = [](void* impl) -> const aimrt_configurator_base_t* {
           return static_cast<CoreProxy*>(impl)->configurator_;
         },
@@ -72,6 +76,8 @@ class CoreProxy {
   }
 
  private:
+  const aimrt_module_info_t module_info_;
+
   const aimrt_configurator_base_t* configurator_;
   const aimrt_allocator_base_t* allocator_handle_;
   const aimrt_executor_manager_base_t* executor_manager_;
