@@ -13,10 +13,40 @@ extern "C" {
 #endif
 
 /**
+ * @brief AIMRT module info
+ * @note Version standard see https://semver.org/
+ */
+typedef struct {
+  aimrt_string_view_t name;
+
+  uint32_t major_version;
+
+  uint32_t minor_version;
+
+  uint32_t patch_version;
+
+  uint32_t build_version;
+
+  aimrt_string_view_t author;
+
+  aimrt_string_view_t description;
+
+} aimrt_module_info_t;
+
+/**
  * @brief AIMRT runtime framework interface
  *
  */
 typedef struct {
+  /**
+   * @brief Function to get module info for current core instance
+   * @note
+   * Parameter definition:
+   * Input 1: Pointer to impl
+   * Output: Module info
+   */
+  aimrt_module_info_t (*info)(void* impl);
+
   /**
    * @brief Function to get configurator handle
    * @note

@@ -11,6 +11,18 @@
 
 namespace aimrt {
 
+struct ModuleInfo {
+  std::string_view name;
+
+  uint32_t major_version = 0;
+  uint32_t minor_version = 0;
+  uint32_t patch_version = 0;
+  uint32_t build_version = 0;
+
+  std::string_view author;
+  std::string_view description;
+};
+
 /**
  * @brief Abstract of framework runtime, providing some functions for modules
  *
@@ -25,6 +37,19 @@ class CoreRef {
   explicit operator bool() const { return (base_ptr_ != nullptr); }
 
   const aimrt_core_base_t* NativeHandle() const { return base_ptr_; }
+
+  ModuleInfo Info() const {
+    assert(base_ptr_);
+    aimrt_module_info_t module_info = base_ptr_->info(base_ptr_->impl);
+    return ModuleInfo{
+        .name = util::ToStdStringView(module_info.name),
+        .major_version = module_info.major_version,
+        .minor_version = module_info.minor_version,
+        .patch_version = module_info.patch_version,
+        .build_version = module_info.build_version,
+        .author = util::ToStdStringView(module_info.author),
+        .description = util::ToStdStringView(module_info.description)};
+  }
 
   /**
    * @brief Get configurator handle

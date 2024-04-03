@@ -145,7 +145,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
                 .description = aimrt::util::ToStdString(info.description)},
             .loader_ptr = nullptr,
             .module_ptr = module_ptr,
-            .core_proxy_ptr = std::make_unique<CoreProxy>()});
+            .core_proxy_ptr = std::make_unique<CoreProxy>(info)});
 
     InitModule(module_wrapper_ptr.get());
 
@@ -186,7 +186,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
                   .description = aimrt::util::ToStdString(info.description)},
               .loader_ptr = module_loader_itr.second.get(),
               .module_ptr = module_ptr,
-              .core_proxy_ptr = std::make_unique<CoreProxy>()});
+              .core_proxy_ptr = std::make_unique<CoreProxy>(info)});
 
       InitModule(module_wrapper_ptr.get());
 

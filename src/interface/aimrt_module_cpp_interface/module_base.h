@@ -8,18 +8,6 @@
 
 namespace aimrt {
 
-struct ModuleInfo {
-  std::string_view name;
-
-  uint32_t major_version = 0;
-  uint32_t minor_version = 0;
-  uint32_t patch_version = 0;
-  uint32_t build_version = 0;
-
-  std::string_view author;
-  std::string_view description;
-};
-
 /**
  * @brief All modules need inherit this interface class
  *
