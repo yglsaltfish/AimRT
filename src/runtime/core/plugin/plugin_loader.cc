@@ -5,8 +5,8 @@ namespace aimrt::runtime::core::plugin {
 using DynlibCreateCorePluginFunc = aimrt::AimRTCorePluginBase* (*)();
 using DynlibDestroyCorePluginFunc = void (*)(const aimrt::AimRTCorePluginBase*);
 
-static const char* kDynlibCreateCorePluginFuncName = "AimRTDynlibCreateCorePluginHandle";
-static const char* kDynlibDestroyCorePluginFuncName = "AimRTDynlibDestroyCorePluginHandle";
+static constexpr const char* kDynlibCreateCorePluginFuncName = "AimRTDynlibCreateCorePluginHandle";
+static constexpr const char* kDynlibDestroyCorePluginFuncName = "AimRTDynlibDestroyCorePluginHandle";
 
 void PluginLoader::LoadPlugin(std::string_view plugin_path) {
   plugin_path_ = plugin_path;
