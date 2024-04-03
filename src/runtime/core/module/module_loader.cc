@@ -8,10 +8,10 @@ using DynlibGetModuleNameListFunc = const aimrt_string_view_t* (*)();
 using DynlibCreateModuleFunc = const aimrt_module_base_t* (*)(aimrt_string_view_t);
 using DynlibDestroyModuleFunc = void (*)(const aimrt_module_base_t*);
 
-static const char* kDynlibGetModuleNumFuncName = "AimRTDynlibGetModuleNum";
-static const char* kDynlibGetModuleNameListFuncName = "AimRTDynlibGetModuleNameList";
-static const char* kDynlibCreateModuleFuncName = "AimRTDynlibCreateModule";
-static const char* kDynlibDestroyModuleFuncName = "AimRTDynlibDestroyModule";
+static constexpr const char* kDynlibGetModuleNumFuncName = "AimRTDynlibGetModuleNum";
+static constexpr const char* kDynlibGetModuleNameListFuncName = "AimRTDynlibGetModuleNameList";
+static constexpr const char* kDynlibCreateModuleFuncName = "AimRTDynlibCreateModule";
+static constexpr const char* kDynlibDestroyModuleFuncName = "AimRTDynlibDestroyModule";
 
 void ModuleLoader::LoadPkg(std::string_view pkg_path,
                            const std::vector<std::string>& disable_modules) {

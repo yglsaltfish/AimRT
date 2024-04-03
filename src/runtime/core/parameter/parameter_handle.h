@@ -3,12 +3,12 @@
 #include <atomic>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "aimrt_module_c_interface/parameter/parameter_handle_base.h"
 #include "util/log_util.h"
-
-#include "tbb/concurrent_hash_map.h"
+#include "util/string_util.h"
 
 namespace aimrt::runtime::core::parameter {
 
@@ -34,27 +34,13 @@ class ParameterHandle {
  private:
   std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
 
-  struct StringHashCompare {
-    using is_transparent = void;
-
-    bool equal(const std::string& lhs, const std::string& rhs) const { return lhs == rhs; }
-    bool equal(const std::string& lhs, std::string_view rhs) const { return lhs == rhs; }
-    bool equal(std::string_view lhs, const std::string& rhs) const { return lhs == rhs; }
-
-    std::size_t hash(const std::string& k) const { return std::hash<std::string_view>{}(k); }
-    std::size_t hash(std::string_view k) const { return std::hash<std::string_view>{}(k); }
-  };
-
-  // TODO: 编译器支持后可以换成std::atomic<std::shared_ptr<Parameter>
-  struct ParameterWrap {
-    explicit ParameterWrap(const std::shared_ptr<std::string>& input_ptr) : ptr(input_ptr) {}
-
-    std::shared_ptr<std::string> ptr;
-    mutable std::mutex mu;
-  };
-
-  using ParameterMap = tbb::concurrent_hash_map<std::string, ParameterWrap, StringHashCompare>;
-  ParameterMap parameter_map_;
+  mutable std::mutex parameter_map_mutex_;
+  std::unordered_map<
+      std::string,
+      std::shared_ptr<std::string>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      parameter_map_;
 };
 
 }  // namespace aimrt::runtime::core::parameter
