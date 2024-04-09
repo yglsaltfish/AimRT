@@ -21,7 +21,6 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
     for (const auto& client_options : rhs.clients_options) {
       Node client_options_node;
       client_options_node["func_name"] = client_options.func_name;
-      client_options_node["enable"] = client_options.enable;
       node["clients_options"].push_back(client_options_node);
     }
 
@@ -39,8 +38,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
       for (auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
-            .func_name = client_options_node["func_name"].as<std::string>(),
-            .enable = client_options_node["enable"].as<bool>()};
+            .func_name = client_options_node["func_name"].as<std::string>()};
 
         rhs.clients_options.emplace_back(std::move(client_options));
       }
@@ -93,7 +91,7 @@ void MqttRpcBackend::Shutdown() {
   // todo:换成MQTTClient_unsubscribeMany
   for (auto sub_info : sub_info_vec_) {
     AIMRT_TRACE("Mqtt unsubscribe for '{}'", sub_info);
-    MQTTClient_unsubscribe(client_, sub_info.data());
+    MQTTAsync_unsubscribe(client_, sub_info.data(), NULL);
   }
 }
 
@@ -114,7 +112,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
 
   msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic,
-      [this, &service_func_wrapper](MQTTClient_message* message) {
+      [this, &service_func_wrapper](MQTTAsync_message* message) {
         try {
           std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
 
@@ -196,15 +194,15 @@ bool MqttRpcBackend::RegisterServiceFunc(
                       buffer_array_data[ii].len);
                 }
 
-                MQTTClient_message pubmsg = MQTTClient_message_initializer;
+                MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
                 pubmsg.payload = msg_buf_vec.data();
                 pubmsg.payloadlen = msg_buf_vec.size();
                 pubmsg.qos = 2;
                 pubmsg.retained = 0;
 
                 AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
-                int rc = MQTTClient_publishMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
-                AIMRT_CHECK_WARN(rc == MQTTCLIENT_SUCCESS,
+                int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
+                AIMRT_CHECK_WARN(rc == MQTTASYNC_SUCCESS,
                                  "Publist mqtt msg failed, topic: {}, code: {}",
                                  mqtt_pub_topic, rc);
               });
@@ -240,7 +238,7 @@ bool MqttRpcBackend::RegisterClientFunc(
 
   msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic,
-      [this](MQTTClient_message* message) {
+      [this](MQTTAsync_message* message) {
         std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper> client_invoke_wrapper_ptr;
 
         try {
@@ -311,26 +309,11 @@ bool MqttRpcBackend::TryInvoke(
   std::string_view to_addr =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
 
-  if (to_addr.empty()) {
-    for (auto& client_options : options_.clients_options) {
-      try {
-        if (std::regex_match(real_func_name.begin(), real_func_name.end(),
-                             std::regex(client_options.func_name, std::regex::ECMAScript))) {
-          if (client_options.enable) to_addr = "mqtt://";
-          break;
-        }
-      } catch (const std::exception& e) {
-        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                   client_options.func_name, real_func_name, e.what());
-      }
-    }
+  if (!to_addr.empty()) {
+    auto pos = to_addr.find("://");
+    if (pos == std::string_view::npos) return false;
+    if (to_addr.substr(0, pos) != "mqtt") return false;
   }
-
-  if (to_addr.empty()) return false;
-
-  auto pos = to_addr.find("://");
-  if (pos == std::string_view::npos) return false;
-  if (to_addr.substr(0, pos) != "mqtt") return false;
 
   // 协议为mqtt，需要由mqtt后端处理。之后只能使用callback报错，不能返回false
   const auto& client_func_wrapper_map = rpc_registry_ptr_->GetClientFuncWrapperMap();
@@ -416,7 +399,7 @@ bool MqttRpcBackend::TryInvoke(
   }
 
   // 发送
-  MQTTClient_message pubmsg = MQTTClient_message_initializer;
+  MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
   pubmsg.payload = msg_buf_vec.data();
   pubmsg.payloadlen = msg_buf_vec.size();
   pubmsg.qos = 2;
@@ -426,8 +409,8 @@ bool MqttRpcBackend::TryInvoke(
   std::string mqtt_pub_topic = "aimrt_rpc_req/" + util::UrlEncode(GetRealFuncName(func_name));
 
   AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
-  int rc = MQTTClient_publishMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
-  AIMRT_CHECK_WARN(rc == MQTTCLIENT_SUCCESS,
+  int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
+  AIMRT_CHECK_WARN(rc == MQTTASYNC_SUCCESS,
                    "Publist mqtt msg failed, topic: {}, code: {}",
                    mqtt_pub_topic, rc);
 
@@ -439,8 +422,8 @@ void MqttRpcBackend::SubscribeMqttTopic() {
     // rpc qos默认都是2
     // todo:换成MQTTClient_subscribeMany
     AIMRT_TRACE("Mqtt subscribe for '{}'", sub_info);
-    int rc = MQTTClient_subscribe(client_, sub_info.data(), 2);
-    if (rc != MQTTCLIENT_SUCCESS) {
+    int rc = MQTTAsync_subscribe(client_, sub_info.data(), 2, NULL);
+    if (rc != MQTTASYNC_SUCCESS) {
       AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info, rc);
     }
   }

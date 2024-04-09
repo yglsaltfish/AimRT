@@ -3,7 +3,7 @@
 #include <atomic>
 #include <memory>
 
-#include "MQTTClient.h"
+#include "MQTTAsync.h"
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "mqtt_plugin/mqtt_channel_backend.h"
@@ -33,8 +33,8 @@ class MqttPlugin : public AimRTCorePluginBase {
   void RegisterMqttRpcBackend();
   void RegisterMqttChannelBackend();
 
-  void OnConnectLost(char *cause);
-  int OnMsgRecv(char *topic, int topic_len, MQTTClient_message *message);
+  void OnConnectLost(const char *cause);
+  int OnMsgRecv(char *topic, int topic_len, MQTTAsync_message *message);
 
  private:
   runtime::core::AimRTCore *core_ptr_ = nullptr;
@@ -45,11 +45,9 @@ class MqttPlugin : public AimRTCorePluginBase {
 
   std::atomic_bool stop_flag_ = false;
 
-  MQTTClient client_;
+  MQTTAsync client_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
-  std::atomic_bool connect_flag_ = false;
-  std::shared_ptr<std::thread> reconnect_thread_ptr_;
   std::vector<MqttRpcBackend *> mqtt_rpc_backend_ptr_vec_;
   std::vector<MqttChannelBackend *> mqtt_channel_backend_ptr_vec_;
 };

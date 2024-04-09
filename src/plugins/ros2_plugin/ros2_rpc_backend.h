@@ -14,7 +14,6 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   struct Options {
     struct ClientOptions {
       std::string func_name;
-      bool enable;
     };
     std::vector<ClientOptions> clients_options;
 

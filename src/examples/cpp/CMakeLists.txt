@@ -1,0 +1,15 @@
+set_namespace()
+
+add_subdirectory(helloworld)
+add_subdirectory(executor)
+add_subdirectory(parameter)
+
+if(AIMRT_BUILD_WITH_PROTOBUF)
+  add_subdirectory(protobuf_channel)
+  add_subdirectory(protobuf_rpc)
+endif()
+
+if(AIMRT_BUILD_WITH_ROS2)
+  add_subdirectory(ros2_channel)
+  add_subdirectory(ros2_rpc)
+endif()

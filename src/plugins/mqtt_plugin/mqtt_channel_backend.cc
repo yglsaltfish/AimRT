@@ -21,7 +21,6 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttChannelBackend::Options> {
       Node pub_topic_options_node;
       pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
       pub_topic_options_node["qos"] = pub_topic_options.qos;
-      pub_topic_options_node["enable"] = pub_topic_options.enable;
       node["pub_topics_options"].push_back(pub_topic_options_node);
     }
 
@@ -47,8 +46,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttChannelBackend::Options> {
 
         auto pub_topic_options = Options::PubTopicOptions{
             .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
-            .qos = qos,
-            .enable = pub_topic_options_node["enable"].as<bool>()};
+            .qos = qos};
 
         rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
       }
@@ -108,7 +106,7 @@ void MqttChannelBackend::Shutdown() {
 
   // todo:换成MQTTClient_unsubscribeMany
   for (auto sub_info : sub_info_vec_) {
-    MQTTClient_unsubscribe(client_, sub_info.topic.data());
+    MQTTAsync_unsubscribe(client_, sub_info.topic.data(), NULL);
   }
 }
 
@@ -174,7 +172,7 @@ bool MqttChannelBackend::Subscribe(
 
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
-  auto handle = [this, subscribe_wrapper_vec_ptr](MQTTClient_message* message) {
+  auto handle = [this, subscribe_wrapper_vec_ptr](MQTTAsync_message* message) {
     try {
       auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
       auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
@@ -247,14 +245,12 @@ void MqttChannelBackend::Publish(
   std::string_view topic_name = publish_wrapper.topic_name;
 
   int qos = 2;
-  bool enable = false;
 
   for (auto& pub_topic_options : options_.pub_topics_options) {
     try {
       if (std::regex_match(topic_name.begin(), topic_name.end(),
                            std::regex(pub_topic_options.topic_name, std::regex::ECMAScript))) {
         qos = pub_topic_options.qos;
-        enable = pub_topic_options.enable;
         break;
       }
     } catch (const std::exception& e) {
@@ -262,8 +258,6 @@ void MqttChannelBackend::Publish(
                  pub_topic_options.topic_name, topic_name, e.what());
     }
   }
-
-  if (!enable) return;
 
   // 确定path
   std::string mqtt_pub_topic = std::string("/channel/") +
@@ -318,15 +312,15 @@ void MqttChannelBackend::Publish(
         buffer_array_data[ii].len);
   }
 
-  MQTTClient_message pubmsg = MQTTClient_message_initializer;
+  MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
   pubmsg.payload = msg_buf_vec.data();
   pubmsg.payloadlen = msg_buf_vec.size();
   pubmsg.qos = qos;
   pubmsg.retained = 0;
 
   AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
-  int rc = MQTTClient_publishMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
-  AIMRT_CHECK_WARN(rc == MQTTCLIENT_SUCCESS,
+  int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
+  AIMRT_CHECK_WARN(rc == MQTTASYNC_SUCCESS,
                    "Publist mqtt msg failed, topic: {}, code: {}",
                    mqtt_pub_topic, rc);
 
@@ -336,8 +330,8 @@ void MqttChannelBackend::Publish(
 void MqttChannelBackend::SubscribeMqttTopic() {
   for (auto sub_info : sub_info_vec_) {
     // todo:换成MQTTClient_subscribeMany
-    int rc = MQTTClient_subscribe(client_, sub_info.topic.data(), sub_info.qos);
-    if (rc != MQTTCLIENT_SUCCESS) {
+    int rc = MQTTAsync_subscribe(client_, sub_info.topic.data(), sub_info.qos, NULL);
+    if (rc != MQTTASYNC_SUCCESS) {
       AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info.topic, rc);
     }
   }

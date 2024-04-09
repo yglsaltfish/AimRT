@@ -179,18 +179,27 @@ void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
 std::vector<RpcBackendBase*> RpcBackendManager::GetBackendsByRules(
     std::string_view func_name,
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
-  std::vector<std::string> backend_names;
   for (const auto& item : rules) {
     const auto& func_regex = item.first;
     const auto& enable_backends = item.second;
 
     try {
       if (std::regex_match(func_name.begin(), func_name.end(), std::regex(func_regex, std::regex::ECMAScript))) {
-        for (const auto& enable_backend : enable_backends) {
-          if (std::find(backend_names.begin(), backend_names.end(), enable_backend) == backend_names.end()) {
-            backend_names.emplace_back(enable_backend);
-          }
+        std::vector<RpcBackendBase*> backend_ptr_vec;
+
+        for (const auto& backend_name : enable_backends) {
+          auto itr = std::find_if(
+              rpc_backend_index_vec_.begin(), rpc_backend_index_vec_.end(),
+              [&backend_name](const RpcBackendBase* backend_ptr) -> bool {
+                return backend_ptr->Name() == backend_name;
+              });
+
+          assert(itr != rpc_backend_index_vec_.end());
+
+          backend_ptr_vec.emplace_back(*itr);
         }
+
+        return backend_ptr_vec;
       }
     } catch (const std::exception& e) {
       AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
@@ -198,21 +207,7 @@ std::vector<RpcBackendBase*> RpcBackendManager::GetBackendsByRules(
     }
   }
 
-  std::vector<RpcBackendBase*> backend_ptr_vec;
-
-  for (const auto& backend_name : backend_names) {
-    auto itr = std::find_if(
-        rpc_backend_index_vec_.begin(), rpc_backend_index_vec_.end(),
-        [&backend_name](const RpcBackendBase* backend_ptr) -> bool {
-          return backend_ptr->Name() == backend_name;
-        });
-
-    assert(itr != rpc_backend_index_vec_.end());
-
-    backend_ptr_vec.emplace_back(*itr);
-  }
-
-  return backend_ptr_vec;
+  return {};
 }
 
 }  // namespace aimrt::runtime::core::rpc

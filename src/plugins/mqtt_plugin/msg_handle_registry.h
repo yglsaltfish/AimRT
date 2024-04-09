@@ -5,7 +5,7 @@
 
 #include "util/string_util.h"
 
-#include "MQTTClient.h"
+#include "MQTTAsync.h"
 
 #include "mqtt_plugin/global.h"
 
@@ -13,7 +13,7 @@ namespace aimrt::plugins::mqtt_plugin {
 
 class MsgHandleRegistry {
  public:
-  using MsgHandleFunc = std::function<void(MQTTClient_message* message)>;
+  using MsgHandleFunc = std::function<void(MQTTAsync_message* message)>;
 
   MsgHandleRegistry() = default;
   ~MsgHandleRegistry() = default;
@@ -27,7 +27,7 @@ class MsgHandleRegistry {
     msg_handle_map_.emplace(topic, std::forward<Args>(args)...);
   }
 
-  void HandleServerMsg(std::string_view topic, MQTTClient_message* message) const {
+  void HandleServerMsg(std::string_view topic, MQTTAsync_message* message) const {
     AIMRT_TRACE("Mqtt recv msg, topic: {}", topic);
     try {
       auto find_topic_itr = msg_handle_map_.find(topic);

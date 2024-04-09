@@ -32,16 +32,14 @@ target_link_libraries(
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
           TBB::tbb
-          paho_mqtt_c::paho-mqtt3cs-static)
+          paho_mqtt_c::paho-mqtt3as-static)
 
 # Set installation of target
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
 install(
   TARGETS ${CUR_TARGET_NAME}
   EXPORT ${INSTALL_CONFIG_NAME}
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib)
+  LIBRARY DESTINATION bin)
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)

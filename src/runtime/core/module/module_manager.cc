@@ -110,10 +110,8 @@ void ModuleManager::Initialize(YAML::Node options_node) {
     module_loader_ptr->SetLogger(logger_ptr_);
     module_loader_ptr->LoadPkg(pkg_options.path, pkg_options.disable_modules);
 
-    AIMRT_INFO("Load pkg '{}' succeeded, found {} module, load {} module:\n{}",
-               pkg_options.path, module_loader_ptr->GetModuleNameList().size(),
-               module_loader_ptr->GetModuleNameList().size(),
-               common::util::Vec2Str(module_loader_ptr->GetModuleNameList()));
+    AIMRT_INFO("Load pkg '{}' succeeded, load module:\n{}",
+               pkg_options.path, common::util::Vec2Str(module_loader_ptr->GetLoadedModuleNameList()));
 
     module_loader_map_.emplace(pkg_options.path, std::move(module_loader_ptr));
   }

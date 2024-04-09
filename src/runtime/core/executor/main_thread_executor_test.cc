@@ -23,7 +23,7 @@ TEST_F(MainThreadExecutorTest, execute) {
   )str");
 
   main_thread_executor_.Initialize(options_node);
-  EXPECT_EQ(main_thread_executor_.Type(), "tbb_thread");
+  EXPECT_EQ(main_thread_executor_.Type(), "main_thread");
   EXPECT_EQ(main_thread_executor_.Name(), "aimrt_main");
   EXPECT_EQ(main_thread_executor_.ThreadSafe(), true);
 

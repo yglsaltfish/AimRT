@@ -25,8 +25,6 @@ class SmChannelBackend : public runtime::core::channel::ChannelBackendBase {
   struct Options {
     std::string sub_default_executor;
     std::list<TopicOptions> sub_topic_options;
-    std::list<std::string> passable_pub_topics;
-    std::list<std::string> unpassable_pub_topics;
   };
 
   struct ModuleInfo {
