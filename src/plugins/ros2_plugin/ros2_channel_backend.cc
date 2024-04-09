@@ -20,7 +20,6 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     for (const auto& pub_topic_options : rhs.pub_topics_options) {
       Node pub_topic_options_node;
       pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
-      pub_topic_options_node["enable"] = pub_topic_options.enable;
       node["pub_topics_options"].push_back(pub_topic_options_node);
     }
 
@@ -38,8 +37,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
       for (auto& pub_topic_options_node : node["pub_topics_options"]) {
         auto pub_topic_options = Options::PubTopicOptions{
-            .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
-            .enable = pub_topic_options_node["enable"].as<bool>()};
+            .topic_name = pub_topic_options_node["topic_name"].as<std::string>()};
 
         rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
       }
@@ -124,26 +122,6 @@ bool Ros2ChannelBackend::RegisterPublishType(
   if (!CheckRosMsg(aimrt::util::TypeSupportRef(publish_type_wrapper.msg_type_support).TypeName()))
     return true;
 
-  bool enable = false;
-  std::string_view topic_name = publish_type_wrapper.topic_name;
-  for (auto& pub_topic_options : options_.pub_topics_options) {
-    try {
-      if (std::regex_match(topic_name.begin(), topic_name.end(),
-                           std::regex(pub_topic_options.topic_name, std::regex::ECMAScript))) {
-        enable = pub_topic_options.enable;
-        break;
-      }
-    } catch (const std::exception& e) {
-      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                 pub_topic_options.topic_name, topic_name, e.what());
-    }
-  }
-
-  if (!enable) {
-    AIMRT_INFO("publish topic '{}' is unpassable publish by ros plugin.", topic_name);
-    return true;
-  }
-
   ChannelTypeKey type_key{
       publish_type_wrapper.pkg_path,
       publish_type_wrapper.module_name,
@@ -226,20 +204,6 @@ bool Ros2ChannelBackend::Subscribe(
   if (!CheckRosMsg(aimrt::util::TypeSupportRef(subscribe_wrapper.msg_type_support).TypeName()))
     return true;
 
-  bool subscribe = false;
-  for (auto& opt : options_.sub_topics_options) {
-    if (opt.topic_name == subscribe_wrapper.topic_name) {
-      subscribe = true;
-      break;
-    }
-  }
-
-  // 如果 sub_topics_options 为空，则不订阅
-  if (!subscribe) {
-    AIMRT_INFO("subscribe topic '{}' is unpassable subscribe by ros plugin.", subscribe_wrapper.topic_name);
-    return true;
-  }
-
   ChannelTypeKey type_key{
       subscribe_wrapper.pkg_path,
       subscribe_wrapper.module_name,
@@ -308,22 +272,6 @@ void Ros2ChannelBackend::Publish(
 
   // 只管前缀是ros2类型的消息
   if (!CheckRosMsg(publish_wrapper.msg_type)) return;
-
-  bool enable = false;
-  for (auto& pub_topic_options : options_.pub_topics_options) {
-    try {
-      if (std::regex_match(topic_name.begin(), topic_name.end(),
-                           std::regex(pub_topic_options.topic_name, std::regex::ECMAScript))) {
-        enable = pub_topic_options.enable;
-        break;
-      }
-    } catch (const std::exception& e) {
-      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                 pub_topic_options.topic_name, topic_name, e.what());
-    }
-  }
-
-  if (!enable) return;
 
   ChannelTypeKey type_key{
       publish_wrapper.pkg_path,

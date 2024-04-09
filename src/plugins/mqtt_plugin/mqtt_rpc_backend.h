@@ -13,7 +13,6 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   struct Options {
     struct ClientOptions {
       std::string func_name;
-      bool enable;
     };
     std::vector<ClientOptions> clients_options;
 
@@ -26,7 +25,7 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
  public:
   MqttRpcBackend(
       std::string client_id,
-      MQTTClient& client,
+      MQTTAsync& client,
       std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
       : client_id_(client_id),
         client_(client),
@@ -74,7 +73,7 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   runtime::core::rpc::ContextManager* context_manager_ptr_ = nullptr;
 
   std::string client_id_;
-  MQTTClient& client_;
+  MQTTAsync& client_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::vector<std::string> sub_info_vec_;

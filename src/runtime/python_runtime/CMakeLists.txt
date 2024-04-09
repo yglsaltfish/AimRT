@@ -30,9 +30,7 @@ set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_N
 install(
   TARGETS ${CUR_TARGET_NAME}
   EXPORT ${INSTALL_CONFIG_NAME}
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib)
+  LIBRARY DESTINATION bin)
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_py")
@@ -40,7 +38,7 @@ set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_py")
 # Py files
 add_custom_target(
   ${CUR_TARGET_NAME}_py ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${py_files} $<TARGET_FILE_DIR:aimrt::runtime::python_runtime>
+  COMMAND ${CMAKE_COMMAND} -E copy ${py_files} ${CMAKE_BINARY_DIR}
   DEPENDS ${py_files})
 
 install(FILES ${py_files} DESTINATION bin)

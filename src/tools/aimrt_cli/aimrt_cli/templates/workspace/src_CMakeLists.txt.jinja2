@@ -47,7 +47,7 @@ install(
 add_custom_target(
   {{ project_name }}_build_all ALL
 {%- raw %}
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin $<TARGET_FILE_DIR:aimrt::runtime::main>
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin ${CMAKE_BINARY_DIR}
 {%- endraw %}
   DEPENDS aimrt::runtime::main
 {%- for build_mode in workspace.pkgs_build_modes %}

@@ -15,7 +15,6 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
     for (const auto& client_options : rhs.clients_options) {
       Node client_options_node;
       client_options_node["func_name"] = client_options.func_name;
-      client_options_node["enable"] = client_options.enable;
       node["clients_options"].push_back(client_options_node);
     }
 
@@ -33,8 +32,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
       for (auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
-            .func_name = client_options_node["func_name"].as<std::string>(),
-            .enable = client_options_node["enable"].as<bool>()};
+            .func_name = client_options_node["func_name"].as<std::string>()};
 
         rhs.clients_options.emplace_back(std::move(client_options));
       }
@@ -183,30 +181,13 @@ bool Ros2RpcBackend::TryInvoke(
   std::string_view to_addr =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
 
-  if (to_addr.empty()) {
-    to_addr = "ros2://";
-    for (auto& client_options : options_.clients_options) {
-      try {
-        if (std::regex_match(real_func_name.begin(), real_func_name.end(),
-                             std::regex(client_options.func_name, std::regex::ECMAScript))) {
-          if (!client_options.enable) to_addr = "";
-          break;
-        }
-      } catch (const std::exception& e) {
-        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                   client_options.func_name, real_func_name, e.what());
-      }
-    }
+  if (!to_addr.empty()) {
+    auto pos = to_addr.find("://");
+    if (pos == std::string_view::npos) return false;
+    if (to_addr.substr(0, pos) != "ros2") return false;
   }
 
-  if (to_addr.empty()) return false;
-
-  auto pos = to_addr.find("://");
-  if (pos == std::string_view::npos) return false;
-  if (to_addr.substr(0, pos) != "ros2") return false;
-
-  auto finditr =
-      ros2_adapter_client_map_.find(client_invoke_wrapper_ptr->func_name);
+  auto finditr = ros2_adapter_client_map_.find(client_invoke_wrapper_ptr->func_name);
   if (finditr == ros2_adapter_client_map_.end()) {
     AIMRT_TRACE(
         "Client '{}' unregistered in ros2 rpc backend, module '{}', lib path '{}'",

@@ -1,11 +1,14 @@
 #pragma once
 
+#include <condition_variable>
+#include <mutex>
+#include <queue>
+
 #include "aimrt_module_c_interface/executor/executor_manager_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "util/log_util.h"
 
-#include "tbb/concurrent_queue.h"
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::runtime::core::executor {
@@ -38,7 +41,7 @@ class MainThreadExecutor {
   void Start();
   void Shutdown();
 
-  std::string_view Type() const { return "tbb_thread"; }
+  std::string_view Type() const { return "main_thread"; }
   std::string_view Name() const { return name_; }
 
   bool ThreadSafe() const { return true; }
@@ -91,7 +94,9 @@ class MainThreadExecutor {
   std::string name_;
   const std::thread::id thread_id_;
 
-  tbb::concurrent_bounded_queue<Task> qu_;
+  std::mutex mutex_;
+  std::condition_variable cond_;
+  std::queue<Task> queue_;
 
   const aimrt_executor_base_t base_;
 };

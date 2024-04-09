@@ -14,7 +14,6 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
     struct PubTopicOptions {
       std::string topic_name;
       int qos = 2;
-      bool enable;
     };
 
     std::vector<PubTopicOptions> pub_topics_options;
@@ -29,7 +28,7 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
  public:
   MqttChannelBackend(
-      MQTTClient& client,
+      MQTTAsync& client,
       std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
       : client_(client),
         msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
@@ -65,7 +64,7 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
   runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
-  MQTTClient& client_;
+  MQTTAsync& client_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   struct MqttSubInfo {

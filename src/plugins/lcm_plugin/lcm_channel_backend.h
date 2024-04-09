@@ -34,8 +34,6 @@ class LcmChannelBackend : public runtime::core::channel::ChannelBackendBase {
     std::string sub_default_executor;
     std::list<SubTopicOptions> sub_topic_options;
     std::list<PubTopicOptions> pub_topic_options;
-    std::list<std::string> passable_pub_topics;
-    std::list<std::string> unpassable_pub_topics;
   };
 
   struct ModuleInfo {

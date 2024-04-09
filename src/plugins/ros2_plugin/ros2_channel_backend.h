@@ -22,7 +22,6 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   struct Options {
     struct PubTopicOptions {
       std::string topic_name;
-      bool enable = false;
     };
 
     std::vector<PubTopicOptions> pub_topics_options;

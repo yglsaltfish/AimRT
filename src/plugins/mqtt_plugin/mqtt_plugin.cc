@@ -1,5 +1,7 @@
 #include "mqtt_plugin/mqtt_plugin.h"
 
+#include <future>
+
 #include "core/aimrt_core.h"
 #include "mqtt_plugin/global.h"
 
@@ -43,57 +45,38 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     init_flag_ = true;
 
     // 初始化mqtt
-    int rc = MQTTClient_create(
+    MQTTAsync_create(
         &client_, options_.broker_addr.c_str(), options_.client_id.c_str(), MQTTCLIENT_PERSISTENCE_NONE, NULL);
-    AIMRT_CHECK_ERROR_THROW(rc == MQTTCLIENT_SUCCESS, "Failed to create mqtt client, return code: {}", rc);
 
-    rc = MQTTClient_setCallbacks(
+    MQTTAsync_setCallbacks(
         client_,
         this,
         [](void *context, char *cause) {
           static_cast<MqttPlugin *>(context)->OnConnectLost(cause);
         },
-        [](void *context, char *topicName, int topicLen, MQTTClient_message *message) -> int {
+        [](void *context, char *topicName, int topicLen, MQTTAsync_message *message) -> int {
           return static_cast<MqttPlugin *>(context)->OnMsgRecv(topicName, topicLen, message);
         },
         NULL);
-    AIMRT_CHECK_ERROR_THROW(rc == MQTTCLIENT_SUCCESS, "Failed to set callbacks for mqtt client, return code: {}", rc);
 
-    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    // connect to broker
+    std::promise<bool> connect_ret_promise;
+
+    MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
-    rc = MQTTClient_connect(client_, &conn_opts);
-    AIMRT_CHECK_ERROR_THROW(rc == MQTTCLIENT_SUCCESS, "Failed to connect mqtt broker, return code: {}", rc);
-    connect_flag_.store(true);
+    conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
+      static_cast<std::promise<bool> *>(context)->set_value(true);
+    };
+    conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
+      static_cast<std::promise<bool> *>(context)->set_value(false);
+    };
+    conn_opts.context = &connect_ret_promise;
+    int rc = MQTTAsync_connect(client_, &conn_opts);
+    AIMRT_CHECK_ERROR_THROW(rc == MQTTASYNC_SUCCESS, "Failed to connect mqtt broker, return code: {}", rc);
 
-    reconnect_thread_ptr_ = std::make_shared<std::thread>([this]() {
-      while (!stop_flag_.load()) {
-        if (!connect_flag_.load()) {
-          MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-          conn_opts.keepAliveInterval = 20;
-          conn_opts.cleansession = 1;
-
-          AIMRT_TRACE("Try reconnect to mqtt broker.");
-          int rc = MQTTClient_connect(client_, &conn_opts);
-          if (rc == MQTTCLIENT_SUCCESS) {
-            AIMRT_TRACE("Reconnect to mqtt broker success.");
-
-            for (auto ptr : mqtt_channel_backend_ptr_vec_) {
-              ptr->SubscribeMqttTopic();
-            }
-
-            for (auto ptr : mqtt_rpc_backend_ptr_vec_) {
-              ptr->SubscribeMqttTopic();
-            }
-
-            connect_flag_.store(true);
-          } else {
-            AIMRT_WARN("Failed to connect mqtt broker, return code {}", rc);
-          }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-      }
-    });
+    bool connect_ret = connect_ret_promise.get_future().get();
+    AIMRT_CHECK_ERROR_THROW(connect_ret, "Failed to connect mqtt broker");
 
     msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
 
@@ -122,11 +105,9 @@ void MqttPlugin::Shutdown() noexcept {
 
     stop_flag_ = true;
 
-    reconnect_thread_ptr_->join();
+    MQTTAsync_disconnect(client_, NULL);
 
-    MQTTClient_disconnect(client_, 10000);
-
-    MQTTClient_destroy(&client_);
+    MQTTAsync_destroy(&client_);
 
   } catch (const std::exception &e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
@@ -157,16 +138,31 @@ void MqttPlugin::RegisterMqttRpcBackend() {
   core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(mqtt_rpc_backend_ptr));
 }
 
-void MqttPlugin::OnConnectLost(char *cause) {
+void MqttPlugin::OnConnectLost(const char *cause) {
   AIMRT_WARN("Lost connect to mqtt broker, cause {}", (cause == nullptr) ? "nil" : cause);
-  connect_flag_.store(false);
+
+  if (stop_flag_.load()) return;
+
+  MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
+  conn_opts.keepAliveInterval = 20;
+  conn_opts.cleansession = 1;
+  conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
+    AIMRT_INFO("Reconnect to mqtt broker success.");
+  };
+  conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
+    static_cast<MqttPlugin *>(context)->OnConnectLost("Reconnect failed");
+  };
+  conn_opts.context = this;
+  int rc = MQTTAsync_connect(client_, &conn_opts);
+
+  AIMRT_CHECK_ERROR(rc == MQTTASYNC_SUCCESS, "Failed to connect mqtt broker, return code: {}", rc);
 }
 
-int MqttPlugin::OnMsgRecv(char *topic, int topic_len, MQTTClient_message *message) {
+int MqttPlugin::OnMsgRecv(char *topic, int topic_len, MQTTAsync_message *message) {
   std::string_view topic_str = topic_len ? std::string_view(topic, topic_len) : std::string_view(topic);
   msg_handle_registry_ptr_->HandleServerMsg(topic_str, message);
-  MQTTClient_freeMessage(&message);
-  MQTTClient_free(topic);
+  MQTTAsync_freeMessage(&message);
+  MQTTAsync_free(topic);
   return 1;
 }
 

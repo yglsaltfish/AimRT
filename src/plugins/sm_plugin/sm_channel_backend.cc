@@ -30,14 +30,6 @@ struct convert<aimrt::plugins::sm_plugin::SmChannelBackend::Options> {
       node["sub_topic_options"].push_back(options_node);
     }
 
-    for (auto& passable_pub_topic : rhs.passable_pub_topics) {
-      node["passable_pub_topics"].push_back(passable_pub_topic);
-    }
-
-    for (auto& unpassable_pub_topic : rhs.unpassable_pub_topics) {
-      node["unpassable_pub_topics"].push_back(unpassable_pub_topic);
-    }
-
     return node;
   }
 
@@ -69,16 +61,6 @@ struct convert<aimrt::plugins::sm_plugin::SmChannelBackend::Options> {
 
         rhs.sub_topic_options.push_back(options);
       }
-    }
-
-    // 如果存在 passable_pub_topics 则赋值
-    if (node["passable_pub_topics"]) {
-      rhs.passable_pub_topics = node["passable_pub_topics"].as<std::list<std::string>>();
-    }
-
-    // 如果存在 unpassable_pub_topics 则赋值
-    if (node["unpassable_pub_topics"]) {
-      rhs.unpassable_pub_topics = node["unpassable_pub_topics"].as<std::list<std::string>>();
     }
 
     return true;
@@ -166,40 +148,6 @@ bool SmChannelBackend::RegisterPublishType(const runtime::core::channel::Publish
     return false;
   }
 
-  try {
-    // 如果 options_.passable_pub_topics 没有配置，则默认为不通行
-    if (options_.passable_pub_topics.empty()) {
-      AIMRT_INFO("publish topic '{}' is unpassable publish by sm plugin.", publish_type_wrapper.topic_name);
-      return true;
-    }
-
-    bool passable = false;
-    for (auto& passable_pub_topic : options_.passable_pub_topics) {
-      std::regex pattern(passable_pub_topic);
-      if ((passable_pub_topic.empty()) || (std::regex_match(std::string(publish_type_wrapper.topic_name), pattern))) {
-        passable = true;
-        break;
-      }
-    }
-
-    // topic需要符合规则，需要允许通行的topic才能注册，如果不允许通行，则不允许注册，属于预期内配置，返回true
-    for (auto& unpassable_pub_topic : options_.unpassable_pub_topics) {
-      std::regex pattern(unpassable_pub_topic);
-      if (std::regex_match(std::string(publish_type_wrapper.topic_name), pattern)) {
-        passable = false;
-        break;
-      }
-    }
-
-    if (!passable) {
-      AIMRT_INFO("publish topic '{}' is unpassable publish by sm plugin.", publish_type_wrapper.topic_name);
-      return true;
-    }
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("check sm plugin publish topic regex error: {}", e.what());
-    return false;
-  }
-
   uint64_t msg_hash = std::hash<std::string>{}(
       std::string(publish_type_wrapper.topic_name) + std::string(publish_type_wrapper.msg_type));
 
@@ -272,12 +220,6 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
   // set module info and pkg path and callback
   std::shared_ptr<ModuleInfo> module_info = std::make_shared<ModuleInfo>(subscribe_wrapper);
   subscriber_info->module_info_list.push_back(module_info);
-
-  // 如果没有配置 sub_topic_options，则默认为不订阅共享内存的 topic
-  if (options_.sub_topic_options.empty()) {
-    AIMRT_INFO("subscribe topic '{}' is unpassable subscribe by sm plugin.", subscribe_wrapper.topic_name);
-    return true;
-  }
 
   try {
     auto& ops = options_.sub_topic_options;
