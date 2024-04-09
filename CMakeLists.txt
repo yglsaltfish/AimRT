@@ -158,6 +158,10 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
 endif()
 
 if(AIMRT_BUILD_WITH_ROS2)
+  # fix gflag
+  set(BUILD_TESTING
+      OFF
+      CACHE BOOL "")
   include(GetJsonCpp)
   find_package(rclcpp REQUIRED)
   find_package(Python3 REQUIRED)
