@@ -15,6 +15,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
 
     node["broker_addr"] = rhs.broker_addr;
     node["client_id"] = rhs.client_id;
+    node["max_pkg_size_k"] = rhs.max_pkg_size_k;
 
     return node;
   }
@@ -24,6 +25,9 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
 
     rhs.broker_addr = node["broker_addr"].as<std::string>();
     rhs.client_id = node["client_id"].as<std::string>();
+
+    if (node["max_pkg_size_k"])
+      rhs.max_pkg_size_k = node["max_pkg_size_k"].as<uint32_t>();
 
     return true;
   }
@@ -120,7 +124,10 @@ void MqttPlugin::SetPluginLogger() {
 
 void MqttPlugin::RegisterMqttChannelBackend() {
   std::unique_ptr<runtime::core::channel::ChannelBackendBase> mqtt_channel_backend_ptr =
-      std::make_unique<MqttChannelBackend>(client_, msg_handle_registry_ptr_);
+      std::make_unique<MqttChannelBackend>(
+          client_,
+          options_.max_pkg_size_k * 1024,
+          msg_handle_registry_ptr_);
 
   mqtt_channel_backend_ptr_vec_.emplace_back(
       static_cast<MqttChannelBackend *>(mqtt_channel_backend_ptr.get()));
@@ -130,7 +137,10 @@ void MqttPlugin::RegisterMqttChannelBackend() {
 
 void MqttPlugin::RegisterMqttRpcBackend() {
   std::unique_ptr<runtime::core::rpc::RpcBackendBase> mqtt_rpc_backend_ptr =
-      std::make_unique<MqttRpcBackend>(options_.client_id, client_, msg_handle_registry_ptr_);
+      std::make_unique<MqttRpcBackend>(
+          options_.client_id, client_,
+          options_.max_pkg_size_k * 1024,
+          msg_handle_registry_ptr_);
 
   mqtt_rpc_backend_ptr_vec_.emplace_back(
       static_cast<MqttRpcBackend *>(mqtt_rpc_backend_ptr.get()));
@@ -155,7 +165,10 @@ void MqttPlugin::OnConnectLost(const char *cause) {
   conn_opts.context = this;
   int rc = MQTTAsync_connect(client_, &conn_opts);
 
-  AIMRT_CHECK_ERROR(rc == MQTTASYNC_SUCCESS, "Failed to connect mqtt broker, return code: {}", rc);
+  if (rc != MQTTASYNC_SUCCESS) {
+    AIMRT_ERROR("Failed to connect mqtt broker, return code: {}", rc);
+    OnConnectLost("Reconnect failed");  // TODO: 得防止爆栈
+  }
 }
 
 int MqttPlugin::OnMsgRecv(char *topic, int topic_len, MQTTAsync_message *message) {

@@ -29,8 +29,10 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   MqttChannelBackend(
       MQTTAsync& client,
+      uint32_t max_pkg_size,
       std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
       : client_(client),
+        max_pkg_size_(max_pkg_size),
         msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
 
   ~MqttChannelBackend() override = default;
@@ -65,6 +67,7 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
   runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   MQTTAsync& client_;
+  uint32_t max_pkg_size_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   struct MqttSubInfo {

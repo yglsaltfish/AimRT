@@ -17,6 +17,12 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
     };
 
     std::vector<PubTopicOptions> pub_topics_options;
+
+    struct SubTopicOptions {
+      std::string topic_name;
+    };
+
+    std::vector<SubTopicOptions> sub_topics_options;
   };
 
  public:
