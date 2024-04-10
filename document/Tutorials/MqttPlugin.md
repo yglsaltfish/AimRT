@@ -54,7 +54,7 @@ Client -> Server，整体分4段:
 | n(0~255) [1 byte] | content type [n byte] 
 | m(0~255) [1 byte] | rsp topic name [m byte] 
 | msg id [4 byte] 
-| msg data [len - 1 - n - 1 - m - 4 byte] |
+| msg data [len - 1 - n - 1 - m - 4 byte]
 ```
 
 Server -> Client，整体分3段:
@@ -65,5 +65,6 @@ Server -> Client，整体分3段:
 ```
 | n(0~255) [1 byte] | content type [n byte] 
 | msg id [4 byte] 
-| msg data [len - 1 - n - 4 byte] |
+| status id [4 byte]
+| msg data [len - 1 - n - 4 -2 byte]
 ```

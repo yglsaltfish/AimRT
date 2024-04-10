@@ -26,9 +26,11 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   MqttRpcBackend(
       std::string client_id,
       MQTTAsync& client,
+      uint32_t max_pkg_size,
       std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
       : client_id_(client_id),
         client_(client),
+        max_pkg_size_(max_pkg_size),
         msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
 
   ~MqttRpcBackend() override = default;
@@ -58,6 +60,12 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
     return func_name;
   }
 
+  void ReturnRspWithStatusCode(
+      std::string_view mqtt_pub_topic,
+      std::string_view serialization_type,
+      const char* req_id_buf,
+      uint32_t code);
+
  private:
   enum class State : uint32_t {
     PreInit,
@@ -74,6 +82,7 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::string client_id_;
   MQTTAsync& client_;
+  uint32_t max_pkg_size_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::vector<std::string> sub_info_vec_;

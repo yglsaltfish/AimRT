@@ -21,6 +21,13 @@ struct convert<aimrt::plugins::net_plugin::HttpChannelBackend::Options> {
       node["pub_topics_options"].push_back(pub_topic_options_node);
     }
 
+    node["sub_topics_options"] = YAML::Node();
+    for (const auto& sub_topic_options : rhs.sub_topics_options) {
+      Node sub_topic_options_node;
+      sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
+      node["sub_topics_options"].push_back(sub_topic_options_node);
+    }
+
     return node;
   }
 
@@ -32,6 +39,15 @@ struct convert<aimrt::plugins::net_plugin::HttpChannelBackend::Options> {
             .server_url_list = pub_topic_options_node["server_url_list"].as<std::vector<std::string>>()};
 
         rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
+      }
+    }
+
+    if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
+      for (auto& sub_topic_options_node : node["sub_topics_options"]) {
+        auto sub_topic_options = Options::SubTopicOptions{
+            .topic_name = sub_topic_options_node["topic_name"].as<std::string>()};
+
+        rhs.sub_topics_options.emplace_back(std::move(sub_topic_options));
       }
     }
 

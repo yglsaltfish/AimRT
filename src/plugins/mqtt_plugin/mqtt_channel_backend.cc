@@ -300,7 +300,15 @@ void MqttChannelBackend::Publish(
   const size_t buffer_array_len = buffer_array->Size();
   size_t msg_size = buffer_array->BufferSize();
 
-  std::vector<char> msg_buf_vec(1 + serialization_type.size() + msg_size);
+  size_t mqtt_pkg_size = 1 + serialization_type.size() + msg_size;
+
+  if (mqtt_pkg_size > max_pkg_size_) [[unlikely]] {
+    AIMRT_WARN("Mqtt publish failed, pkg is too large, limit {}k, actual {}k",
+               max_pkg_size_ / 1024, mqtt_pkg_size / 1024);
+    return;
+  }
+
+  std::vector<char> msg_buf_vec(mqtt_pkg_size);
 
   util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
 
@@ -321,7 +329,7 @@ void MqttChannelBackend::Publish(
   AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
   int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
   AIMRT_CHECK_WARN(rc == MQTTASYNC_SUCCESS,
-                   "Publist mqtt msg failed, topic: {}, code: {}",
+                   "publish mqtt msg failed, topic: {}, code: {}",
                    mqtt_pub_topic, rc);
 
   return;
