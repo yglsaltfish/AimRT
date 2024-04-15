@@ -6,11 +6,18 @@ set(googletest_DOWNLOAD_URL
     "https://github.com/google/googletest/archive/v1.13.0.tar.gz"
     CACHE STRING "")
 
-FetchContent_Declare(
-  googletest
-  URL ${googletest_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  OVERRIDE_FIND_PACKAGE)
+if(${googletest_LOCAL_SOURCE})
+  FetchContent_Declare(
+    googletest
+    SOURCE_DIR ${googletest_LOCAL_SOURCE}
+    OVERRIDE_FIND_PACKAGE)
+else()
+  FetchContent_Declare(
+    googletest
+    URL ${googletest_DOWNLOAD_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OVERRIDE_FIND_PACKAGE)
+endif()
 
 FetchContent_GetProperties(googletest)
 if(NOT googletest_POPULATED)

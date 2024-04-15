@@ -10,6 +10,7 @@ with section("parse"):
             'kwargs': {
                 'URL': '*',
                 'URL_HASH': '*',
+                'SOURCE_DIR': '*',
                 'DOWNLOAD_EXTRACT_TIMESTAMP': '*',
                 'GIT_REPOSITORY ': '*',
                 'GIT_TAG ': '*'

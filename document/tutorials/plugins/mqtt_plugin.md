@@ -51,20 +51,21 @@ Client -> Server，整体分4段:
 - 数据
 
 ```
-| n(0~255) [1 byte] | content type [n byte] 
-| m(0~255) [1 byte] | rsp topic name [m byte] 
-| msg id [4 byte] 
+| n(0~255) [1 byte] | content type [n byte]
+| m(0~255) [1 byte] | rsp topic name [m byte]
+| msg id [4 byte]
 | msg data [len - 1 - n - 1 - m - 4 byte]
 ```
 
-Server -> Client，整体分3段:
+Server -> Client，整体分4段:
 - 序列化类型，一般是`pb`或`json`
 - msg id，4字节，req中的msg id
+- status code，4字节，框架错误码，如果这个部分不为零，则代表服务端发生了错误，数据段将没有内容
 - 数据
 
 ```
-| n(0~255) [1 byte] | content type [n byte] 
-| msg id [4 byte] 
-| status id [4 byte]
+| n(0~255) [1 byte] | content type [n byte]
+| msg id [4 byte]
+| status code [4 byte]
 | msg data [len - 1 - n - 4 -2 byte]
 ```

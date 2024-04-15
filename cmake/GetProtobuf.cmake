@@ -6,11 +6,18 @@ set(protobuf_DOWNLOAD_URL
     "https://github.com/protocolbuffers/protobuf/archive/v3.21.12.tar.gz"
     CACHE STRING "")
 
-FetchContent_Declare(
-  protobuf
-  URL ${protobuf_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  OVERRIDE_FIND_PACKAGE)
+if(${protobuf_LOCAL_SOURCE})
+  FetchContent_Declare(
+    protobuf
+    SOURCE_DIR ${protobuf_LOCAL_SOURCE}
+    OVERRIDE_FIND_PACKAGE)
+else()
+  FetchContent_Declare(
+    protobuf
+    URL ${protobuf_DOWNLOAD_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OVERRIDE_FIND_PACKAGE)
+endif()
 
 FetchContent_GetProperties(protobuf)
 if(NOT protobuf_POPULATED)

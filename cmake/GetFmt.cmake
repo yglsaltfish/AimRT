@@ -6,11 +6,18 @@ set(fmt_DOWNLOAD_URL
     "https://github.com/fmtlib/fmt/archive/9.1.0.tar.gz"
     CACHE STRING "")
 
-FetchContent_Declare(
-  fmt
-  URL ${fmt_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  OVERRIDE_FIND_PACKAGE)
+if(${fmt_LOCAL_SOURCE})
+  FetchContent_Declare(
+    fmt
+    SOURCE_DIR ${fmt_LOCAL_SOURCE}
+    OVERRIDE_FIND_PACKAGE)
+else()
+  FetchContent_Declare(
+    fmt
+    URL ${fmt_DOWNLOAD_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OVERRIDE_FIND_PACKAGE)
+endif()
 
 FetchContent_GetProperties(fmt)
 if(NOT fmt_POPULATED)

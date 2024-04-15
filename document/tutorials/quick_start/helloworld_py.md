@@ -1,4 +1,9 @@
-# aimrt_py 使用指南
+
+# HelloWorld Python
+
+
+本章将以一个HelloWorld示例来介绍如何建立一个最基本的AimRT Python工程。
+
 
 
 ## 1. 简介

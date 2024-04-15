@@ -6,11 +6,18 @@ set(pybind11_DOWNLOAD_URL
     "https://github.com/pybind/pybind11/archive/v2.11.1.tar.gz"
     CACHE STRING "")
 
-FetchContent_Declare(
-  pybind11
-  URL ${pybind11_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  OVERRIDE_FIND_PACKAGE)
+if(${pybind11_LOCAL_SOURCE})
+  FetchContent_Declare(
+    pybind11
+    SOURCE_DIR ${pybind11_LOCAL_SOURCE}
+    OVERRIDE_FIND_PACKAGE)
+else()
+  FetchContent_Declare(
+    pybind11
+    URL ${pybind11_DOWNLOAD_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OVERRIDE_FIND_PACKAGE)
+endif()
 
 FetchContent_GetProperties(pybind11)
 if(NOT pybind11_POPULATED)
