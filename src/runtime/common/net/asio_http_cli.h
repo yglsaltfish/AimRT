@@ -13,7 +13,7 @@
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
 class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
  public:
@@ -600,4 +600,4 @@ class AsioHttpClientPool
   std::unordered_map<std::string, std::shared_ptr<AsioHttpClient>> client_map_;
 };
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

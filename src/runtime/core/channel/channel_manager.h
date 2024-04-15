@@ -45,7 +45,7 @@ class ChannelManager {
 
  public:
   ChannelManager()
-      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~ChannelManager() = default;
 
   ChannelManager(const ChannelManager&) = delete;
@@ -69,8 +69,8 @@ class ChannelManager {
 
   State GetState() const { return state_.load(); }
 
-  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   void RegisterLocalChannelBackend();
@@ -78,7 +78,7 @@ class ChannelManager {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 
@@ -95,7 +95,7 @@ class ChannelManager {
     ChannelHandleProxyWrap(
         std::string_view input_pkg_path,
         std::string_view input_module_name,
-        common::util::LoggerWrapper& logger,
+        aimrt::common::util::LoggerWrapper& logger,
         ChannelBackendManager& channel_backend_manager,
         ContextManager& context_manager,
         std::atomic_bool& channel_handle_proxy_start_flag)

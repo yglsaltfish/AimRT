@@ -6,7 +6,7 @@
 namespace aimrt::runtime::core {
 
 AimRTCore::AimRTCore()
-    : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
+    : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
 
 AimRTCore::~AimRTCore() {
   try {

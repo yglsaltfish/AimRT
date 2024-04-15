@@ -11,7 +11,7 @@
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
 class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
  public:
@@ -479,4 +479,4 @@ class AsioUdpClientPool
   std::unordered_map<size_t, std::shared_ptr<AsioUdpClient>> client_map_;
 };
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

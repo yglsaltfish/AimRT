@@ -9,12 +9,12 @@
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 
-#include "net_plugin/util/http_dispatcher.h"
+#include "net/http_dispatcher.h"
 #include "util/log_util.h"
 #include "util/string_util.h"
 #include "util/url_parser.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
 class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
  public:
@@ -818,4 +818,4 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
   std::list<std::shared_ptr<Session>> session_ptr_list_;  // session池
 };
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

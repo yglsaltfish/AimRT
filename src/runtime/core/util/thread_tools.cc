@@ -56,13 +56,13 @@ void BindCpuForCurrentThread(const std::vector<uint32_t>& cpu_set) {
   if (cpu_set.empty()) return;
 
 #if defined(_WIN32)
-  throw common::util::AimRTException(
+  throw aimrt::common::util::AimRTException(
       "BindCpuForCurrentThread currently not supported on the Windows platform.");
 #else
   static const uint32_t max_cpu_idx = std::thread::hardware_concurrency();
   for (auto cpu_idx : cpu_set) {
     if (cpu_idx >= max_cpu_idx) {
-      throw common::util::AimRTException(::aimrt_fmt::format(
+      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
           "Invalid cpu index '{}', max cpu idx is '{}'.",
           cpu_idx, max_cpu_idx));
     }
@@ -76,7 +76,7 @@ void BindCpuForCurrentThread(const std::vector<uint32_t>& cpu_set) {
 
   auto ret = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   if (ret) {
-    throw common::util::AimRTException(::aimrt_fmt::format(
+    throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
         "Call 'pthread_setaffinity_np' get error, ret code '{}'", ret));
   }
 #endif
@@ -86,7 +86,7 @@ void SetCpuSchedForCurrentThread(std::string_view sched) {
   if (sched.empty()) return;
 
 #if defined(_WIN32)
-  throw common::util::AimRTException(
+  throw aimrt::common::util::AimRTException(
       "SetCpuSchedForCurrentThread currently not supported on the Windows platform.");
 #else
   if (sched == "SCHED_OTHER") {
@@ -94,7 +94,7 @@ void SetCpuSchedForCurrentThread(std::string_view sched) {
     param.sched_priority = 0;
     int ret = pthread_setschedparam(pthread_self(), SCHED_OTHER, &param);
     if (ret) {
-      throw common::util::AimRTException(::aimrt_fmt::format(
+      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
           "Call 'pthread_setschedparam' get error, ret code '{}'", ret));
     }
 
@@ -102,7 +102,7 @@ void SetCpuSchedForCurrentThread(std::string_view sched) {
     auto pos = sched.find_first_of(':');
 
     if (pos == std::string_view::npos || pos == sched.size() - 1) {
-      throw common::util::AimRTException(
+      throw aimrt::common::util::AimRTException(
           ::aimrt_fmt::format("Invalid sched parm '{}'", sched));
     }
     auto sched_policy_str = sched.substr(0, pos);
@@ -114,7 +114,7 @@ void SetCpuSchedForCurrentThread(std::string_view sched) {
     } else if (sched_policy_str == "SCHED_RR") {
       policy = SCHED_RR;
     } else {
-      throw common::util::AimRTException(
+      throw aimrt::common::util::AimRTException(
           ::aimrt_fmt::format("Invalid sched parm '{}'", sched));
     }
 
@@ -126,14 +126,14 @@ void SetCpuSchedForCurrentThread(std::string_view sched) {
     param.sched_priority = atoi(sched_priority_str.data());
     if (param.sched_priority < priority_min ||
         param.sched_priority > priority_max) {
-      throw common::util::AimRTException(::aimrt_fmt::format(
+      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
           "Invalid sched priority '{}', required range {}~{}",
           param.sched_priority, priority_min, priority_max));
     }
 
     int ret = pthread_setschedparam(pthread_self(), policy, &param);
     if (ret) {
-      throw common::util::AimRTException(::aimrt_fmt::format(
+      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
           "Call 'pthread_setschedparam' get error, ret code '{}'", ret));
     }
 
@@ -141,12 +141,12 @@ void SetCpuSchedForCurrentThread(std::string_view sched) {
     struct sched_param check_param;
     ret = pthread_getschedparam(pthread_self(), &check_policy, &check_param);
     if (ret) {
-      throw common::util::AimRTException(::aimrt_fmt::format(
+      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
           "Call 'pthread_getschedparam' get error, ret code '{}'", ret));
     }
     if (check_policy != policy ||
         check_param.sched_priority != param.sched_priority) {
-      throw common::util::AimRTException(::aimrt_fmt::format(
+      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
           "Set sched failed, want '{}:{}', actual '{}:{}'",
           policy, param.sched_priority, check_policy, check_param.sched_priority));
     }

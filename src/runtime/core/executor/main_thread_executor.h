@@ -32,7 +32,7 @@ class MainThreadExecutor {
 
  public:
   MainThreadExecutor()
-      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()),
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()),
         thread_id_(std::this_thread::get_id()),
         base_(GenBase(this)) {}
   ~MainThreadExecutor() = default;
@@ -54,8 +54,8 @@ class MainThreadExecutor {
 
   State GetState() const { return state_.load(); }
 
-  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   const aimrt_executor_base_t* NativeHandle() const { return &base_; }
 
@@ -89,7 +89,7 @@ class MainThreadExecutor {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::string name_;
   const std::thread::id thread_id_;

@@ -55,7 +55,7 @@ install(
   TARGETS ${CUR_TARGET_NAME}_aimrt_rpc_gencode
   EXPORT ${INSTALL_CONFIG_NAME}
   FILE_SET HEADERS
-  DESTINATION include/aimrt/${CUR_TARGET_NAME}_aimrt_rpc_gencode)
+  DESTINATION include/${CUR_TARGET_NAME}_aimrt_rpc_gencode)
 
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()

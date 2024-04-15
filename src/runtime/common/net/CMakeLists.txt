@@ -11,22 +11,17 @@ set(CUR_TARGET_ALIAS_NAME ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR})
 
 # Set file collection
 file(GLOB_RECURSE head_files ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
-file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 file(GLOB_RECURSE test_files ${CMAKE_CURRENT_SOURCE_DIR}/*_test.cc)
-list(REMOVE_ITEM src ${test_files})
 
 # Add target
-add_library(${CUR_TARGET_NAME} STATIC)
+add_library(${CUR_TARGET_NAME} INTERFACE)
 add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
-
-# Set source file of target
-target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 
 # Set include path of target
 target_include_directories(
   ${CUR_TARGET_NAME}
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-         $<INSTALL_INTERFACE:include/aimrt>)
+  INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+            $<INSTALL_INTERFACE:include/aimrt>)
 
 # Set head files of target
 target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES ${head_files})
@@ -34,15 +29,16 @@ target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_C
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
-  PUBLIC Boost::asio
-         yaml-cpp::yaml-cpp
-         TBB::tbb
-         aimrt::interface::aimrt_module_cpp_interface
-         aimrt::interface::aimrt_core_plugin_interface
-         aimrt::common::util)
+  INTERFACE aimrt::common::util
+            Boost::beast)
 
 # Set compile definitions of target
-target_compile_definitions(${CUR_TARGET_NAME} PUBLIC BOOST_ASIO_NO_DEPRECATED)
+target_compile_definitions(${CUR_TARGET_NAME} INTERFACE BOOST_ASIO_NO_DEPRECATED)
+
+# Set compile options of target
+if(WIN32)
+  target_compile_options(${CUR_TARGET_NAME} INTERFACE /bigobj)
+endif()
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)

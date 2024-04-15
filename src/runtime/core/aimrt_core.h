@@ -135,7 +135,7 @@ class AimRTCore {
   Options options_;
   std::atomic_bool stop_flag_ = false;
   State state_ = State::PreInit;
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::vector<HookTask> hook_task_vec_array_[static_cast<uint32_t>(State::MaxStateNum)];
 

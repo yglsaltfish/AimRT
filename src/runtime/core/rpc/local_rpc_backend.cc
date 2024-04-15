@@ -103,11 +103,11 @@ bool LocalRpcBackend::TryInvoke(
   // url: local://rpc/func_name?pkg_path=xxxx&module_name=yyyy
   std::string_view to_addr = client_invoke_wrapper_ptr->ctx_ref.GetToAddr();
   if (!to_addr.empty()) {
-    auto url = common::util::ParseUrl<std::string_view>(to_addr);
+    auto url = aimrt::common::util::ParseUrl<std::string_view>(to_addr);
     if (url) {
       assert(url->protocol == Name());
-      service_pkg_path = common::util::GetValueFromStrKV(url->query, "pkg_path");
-      service_module_name = common::util::GetValueFromStrKV(url->query, "module_name");
+      service_pkg_path = aimrt::common::util::GetValueFromStrKV(url->query, "pkg_path");
+      service_module_name = aimrt::common::util::GetValueFromStrKV(url->query, "module_name");
     }
   }
 

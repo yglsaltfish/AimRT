@@ -18,7 +18,7 @@ class RpcBackendManager {
 
  public:
   RpcBackendManager()
-      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~RpcBackendManager() = default;
 
   RpcBackendManager(const RpcBackendManager&) = delete;
@@ -41,8 +41,8 @@ class RpcBackendManager {
 
   State GetState() const { return state_.load(); }
 
-  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   std::vector<RpcBackendBase*> GetBackendsByRules(
@@ -51,7 +51,7 @@ class RpcBackendManager {
 
  private:
   std::atomic<State> state_ = State::PreInit;
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   RpcRegistry* rpc_registry_ptr_ = nullptr;
 

@@ -38,7 +38,7 @@ class LoggerManager {
 
  public:
   LoggerManager()
-      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~LoggerManager() = default;
 
   LoggerManager(const LoggerManager&) = delete;
@@ -59,8 +59,8 @@ class LoggerManager {
 
   State GetState() const { return state_.load(); }
 
-  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   void RegisterConsoleLoggerBackend();
@@ -69,7 +69,7 @@ class LoggerManager {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 
