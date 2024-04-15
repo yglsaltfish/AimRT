@@ -2,16 +2,23 @@ include(FetchContent)
 
 message(STATUS "get sqlite ...")
 
+# sqlite version: https://www.sqlite.org/chronology.html
 set(sqlite_DOWNLOAD_URL
     "https://www.sqlite.org/2023/sqlite-amalgamation-3420000.zip"
     CACHE STRING "")
 
-# sqlite version: https://www.sqlite.org/chronology.html
-FetchContent_Declare(
-  sqlite
-  URL ${sqlite_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  OVERRIDE_FIND_PACKAGE)
+if(${sqlite_LOCAL_SOURCE})
+  FetchContent_Declare(
+    sqlite
+    SOURCE_DIR ${sqlite_LOCAL_SOURCE}
+    OVERRIDE_FIND_PACKAGE)
+else()
+  FetchContent_Declare(
+    sqlite
+    URL ${sqlite_DOWNLOAD_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OVERRIDE_FIND_PACKAGE)
+endif()
 
 FetchContent_GetProperties(sqlite)
 if(NOT sqlite_POPULATED)

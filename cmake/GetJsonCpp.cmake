@@ -6,11 +6,18 @@ set(jsoncpp_DOWNLOAD_URL
     "https://github.com/open-source-parsers/jsoncpp/archive/1.9.5.tar.gz"
     CACHE STRING "")
 
-FetchContent_Declare(
-  jsoncpp
-  URL ${jsoncpp_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  OVERRIDE_FIND_PACKAGE)
+if(${jsoncpp_LOCAL_SOURCE})
+  FetchContent_Declare(
+    jsoncpp
+    SOURCE_DIR ${jsoncpp_LOCAL_SOURCE}
+    OVERRIDE_FIND_PACKAGE)
+else()
+  FetchContent_Declare(
+    jsoncpp
+    URL ${jsoncpp_DOWNLOAD_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OVERRIDE_FIND_PACKAGE)
+endif()
 
 FetchContent_GetProperties(jsoncpp)
 if(NOT jsoncpp_POPULATED)

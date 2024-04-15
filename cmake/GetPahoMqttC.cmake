@@ -6,10 +6,18 @@ set(paho_mqtt_c_DOWNLOAD_URL
     "https://github.com/eclipse/paho.mqtt.c/archive/v1.3.13.tar.gz"
     CACHE STRING "")
 
-FetchContent_Declare(
-  paho_mqtt_c
-  URL ${paho_mqtt_c_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+if(${paho_mqtt_c_LOCAL_SOURCE})
+  FetchContent_Declare(
+    paho_mqtt_c
+    SOURCE_DIR ${paho_mqtt_c_LOCAL_SOURCE}
+    OVERRIDE_FIND_PACKAGE)
+else()
+  FetchContent_Declare(
+    paho_mqtt_c
+    URL ${paho_mqtt_c_DOWNLOAD_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OVERRIDE_FIND_PACKAGE)
+endif()
 
 FetchContent_GetProperties(paho_mqtt_c)
 if(NOT paho_mqtt_c_POPULATED)

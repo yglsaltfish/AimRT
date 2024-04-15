@@ -1,7 +1,5 @@
 # AimRT
 
-[TOC]
-
 ## Brief
 - AimRT is a basic runtime framework for the field of modern robotics. It is developed based on modern C++, is lightweight and easy to deploy, and has more modern designs in resource management and control, asynchronous programming, deployment configuration, etc.
 - AimRT is committed to integrating the research and development of various deployment scenarios such as robot end-side, edge end, and cloud. It serves modern AI- and cloud-based robot applications and provides modern and complete debugging and performance analysis tools, as well as good observability support.
@@ -9,8 +7,7 @@
 
 ## Getting started
 
-- [Installation](document/Installation.md)
-- [Tutorials](document/Tutorials.md)
-- [FAQ](document/FAQ.md)
-- [Contact](document/Contact.md)
-- [ReleaseNotes](document/ReleaseNotes.md)
+- [Tutorials](document/tutorials/tutorials.md)
+- [FAQ](document/faq.md)
+- [Contact](document/contact.md)
+- [ReleaseNotes](document/release_notes.md)

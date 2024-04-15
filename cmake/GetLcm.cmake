@@ -6,11 +6,18 @@ set(lcm_DOWNLOAD_URL
     "https://github.com/lcm-proj/lcm/archive/refs/tags/v1.5.0.tar.gz"
     CACHE STRING "")
 
-FetchContent_Declare(
-  lcm
-  URL ${lcm_DOWNLOAD_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  OVERRIDE_FIND_PACKAGE)
+if(${lcm_LOCAL_SOURCE})
+  FetchContent_Declare(
+    lcm
+    SOURCE_DIR ${lcm_LOCAL_SOURCE}
+    OVERRIDE_FIND_PACKAGE)
+else()
+  FetchContent_Declare(
+    lcm
+    URL ${lcm_DOWNLOAD_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OVERRIDE_FIND_PACKAGE)
+endif()
 
 FetchContent_GetProperties(lcm)
 if(NOT lcm_POPULATED)

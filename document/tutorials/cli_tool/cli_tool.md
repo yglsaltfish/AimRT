@@ -1,10 +1,9 @@
-# aimrt_cli
 
-
+# CLI工具
 
 ## 1. 简介
 
-**aimrt_cli**是**aimrt**自带的命令行工具代码库，目前支持以下功能：
+**aimrt_cli**是一个命令行工具，目前支持以下功能：
 
 + 自动化生成代码，详细指引: [自动化生成指南](#3-代码自动化生成指南)
 
@@ -210,10 +209,5 @@ deploy_modes:
 
 最终将在指定的目录中生成具体的工程， `configuration_example.yaml`生成的工程结构如下：
 
-<img src="./picture/project_tree.jpg" alt="工程树形图" width="300" height="450">
+<img src="./project_tree.jpg" alt="工程树形图" width="300" height="450">
 
-## 问题及需求
-您在使用此工具中的有价值需求可以在aimrt代码仓中给我们提issue，
-遇到问题也可以在此进行查找或者提问[issue链接](https://code.agibot.com/agibot-tech/aimrt/-/issues)
-
-请在提相关issue时，将标签关联到tools上并且关联人选择@yuxi，我们将尽快解决您的需求。
