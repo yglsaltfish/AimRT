@@ -31,14 +31,14 @@ struct SubscribeWrapper {
 class ChannelRegistry {
  public:
   ChannelRegistry()
-      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~ChannelRegistry() = default;
 
   ChannelRegistry(const ChannelRegistry&) = delete;
   ChannelRegistry& operator=(const ChannelRegistry&) = delete;
 
-  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool RegisterPublishType(
       std::unique_ptr<PublishTypeWrapper>&& publish_type_wrapper_ptr);
@@ -57,7 +57,7 @@ class ChannelRegistry {
       std::string_view msg_type) const;
 
  private:
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   // 发布类型注册表: pkg_path:module_name:topic:msg_type:wrapper
   using PublishTypeMsgTypeMap = std::unordered_map<std::string_view, std::unique_ptr<PublishTypeWrapper>>;

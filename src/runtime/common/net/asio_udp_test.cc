@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "net_plugin/util/asio_tools.h"
-#include "net_plugin/util/asio_udp_cli.h"
-#include "net_plugin/util/asio_udp_svr.h"
+#include "net/asio_tools.h"
+#include "net/asio_udp_cli.h"
+#include "net/asio_udp_svr.h"
 #include "util/string_util.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
 namespace asio = boost::asio;
 
@@ -82,4 +82,4 @@ TEST(NET_TEST, UDP_base) {
   t_cli.join();
 }
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

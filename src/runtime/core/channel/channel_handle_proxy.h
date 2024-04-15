@@ -184,7 +184,7 @@ class ChannelHandleProxy {
 
   ChannelHandleProxy(std::string_view pkg_path,
                      std::string_view module_name,
-                     common::util::LoggerWrapper& logger,
+                     aimrt::common::util::LoggerWrapper& logger,
                      ChannelBackendManager& channel_backend_manager,
                      ContextManager& context_manager,
                      std::atomic_bool& start_flag,
@@ -208,7 +208,7 @@ class ChannelHandleProxy {
 
   const aimrt_channel_handle_base_t* NativeHandle() const { return &base_; }
 
-  const common::util::LoggerWrapper& GetLogger() const { return logger_; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return logger_; }
 
  private:
   PublisherProxy* GetPublisher(std::string_view topic) {
@@ -273,7 +273,7 @@ class ChannelHandleProxy {
   const std::string_view pkg_path_;
   const std::string_view module_name_;
 
-  common::util::LoggerWrapper& logger_;
+  aimrt::common::util::LoggerWrapper& logger_;
 
   ChannelBackendManager& channel_backend_manager_;
 

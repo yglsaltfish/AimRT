@@ -28,7 +28,7 @@ class LocalChannelBackend : public ChannelBackendBase {
 
  public:
   LocalChannelBackend()
-      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~LocalChannelBackend() override = default;
 
   std::string_view Name() const override { return "local"; }
@@ -49,8 +49,8 @@ class LocalChannelBackend : public ChannelBackendBase {
 
   State GetState() const { return state_.load(); }
 
-  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   const SubscribeWrapper* GetTplSubscribeWrapper(
@@ -67,7 +67,7 @@ class LocalChannelBackend : public ChannelBackendBase {
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   const ChannelRegistry* channel_registry_ptr_ = nullptr;
   ContextManager* context_manager_ptr_ = nullptr;

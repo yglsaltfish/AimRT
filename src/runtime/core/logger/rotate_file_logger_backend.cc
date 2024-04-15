@@ -95,7 +95,7 @@ void RotateFileLoggerBackend::Log(
             .count();
     *format_log_str_ptr = ::aimrt_fmt::format(
         "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]{}",
-        common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
+        aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
         (time_stamp_us % 1000000),
         LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
         log_data_wrapper.thread_id, log_data_wrapper.module_name,
@@ -165,7 +165,7 @@ void RotateFileLoggerBackend::CleanLogFile() {
       continue;
     const std::string& cur_log_file_name_suffix =
         cur_log_file_name.substr(base_file_name_.size() + 1);
-    if (!common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
+    if (!aimrt::common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
     uint32_t cur_idx = atoi(cur_log_file_name_suffix.c_str());
     log_files.emplace(cur_idx, cur_log_file_name);
   }
@@ -196,7 +196,7 @@ uint32_t RotateFileLoggerBackend::GetNextIndex() {
 
     const std::string& cur_log_file_name_suffix =
         cur_log_file_name.substr(base_file_name_.size() + 1);
-    if (!common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
+    if (!aimrt::common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
     uint32_t cur_idx = atoi(cur_log_file_name_suffix.c_str());
     if (cur_idx >= idx) idx = cur_idx + 1;
   }

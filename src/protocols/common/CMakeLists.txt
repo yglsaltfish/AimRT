@@ -29,4 +29,4 @@ install(
   EXPORT ${INSTALL_CONFIG_NAME}
   ARCHIVE DESTINATION lib
           FILE_SET HEADERS
-          DESTINATION include/aimrt/${CUR_TARGET_NAME}_pb_gencode)
+          DESTINATION include/${CUR_TARGET_NAME}_pb_gencode)

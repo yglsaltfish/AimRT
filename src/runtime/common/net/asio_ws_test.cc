@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "net_plugin/util/asio_tools.h"
-#include "net_plugin/util/asio_ws_cli.h"
-#include "net_plugin/util/asio_ws_svr.h"
+#include "net/asio_tools.h"
+#include "net/asio_ws_cli.h"
+#include "net/asio_ws_svr.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
 namespace asio = boost::asio;
 
@@ -93,4 +93,4 @@ TEST(NET_TEST, WebSocket_base) {
   t_svr.join();
 }
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

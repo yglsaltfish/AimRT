@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "net_plugin/util/asio_http_cli.h"
-#include "net_plugin/util/asio_http_svr.h"
-#include "net_plugin/util/asio_tools.h"
+#include "net/asio_http_cli.h"
+#include "net/asio_http_svr.h"
+#include "net/asio_tools.h"
 #include "util/string_util.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
 namespace asio = boost::asio;
 namespace http = boost::beast::http;
@@ -470,4 +470,4 @@ TEST(NET_TEST, Http_server_handle) {
   t_cli.join();
 }
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

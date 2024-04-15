@@ -2,24 +2,23 @@
 
 #include <atomic>
 #include <chrono>
-#include <functional>
 #include <list>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include <boost/asio.hpp>
-#include <boost/beast.hpp>
 
+#include "util/buffer_util.h"
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
-class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketServer> {
+class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
  public:
   using IOCtx = boost::asio::io_context;
   using Tcp = boost::asio::ip::tcp;
-  using WsStream = boost::beast::websocket::stream<boost::beast::tcp_stream>;
   using Strand = boost::asio::strand<IOCtx::executor_type>;
   using Timer = boost::asio::steady_timer;
   using Streambuf = boost::asio::streambuf;
@@ -27,13 +26,12 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   template <class T>
   using Awaitable = boost::asio::awaitable<T>;
 
-  // todo
   using MsgHandle =
       std::function<void(const Tcp::endpoint&, const std::shared_ptr<Streambuf>&)>;
 
   struct Options {
     /// 监听的地址
-    Tcp::endpoint ep = Tcp::endpoint{boost::asio::ip::address_v4(), 50180};
+    Tcp::endpoint ep = Tcp::endpoint{boost::asio::ip::address_v4(), 57634};
 
     /// 最大连接数
     size_t max_session_num = 1000;
@@ -46,9 +44,6 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
     /// 包最大尺寸
     uint32_t max_recv_size = 1024 * 1024 * 16;
-
-    // 使用binary模式还是text模式
-    bool binary_mode = true;
 
     /// 校验配置
     static Options Verify(const Options& verify_options) {
@@ -69,7 +64,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     }
   };
 
-  explicit AsioWebSocketServer(const std::shared_ptr<IOCtx>& io_ptr)
+  explicit AsioTcpServer(const std::shared_ptr<IOCtx>& io_ptr)
       : io_ptr_(io_ptr),
         mgr_strand_(boost::asio::make_strand(*io_ptr_)),
         acceptor_(mgr_strand_),
@@ -77,10 +72,10 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
         mgr_timer_(mgr_strand_),
         logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
 
-  ~AsioWebSocketServer() = default;
+  ~AsioTcpServer() = default;
 
-  AsioWebSocketServer(const AsioWebSocketServer&) = delete;
-  AsioWebSocketServer& operator=(const AsioWebSocketServer&) = delete;
+  AsioTcpServer(const AsioTcpServer&) = delete;
+  AsioTcpServer& operator=(const AsioTcpServer&) = delete;
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
@@ -101,6 +96,10 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   }
 
   void Initialize(const Options& options) {
+    AIMRT_CHECK_ERROR_THROW(
+        msg_handle_ptr_,
+        "Msg handle is not set before initialize.");
+
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
         "Function can only be called when state is 'PreInit'.");
@@ -141,13 +140,16 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
               co_await acceptor_.async_accept(session_ptr->Socket(),
                                               boost::asio::use_awaitable);
+              AIMRT_TRACE(
+                  "Tcp svr accept a new connection, remote addr is {}",
+                  aimrt::common::util::SSToString(session_ptr->Socket().remote_endpoint()));
               session_ptr->Start();
 
               session_ptr_map_.emplace(session_ptr->Socket().remote_endpoint(), session_ptr);
 
             } catch (const std::exception& e) {
               AIMRT_WARN(
-                  "WebSocket svr accept connection get exception and exit, exception info: {}",
+                  "Tcp svr accept connection get exception and exit, exception info: {}",
                   e.what());
             }
           }
@@ -174,7 +176,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
               }
             } catch (const std::exception& e) {
               AIMRT_WARN(
-                  "WebSocket svr timer get exception and exit, exception info: {}",
+                  "Tcp svr timer get exception and exit, exception info: {}",
                   e.what());
             }
           }
@@ -217,7 +219,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           }
         } catch (const std::exception& e) {
           AIMRT_WARN(
-              "WebSocket svr stop get exception at step {}, exception info: {}",
+              "Tcp svr stop get exception at step {}, exception info: {}",
               stop_step, e.what());
           ++stop_step;
         }
@@ -239,7 +241,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
       auto finditr = session_ptr_map_.find(ep);
       if (finditr == session_ptr_map_.end()) {
-        AIMRT_WARN("WebSocket svr can not find endpoint {} in session map",
+        AIMRT_WARN("Tcp svr can not find endpoint {} in session map",
                    aimrt::common::util::SSToString(ep));
         return;
       }
@@ -256,6 +258,11 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   bool IsRunning() const { return state_.load() == State::Start; }
 
  private:
+  // 包头结构：| 2byte magicnum | 4byte msglen |
+  static constexpr size_t HEAD_SIZE = 6;
+  static constexpr char HEAD_BYTE_1 = 'Y';
+  static constexpr char HEAD_BYTE_2 = 'T';
+
   static bool CheckListenAddr(const Tcp::endpoint& ep) {
     try {
       IOCtx io;
@@ -269,12 +276,10 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   struct SessionOptions {
     explicit SessionOptions(const Options& options)
         : max_no_data_duration(options.max_no_data_duration),
-          max_recv_size(options.max_recv_size),
-          binary_mode(options.binary_mode) {}
+          max_recv_size(options.max_recv_size) {}
 
     std::chrono::nanoseconds max_no_data_duration;
     uint32_t max_recv_size;
-    bool binary_mode;
   };
 
   class Session : public std::enable_shared_from_this<Session> {
@@ -284,10 +289,10 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
             const std::shared_ptr<MsgHandle>& msg_handle_ptr)
         : io_ptr_(io_ptr),
           session_socket_strand_(boost::asio::make_strand(*io_ptr)),
-          stream_(session_socket_strand_),
+          sock_(session_socket_strand_),
           send_sig_timer_(session_socket_strand_),
           session_mgr_strand_(boost::asio::make_strand(*io_ptr)),
-          timer_(session_socket_strand_),
+          timer_(session_mgr_strand_),
           logger_ptr_(logger_ptr),
           msg_handle_ptr_(msg_handle_ptr) {}
 
@@ -296,7 +301,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     Session(const Session&) = delete;
     Session& operator=(const Session&) = delete;
 
-    void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
+    void Initialize(const std::shared_ptr<const SessionOptions>& session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
           "Function can only be called when state is 'PreInit'.");
@@ -309,106 +314,118 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
           "Function can only be called when state is 'Init'.");
 
-      remote_addr_ = aimrt::common::util::SSToString(stream_.next_layer().socket().remote_endpoint());
-      AIMRT_TRACE("WebSocket svr accept a new connect from {}.", RemoteAddr());
+      remote_addr_ = aimrt::common::util::SSToString(sock_.remote_endpoint());
 
       auto self = shared_from_this();
 
-      // 建立连接
+      // 发送协程
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
             try {
-              namespace http = boost::beast::http;
-              namespace websocket = boost::beast::websocket;
+              while (state_.load() == SessionState::Start) {
+                while (!data_list.empty()) {
+                  std::list<std::shared_ptr<Streambuf>> tmp_data_list;
+                  tmp_data_list.swap(data_list);
 
-              stream_.set_option(websocket::stream_base::timeout::suggested(
-                  boost::beast::role_type::server));
+                  std::vector<char> head_buf(tmp_data_list.size() * HEAD_SIZE);
 
-              stream_.set_option(websocket::stream_base::decorator(
-                  [](websocket::response_type& res) {
-                    res.set(http::field::server,
-                            std::string(BOOST_BEAST_VERSION_STRING) + " websocket-server-coro");
-                  }));
+                  std::vector<boost::asio::const_buffer> data_buf_vec;
+                  data_buf_vec.reserve(tmp_data_list.size() * 2);
+                  size_t ct = 0;
+                  for (auto& itr : tmp_data_list) {
+                    head_buf[ct * HEAD_SIZE] = HEAD_BYTE_1;
+                    head_buf[ct * HEAD_SIZE + 1] = HEAD_BYTE_2;
+                    aimrt::common::util::SetBufFromUint32(&head_buf[ct * HEAD_SIZE + 2],
+                                                          static_cast<uint32_t>(itr->size()));
+                    data_buf_vec.emplace_back(
+                        boost::asio::const_buffer(&head_buf[ct * HEAD_SIZE], HEAD_SIZE));
+                    ++ct;
 
-              co_await stream_.async_accept(boost::asio::use_awaitable);
+                    data_buf_vec.emplace_back(itr->data());
+                  }
 
-              stream_.binary(session_options_ptr_->binary_mode);
+                  tick_has_data_ = true;
+                  size_t write_data_size = co_await boost::asio::async_write(
+                      sock_, data_buf_vec, boost::asio::use_awaitable);
+                  AIMRT_TRACE("Tcp svr session async write {} bytes to {}.",
+                              write_data_size, RemoteAddr());
+                }
 
-              // 发送协程
-              boost::asio::co_spawn(
-                  session_socket_strand_,
-                  [this, self]() -> Awaitable<void> {
-                    try {
-                      while (state_.load() == SessionState::Start) {
-                        while (!data_list.empty()) {
-                          auto data_itr = data_list.begin();
-
-                          tick_has_data_ = true;
-                          size_t write_data_size = co_await stream_.async_write(
-                              (*data_itr)->data(), boost::asio::use_awaitable);
-                          AIMRT_TRACE("WebSocket svr session async write {} bytes to {}.",
-                                      write_data_size, RemoteAddr());
-                          data_list.erase(data_itr);
-                        }
-
-                        try {
-                          send_sig_timer_.expires_after(std::chrono::seconds(3600));
-                          co_await send_sig_timer_.async_wait(boost::asio::use_awaitable);
-                        } catch (const std::exception& e) {
-                          AIMRT_TRACE(
-                              "WebSocket svr session timer canceled, remote addr {}, exception info: {}",
-                              RemoteAddr(), e.what());
-                        }
-                      }
-                    } catch (const std::exception& e) {
-                      AIMRT_WARN(
-                          "WebSocket svr session send co get exception and exit, remote addr {}, exception info: {}",
-                          RemoteAddr(), e.what());
-                    }
-
-                    Shutdown();
-
-                    co_return;
-                  },
-                  boost::asio::detached);
-
-              // 接收协程
-              boost::asio::co_spawn(
-                  session_socket_strand_,
-                  [this, self]() -> Awaitable<void> {
-                    try {
-                      while (state_.load() == SessionState::Start) {
-                        auto msg_buf = std::make_shared<Streambuf>();
-
-                        size_t read_data_size = co_await stream_.async_read(
-                            *msg_buf, boost::asio::use_awaitable);
-                        AIMRT_TRACE("WebSocket svr session async read {} bytes from {}.",
-                                    read_data_size, RemoteAddr());
-                        tick_has_data_ = true;
-
-                        boost::asio::post(
-                            *io_ptr_,
-                            [this, msg_buf]() { (*msg_handle_ptr_)(Socket().remote_endpoint(), msg_buf); });
-                      }
-                    } catch (const std::exception& e) {
-                      AIMRT_WARN(
-                          "WebSocket svr session recv co get exception and exit, remote addr {}, exception info: {}",
-                          RemoteAddr(), e.what());
-                    }
-
-                    Shutdown();
-
-                    co_return;
-                  },
-                  boost::asio::detached);
-
+                try {
+                  send_sig_timer_.expires_after(std::chrono::seconds(3600));
+                  co_await send_sig_timer_.async_wait(boost::asio::use_awaitable);
+                } catch (const std::exception& e) {
+                  AIMRT_TRACE(
+                      "Tcp svr session timer canceled, remote addr {}, exception info: {}",
+                      RemoteAddr(), e.what());
+                }
+              }
             } catch (const std::exception& e) {
               AIMRT_WARN(
-                  "WebSocket svr session get exception and exit, remote addr {}, exception info: {}",
+                  "Tcp svr session send co get exception and exit, remote addr {}, exception info: {}",
                   RemoteAddr(), e.what());
-              Shutdown();
             }
+
+            Shutdown();
+
+            co_return;
+          },
+          boost::asio::detached);
+
+      // 接收协程
+      boost::asio::co_spawn(
+          session_socket_strand_,
+          [this, self]() -> Awaitable<void> {
+            try {
+              std::vector<char> head_buf(HEAD_SIZE);
+              boost::asio::mutable_buffer asio_head_buf(head_buf.data(), HEAD_SIZE);
+
+              while (state_.load() == SessionState::Start) {
+                size_t read_data_size = co_await boost::asio::async_read(
+                    sock_, asio_head_buf,
+                    boost::asio::transfer_exactly(HEAD_SIZE),
+                    boost::asio::use_awaitable);
+                AIMRT_TRACE(
+                    "Tcp svr session async read {} bytes from {} for head.",
+                    read_data_size, RemoteAddr());
+                tick_has_data_ = true;
+
+                AIMRT_CHECK_ERROR_THROW(
+                    read_data_size == HEAD_SIZE && head_buf[0] == HEAD_BYTE_1 && head_buf[1] == HEAD_BYTE_2,
+                    "Get an invalid head, remote addr {}, read_data_size: {}, head_buf[0]: {}, head_buf[1]: {}.",
+                    RemoteAddr(), read_data_size,
+                    static_cast<uint8_t>(head_buf[0]),
+                    static_cast<uint8_t>(head_buf[1]));
+
+                uint32_t msg_len = aimrt::common::util::GetUint32FromBuf(&head_buf[2]);
+
+                AIMRT_CHECK_ERROR_THROW(
+                    msg_len <= session_options_ptr_->max_recv_size,
+                    "Msg too large, remote addr {}, size: {}.", RemoteAddr(), msg_len);
+
+                auto msg_buf = std::make_shared<Streambuf>();
+
+                read_data_size = co_await boost::asio::async_read(
+                    sock_, msg_buf->prepare(msg_len),
+                    boost::asio::transfer_exactly(msg_len),
+                    boost::asio::use_awaitable);
+                AIMRT_TRACE("Tcp svr session async read {} bytes from {}.",
+                            read_data_size, RemoteAddr());
+                tick_has_data_ = true;
+
+                msg_buf->commit(msg_len);
+                boost::asio::post(
+                    *io_ptr_,
+                    [this, msg_buf]() { (*msg_handle_ptr_)(Socket().remote_endpoint(), msg_buf); });
+              }
+            } catch (const std::exception& e) {
+              AIMRT_WARN(
+                  "Tcp svr session recv co get exception and exit, remote addr {}, exception info: {}",
+                  RemoteAddr(), e.what());
+            }
+
+            Shutdown();
 
             co_return;
           },
@@ -427,17 +444,15 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
                   tick_has_data_ = false;
                 } else {
                   AIMRT_TRACE(
-                      "WebSocket svr session exit due to timeout({}ms), remote addr {}.",
-                      std::chrono::duration_cast<std::chrono::milliseconds>(
-                          session_options_ptr_->max_no_data_duration)
-                          .count(),
+                      "Tcp svr session exit due to timeout({}ms), remote addr {}.",
+                      std::chrono::duration_cast<std::chrono::milliseconds>(session_options_ptr_->max_no_data_duration).count(),
                       RemoteAddr());
                   break;
                 }
               }
             } catch (const std::exception& e) {
               AIMRT_TRACE(
-                  "WebSocket svr session timer get exception and exit, remote addr {}, exception info: {}",
+                  "Tcp svr session timer get exception and exit, remote addr {}, exception info: {}",
                   RemoteAddr(), e.what());
             }
 
@@ -462,28 +477,16 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
                 send_sig_timer_.cancel();
                 ++stop_step;
               case 2:
-                stream_.next_layer().socket().shutdown(Tcp::socket::shutdown_both);
+                sock_.shutdown(Tcp::socket::shutdown_both);
                 ++stop_step;
               case 3:
-                stream_.next_layer().socket().cancel();
+                sock_.cancel();
                 ++stop_step;
               case 4:
-                stream_.next_layer().socket().close();
+                sock_.close();
                 ++stop_step;
               case 5:
-                stream_.next_layer().socket().release();
-                ++stop_step;
-              case 6:
-                stream_.next_layer().cancel();
-                ++stop_step;
-              case 7:
-                stream_.next_layer().close();
-                ++stop_step;
-              case 8:
-                stream_.next_layer().release_socket();
-                ++stop_step;
-              case 9:
-                stream_.close(boost::beast::websocket::close_code::normal);
+                sock_.release();
                 ++stop_step;
               default:
                 stop_step = 0;
@@ -491,7 +494,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
             }
           } catch (const std::exception& e) {
             AIMRT_TRACE(
-                "WebSocket svr session stop get exception at step {}, remote addr {}, exception info: {}",
+                "Tcp svr session stop get exception at step {}, remote addr {}, exception info: {}",
                 RemoteAddr(), stop_step, e.what());
             ++stop_step;
           }
@@ -512,7 +515,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
             }
           } catch (const std::exception& e) {
             AIMRT_WARN(
-                "WebSocket svr session mgr stop get exception at step {}, remote addr {}, exception info: {}",
+                "Tcp svr session mgr stop get exception at step {}, remote addr {}, exception info: {}",
                 stop_step, RemoteAddr(), e.what());
             ++stop_step;
           }
@@ -537,7 +540,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
     const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-    Tcp::socket& Socket() { return stream_.next_layer().socket(); }
+    Tcp::socket& Socket() { return sock_; }
 
     std::string_view RemoteAddr() const { return remote_addr_; }
 
@@ -554,7 +557,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     // IO CTX
     std::shared_ptr<IOCtx> io_ptr_;
     Strand session_socket_strand_;
-    WsStream stream_;
+    Tcp::socket sock_;
     Timer send_sig_timer_;
     Strand session_mgr_strand_;
     Timer timer_;
@@ -609,4 +612,4 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

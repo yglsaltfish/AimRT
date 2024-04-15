@@ -34,14 +34,14 @@ struct ClientFuncWrapper {
 class RpcRegistry {
  public:
   RpcRegistry()
-      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~RpcRegistry() = default;
 
   RpcRegistry(const RpcRegistry&) = delete;
   RpcRegistry& operator=(const RpcRegistry&) = delete;
 
-  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   bool RegisterServiceFunc(
       std::unique_ptr<ServiceFuncWrapper>&& service_func_wrapper_ptr);
@@ -58,7 +58,7 @@ class RpcRegistry {
   }
 
  private:
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   // pkg_path:module_name:func_name:wrapper
   using ServiceFuncMap = std::unordered_map<std::string_view, std::unique_ptr<ServiceFuncWrapper>>;

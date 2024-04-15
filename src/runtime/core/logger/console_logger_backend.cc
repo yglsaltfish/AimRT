@@ -143,7 +143,7 @@ void ConsoleLoggerBackend::Log(
             .count();
     *format_log_str_ptr = ::aimrt_fmt::format(
         "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]{}",
-        common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
+        aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
         (time_stamp_us % 1000000),
         LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
         log_data_wrapper.thread_id, log_data_wrapper.module_name,

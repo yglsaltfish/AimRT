@@ -13,7 +13,7 @@
 #include "util/log_util.h"
 #include "util/string_util.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
 class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
  public:
@@ -419,4 +419,4 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   std::unordered_map<Udp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

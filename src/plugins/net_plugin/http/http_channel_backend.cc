@@ -119,12 +119,12 @@ bool HttpChannelBackend::Subscribe(
 
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
-  AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
+  runtime::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
       [this, subscribe_wrapper_vec_ptr](
           const http::request<http::dynamic_body>& req,
           http::response<http::dynamic_body>& rsp,
           std::chrono::nanoseconds timeout)
-      -> asio::awaitable<AsioHttpServer::HttpHandleStatus> {
+      -> asio::awaitable<runtime::common::net::AsioHttpServer::HttpHandleStatus> {
     // 获取序列化类型
     std::string serialization_type;
     auto req_content_type_itr = req.find(http::field::content_type);
@@ -199,7 +199,7 @@ bool HttpChannelBackend::Subscribe(
       subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
     }
 
-    co_return AsioHttpServer::HttpHandleStatus::OK;
+    co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::OK;
   };
 
   http_svr_ptr_->RegisterHttpHandleFunc<http::dynamic_body>(
@@ -330,7 +330,7 @@ void HttpChannelBackend::Publish(
         *io_ptr_,
         [this, &publish_add, req_ptr]() -> asio::awaitable<void> {
           auto url_op = aimrt::common::util::ParseUrl(publish_add);
-          AsioHttpClient::Options cli_options{
+          runtime::common::net::AsioHttpClient::Options cli_options{
               .host = std::string(url_op->host),
               .service = std::string(url_op->service)};
 

@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "net_plugin/util/asio_tcp_cli.h"
-#include "net_plugin/util/asio_tcp_svr.h"
-#include "net_plugin/util/asio_tools.h"
+#include "net/asio_tcp_cli.h"
+#include "net/asio_tcp_svr.h"
+#include "net/asio_tools.h"
 
-namespace aimrt::plugins::net_plugin {
+namespace aimrt::runtime::common::net {
 
 namespace asio = boost::asio;
 
@@ -92,4 +92,4 @@ TEST(NET_TEST, Tcp_base) {
   t_cli.join();
 }
 
-}  // namespace aimrt::plugins::net_plugin
+}  // namespace aimrt::runtime::common::net

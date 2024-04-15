@@ -149,7 +149,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
   rpc_backend_manager_.Initialize(rpc_registry_ptr_.get());
 
   AIMRT_TRACE("Rpc manager init success, backends list: {}",
-              common::util::Vec2Str(rpc_backend_name_vec_));
+              aimrt::common::util::Vec2Str(rpc_backend_name_vec_));
 
   options_node = options_;
 }

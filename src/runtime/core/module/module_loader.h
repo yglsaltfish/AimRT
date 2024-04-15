@@ -14,14 +14,14 @@ namespace aimrt::runtime::core::module {
 class ModuleLoader {
  public:
   ModuleLoader()
-      : logger_ptr_(std::make_shared<common::util::LoggerWrapper>()) {}
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~ModuleLoader() { UnLoadPkg(); }
 
   ModuleLoader(const ModuleLoader&) = delete;
   ModuleLoader& operator=(const ModuleLoader&) = delete;
 
-  void SetLogger(const std::shared_ptr<common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   void LoadPkg(std::string_view pkg_path,
                const std::vector<std::string>& disable_modules);
@@ -40,12 +40,12 @@ class ModuleLoader {
   void DestroyModule(const aimrt_module_base_t* module_ptr);
 
  private:
-  std::shared_ptr<common::util::LoggerWrapper> logger_ptr_;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::string pkg_path_;
-  common::util::DynamicLib dynamic_lib_;
+  aimrt::common::util::DynamicLib dynamic_lib_;
 
-  common::util::DynamicLib::SymbolType destroy_func_ = nullptr;
+  aimrt::common::util::DynamicLib::SymbolType destroy_func_ = nullptr;
 
   std::vector<std::string> module_name_vec_;
   std::vector<std::string> loaded_module_name_vec_;

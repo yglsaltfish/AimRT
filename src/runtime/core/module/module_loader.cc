@@ -19,7 +19,7 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
 
   AIMRT_CHECK_ERROR_THROW(dynamic_lib_.Load(pkg_path_),
                           "Load dynamic lib failed, lib path {}, error info {}",
-                          pkg_path_, common::util::DynamicLib::GetErr());
+                          pkg_path_, aimrt::common::util::DynamicLib::GetErr());
 
   auto get_module_num_func = dynamic_lib_.GetSymbol(kDynlibGetModuleNumFuncName);
   AIMRT_CHECK_ERROR_THROW(get_module_num_func != nullptr,

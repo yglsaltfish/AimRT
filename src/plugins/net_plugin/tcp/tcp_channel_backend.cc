@@ -278,8 +278,8 @@ void TcpChannelBackend::Publish(
     boost::asio::co_spawn(
         *io_ptr_,
         [this, publish_add, msg_buf_ptr]() -> boost::asio::awaitable<void> {
-          auto v = common::util::SplitToVec<std::string>(publish_add, ":");
-          AsioTcpClient::Options client_options{
+          auto v = aimrt::common::util::SplitToVec<std::string>(publish_add, ":");
+          runtime::common::net::AsioTcpClient::Options client_options{
               .svr_ep = {boost::asio::ip::make_address(v[0].c_str()),
                          static_cast<uint16_t>(atoi(v[1].c_str()))}};
 

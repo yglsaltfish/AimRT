@@ -149,7 +149,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
   channel_backend_manager_.Initialize(channel_registry_ptr_.get());
 
   AIMRT_TRACE("Channel manager init success, backends list: {}",
-              common::util::Vec2Str(channel_backend_name_vec_));
+              aimrt::common::util::Vec2Str(channel_backend_name_vec_));
 
   options_node = options_;
 }
