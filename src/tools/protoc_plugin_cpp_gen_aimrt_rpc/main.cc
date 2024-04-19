@@ -73,8 +73,7 @@ class {{service_name}} : public aimrt::rpc::ServiceBase {
   aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
       const {{rpc_req_name}}& req,
       {{rpc_rsp_name}}& rsp) {
-    static constexpr aimrt::rpc::ContextRef ctx_ref{};
-    return {{rpc_func_name}}(ctx_ref, req, rsp);
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
   })str";
 
   constexpr static std::string_view t_hfile_one_service_proxy_class = R"str(

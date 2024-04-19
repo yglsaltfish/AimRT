@@ -138,18 +138,35 @@ void AimRTCore::Shutdown() {
   auto stop_work = [this]() {
     EnterState(State::PreShutdown);
 
-    AIMRT_INFO("Shutdown.");
-
+    AIMRT_INFO("Shutdown modules.");
     module_manager_.Shutdown();
+
+    AIMRT_INFO("Shutdown parameter.");
     parameter_manager_.Shutdown();
+
+    AIMRT_INFO("Shutdown channel.");
     channel_manager_.Shutdown();
+
+    AIMRT_INFO("Shutdown rpc.");
     rpc_manager_.Shutdown();
+
+    AIMRT_INFO("Shutdown logger.");
+    ResetCoreLogger();
     logger_manager_.Shutdown();
+
+    AIMRT_INFO("Shutdown executor.");
     executor_manager_.Shutdown();
+
+    AIMRT_INFO("Shutdown allocator.");
     allocator_manager_.Shutdown();
+
+    AIMRT_INFO("Shutdown plugin.");
     plugin_manager_.Shutdown();
+
+    AIMRT_INFO("Shutdown configurator.");
     configurator_manager_.Shutdown();
 
+    AIMRT_INFO("Shutdown main thread.");
     main_thread_executor_.Shutdown();
 
     EnterState(State::PostShutdown);
@@ -199,6 +216,12 @@ void AimRTCore::SetCoreLogger() {
     void* buf = core_allocator_ptr->get_thread_local_buf(core_allocator_ptr->impl, kMaxLogBufSize);
     return {static_cast<char*>(buf), kMaxLogBufSize};
   };
+}
+
+void AimRTCore::ResetCoreLogger() {
+  logger_ptr_->get_log_level_func = aimrt::common::util::SimpleLogger::GetLogLevel;
+  logger_ptr_->log_func = aimrt::common::util::SimpleLogger::Log;
+  logger_ptr_->get_log_buf_func = []() -> std::tuple<char*, size_t> { return {nullptr, 0}; };
 }
 
 aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_name) {

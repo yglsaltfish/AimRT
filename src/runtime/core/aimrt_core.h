@@ -127,6 +127,7 @@ class AimRTCore {
  private:
   void EnterState(State state);
   void SetCoreLogger();
+  void ResetCoreLogger();
   aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
   void DumpCfgFile(const std::string& path = "");

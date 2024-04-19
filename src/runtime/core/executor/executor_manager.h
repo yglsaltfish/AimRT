@@ -72,6 +72,7 @@ class ExecutorManager {
  private:
   void RegisterAsioExecutorGenFunc();
   void RegisterTBBExecutorGenFunc();
+  void RegisterTimwWheelExecutorGenFunc();
 
  private:
   Options options_;

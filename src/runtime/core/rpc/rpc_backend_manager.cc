@@ -127,6 +127,12 @@ void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
   auto client_invoke_wrapper_ptr =
       std::make_shared<ClientInvokeWrapper>(std::move(client_invoke_wrapper));
 
+  // 未设置timeout时，默认60s超时
+  auto now = std::chrono::system_clock::now();
+  if (client_invoke_wrapper_ptr->ctx_ref.Deadline() <= now) {
+    client_invoke_wrapper_ptr->ctx_ref.SetDeadline(now + std::chrono::seconds(60));
+  }
+
   std::string_view func_name = client_invoke_wrapper_ptr->func_name;
 
   auto find_itr = clients_backend_index_map_.find(func_name);

@@ -3,6 +3,7 @@
 #include "core/executor/asio_strand_executor.h"
 #include "core/executor/asio_thread_executor.h"
 #include "core/executor/tbb_thread_executor.h"
+#include "core/executor/time_wheel_executor.h"
 #include "util/string_util.h"
 
 namespace YAML {
@@ -51,6 +52,7 @@ namespace aimrt::runtime::core::executor {
 void ExecutorManager::Initialize(YAML::Node options_node) {
   RegisterAsioExecutorGenFunc();
   RegisterTBBExecutorGenFunc();
+  RegisterTimwWheelExecutorGenFunc();
 
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
@@ -184,6 +186,17 @@ void ExecutorManager::RegisterTBBExecutorGenFunc() {
   RegisterExecutorGenFunc("tbb_thread", [this]() -> std::unique_ptr<ExecutorBase> {
     auto ptr = std::make_unique<TBBThreadExecutor>();
     ptr->SetLogger(logger_ptr_);
+    return ptr;
+  });
+}
+
+void ExecutorManager::RegisterTimwWheelExecutorGenFunc() {
+  RegisterExecutorGenFunc("time_wheel", [this]() -> std::unique_ptr<ExecutorBase> {
+    auto ptr = std::make_unique<TimeWheelExecutor>();
+    ptr->SetLogger(logger_ptr_);
+    ptr->RegisterGetExecutorFunc([this](std::string_view name) {
+      return GetExecutor(name);
+    });
     return ptr;
   });
 }

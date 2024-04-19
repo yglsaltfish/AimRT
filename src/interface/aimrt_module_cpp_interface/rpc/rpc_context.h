@@ -17,7 +17,7 @@ class ContextRef {
  public:
   ContextRef() = default;
   explicit ContextRef(const ContextSharedPtr& ctx)
-      : base_ptr_(ctx.get()) {}
+      : base_ptr_(ctx.get()), ctx_shared_ptr_(ctx) {}
   explicit ContextRef(const aimrt_rpc_context_base_t* base_ptr)
       : base_ptr_(base_ptr) {}
   ~ContextRef() = default;
@@ -29,8 +29,9 @@ class ContextRef {
   // Timeout manager
   std::chrono::system_clock::time_point Deadline() const {
     assert(base_ptr_ && base_ptr_->ops);
-    return std::chrono::system_clock::time_point(std::chrono::nanoseconds(
-        base_ptr_->ops->get_deadline_ns(base_ptr_->impl)));
+    return std::chrono::system_clock::time_point(
+        std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+            std::chrono::nanoseconds(base_ptr_->ops->get_deadline_ns(base_ptr_->impl))));
   }
 
   void SetDeadline(std::chrono::system_clock::time_point deadline) {
@@ -48,7 +49,8 @@ class ContextRef {
   }
 
   void SetTimeout(std::chrono::nanoseconds timeout) {
-    SetDeadline(std::chrono::system_clock::now() + timeout);
+    SetDeadline(std::chrono::system_clock::now() +
+                std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(timeout));
   }
 
   // Some frame fields
@@ -84,6 +86,7 @@ class ContextRef {
 
  private:
   const aimrt_rpc_context_base_t* base_ptr_;
+  ContextSharedPtr ctx_shared_ptr_;
 };
 
 }  // namespace aimrt::rpc

@@ -59,8 +59,7 @@ class {{srv_filename}}Proxy : public aimrt::rpc::ProxyBase {
   aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}(
       const {{srv_filename}}_Request& req,
       {{srv_filename}}_Response& rsp) {
-    static constexpr aimrt::rpc::ContextRef ctx_ref{};
-    return {{srv_filename}}(ctx_ref, req, rsp);
+    return {{srv_filename}}(aimrt::rpc::ContextRef(), req, rsp);
   }
 };
 

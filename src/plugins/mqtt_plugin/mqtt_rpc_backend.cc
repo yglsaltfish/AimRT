@@ -17,6 +17,8 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
   static Node encode(const Options& rhs) {
     Node node;
 
+    node["timeout_executor"] = rhs.timeout_executor;
+
     node["clients_options"] = YAML::Node();
     for (const auto& client_options : rhs.clients_options) {
       Node client_options_node;
@@ -35,6 +37,9 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
   }
 
   static bool decode(const Node& node, Options& rhs) {
+    if (node["timeout_executor"])
+      rhs.timeout_executor = node["timeout_executor"].as<std::string>();
+
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
       for (auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
@@ -73,6 +78,28 @@ void MqttRpcBackend::Initialize(YAML::Node options_node,
   rpc_registry_ptr_ = rpc_registry_ptr;
   context_manager_ptr_ = context_manager_ptr;
 
+  if (!options_.timeout_executor.empty()) {
+    AIMRT_CHECK_ERROR_THROW(
+        get_executor_func_,
+        "Get executor function is not set before initialize.");
+
+    auto timeout_executor = get_executor_func_(options_.timeout_executor);
+
+    AIMRT_CHECK_ERROR_THROW(
+        timeout_executor,
+        "Get timeout executor '{}' failed.", options_.timeout_executor);
+
+    client_tool_.RegisterTimeoutExecutor(timeout_executor);
+    client_tool_.RegisterTimeoutHandle([](MsgRecorder&& msg_recorder) {
+      msg_recorder.client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_TIMEOUT);
+    });
+
+    AIMRT_TRACE("Mqtt rpc backend enable the timeout function, use '{}' as timeout executor.",
+                options_.timeout_executor);
+  } else {
+    AIMRT_TRACE("Mqtt rpc backend does not enable the timeout function.");
+  }
+
   options_node = options_;
 }
 
@@ -88,38 +115,7 @@ void MqttRpcBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  // todo:换成MQTTClient_unsubscribeMany
-  for (auto sub_info : sub_info_vec_) {
-    AIMRT_TRACE("Mqtt unsubscribe for '{}'", sub_info);
-    MQTTAsync_unsubscribe(client_, sub_info.data(), NULL);
-  }
-}
-
-void MqttRpcBackend::ReturnRspWithStatusCode(
-    std::string_view mqtt_pub_topic,
-    std::string_view serialization_type,
-    const char* req_id_buf,
-    uint32_t code) {
-  namespace util = aimrt::common::util;
-
-  std::vector<char> msg_buf_vec(1 + serialization_type.size() + 4 + 4);
-  util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
-
-  buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
-  buf_oper.SetBuffer(req_id_buf, 4);
-  buf_oper.SetUint32(code);
-
-  MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
-  pubmsg.payload = msg_buf_vec.data();
-  pubmsg.payloadlen = msg_buf_vec.size();
-  pubmsg.qos = 2;
-  pubmsg.retained = 0;
-
-  AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
-  int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
-  AIMRT_CHECK_WARN(rc == MQTTASYNC_SUCCESS,
-                   "publish mqtt msg failed, topic: {}, code: {}",
-                   mqtt_pub_topic, rc);
+  UnSubscribeMqttTopic();
 }
 
 bool MqttRpcBackend::RegisterServiceFunc(
@@ -281,6 +277,11 @@ bool MqttRpcBackend::RegisterClientFunc(
       util::UrlEncode(client_id_) + "/" +
       util::UrlEncode(GetRealFuncName(client_func_wrapper.func_name));
 
+  if (mqtt_sub_topic.size() > 255) {
+    AIMRT_ERROR("Too long mqtt topic name: {}", mqtt_sub_topic);
+    return false;
+  }
+
   sub_info_vec_.emplace_back(mqtt_sub_topic);
 
   msg_handle_registry_ptr_->RegisterMsgHandle(
@@ -295,14 +296,15 @@ bool MqttRpcBackend::RegisterClientFunc(
           uint32_t req_id = buf_oper.GetUint32();
           uint32_t code = buf_oper.GetUint32();
 
-          // 从client_msg_recorder_map_找到req
-          ClientMsgRecorderMap::const_accessor ac;
-          bool find_ret = client_msg_recorder_map_.find(ac, req_id);
-          AIMRT_CHECK_ERROR_THROW(find_ret, "Invalid req id '{}' from mqtt msg", req_id);
+          auto msg_recorder = client_tool_.GetRecord(req_id);
+          if (!msg_recorder) [[unlikely]] {
+            // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
+            AIMRT_TRACE("Can not get req id {} from recorder.", req_id);
+            return;
+          }
 
-          auto client_func_wrapper_ptr = ac->second.client_func_wrapper_ptr;
-          client_invoke_wrapper_ptr = std::move(ac->second.client_invoke_wrapper_ptr);
-          client_msg_recorder_map_.erase(ac);
+          auto client_func_wrapper_ptr = msg_recorder->client_func_wrapper_ptr;
+          client_invoke_wrapper_ptr = std::move(msg_recorder->client_invoke_wrapper_ptr);
 
           if (code) [[unlikely]] {
             client_invoke_wrapper_ptr->callback(code);
@@ -354,8 +356,6 @@ bool MqttRpcBackend::TryInvoke(
   std::string_view module_name = client_invoke_wrapper_ptr->module_name;
   std::string_view func_name = client_invoke_wrapper_ptr->func_name;
 
-  auto real_func_name = GetRealFuncName(func_name);
-
   // 检查ctx，当前只支持一个server url，且在plugin层配置
   std::string_view to_addr =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
@@ -366,7 +366,7 @@ bool MqttRpcBackend::TryInvoke(
     if (to_addr.substr(0, pos) != "mqtt") return false;
   }
 
-  // 协议为mqtt，需要由mqtt后端处理。之后只能使用callback报错，不能返回false
+  // 协议为mqtt，需要由mqtt后端处理。此行之后只能使用callback报错，不能返回false
   const auto& client_func_wrapper_map = rpc_registry_ptr_->GetClientFuncWrapperMap();
 
   // 找注册的client方法
@@ -384,7 +384,7 @@ bool MqttRpcBackend::TryInvoke(
   };
   const auto* client_func_wrapper_ptr = get_client_func_wrapper_ptr_func();
 
-  uint32_t cur_req_id = ++req_id_;
+  uint32_t cur_req_id = client_tool_.GetNewReqID();
 
   auto serialization_type =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
@@ -429,18 +429,17 @@ bool MqttRpcBackend::TryInvoke(
     return true;
   }
 
-  // 将回调等内容放到并发hash表中
-  ClientMsgRecorderMap::const_accessor ac;
-  bool emplace_ret = client_msg_recorder_map_.emplace(
-      ac,
+  // 将回调等内容记录下来
+  bool ret = client_tool_.Record(
       cur_req_id,
+      client_invoke_wrapper_ptr->ctx_ref.Timeout(),
       MsgRecorder{
           .client_func_wrapper_ptr = client_func_wrapper_ptr,
           .client_invoke_wrapper_ptr = client_invoke_wrapper_ptr});
 
-  if (!emplace_ret) [[unlikely]] {
-    // 一般不太可能出现，除非req_id_积压了一轮了
-    AIMRT_WARN("Failed to insert to client_msg_recorder_map.");
+  if (!ret) [[unlikely]] {
+    // 一般不太可能出现
+    AIMRT_WARN("Failed to record msg.");
     client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
     return true;
   }
@@ -479,16 +478,58 @@ bool MqttRpcBackend::TryInvoke(
   return true;
 }
 
+void MqttRpcBackend::RegisterGetExecutorFunc(
+    const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
+  get_executor_func_ = get_executor_func;
+}
+
 void MqttRpcBackend::SubscribeMqttTopic() {
+  // todo:换成MQTTClient_subscribeMany
   for (auto sub_info : sub_info_vec_) {
-    // rpc qos默认都是2
-    // todo:换成MQTTClient_subscribeMany
     AIMRT_TRACE("Mqtt subscribe for '{}'", sub_info);
-    int rc = MQTTAsync_subscribe(client_, sub_info.data(), 2, NULL);
+    int rc = MQTTAsync_subscribe(client_, sub_info.data(), 2, NULL);  // rpc qos默认都是2
     if (rc != MQTTASYNC_SUCCESS) {
       AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info, rc);
     }
   }
+}
+
+void MqttRpcBackend::UnSubscribeMqttTopic() {
+  // todo:换成MQTTClient_unsubscribeMany
+  for (auto sub_info : sub_info_vec_) {
+    AIMRT_TRACE("Mqtt unsubscribe for '{}'", sub_info);
+    MQTTAsync_unsubscribe(client_, sub_info.data(), NULL);
+  }
+}
+
+void MqttRpcBackend::ReturnRspWithStatusCode(
+    std::string_view mqtt_pub_topic,
+    std::string_view serialization_type,
+    const char* req_id_buf,
+    uint32_t code) {
+  namespace util = aimrt::common::util;
+
+  std::vector<char> msg_buf_vec(1 + serialization_type.size() + 4 + 4);
+  util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
+
+  buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+  buf_oper.SetBuffer(req_id_buf, 4);
+  buf_oper.SetUint32(code);
+
+  MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
+  pubmsg.payload = msg_buf_vec.data();
+  pubmsg.payloadlen = msg_buf_vec.size();
+  pubmsg.qos = 2;
+  pubmsg.retained = 0;
+
+  AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
+  int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
+  AIMRT_CHECK_WARN(rc == MQTTASYNC_SUCCESS,
+                   "publish mqtt msg failed, topic: {}, code: {}",
+                   mqtt_pub_topic, rc);
 }
 
 }  // namespace aimrt::plugins::mqtt_plugin

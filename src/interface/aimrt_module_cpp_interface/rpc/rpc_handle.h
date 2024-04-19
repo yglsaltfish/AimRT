@@ -152,6 +152,15 @@ class RpcHandleRef {
         });
   }
 
+  /**
+   * @brief Create context reference with context shared ptr in it
+   *
+   * @return ContextRef
+   */
+  ContextRef NewContextRef() {
+    return ContextRef(NewContextSharedPtr());
+  }
+
  private:
   const aimrt_rpc_handle_base_t* base_ptr_ = nullptr;
 };
@@ -172,6 +181,14 @@ class ProxyBase {
   }
 
   auto& GetFilterManager() { return filter_mgr_; }
+
+  ContextSharedPtr NewContextSharedPtr() {
+    return rpc_handle_ref_.NewContextSharedPtr();
+  }
+
+  ContextRef NewContextRef() {
+    return ContextRef(NewContextSharedPtr());
+  }
 
  protected:
   RpcHandleRef rpc_handle_ref_;

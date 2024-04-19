@@ -1,5 +1,7 @@
 #include "core/plugin/plugin_manager.h"
 
+#include "util/stl_tool.h"
+
 namespace YAML {
 template <>
 struct convert<aimrt::runtime::core::plugin::PluginManager::Options> {
@@ -54,20 +56,12 @@ void PluginManager::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
+  auto tmp_registered_plugin_vec = registered_plugin_vec_;
+
   // 加载并初始化所有插件
   for (const auto& plugin_options : options_.plugins_options) {
-    // 检查重复动态库
-    auto finditr = std::find_if(
-        options_.plugins_options.begin(), options_.plugins_options.end(),
-        [&plugin_options](const auto& op) {
-          if (&plugin_options == &op) return false;
-          return op.path == plugin_options.path;
-        });
-    AIMRT_CHECK_ERROR_THROW(finditr == options_.plugins_options.end(),
-                            "Duplicate load plugin lib {}", plugin_options.path);
-
     // 检查重复插件名称
-    finditr = std::find_if(
+    auto finditr = std::find_if(
         options_.plugins_options.begin(), options_.plugins_options.end(),
         [&plugin_options](const auto& op) {
           if (&plugin_options == &op) return false;
@@ -76,26 +70,65 @@ void PluginManager::Initialize(YAML::Node options_node) {
     AIMRT_CHECK_ERROR_THROW(finditr == options_.plugins_options.end(),
                             "Duplicate plugin name {}", plugin_options.name);
 
-    // 加载插件
-    auto plugin_loader_ptr = std::make_unique<PluginLoader>();
-    plugin_loader_ptr->SetLogger(logger_ptr_);
-    plugin_loader_ptr->LoadPlugin(plugin_options.path);
+    AimRTCorePluginBase* plugin_ptr = nullptr;
 
-    auto plugin_ptr = plugin_loader_ptr->GetPlugin();
-    auto plugin_name = plugin_ptr->Name();
+    if (!plugin_options.path.empty()) {
+      // 检查重复动态库
+      auto finditr = std::find_if(
+          options_.plugins_options.begin(), options_.plugins_options.end(),
+          [&plugin_options](const auto& op) {
+            if (&plugin_options == &op) return false;
+            return op.path == plugin_options.path;
+          });
+      AIMRT_CHECK_ERROR_THROW(finditr == options_.plugins_options.end(),
+                              "Duplicate load plugin lib {}", plugin_options.path);
 
-    // 检查插件名称
-    AIMRT_CHECK_ERROR_THROW(
-        plugin_name == plugin_options.name,
-        "Require plugin name '{}', but get plugin name '{}' in lib {}.",
-        plugin_options.name, plugin_name, plugin_options.path);
+      // 加载插件
+      auto plugin_loader_ptr = std::make_unique<PluginLoader>();
+      plugin_loader_ptr->SetLogger(logger_ptr_);
+      plugin_loader_ptr->LoadPlugin(plugin_options.path);
+
+      plugin_ptr = plugin_loader_ptr->GetPlugin();
+
+      auto plugin_name = plugin_ptr->Name();
+
+      // 检查插件名称
+      AIMRT_CHECK_ERROR_THROW(
+          plugin_name == plugin_options.name,
+          "Require plugin name '{}', but get plugin name '{}' in lib {}.",
+          plugin_options.name, plugin_name, plugin_options.path);
+
+      plugin_loader_vec_.emplace_back(std::move(plugin_loader_ptr));
+
+    } else {
+      // 在直接注册的插件中寻找
+      auto finditr = std::find_if(
+          tmp_registered_plugin_vec.begin(), tmp_registered_plugin_vec.end(),
+          [&plugin_options](const AimRTCorePluginBase* plugin) {
+            return plugin->Name() == plugin_options.name;
+          });
+
+      AIMRT_CHECK_ERROR_THROW(finditr != tmp_registered_plugin_vec.end(),
+                              "Can not find plugin {}", plugin_options.name);
+
+      plugin_ptr = *finditr;
+
+      tmp_registered_plugin_vec.erase(finditr);
+    }
 
     // 初始化插件
     bool ret = plugin_init_func_(plugin_ptr);
     AIMRT_CHECK_ERROR_THROW(ret, "Init plugin '{}' failed.", plugin_options.path);
 
-    plugin_loader_vec_.emplace_back(std::move(plugin_loader_ptr));
     AIMRT_INFO("Load plugin '{}' succeeded.", plugin_options.path);
+  }
+
+  if (!tmp_registered_plugin_vec.empty()) {
+    std::vector<std::string> unconfigured_plugins;
+    for (auto itr : tmp_registered_plugin_vec)
+      unconfigured_plugins.emplace_back(itr->Name());
+    AIMRT_ERROR_THROW("Some plugins are not configured, {}",
+                      aimrt::common::util::Vec2Str(unconfigured_plugins));
   }
 
   options_node = options_;
@@ -119,6 +152,16 @@ void PluginManager::Shutdown() {
   // plugin_loader_vec_ 不能清理掉，有很多回调是从其他dll中注册过来的
 
   plugin_init_func_ = PluginInitFunc();
+}
+
+void PluginManager::RegisterPlugin(AimRTCorePluginBase* plugin) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
+
+  AIMRT_CHECK_ERROR_THROW(plugin != nullptr, "Register invalid plugin");
+
+  registered_plugin_vec_.emplace_back(plugin);
 }
 
 void PluginManager::RegisterPluginInitFunc(PluginInitFunc&& plugin_init_func) {

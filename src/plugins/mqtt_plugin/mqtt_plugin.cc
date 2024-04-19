@@ -129,9 +129,6 @@ void MqttPlugin::RegisterMqttChannelBackend() {
           options_.max_pkg_size_k * 1024,
           msg_handle_registry_ptr_);
 
-  mqtt_channel_backend_ptr_vec_.emplace_back(
-      static_cast<MqttChannelBackend *>(mqtt_channel_backend_ptr.get()));
-
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(mqtt_channel_backend_ptr));
 }
 
@@ -142,8 +139,11 @@ void MqttPlugin::RegisterMqttRpcBackend() {
           options_.max_pkg_size_k * 1024,
           msg_handle_registry_ptr_);
 
-  mqtt_rpc_backend_ptr_vec_.emplace_back(
-      static_cast<MqttRpcBackend *>(mqtt_rpc_backend_ptr.get()));
+  static_cast<MqttRpcBackend *>(mqtt_rpc_backend_ptr.get())
+      ->RegisterGetExecutorFunc(
+          [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
+            return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+          });
 
   core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(mqtt_rpc_backend_ptr));
 }

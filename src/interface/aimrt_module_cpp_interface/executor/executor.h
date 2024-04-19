@@ -57,7 +57,8 @@ class ExecutorRef {
   std::chrono::system_clock::time_point Now() const {
     assert(base_ptr_);
     return std::chrono::system_clock::time_point(
-        std::chrono::nanoseconds(base_ptr_->now(base_ptr_->impl)));
+        std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+            std::chrono::nanoseconds(base_ptr_->now(base_ptr_->impl))));
   }
 
   void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
@@ -76,7 +77,9 @@ class ExecutorRef {
   }
 
   void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task) {
-    ExecuteAt(Now() + dt, std::move(task));
+    ExecuteAt(
+        Now() + std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(dt),
+        std::move(task));
   }
 
  private:
