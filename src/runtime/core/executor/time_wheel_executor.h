@@ -7,17 +7,15 @@
 
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "core/executor/executor_base.h"
+#include "util/log_util.h"
 
-#include "yaml-cpp/yaml.h"
+namespace aimrt::runtime::core::executor {
 
-namespace aimrt::plugins::time_manipulator_plugin {
-
-class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorBase {
+class TimeWheelExecutor : public ExecutorBase {
  public:
   struct Options {
     std::string bind_executor;
     std::chrono::nanoseconds dt = std::chrono::microseconds(1000);
-    double init_ratio = 1.0;
     std::vector<size_t> wheel_size = {1000, 600};
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
@@ -31,17 +29,18 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   };
 
  public:
-  TimeManipulatorExecutor() = default;
-  ~TimeManipulatorExecutor() override = default;
+  TimeWheelExecutor()
+      : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
+  ~TimeWheelExecutor() override = default;
 
   void Initialize(std::string_view name, YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
 
-  std::string_view Type() const override { return "time_manipulator"; }
+  std::string_view Type() const override { return "time_wheel"; }
   std::string_view Name() const override { return name_; }
 
-  bool ThreadSafe() const override;
+  bool ThreadSafe() const override { return thread_safe_; }
   bool IsInCurrentExecutor() const override;
   bool SupportTimerSchedule() const override { return true; }
 
@@ -50,13 +49,13 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   std::chrono::system_clock::time_point Now() const override;
   void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) override;
 
-  State GetState() const { return state_.load(); }
-
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
-  void SetTimeRatio(double ratio);
-  double GetTimeRatio() const;
+  State GetState() const { return state_.load(); }
+
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
   void TimerLoop();
@@ -92,15 +91,13 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   std::string name_;
   Options options_;
   std::atomic<State> state_ = State::PreInit;
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
-  executor::ExecutorRef bind_executor_ref_;
+  aimrt::executor::ExecutorRef bind_executor_ref_;
+  bool thread_safe_ = true;
 
   uint64_t dt_count_;
-
-  mutable std::shared_mutex ratio_mutex_;
-  bool ratio_direction_ = true;
-  uint32_t real_ratio_ = 1;
 
   uint64_t start_time_point_ = 0;
   std::atomic_bool start_flag_ = false;
@@ -111,7 +108,11 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   uint64_t timing_task_map_pos_ = 0;
   std::map<uint64_t, TaskList> timing_task_map_;
 
+  mutable std::mutex imd_mutex_;
+  std::queue<Task> imd_queue_;
+
   std::unique_ptr<std::thread> timer_thread_;
+  std::thread::id tid_;
 };
 
-}  // namespace aimrt::plugins::time_manipulator_plugin
+}  // namespace aimrt::runtime::core::executor

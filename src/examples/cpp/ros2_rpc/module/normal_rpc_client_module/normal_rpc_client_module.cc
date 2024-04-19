@@ -115,7 +115,10 @@ co::Task<void> NormalRpcClientModule::MainLoop() {
       AIMRT_INFO("start new rpc call. req:\n{}",
                  example_ros2::srv::to_yaml(req));
 
-      auto status = co_await proxy_->RosTestRpc(req, rsp);
+      auto ctx = proxy_->NewContextRef();
+      ctx.SetTimeout(std::chrono::seconds(3));
+
+      auto status = co_await proxy_->RosTestRpc(ctx, req, rsp);
 
       AIMRT_INFO("Get rpc ret, status: {}. rsp:\n{}",
                  status.ToString(), example_ros2::srv::to_yaml(rsp));

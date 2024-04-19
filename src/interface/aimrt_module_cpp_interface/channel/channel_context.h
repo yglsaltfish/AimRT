@@ -31,8 +31,9 @@ class ContextRef {
   // Timestamp
   std::chrono::system_clock::time_point GetMsgTimestamp() const {
     assert(base_ptr_ && base_ptr_->ops);
-    return std::chrono::system_clock::time_point(std::chrono::nanoseconds(
-        base_ptr_->ops->get_msg_timestamp_ns(base_ptr_->impl)));
+    return std::chrono::system_clock::time_point(
+        std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+            std::chrono::nanoseconds(base_ptr_->ops->get_msg_timestamp_ns(base_ptr_->impl))));
   }
 
   void SetMsgTimestamp(std::chrono::system_clock::time_point deadline) {

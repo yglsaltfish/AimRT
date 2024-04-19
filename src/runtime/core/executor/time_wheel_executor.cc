@@ -1,11 +1,10 @@
-#include "time_manipulator_plugin/time_manipulator_executor.h"
+#include "core/executor/time_wheel_executor.h"
 #include "core/util/thread_tools.h"
-#include "time_manipulator_plugin/global.h"
 
 namespace YAML {
 template <>
-struct convert<aimrt::plugins::time_manipulator_plugin::TimeManipulatorExecutor::Options> {
-  using Options = aimrt::plugins::time_manipulator_plugin::TimeManipulatorExecutor::Options;
+struct convert<aimrt::runtime::core::executor::TimeWheelExecutor::Options> {
+  using Options = aimrt::runtime::core::executor::TimeWheelExecutor::Options;
 
   static Node encode(const Options& rhs) {
     Node node;
@@ -13,7 +12,6 @@ struct convert<aimrt::plugins::time_manipulator_plugin::TimeManipulatorExecutor:
     node["bind_executor"] = rhs.bind_executor;
     node["dt_us"] = static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::microseconds>(rhs.dt).count());
-    node["init_ratio"] = rhs.init_ratio;
     node["wheel_size"] = rhs.wheel_size;
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
@@ -24,12 +22,10 @@ struct convert<aimrt::plugins::time_manipulator_plugin::TimeManipulatorExecutor:
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
 
-    rhs.bind_executor = node["bind_executor"].as<std::string>();
-
+    if (node["bind_executor"])
+      rhs.bind_executor = node["bind_executor"].as<std::string>();
     if (node["dt_us"])
       rhs.dt = std::chrono::microseconds(node["dt_us"].as<uint64_t>());
-    if (node["init_ratio"])
-      rhs.init_ratio = node["init_ratio"].as<double>();
     if (node["wheel_size"])
       rhs.wheel_size = node["wheel_size"].as<std::vector<size_t>>();
     if (node["thread_sched_policy"])
@@ -42,34 +38,36 @@ struct convert<aimrt::plugins::time_manipulator_plugin::TimeManipulatorExecutor:
 };
 }  // namespace YAML
 
-namespace aimrt::plugins::time_manipulator_plugin {
+namespace aimrt::runtime::core::executor {
 
-void TimeManipulatorExecutor::Initialize(std::string_view name,
-                                         YAML::Node options_node) {
+void TimeWheelExecutor::Initialize(std::string_view name,
+                                   YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       get_executor_func_,
       "Get executor function is not set before initialize.");
 
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
-      "TimeManipulatorExecutor can only be initialized once.");
+      "TimeWheelExecutor can only be initialized once.");
 
   name_ = std::string(name);
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
-  AIMRT_CHECK_ERROR_THROW(
-      !options_.bind_executor.empty(),
-      "Invalide bind executor name, name is empty.");
+  if (!options_.bind_executor.empty()) {
+    bind_executor_ref_ = get_executor_func_(options_.bind_executor);
 
-  bind_executor_ref_ = get_executor_func_(options_.bind_executor);
+    AIMRT_CHECK_ERROR_THROW(
+        bind_executor_ref_,
+        "Can not get executor {}.", options_.bind_executor);
 
-  AIMRT_CHECK_ERROR_THROW(
-      bind_executor_ref_,
-      "Can not get executor {}.", options_.bind_executor);
+    AIMRT_CHECK_ERROR_THROW(
+        bind_executor_ref_.Name() != Name(),
+        "Bind executor '{}' is self!", options_.bind_executor);
 
-  SetTimeRatio(options_.init_ratio);
+    thread_safe_ = bind_executor_ref_.ThreadSafe();
+  }
 
   dt_count_ = static_cast<uint64_t>(
       std::chrono::duration_cast<std::chrono::nanoseconds>(options_.dt).count());
@@ -107,17 +105,17 @@ void TimeManipulatorExecutor::Initialize(std::string_view name,
   options_node = options_;
 }
 
-void TimeManipulatorExecutor::Start() {
+void TimeWheelExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Function can only be called when state is 'Init'.");
 
-  timer_thread_ = std::make_unique<std::thread>(std::bind(&TimeManipulatorExecutor::TimerLoop, this));
+  timer_thread_ = std::make_unique<std::thread>(std::bind(&TimeWheelExecutor::TimerLoop, this));
 
   start_flag_.wait(false);
 }
 
-void TimeManipulatorExecutor::Shutdown() {
+void TimeWheelExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
@@ -126,34 +124,39 @@ void TimeManipulatorExecutor::Shutdown() {
   timer_thread_.reset();
   timing_task_map_.clear();
   timing_wheel_vec_.clear();
-  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
+  get_executor_func_ = std::function<aimrt::executor::ExecutorRef(std::string_view)>();
 }
 
-bool TimeManipulatorExecutor::ThreadSafe() const {
+bool TimeWheelExecutor::IsInCurrentExecutor() const {
   assert(state_.load() == State::Start);
-  return bind_executor_ref_.ThreadSafe();
+  return bind_executor_ref_
+             ? bind_executor_ref_.IsInCurrentExecutor()
+             : (tid_ == std::this_thread::get_id());
 }
 
-bool TimeManipulatorExecutor::IsInCurrentExecutor() const {
+void TimeWheelExecutor::Execute(Task&& task) {
   assert(state_.load() == State::Start);
-  return bind_executor_ref_.IsInCurrentExecutor();
+
+  if (bind_executor_ref_) {
+    bind_executor_ref_.Execute(std::move(task));
+    return;
+  }
+
+  std::unique_lock<std::mutex> lck(imd_mutex_);
+  imd_queue_.emplace(std::move(task));
 }
 
-void TimeManipulatorExecutor::Execute(Task&& task) {
-  assert(state_.load() == State::Start);
-  bind_executor_ref_.Execute(std::move(task));
-}
-
-std::chrono::system_clock::time_point TimeManipulatorExecutor::Now() const {
+std::chrono::system_clock::time_point TimeWheelExecutor::Now() const {
   assert(state_.load() == State::Start);
 
   std::shared_lock<std::shared_mutex> lck(tick_mutex_);
 
   return std::chrono::system_clock::time_point(
-      std::chrono::nanoseconds(current_tick_count_ * dt_count_ + start_time_point_));
+      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+          std::chrono::nanoseconds(current_tick_count_ * dt_count_ + start_time_point_)));
 }
 
-void TimeManipulatorExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
+void TimeWheelExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
   assert(state_.load() == State::Start);
 
   uint64_t virtual_tp =
@@ -167,7 +170,7 @@ void TimeManipulatorExecutor::ExecuteAt(std::chrono::system_clock::time_point tp
 
   if (virtual_tp < current_tick_count_ * dt_count_) {
     lck.unlock();
-    bind_executor_ref_.Execute(std::move(task));
+    Execute(std::move(task));
     return;
   }
 
@@ -194,7 +197,7 @@ void TimeManipulatorExecutor::ExecuteAt(std::chrono::system_clock::time_point tp
       TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
 }
 
-void TimeManipulatorExecutor::RegisterGetExecutorFunc(
+void TimeWheelExecutor::RegisterGetExecutorFunc(
     const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
@@ -202,46 +205,9 @@ void TimeManipulatorExecutor::RegisterGetExecutorFunc(
   get_executor_func_ = get_executor_func;
 }
 
-void TimeManipulatorExecutor::SetTimeRatio(double ratio) {
-  assert(state_.load() == State::Init || state_.load() == State::Start);
+void TimeWheelExecutor::TimerLoop() {
+  tid_ = std::this_thread::get_id();
 
-  std::unique_lock<std::shared_mutex> lck(ratio_mutex_);
-
-  // 大于1，快进
-  if (ratio >= 1.0) {
-    ratio_direction_ = true;
-    real_ratio_ = static_cast<uint32_t>(ratio);
-    return;
-  }
-
-  ratio_direction_ = false;
-
-  // 大于0小于1，慢放
-  if (ratio > 1e-15 && ratio < 1.0 &&
-      (1.0 / ratio) < std::numeric_limits<uint32_t>::max()) {
-    real_ratio_ = static_cast<uint32_t>(1.0 / ratio);
-    return;
-  }
-
-  // 小于0等于0，暂停
-  real_ratio_ = std::numeric_limits<uint32_t>::max();
-}
-
-double TimeManipulatorExecutor::GetTimeRatio() const {
-  assert(state_.load() == State::Init || state_.load() == State::Start);
-
-  std::shared_lock<std::shared_mutex> lck(ratio_mutex_);
-
-  if (ratio_direction_)
-    return real_ratio_;
-
-  if (real_ratio_ == std::numeric_limits<uint32_t>::max())
-    return 0.0;
-
-  return 1.0 / real_ratio_;
-}
-
-void TimeManipulatorExecutor::TimerLoop() {
   std::string threadname = name_;
 
   try {
@@ -266,22 +232,8 @@ void TimeManipulatorExecutor::TimerLoop() {
 
   while (state_.load() != State::Shutdown) {
     try {
-      // 获取时间比例。注意：调速只能在下一个tick生效
-      ratio_mutex_.lock_shared();
-
-      bool ratio_direction = ratio_direction_;
-      uint32_t real_ratio = real_ratio_;
-
-      ratio_mutex_.unlock_shared();
-
-      // sleep一个tick
-      if (real_ratio == std::numeric_limits<uint32_t>::max()) {
-        // 暂停了
-        std::this_thread::sleep_until(last_loop_time_point += std::chrono::seconds(1));
-        continue;
-      }
-
-      auto real_dt = ratio_direction ? options_.dt : (options_.dt * real_ratio);
+      // sleep一个dt
+      auto real_dt = options_.dt;
       do {
         // 最长sleep时间
         static constexpr auto max_sleep_dt = std::chrono::seconds(1);
@@ -299,32 +251,54 @@ void TimeManipulatorExecutor::TimerLoop() {
 
       } while (state_.load() != State::Shutdown && real_dt.count());
 
-      // 走时间轮
+      // 执行立即任务
+      if (!bind_executor_ref_) {
+        std::queue<Task> tmp_queue;
 
-      // 要走的tick数
-      uint64_t diff_tick_count = ratio_direction ? real_ratio : 1;
+        imd_mutex_.lock();
+        imd_queue_.swap(tmp_queue);
+        imd_mutex_.unlock();
 
-      tick_mutex_.lock();
+        while (!tmp_queue.empty()) {
+          auto& task = tmp_queue.front();
 
-      do {
-        // 取出task
-        TaskList task_list = timing_wheel_vec_[0].Tick();
-
-        // 执行任务
-        if (!task_list.empty()) {
-          tick_mutex_.unlock();
-
-          for (auto& itr : task_list) {
-            bind_executor_ref_.Execute(std::move(itr.task));
+          try {
+            task();
+          } catch (const std::exception& e) {
+            AIMRT_FATAL("Time wheel executor run task get exception, {}", e.what());
           }
 
-          tick_mutex_.lock();
+          tmp_queue.pop();
+        }
+      }
+
+      // 走一个粒度的时间轮
+      tick_mutex_.lock();
+
+      // 取出task
+      TaskList task_list = timing_wheel_vec_[0].Tick();
+
+      // 执行任务
+      if (!task_list.empty()) {
+        tick_mutex_.unlock();
+
+        for (auto& itr : task_list) {
+          if (bind_executor_ref_) {
+            bind_executor_ref_.Execute(std::move(itr.task));
+          } else {
+            try {
+              itr.task();
+            } catch (const std::exception& e) {
+              AIMRT_FATAL("Time wheel executor run task get exception, {}", e.what());
+            }
+          }
         }
 
-        // 更新time point
-        ++current_tick_count_;
+        tick_mutex_.lock();
+      }
 
-      } while (--diff_tick_count);
+      // 更新time point
+      ++current_tick_count_;
 
       tick_mutex_.unlock();
     } catch (const std::exception& e) {
@@ -333,4 +307,4 @@ void TimeManipulatorExecutor::TimerLoop() {
     }
   }
 }
-}  // namespace aimrt::plugins::time_manipulator_plugin
+}  // namespace aimrt::runtime::core::executor

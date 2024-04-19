@@ -43,6 +43,8 @@ class PluginManager {
   void Start();
   void Shutdown();
 
+  void RegisterPlugin(AimRTCorePluginBase* plugin);
+
   void RegisterPluginInitFunc(PluginInitFunc&& plugin_init_func);
 
   YAML::Node GetPluginOptionsNode(std::string_view plugin_name) const;
@@ -59,6 +61,10 @@ class PluginManager {
 
   PluginInitFunc plugin_init_func_;
 
+  // 直接注册的插件
+  std::vector<AimRTCorePluginBase*> registered_plugin_vec_;
+
+  // 通过动态库加载的插件
   std::vector<std::unique_ptr<PluginLoader>> plugin_loader_vec_;
 };
 }  // namespace aimrt::runtime::core::plugin

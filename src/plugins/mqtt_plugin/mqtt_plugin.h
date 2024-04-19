@@ -48,9 +48,6 @@ class MqttPlugin : public AimRTCorePluginBase {
 
   MQTTAsync client_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
-
-  std::vector<MqttRpcBackend *> mqtt_rpc_backend_ptr_vec_;
-  std::vector<MqttChannelBackend *> mqtt_channel_backend_ptr_vec_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

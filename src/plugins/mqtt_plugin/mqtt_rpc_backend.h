@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/rpc/rpc_backend_base.h"
-
+#include "core/util/rpc_client_tool.h"
 #include "mqtt_plugin/msg_handle_registry.h"
 
 #include "tbb/concurrent_hash_map.h"
@@ -11,6 +11,8 @@ namespace aimrt::plugins::mqtt_plugin {
 class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
  public:
   struct Options {
+    std::string timeout_executor;
+
     struct ClientOptions {
       std::string func_name;
     };
@@ -49,7 +51,10 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   bool TryInvoke(
       const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
 
+  void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
+
   void SubscribeMqttTopic();
+  void UnSubscribeMqttTopic();
 
  private:
   static std::string_view GetRealFuncName(std::string_view func_name) {
@@ -80,21 +85,21 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   const runtime::core::rpc::RpcRegistry* rpc_registry_ptr_ = nullptr;
   runtime::core::rpc::ContextManager* context_manager_ptr_ = nullptr;
 
+  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
+
   std::string client_id_;
   MQTTAsync& client_;
   uint32_t max_pkg_size_;
-  std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::vector<std::string> sub_info_vec_;
 
-  std::atomic_uint32_t req_id_ = 0;
+  std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   struct MsgRecorder {
     const runtime::core::rpc::ClientFuncWrapper* client_func_wrapper_ptr;
     std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper> client_invoke_wrapper_ptr;
   };
-  using ClientMsgRecorderMap = tbb::concurrent_hash_map<uint32_t, MsgRecorder>;
-  ClientMsgRecorderMap client_msg_recorder_map_;
+  aimrt::runtime::core::util::RpcClientTool<MsgRecorder> client_tool_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin
