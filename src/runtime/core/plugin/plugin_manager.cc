@@ -98,6 +98,10 @@ void PluginManager::Initialize(YAML::Node options_node) {
           "Require plugin name '{}', but get plugin name '{}' in lib {}.",
           plugin_options.name, plugin_name, plugin_options.path);
 
+      AIMRT_INFO("Load plugin lib succeeded.\ncfg path: {}\nfull path: {}\n",
+                 plugin_options.path,
+                 plugin_loader_ptr->GetDynamicLib().GetLibFullPath());
+
       plugin_loader_vec_.emplace_back(std::move(plugin_loader_ptr));
 
     } else {
