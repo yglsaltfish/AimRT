@@ -26,6 +26,8 @@ class PluginLoader {
 
   AimRTCorePluginBase* GetPlugin() { return plugin_ptr_; }
 
+  auto& GetDynamicLib() { return dynamic_lib_; }
+
  private:
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 

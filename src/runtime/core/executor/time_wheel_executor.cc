@@ -247,7 +247,9 @@ void TimeWheelExecutor::TimerLoop() {
           real_dt -= real_dt;
         }
 
-        std::this_thread::sleep_until(last_loop_time_point += sleep_time);
+        std::this_thread::sleep_until(
+            last_loop_time_point +=
+            std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(sleep_time));
 
       } while (state_.load() != State::Shutdown && real_dt.count());
 

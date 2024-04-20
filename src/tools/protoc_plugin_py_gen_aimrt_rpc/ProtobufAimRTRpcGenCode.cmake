@@ -24,7 +24,7 @@ function(add_protobuf_aimrt_rpc_gencode_target_for_proto_files)
 
   if(NOT PROTOC_NAMESPACE)
     set(CUR_PROTOC_NAMESPACE "protobuf")
-  elseif()
+  else()
     set(CUR_PROTOC_NAMESPACE ${PROTOC_NAMESPACE})
   endif()
 

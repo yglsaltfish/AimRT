@@ -39,6 +39,8 @@ class ModuleLoader {
   const aimrt_module_base_t* GetModule(std::string_view module_name);
   void DestroyModule(const aimrt_module_base_t* module_ptr);
 
+  auto& GetDynamicLib() { return dynamic_lib_; }
+
  private:
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 

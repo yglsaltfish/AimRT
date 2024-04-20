@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 
@@ -34,8 +35,16 @@ class DynamicLib {
 
 #if defined(_WIN32)
     handle_ = LoadLibraryEx(libname_.c_str(), NULL, 0);
+
+    TCHAR buf[MAX_PATH];
+    DWORD re = GetModuleFileName(handle_, buf, MAX_PATH);
+    if (re != 0) lib_full_path_ = std::string(buf);
 #else
     handle_ = dlopen(libname_.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
+
+    char buf[1024];
+    dlinfo(handle_, RTLD_DI_ORIGIN, &buf);
+    lib_full_path_ = std::filesystem::canonical(std::filesystem::path(buf) / libname_).string();
 #endif
 
     if (nullptr == handle_) {
@@ -77,6 +86,8 @@ class DynamicLib {
 
   const std::string& GetLibName() const { return libname_; }
 
+  const std::string& GetLibFullPath() const { return lib_full_path_; }
+
   static std::string GetErr() {
 #if defined(_WIN32)
     LPTSTR lp_msg_buf;
@@ -98,6 +109,7 @@ class DynamicLib {
  private:
   DynlibHandle handle_ = nullptr;
   std::string libname_;
+  std::string lib_full_path_;
 };
 
 }  // namespace aimrt::common::util

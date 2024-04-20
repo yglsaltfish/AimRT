@@ -24,7 +24,7 @@ function(add_protobuf_gencode_target_for_proto_path)
 
   if(NOT PROTOC_NAMESPACE)
     set(CUR_PROTOC_NAMESPACE "protobuf")
-  elseif()
+  else()
     set(CUR_PROTOC_NAMESPACE ${PROTOC_NAMESPACE})
   endif()
 
@@ -87,7 +87,7 @@ function(add_protobuf_gencode_target_for_one_proto_file)
 
   if(NOT PROTOC_NAMESPACE)
     set(CUR_PROTOC_NAMESPACE "protobuf")
-  elseif()
+  else()
     set(CUR_PROTOC_NAMESPACE ${PROTOC_NAMESPACE})
   endif()
 
