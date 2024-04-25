@@ -137,7 +137,12 @@ void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
 
   auto find_itr = clients_backend_index_map_.find(func_name);
 
-  assert(find_itr != clients_backend_index_map_.end());
+  if (find_itr != clients_backend_index_map_.end()) [[unlikely]] {
+    AIMRT_ERROR("Rpc call found no backend to handle, func name '{}'.",
+                client_invoke_wrapper_ptr->func_name);
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE);
+    return;
+  }
 
   const auto& backend_ptr_vec = find_itr->second;
 

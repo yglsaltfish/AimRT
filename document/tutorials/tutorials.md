@@ -3,9 +3,9 @@
 
 - 概念
   - [AimRT中的CMake](concepts/cmake.md)
-  - [AimRT基本概念](concepts/concepts.md)
+  - [AimRT中的基本概念](concepts/concepts.md)
 - 快速开始
-  - [安装](quick_start/installation.md)
+  - [引用与安装](quick_start/installation.md)
   - [HelloWorld Cpp](quick_start/helloworld_cpp.md)
   - [HelloWorld Python](quick_start/helloworld_py.md)
 - CLI工具
