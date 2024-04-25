@@ -2,22 +2,51 @@
 # 基本概念
 
 
-## `Module`：模块
+## `AimRT`框架包含的内容
+
+&emsp;&emsp;`AimRT`框架中包含的内容如下：
+- common: 一些基础的、可以直接使用的通用组件，例如string、log接口、buffer等。
+- interface: `AimRT`接口
+  - aimrt_module_c_interface： `Module`开发接口，C版本
+  - aimrt_module_cpp_interface： `Module`开发接口，CPP版本，对C版本的封装
+  - aimrt_module_ros2_interface： `Module`开发接口，与ROS2相关的部分，基于CPP版本接口
+  - aimrt_module_protobuf_interface: `Module`开发接口，与protobuf相关的部分，基于CPP版本接口
+  - aimrt_pkg_c_interface: `Pkg`开发接口，C版本
+  - aimrt_core_plugin_interface: 插件开发接口
+- runtime: `AimRT`运行时
+  - core: 运行时核心库
+  - main: 基于core实现的一个主进程`aimrt_main`
+  - python_runtime: 基于pybind11封装的python版本运行时
+- plugins: `AimRT`官方插件
+- protocols: 一些`AimRT`官方的标准协议
+- examples: 示例
+  - cpp: 基于CPP版本`Module`接口开发的相关示例
+  - python: 基于Python版本`Module`接口开发的相关示例
+  - plugins: 一些各方插件的使用示例
+- tools: 一些配套工具
+
+## `AimRT`中的`Module`概念
 &emsp;&emsp;与大多数框架一样，AimRT拥有一个用于标识独立逻辑单元的概念：`Module`。`Module`是一个逻辑层面的概念，代表一个逻辑上内聚的类。`Module`与`Module`之间可以在逻辑层通信，主要的逻辑层通信接口有两种：`Channel`、`RPC`。可以将`Module`看作一个对外提供一定接口的黑盒。
 
 &emsp;&emsp;`Module`通过实现几个简单的模块接口来创建。一个`Module`通常对应一个硬件抽象，或者是一个独立算法、一项业务功能。`Module`可以使用框架提供的各项运行时功能，例如配置、日志、执行器等。
 
-## `Node`：节点
+## `AimRT`中的`Node`概念
 &emsp;&emsp;`Node`代表一个可以部署启动的进程，在其中运行了一个`AimRT`框架的Runtime实例。`Node`是一个部署、运行层面的概念，一个`Node`中可能存在多个`Module`。`Node`在启动时可以通过配置文件来设置日志、插件、执行器等运行参数。
 
-## `Pkg`：模块包
-&emsp;&emsp;`Pkg`代表一个包含了单个或多个`Module`的动态库，可以被`AimRT`框架运行时加载。`Pkg`通过实现几个简单的模块描述接口来创建。一个`Pkg`中可以有多个`Module`，相比于`Pkg`，`Module`的概念更侧重于代码层面，而`Pkg`则是一个部署层面的概念，其中不包含业务逻辑代码。
+## `AimRT`中的`Pkg`概念
+&emsp;&emsp;`Pkg`是`AimRT`框架运行`Module`的一种途径。`Pkg`代表一个包含了单个或多个`Module`的动态库，`Node`在运行时可以加载一个或多个`Pkg`。`Pkg`通过实现几个简单的模块描述接口来创建，一个`Pkg`中可以有多个`Module`。相比于`Pkg`，`Module`的概念更侧重于代码层面，而`Pkg`则是一个部署层面的概念，其中不包含业务逻辑代码。一般来说，在可以互相兼容的情况下，推荐将多个`Module`编译在一个`Pkg`中，这种情况下使用RPC、Channel等功能时性能会有优化。
 
-&emsp;&emsp;`Pkg`中的符号都是默认隐藏的，只暴露有限的纯C接口，不同`Pkg`之间不会有符号上的相互干扰。一般情况下，不同`Pkg`可以使用不同版本的编译器独立编译，不同`Pkg`里的`Module`也可以使用相互冲突的第三方依赖进行编译，最终编译出的`Pkg`可以二进制发布。
+&emsp;&emsp;一般来说，`Pkg`中的符号都是默认隐藏的，只暴露有限的纯C接口，不同`Pkg`之间不会有符号上的相互干扰。不同`Pkg`理论上可以使用不同版本的编译器独立编译，不同`Pkg`里的`Module`也可以使用相互冲突的第三方依赖版本进行编译，最终编译出的`Pkg`可以二进制发布。
 
-&emsp;&emsp;`AimRT`框架同时支持两种`Module`加载方式：
-- 运行时加载`Pkg`，以导入其中包含的`Module`。
-- 编译时直接将`Module`编译进主程序。
+
+## `AimRT`框架加载`Moduel`的两种方式
+&emsp;&emsp;`AimRT`框架可以通过两种方式来加载、运行`Module`：
+- 运行时加载`Pkg`，导入其中的`Module`类:
+  - 优势：编译业务`Module`时只需要链接AimRT的接口库，不需要链接运行时库；可以二进制发布；独立性较好。
+  - 劣势：框架基于dlopen加载`Pkg`，有时会有一些兼容性问题。
+- 编译时直接将`Module`类编译进主程序：
+  - 优势：没有dlopen这个步骤，只会有最终一个exe。
+  - 劣势：可能会有第三方库的冲突，无法独立的发布`Module`，想要二进制发布只能直接发布exe。
 
 &emsp;&emsp;实际采用哪种方式需要根据具体场景进行判断。
 
@@ -43,6 +72,12 @@
 &emsp;&emsp;`Executor`是指一个可以运行任务的抽象概念，一个执行器可以是一个Fiber、Thread或者Thread Pool，我们平常写的代码也是默认的直接指定了一个执行器：Main线程。一般来说，能提供以下接口的就可以算是一个执行器：
 ```cpp
 void Execute(std::function<void()>&& task);
+```
+
+&emsp;&emsp;还有一种`Executor`提供定时执行的功能，可以指定在某个时间点或某段时间之后再执行任务。其接口类似如下：
+```cpp
+void ExecuteAt(std::chrono::system_clock::time_point tp, std::function<void()>&& task);
+void ExecuteAfter(std::chrono::nanoseconds dt, std::function<void()>&& task);
 ```
 
 ## `Plugin`：插件

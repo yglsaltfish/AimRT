@@ -1,99 +1,8 @@
-# see: https://agirobot.feishu.cn/wiki/wikcnBt7vy5H1zUvcwYhFZJ5zEg
-
-stages:
-  - check
-  - test
-  - build
-  - deploy
-  - release
+include:
+  - project: "agibot_aima/aimrt_ci"
+    file: "gitlab-ci/main.gitlab-ci.yml"
 
 variables:
-  # -------------------------------------------------------------
-  DEFAULT_BUILD_TEST:
-    value: "True"
-    options:
-      - "True"
-      - "False"
-    description: "If want to build this project with default build and test."
-
-  DEFAULT_BUILD_TEST_PLATFORM:
-    value: "x86_64_jammy"
-    options:
-      - "x86_64_bionic"
-      - "x86_64_focal"
-      - "x86_64_jammy"
-      - "aarch64_bionic"
-      - "aarch64_focal"
-      - "aarch64_jammy"
-      - ""
-    description: "The default build and test platform."
-
-  X86_64_BIONIC:
-    value: "False"
-    options:
-      - "True"
-      - "False"
-    description: "If want to build this project with x86_64-bionic."
-
-  X86_64_FOCAL:
-    value: "False"
-    options:
-      - "True"
-      - "False"
-    description: "If want to build this project with x86_64-focal."
-
-  X86_64_JAMMY:
-    value: "True"
-    options:
-      - "True"
-      - "False"
-    description: "If want to build this project with x86_64-jammy."
-
-  AARCH64_BIONIC:
-    value: "False"
-    options:
-      - "True"
-      - "False"
-    description: "If want to build this project with aarch64-bionic."
-
-  AARCH64_FOCAL:
-    value: "False"
-    options:
-      - "True"
-      - "False"
-    description: "If want to build this project with aarch64-focal."
-
-  AARCH64_JAMMY:
-    value: "False"
-    options:
-      - "True"
-      - "False"
-    description: "If want to build this project with aarch64-jammy."
-
-  PORTABILITY_SEVERITY_MAX:
-    value: "1000"
-    description: "The max portability severity of cppcheck."
-
-  STYLE_SEVERITY_MAX:
-    value: "1000"
-    description: "The max style severity of cppcheck."
-
-  WARNING_SEVERITY_MAX:
-    value: "500"
-    description: "The max warning severity of cppcheck."
-
-  ERROR_SEVERITY_MAX:
-    value: "1"
-    description: "The max error severity of cppcheck."
-
-  TEST_COVERAGE_THRESHOLD:
-    value: "1"
-    description: "The threshold of test coverage."
-
-  CHECK_CMD:
-    value: ""
-    description: "The check command of this project."
-
   BUILD_CMD:
     value: |
       source /opt/ros/humble/setup.bash && 
@@ -117,8 +26,6 @@ variables:
       -Dpybind11_DOWNLOAD_URL=https://file.agibot.com/third_party/pybind11-2.11.1.tar.gz \
       -Dpaho_mqtt_c_DOWNLOAD_URL=https://file.agibot.com/third_party/paho.mqtt.c-1.3.13.tar.gz
 
-    description: "The build command of this project."
-
   TEST_CMD:
     value: |
       source /opt/ros/humble/setup.bash && 
@@ -141,19 +48,3 @@ variables:
       -Dtbb_DOWNLOAD_URL=https://file.agibot.com/third_party/oneTBB-2021.12.0-rc2.tar.gz  \
       -Dpybind11_DOWNLOAD_URL=https://file.agibot.com/third_party/pybind11-2.11.1.tar.gz \
       -Dpaho_mqtt_c_DOWNLOAD_URL=https://file.agibot.com/third_party/paho.mqtt.c-1.3.13.tar.gz
-
-    description: "The test command of this project."
-
-  DOCKER_IMAGE: "192.168.22.31:8082/zy/agi-dev"
-  GITLAB_CI_IMAGE: "192.168.22.31:8082/zy/gitlab-ci"
-
-  CPPCHECK_REPORT_URL: "http://192.168.22.31:8083/cppcheck-report"
-  CPPCHECK_REPORT_POST_URL: "http://192.168.22.31:8084/cppcheck-report"
-
-  TEST_COVERAGE_REPORT_URL: "http://192.168.22.31:8083/test-coverage"
-  TEST_COVERAGE_REPORT_POST_URL: "http://192.168.22.31:8084/test-coverage"
-  # -------------------------------------------------------------
-
-include:
-  - project: "agi-ep/ci-template"
-    file: ".ci/main.gitlab-ci.yml"

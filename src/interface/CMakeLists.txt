@@ -3,7 +3,6 @@ set_namespace()
 add_subdirectory(aimrt_module_c_interface)
 add_subdirectory(aimrt_module_cpp_interface)
 add_subdirectory(aimrt_pkg_c_interface)
-add_subdirectory(aimrt_runtime_c_interface)
 add_subdirectory(aimrt_core_plugin_interface)
 
 if(AIMRT_BUILD_WITH_PROTOBUF)
