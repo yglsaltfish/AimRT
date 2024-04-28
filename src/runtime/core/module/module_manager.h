@@ -11,6 +11,7 @@
 
 #include "aimrt_module_c_interface/logger/logger_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
+#include "aimrt_module_cpp_interface/util/string.h"
 #include "core/module/core_proxy.h"
 #include "core/module/module_loader.h"
 #include "core/util/module_detail_info.h"
@@ -61,6 +62,14 @@ class ModuleManager {
 
   void RegisterModule(const std::string& pkg, const aimrt_module_base_t* module);
   void RegisterModule(const aimrt_module_base_t* module) { RegisterModule("core", module); }
+
+  const aimrt_core_base_t* CreateModule(const std::string& pkg, aimrt_module_info_t module_info);
+  const aimrt_core_base_t* CreateModule(const std::string& pkg, const std::string& module_name) {
+    return CreateModule(pkg, aimrt_module_info_t{.name = aimrt::util::ToAimRTStringView(module_name)});
+  }
+  const aimrt_core_base_t* CreateModule(const std::string& module_name) {
+    return CreateModule("core", module_name);
+  }
 
   void RegisterCoreProxyConfigurator(CoreProxyConfigurator&& module_proxy_configurator);
 

@@ -1,5 +1,77 @@
 
-# CPP模块接口
+# Module接口-Cpp版本
+
+## 简介
+
+&emsp;&emsp;AimRT为`Module`开发提供了一套CPP接口层，使用者在开发`Module`时只需要链接这个接口层即可，可以与AimRT的实现细节相隔离。此接口层的依赖只有两个：
+- fmt：用于日志。如果使用C++20的format，则可以去掉这个依赖。
+- libunifex：用于将异步逻辑封装为协程。可以选用。
+
+
+&emsp;&emsp;所有的接口层代码见[aimrt_module_cpp_interface](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/interface/aimrt_module_cpp_interface)。
+
+
+## ModuleBase
+
+&emsp;&emsp;所有的业务模块，都需要继承[ModuleBase](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/module_base.h)基类。`ModuleBase`定义了业务模块所需要实现的几个接口，其签名和使用方式如下：
+
+```cpp
+class ModuleBase {
+ public:
+  /**
+   * @brief 用于AimRT框架获取模块信息，包括模块名称、模块版本等。
+   * 1. AimRT框架会在加载模块时调用此接口，读取返回的模块信息。
+   *
+   * @return 模块信息
+   */
+  virtual ModuleInfo Info() const noexcept = 0;
+
+  /**
+   * @brief 用于初始化模块。
+   * 1. AimRT框架会在Initialize阶段依次调用各个模块的Initialize方法。
+   * 2. AimRT框架会保证在主线程中调用模块的Initialize方法。模块不应阻塞Initialize方法太久。
+   * 3. AimRT框架在调用模块的Initialize方法时，会传入一个CoreRef句柄类，模块可以存储此句柄，并在后续通过此句柄来调用框架的组件。
+   * 4. 在AimRT框架调用模块的Initialize方法之前，AimRT框架保证所有的组件（例如配置、日志等）都已经完成Initialize，但还未Start。
+   * 5. 如果有任何模块在AimRT框架调用其Initialize方法时返回了false，则整个AimRT框架会Initialize失败。
+   *
+   * @param core 模块通过此句柄来调用框架的组件
+   * @return 初始化结果
+   */
+  virtual bool Initialize(CoreRef core) noexcept = 0;
+
+  /**
+   * @brief 用于启动模块。
+   * 1. AimRT框架会在Start阶段依次调用各个模块的Start方法。
+   * 2. AimRT框架会保证在主线程中调用模块的Start方法。模块不应阻塞Start方法太久。
+   * 3. 在AimRT框架调用模块的Start方法之前，AimRT框架保证所有的组件（例如配置、日志等）都已经完成Start。
+   * 4. 如果有任何模块在AimRT框架调用其Start方法时返回了false，则整个AimRT框架会Start失败。
+   *
+   * @return Start result
+   */
+  virtual bool Start() noexcept = 0;
+
+  /**
+   * @brief Shutdown module
+   *
+   */
+  virtual void Shutdown() noexcept = 0;
+};
+```
+
+
+
+## CoreRef
+
+
+
+
+
+
+
+-----------------------------------
+
+
+
 
 
 

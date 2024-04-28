@@ -31,7 +31,6 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          TBB::tbb
           paho_mqtt_c::paho-mqtt3as-static)
 
 # Set installation of target

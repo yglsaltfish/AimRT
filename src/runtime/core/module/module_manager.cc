@@ -243,7 +243,8 @@ void ModuleManager::Shutdown() {
   module_proxy_configurator_ = CoreProxyConfigurator();
 }
 
-void ModuleManager::RegisterModule(const std::string& pkg, const aimrt_module_base_t* module) {
+void ModuleManager::RegisterModule(
+    const std::string& pkg, const aimrt_module_base_t* module) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Function can only be called when state is 'PreInit'.");
@@ -251,6 +252,16 @@ void ModuleManager::RegisterModule(const std::string& pkg, const aimrt_module_ba
   AIMRT_CHECK_ERROR_THROW(module != nullptr, "Register invalid module");
 
   registered_module_vec_.emplace_back(pkg, module);
+}
+
+const aimrt_core_base_t* ModuleManager::CreateModule(
+    const std::string& pkg, aimrt_module_info_t module_info) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Function can only be called when state is 'PreInit'.");
+  // TODO
+
+  return nullptr;
 }
 
 void ModuleManager::RegisterCoreProxyConfigurator(
