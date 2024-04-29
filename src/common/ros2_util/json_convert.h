@@ -70,7 +70,7 @@ inline void WriteSequence(
   if (member.is_upper_bound_ && json.size() > member.array_size_)
     throw std::runtime_error("WriteSequence: upper bound exceeded");
 
-  for (int i = 0; i < json.size(); i++) {
+  for (unsigned int i = 0; i < json.size(); i++) {
     WriteSequenceMemberItem<RosTypeId>(json[i], buffer);
   }
 }
@@ -112,7 +112,7 @@ inline void WriteMember(
   // Handle classic C arrays
   if (member.is_array_) {
     if (json[member.name_].isArray() && member.array_size_ == json[member.name_].size()) {
-      for (int i = 0; i < member.array_size_; i++) {
+      for (unsigned int i = 0; i < member.array_size_; i++) {
         WriteMemberItem<RosTypeId>(
             json[member.name_][i],
             buffer + member.offset_ + sizeof(CppType) * i);
@@ -142,7 +142,7 @@ inline void WriteMemberSequenceNested(
       reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(member.members_->data);
   auto &seq = buffer;
   member.resize_function(seq, json.size());
-  for (int i = 0; i < json.size(); i++) {
+  for (unsigned int i = 0; i < json.size(); i++) {
     JsonToMessageImpl(
         json[i],
         member_typeinfo,
@@ -166,7 +166,7 @@ inline void WriteMemberNested(
   auto member_typeinfo =
       reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(member.members_->data);
   if (member.is_array_) {
-    for (int i = 0; i < json[member.name_].size(); i++) {
+    for (unsigned int i = 0; i < json[member.name_].size(); i++) {
       JsonToMessageImpl(
           json[member.name_][i],
           member_typeinfo,
