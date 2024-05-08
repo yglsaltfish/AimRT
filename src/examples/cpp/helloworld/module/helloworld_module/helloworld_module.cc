@@ -9,70 +9,48 @@
 
 namespace aimrt::examples::cpp::helloworld::helloworld_module {
 
-bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
   // Save aimrt framework handle
   core_ = core;
 
-  try {
-    // Read cfg
-    auto configurator = core_.GetConfigurator();
-    if (configurator) {
-      std::string file_path = std::string(configurator.GetConfigFilePath());
-      if (!file_path.empty()) {
-        YAML::Node cfg_node = YAML::LoadFile(file_path);
-        for (const auto& itr : cfg_node) {
-          std::string k = itr.first.as<std::string>();
-          std::string v = itr.second.as<std::string>();
-          AIMRT_HL_INFO(core_.GetLogger(), "cfg [{} : {}]", k, v);
-        }
-      }
+  // Read cfg
+  auto file_path = core_.GetConfigurator().GetConfigFilePath();
+  if (!file_path.empty()) {
+    YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+    for (const auto& itr : cfg_node) {
+      std::string k = itr.first.as<std::string>();
+      std::string v = itr.second.as<std::string>();
+      AIMRT_INFO("cfg [{} : {}]", k, v);
     }
-
-    // Get executor handle
-    work_executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
-    AIMRT_HL_CHECK_ERROR_THROW(core_.GetLogger(),
-                               work_executor_ && work_executor_.SupportTimerSchedule(),
-                               "Get executor 'work_thread_pool' failed.");
-
-  } catch (const std::exception& e) {
-    AIMRT_HL_ERROR(core_.GetLogger(), "Init failed, {}", e.what());
-    return false;
   }
 
-  AIMRT_HL_INFO(core_.GetLogger(), "Init succeeded.");
+  // Get executor handle
+  work_executor_ = core_.GetExecutorManager().GetExecutor("work_thread_pool");
+  AIMRT_CHECK_ERROR_THROW(work_executor_ && work_executor_.SupportTimerSchedule(),
+                          "Get executor 'work_thread_pool' failed.");
+
+  AIMRT_INFO("Init succeeded.");
 
   return true;
 }
 
-bool HelloWorldModule::Start() noexcept {
-  try {
-    // Start main loop
-    scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
-  } catch (const std::exception& e) {
-    AIMRT_HL_ERROR(core_.GetLogger(), "Start failed, {}", e.what());
-    return false;
-  }
+bool HelloWorldModule::Start() {
+  scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
 
-  AIMRT_HL_INFO(core_.GetLogger(), "Start succeeded.");
+  AIMRT_INFO("Start succeeded.");
   return true;
 }
 
-void HelloWorldModule::Shutdown() noexcept {
-  try {
-    // Wait all coroutine complete
-    run_flag_ = false;
-    co::SyncWait(scope_.complete());
-  } catch (const std::exception& e) {
-    AIMRT_HL_ERROR(core_.GetLogger(), "Shutdown failed, {}", e.what());
-    return;
-  }
+void HelloWorldModule::Shutdown() {
+  run_flag_ = false;
+  co::SyncWait(scope_.complete());
 
-  AIMRT_HL_INFO(core_.GetLogger(), "Shutdown succeeded.");
+  AIMRT_INFO("Shutdown succeeded.");
 }
 
 co::Task<void> HelloWorldModule::MainLoop() {
   try {
-    AIMRT_HL_INFO(core_.GetLogger(), "Start MainLoop.");
+    AIMRT_INFO("Start MainLoop.");
 
     co::AimRTScheduler work_scheduler(work_executor_);
 
@@ -81,16 +59,14 @@ co::Task<void> HelloWorldModule::MainLoop() {
     uint32_t count = 0;
     while (run_flag_) {
       count++;
-      AIMRT_HL_INFO(core_.GetLogger(),
-                    "Loop count : {} -------------------------", count);
+      AIMRT_INFO("Loop count : {} -------------------------", count);
 
       co_await co::ScheduleAfter(work_scheduler, std::chrono::seconds(1));
     }
 
-    AIMRT_HL_INFO(core_.GetLogger(), "Exit MainLoop.");
+    AIMRT_INFO("Exit MainLoop.");
   } catch (const std::exception& e) {
-    AIMRT_HL_ERROR(core_.GetLogger(),
-                   "Exit MainLoop with exception, {}", e.what());
+    AIMRT_ERROR("Exit MainLoop with exception, {}", e.what());
   }
 
   co_return;

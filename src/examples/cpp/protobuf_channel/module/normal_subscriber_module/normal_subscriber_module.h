@@ -12,18 +12,18 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
   NormalSubscriberModule() = default;
   ~NormalSubscriberModule() override = default;
 
-  ModuleInfo Info() const noexcept override {
+  ModuleInfo Info() const override {
     return ModuleInfo{.name = "NormalSubscriberModule"};
   }
 
-  bool Initialize(aimrt::CoreRef core) noexcept override;
+  bool Initialize(aimrt::CoreRef core) override;
 
-  bool Start() noexcept override;
+  bool Start() override;
 
-  void Shutdown() noexcept override;
+  void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
+  auto GetLogger() { return core_.GetLogger(); }
 
   co::Task<void> EventHandle(const aimrt::protocols::example::ExampleEventMsg& data);
 

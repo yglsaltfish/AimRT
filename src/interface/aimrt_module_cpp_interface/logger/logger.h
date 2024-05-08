@@ -17,7 +17,7 @@ class LoggerRef {
   const aimrt_logger_base_t* NativeHandle() const { return base_ptr_; }
 
   uint32_t GetLogLevel() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return static_cast<uint32_t>(base_ptr_->get_log_level(base_ptr_->impl));
   }
 
@@ -29,7 +29,7 @@ class LoggerRef {
       const char* function_name,
       const char* log_data,
       size_t log_data_size) const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->log(
         base_ptr_->impl,
         static_cast<aimrt_log_level_t>(lvl),

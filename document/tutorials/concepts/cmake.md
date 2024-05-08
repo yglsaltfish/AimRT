@@ -28,6 +28,17 @@
 
 
 ## AimRT中的CMake Target
-&emsp;&emsp;AimRT中所有的可引用的CMake Target如下：
+&emsp;&emsp;AimRT中所有的可引用的非协议类型CMake Target如下：
 
-***TODO待完善***
+|  CMake Target名称   | 作用  | 需要开启的宏 |
+|  ----  | ----  | ----  |
+| aimrt::common::util  | 一些独立基础工具，如string、log等 |  |
+| aimrt::common::ros2_util  | 独立的ros2相关的基础工具 | AIMRT_BUILD_WITH_ROS2  |
+| aimrt::interface::aimrt_module_c_interface  | 模块开发接口-C版本 |   |
+| aimrt::interface::aimrt_module_cpp_interface  | 模块开发接口-CPP版本 |   |
+| aimrt::interface::aimrt_module_protobuf_interface  | 模块开发protobuf相关接口，基于CPP接口 | AIMRT_BUILD_WITH_PROTOBUF  |
+| aimrt::interface::aimrt_module_ros2_interface  | 模块开发ros2相关接口，基于CPP接口 | AIMRT_BUILD_WITH_ROS2  |
+| aimrt::interface::aimrt_pkg_c_interface  | Pkg开发接口 |   |
+| aimrt::interface::aimrt_core_plugin_interface  | 插件开发接口 | AIMRT_BUILD_RUNTIME  |
+| aimrt::runtime::core  | 运行时核心库 | AIMRT_BUILD_RUNTIME  |
+

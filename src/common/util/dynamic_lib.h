@@ -54,7 +54,7 @@ class DynamicLib {
     return true;
   }
 
-  void Unload() noexcept {
+  void Unload() {
     if (nullptr == handle_) return;
 
     bool ret = false;

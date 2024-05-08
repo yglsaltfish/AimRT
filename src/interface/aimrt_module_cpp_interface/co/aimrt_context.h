@@ -175,6 +175,8 @@ class AimRTScheduler {
     return a.executor_ref_.NativeHandle() != b.executor_ref_.NativeHandle();
   }
 
+  explicit operator bool() const { return static_cast<bool>(executor_ref_); }
+
  private:
   executor::ExecutorRef executor_ref_;
 };
@@ -182,12 +184,14 @@ class AimRTScheduler {
 // Context
 class AimRTContext {
  public:
-  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref) noexcept
+  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref = {}) noexcept
       : executor_manager_ref_(executor_manager_ref) {}
 
   AimRTScheduler GetScheduler(std::string_view executor_name) {
     return AimRTScheduler(executor_manager_ref_.GetExecutor(executor_name));
   }
+
+  explicit operator bool() const { return static_cast<bool>(executor_manager_ref_); }
 
  private:
   executor::ExecutorManagerRef executor_manager_ref_;
@@ -391,6 +395,8 @@ class AimRTScheduler {
     return a.executor_ref_.NativeHandle() != b.executor_ref_.NativeHandle();
   }
 
+  explicit operator bool() const { return static_cast<bool>(executor_ref_); }
+
  private:
   executor::ExecutorRef executor_ref_;
 };
@@ -398,12 +404,14 @@ class AimRTScheduler {
 // Context
 class AimRTContext {
  public:
-  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref) noexcept
+  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref = {}) noexcept
       : executor_manager_ref_(executor_manager_ref) {}
 
   AimRTScheduler GetScheduler(std::string_view executor_name) {
     return AimRTScheduler(executor_manager_ref_.GetExecutor(executor_name));
   }
+
+  explicit operator bool() const { return static_cast<bool>(executor_manager_ref_); }
 
  private:
   executor::ExecutorManagerRef executor_manager_ref_;

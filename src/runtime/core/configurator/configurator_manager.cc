@@ -140,7 +140,6 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
     return *(emplace_ret.first->second);
   }
 
-  static ConfiguratorProxy default_cfg_proxy("");
   return default_cfg_proxy;
 }
 

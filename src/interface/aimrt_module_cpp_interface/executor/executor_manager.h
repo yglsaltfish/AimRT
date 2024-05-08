@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <memory>
 
 #include "aimrt_module_c_interface/executor/executor_manager_base.h"
@@ -22,8 +21,8 @@ class ExecutorManagerRef {
     return base_ptr_;
   }
 
-  ExecutorRef GetExecutor(std::string_view executor_name) {
-    assert(base_ptr_);
+  ExecutorRef GetExecutor(std::string_view executor_name) const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return ExecutorRef(base_ptr_->get_executor(
         base_ptr_->impl, aimrt::util::ToAimRTStringView(executor_name)));
   }

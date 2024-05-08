@@ -39,7 +39,7 @@ class CoreRef {
   const aimrt_core_base_t* NativeHandle() const { return base_ptr_; }
 
   ModuleInfo Info() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     aimrt_module_info_t module_info = base_ptr_->info(base_ptr_->impl);
     return ModuleInfo{
         .name = util::ToStdStringView(module_info.name),
@@ -57,7 +57,7 @@ class CoreRef {
    * @return ConfiguratorRef
    */
   configurator::ConfiguratorRef GetConfigurator() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return configurator::ConfiguratorRef(base_ptr_->configurator(base_ptr_->impl));
   }
 
@@ -67,7 +67,7 @@ class CoreRef {
    * @return allocator::AllocatorRef
    */
   allocator::AllocatorRef GetAllocator() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return allocator::AllocatorRef(base_ptr_->allocator_handle(base_ptr_->impl));
   }
 
@@ -77,18 +77,18 @@ class CoreRef {
    * @return ExecutorManagerRef
    */
   executor::ExecutorManagerRef GetExecutorManager() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return executor::ExecutorManagerRef(base_ptr_->executor_manager(base_ptr_->impl));
   }
 
   /**
    * @brief Get logger handle
    *
-   * @return aimrt::logger::LoggerRef
+   * @return logger::LoggerRef
    */
-  aimrt::logger::LoggerRef GetLogger() const {
-    assert(base_ptr_);
-    return aimrt::logger::LoggerRef(base_ptr_->logger(base_ptr_->impl));
+  logger::LoggerRef GetLogger() const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
+    return logger::LoggerRef(base_ptr_->logger(base_ptr_->impl));
   }
 
   /**
@@ -97,7 +97,7 @@ class CoreRef {
    * @return rpc::RpcHandleRef
    */
   rpc::RpcHandleRef GetRpcHandle() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return rpc::RpcHandleRef(base_ptr_->rpc_handle(base_ptr_->impl));
   }
 
@@ -107,7 +107,7 @@ class CoreRef {
    * @return channel::ChannelHandleRef
    */
   channel::ChannelHandleRef GetChannelHandle() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return channel::ChannelHandleRef(base_ptr_->channel_handle(base_ptr_->impl));
   }
 
@@ -117,7 +117,7 @@ class CoreRef {
    * @return parameter::ParameterHandleRef
    */
   parameter::ParameterHandleRef GetParameterHandle() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return parameter::ParameterHandleRef(base_ptr_->parameter_handle(base_ptr_->impl));
   }
 

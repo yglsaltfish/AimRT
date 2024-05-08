@@ -4,6 +4,7 @@
 &emsp;&emsp;本章将以一个简单的Demo来介绍如何建立一个最基本的AimRT CPP工程。
 
 &emsp;&emsp;本Demo将演示以下几项基本功能：
+- 基于CMake FetchContent通过源码引用AimRT；
 - 编写一个基础的基于AimRT CPP接口的`Module`；
 - 使用基础的日志功能；
 - 使用基础的基础配置功能；
@@ -15,7 +16,9 @@
 
 ## STEP1: 确保本地环境符合要求
 
-&emsp;&emsp;本示例将基于CMake FetchContent通过源码引用AimRT。本Demo基于linux，请先确保本地的编译环境、网络环境符合要求，具体请参考[引用与安装](installation.md)中的要求。
+&emsp;&emsp;请先确保本地的编译环境、网络环境符合要求，具体请参考[引用与安装](installation.md)中的要求。
+
+&emsp;&emsp;注意，本示例是跨平台的，但本章节基于linux进行演示。
 
 
 ## STEP2: 创建目录结构，并添加基本的文件
@@ -108,6 +111,7 @@ target_include_directories(
   helloworld_module
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+# 引用aimrt_module_cpp_interface
 target_link_libraries(
   helloworld_module
   PRIVATE yaml-cpp::yaml-cpp
@@ -140,6 +144,7 @@ target_link_libraries(
 ### File 6 : src/module/helloworld_module/helloworld_module.h
 ```cpp
 #pragma once
+
 #include "aimrt_module_cpp_interface/module_base.h"
 
 class HelloWorldModule : public aimrt::ModuleBase {
@@ -147,13 +152,13 @@ public:
   HelloWorldModule() = default;
   ~HelloWorldModule() override = default;
 
-  aimrt::ModuleInfo Info() const noexcept override {
+  aimrt::ModuleInfo Info() const override {
     return aimrt::ModuleInfo{.name = "HelloWorldModule"};
   }
 
-  bool Initialize(aimrt::CoreRef core) noexcept override;
-  bool Start() noexcept override;
-  void Shutdown() noexcept override;
+  bool Initialize(aimrt::CoreRef core) override;
+  bool Start() override;
+  void Shutdown() override;
 
 private:
   aimrt::CoreRef core_;
@@ -166,7 +171,7 @@ private:
 
 #include "yaml-cpp/yaml.h"
 
-bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
   // Save aimrt framework handle
   core_ = core;
 
@@ -195,12 +200,12 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool HelloWorldModule::Start() noexcept {
+bool HelloWorldModule::Start() {
   AIMRT_HL_INFO(core_.GetLogger(), "Start succeeded.");
   return true;
 }
 
-void HelloWorldModule::Shutdown() noexcept {
+void HelloWorldModule::Shutdown() {
   AIMRT_HL_INFO(core_.GetLogger(), "Shutdown succeeded.");
 }
 ```
@@ -312,3 +317,5 @@ make -j
 ```shell
 ./helloworld_app ./helloworld_cfg.yaml
 ```
+
+&emsp;&emsp;如果是在其他平台上，例如windows上，也可以参考linux上的步骤进行编译、运行。

@@ -1,44 +1,82 @@
 #include "executor_module/executor_module.h"
-#include "aimrt_module_cpp_interface/co/aimrt_context.h"
-#include "aimrt_module_cpp_interface/co/on.h"
-#include "aimrt_module_cpp_interface/co/schedule.h"
-#include "aimrt_module_cpp_interface/co/sync_wait.h"
 
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::examples::cpp::executor::executor_module {
 
-bool ExecutorModule::Initialize(aimrt::CoreRef core) noexcept {
+bool ExecutorModule::Initialize(aimrt::CoreRef core) {
   // Save aimrt framework handle
   core_ = core;
+
+  // Get executor
+  work_executor_ = core_.GetExecutorManager().GetExecutor("work_executor");
+  AIMRT_CHECK_ERROR_THROW(work_executor_, "Can not get work_executor");
+
+  // Get thread safe executor
+  thread_safe_executor_ = core_.GetExecutorManager().GetExecutor("thread_safe_executor");
+  AIMRT_CHECK_ERROR_THROW(thread_safe_executor_ && thread_safe_executor_.ThreadSafe(),
+                          "Can not get thread_safe_executor");
+
+  // Get time schedule executor
+  time_schedule_executor_ = core_.GetExecutorManager().GetExecutor("time_schedule_executor");
+  AIMRT_CHECK_ERROR_THROW(time_schedule_executor_ && time_schedule_executor_.SupportTimerSchedule(),
+                          "Can not get time_schedule_executor");
 
   AIMRT_INFO("Init succeeded.");
 
   return true;
 }
 
-bool ExecutorModule::Start() noexcept {
-  try {
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("Start failed, {}", e.what());
-    return false;
-  }
+bool ExecutorModule::Start() {
+  // Test simple execute
+  SimpleExecuteDemo();
+
+  // Test thread safe execute
+  ThreadSafeDemo();
+
+  // Test time schedule execute
+  TimeScheduleDemo();
 
   AIMRT_INFO("Start succeeded.");
+
   return true;
 }
 
-void ExecutorModule::Shutdown() noexcept {
-  try {
-    // Wait all coroutine complete
-    run_flag_ = false;
-    co::SyncWait(scope_.complete());
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("Shutdown failed, {}", e.what());
-    return;
-  }
+void ExecutorModule::Shutdown() {
+  run_flag_ = false;
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
   AIMRT_INFO("Shutdown succeeded.");
+}
+
+void ExecutorModule::SimpleExecuteDemo() {
+  work_executor_.Execute([this]() {
+    AIMRT_INFO("This is a simple task");
+  });
+}
+
+void ExecutorModule::ThreadSafeDemo() {
+  uint32_t n = 0;
+  for (uint32_t ii = 0; ii < 10000; ++ii) {
+    thread_safe_executor_.Execute([&n]() {
+      n++;
+    });
+  }
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  AIMRT_INFO("Value of n is {}", n);
+}
+
+void ExecutorModule::TimeScheduleDemo() {
+  if (!run_flag_) return;
+
+  AIMRT_INFO("Loop count : {}", loop_count_++);
+
+  time_schedule_executor_.ExecuteAfter(
+      std::chrono::seconds(1),
+      std::bind(&ExecutorModule::TimeScheduleDemo, this));
 }
 
 }  // namespace aimrt::examples::cpp::executor::executor_module

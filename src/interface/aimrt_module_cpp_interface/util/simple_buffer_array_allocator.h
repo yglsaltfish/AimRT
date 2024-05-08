@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -11,8 +10,6 @@ namespace aimrt::util {
 class SimpleBufferArrayAllocator {
  public:
   static void Reserve(aimrt_buffer_array_t* buffer_array, size_t new_cap) {
-    assert(buffer_array);
-
     aimrt_buffer_t* cur_data = buffer_array->data;
 
     buffer_array->data = new aimrt_buffer_t[new_cap];
@@ -25,8 +22,6 @@ class SimpleBufferArrayAllocator {
   }
 
   static aimrt_buffer_t Allocate(aimrt_buffer_array_t* buffer_array, size_t size) {
-    assert(buffer_array);
-
     void* data = std::malloc(size);
 
     if (data == nullptr) [[unlikely]]
@@ -48,8 +43,6 @@ class SimpleBufferArrayAllocator {
   }
 
   static void Release(aimrt_buffer_array_t* buffer_array) {
-    assert(buffer_array);
-
     for (size_t ii = 0; ii < buffer_array->len; ++ii) {
       std::free(buffer_array->data[ii].data);
     }

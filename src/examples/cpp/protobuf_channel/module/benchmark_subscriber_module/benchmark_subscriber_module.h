@@ -13,18 +13,18 @@ class BenchmarkSubscriberModule : public aimrt::ModuleBase {
   BenchmarkSubscriberModule() = default;
   ~BenchmarkSubscriberModule() override = default;
 
-  ModuleInfo Info() const noexcept override {
+  ModuleInfo Info() const override {
     return ModuleInfo{.name = "BenchmarkSubscriberModule"};
   }
 
-  bool Initialize(aimrt::CoreRef core) noexcept override;
+  bool Initialize(aimrt::CoreRef core) override;
 
-  bool Start() noexcept override;
+  bool Start() override;
 
-  void Shutdown() noexcept override;
+  void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
+  auto GetLogger() { return core_.GetLogger(); }
 
   co::Task<void> BenchmarkSignalHandle(const aimrt::protocols::example::BenchmarkSignal& data);
   co::Task<void> BenchmarkMessageHandle(const aimrt::protocols::example::BenchmarkMessage& data);

@@ -6,7 +6,7 @@
 
 namespace aimrt::examples::cpp::protobuf_channel::normal_subscriber_module {
 
-bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
+bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -36,9 +36,9 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool NormalSubscriberModule::Start() noexcept { return true; }
+bool NormalSubscriberModule::Start() { return true; }
 
-void NormalSubscriberModule::Shutdown() noexcept {}
+void NormalSubscriberModule::Shutdown() {}
 
 co::Task<void> NormalSubscriberModule::EventHandle(const aimrt::protocols::example::ExampleEventMsg& data) {
   AIMRT_INFO("Receive new pb event, data: {}", aimrt::Pb2CompactJson(data));

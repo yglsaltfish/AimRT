@@ -24,19 +24,19 @@ class PyModuleBaseAdapter : public ModuleBase {
  public:
   using ModuleBase::ModuleBase;
 
-  ModuleInfo Info() const noexcept override {
+  ModuleInfo Info() const override {
     PYBIND11_OVERRIDE_PURE(ModuleInfo, ModuleBase, Info);
   }
 
-  bool Initialize(CoreRef core) noexcept override {
+  bool Initialize(CoreRef core) override {
     PYBIND11_OVERRIDE_PURE(bool, ModuleBase, Initialize, core);
   }
 
-  bool Start() noexcept override {
+  bool Start() override {
     PYBIND11_OVERRIDE_PURE(bool, ModuleBase, Start);
   }
 
-  void Shutdown() noexcept override {
+  void Shutdown() override {
     PYBIND11_OVERRIDE_PURE(void, ModuleBase, Shutdown);
   }
 };

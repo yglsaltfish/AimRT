@@ -5,7 +5,7 @@
 
 namespace aimrt::examples::cpp::ros2_channel::normal_subscriber_module {
 
-bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
+bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -35,9 +35,9 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool NormalSubscriberModule::Start() noexcept { return true; }
+bool NormalSubscriberModule::Start() { return true; }
 
-void NormalSubscriberModule::Shutdown() noexcept {}
+void NormalSubscriberModule::Shutdown() {}
 
 co::Task<void> NormalSubscriberModule::EventHandle(const example_ros2::msg::RosTestMsg& data) {
   AIMRT_INFO("Receive new ros event, data:\n{}", example_ros2::msg::to_yaml(data));

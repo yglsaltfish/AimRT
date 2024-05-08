@@ -51,16 +51,16 @@
 &emsp;&emsp;实际采用哪种方式需要根据具体场景进行判断。
 
 
-## `Channel`：数据通道
-&emsp;&emsp;`Channel`是一种典型的通信拓补概念，其通过`Topic`标识单个数据通道，由发布者`Publisher`和订阅者`Subscriber`组成，订阅者可以获取到发布者发布的数据。`Channel`是一种多对多的拓补结构，`Module`可以向任意数量的`Topic`发布数据，同时可以订阅任意数量的`Topic`。类似的概念如ROS中的Topic、Kafka/RabbitMQ等消息队列。
+## `AimRT`中的`Channel`概念
+&emsp;&emsp;`Channel`也叫数据通道，是一种典型的通信拓补概念，其通过`Topic`标识单个数据通道，由发布者`Publisher`和订阅者`Subscriber`组成，订阅者可以获取到发布者发布的数据。`Channel`是一种多对多的拓补结构，`Module`可以向任意数量的`Topic`发布数据，同时可以订阅任意数量的`Topic`。类似的概念如ROS中的Topic、Kafka/RabbitMQ等消息队列。
 
 
-## `Rpc`：远程过程调用
-&emsp;&emsp;`RPC`基于请求-回复模型，由客户端`Client`和服务端`Server`组成，`Module`可以创建客户端句柄，发起特定的RPC请求，由其指定的、或由框架根据一定规则指定的服务端来接收请求并回复。`Module`也可以创建服务端句柄，提供特定的RPC服务，接收处理系统路由过来的请求并回复。类似的概念如ROS中的Services、GRPC/Thrift等RPC框架。
+## `AimRT`中的`Rpc`概念
+&emsp;&emsp;`RPC`也叫远程过程调用，基于请求-回复模型，由客户端`Client`和服务端`Server`组成，`Module`可以创建客户端句柄，发起特定的RPC请求，由其指定的、或由框架根据一定规则指定的服务端来接收请求并回复。`Module`也可以创建服务端句柄，提供特定的RPC服务，接收处理系统路由过来的请求并回复。类似的概念如ROS中的Services、GRPC/Thrift等RPC框架。
 
 
-## `Protocol`：协议
-&emsp;&emsp;`Protocol`代表`Module`之间通信的数据格式，用来描述数据的字段信息以及序列化、反序列化方式，例如`Channel`的订阅者和发布者之间制定的数据格式、或者`RPC`客户端和服务端之间制定的请求包/回包的数据格式。通常由一种`IDL`(Interface description language)描述，然后由某种工具转换为各个语言的代码。
+## `AimRT`中的`Protocol`概念
+&emsp;&emsp;`Protocol`意为协议，代表`Module`之间通信的数据格式，用来描述数据的字段信息以及序列化、反序列化方式，例如`Channel`的订阅者和发布者之间制定的数据格式、或者`RPC`客户端和服务端之间制定的请求包/回包的数据格式。通常由一种`IDL`(Interface description language)描述，然后由某种工具转换为各个语言的代码。
 
 &emsp;&emsp;`AimRT`目前官方支持两种IDL：
 - Protobuf
@@ -68,8 +68,8 @@
 
 &emsp;&emsp;但`AimRT`并不限定协议与IDL的具体类型，使用者可以实现其他的IDL，例如Thrift IDL、FlatBuffers等，甚至支持一些自定义的IDL。
 
-## `Executor`：执行器
-&emsp;&emsp;`Executor`是指一个可以运行任务的抽象概念，一个执行器可以是一个Fiber、Thread或者Thread Pool，我们平常写的代码也是默认的直接指定了一个执行器：Main线程。一般来说，能提供以下接口的就可以算是一个执行器：
+## `AimRT`中的`Executor`概念
+&emsp;&emsp;`Executor`，或者叫执行器，是指一个可以运行任务的抽象概念，一个执行器可以是一个Fiber、Thread或者Thread Pool，我们平常写的代码也是默认的直接指定了一个执行器：Main线程。一般来说，能提供以下接口的就可以算是一个执行器：
 ```cpp
 void Execute(std::function<void()>&& task);
 ```
@@ -80,8 +80,8 @@ void ExecuteAt(std::chrono::system_clock::time_point tp, std::function<void()>&&
 void ExecuteAfter(std::chrono::nanoseconds dt, std::function<void()>&& task);
 ```
 
-## `Plugin`：插件
-&emsp;&emsp;`Plugin`是指一个可以向`AimRT`框架注册各种自定义功能的动态库，可以被框架运行时加载，或在用户自定义的可执行程序中通过硬编码的方式注册到框架中。`AimRT`框架暴露了大量插接点和查询接口，例如：
+## `AimRT`中的`Plugin`概念
+&emsp;&emsp;`Plugin`指插件，是指一个可以向`AimRT`框架注册各种自定义功能的动态库，可以被框架运行时加载，或在用户自定义的可执行程序中通过硬编码的方式注册到框架中。`AimRT`框架暴露了大量插接点和查询接口，例如：
 - 日志后端注册接口
 - Channel/Rpc后端注册接口
 - Channel/Rpc注册表查询接口

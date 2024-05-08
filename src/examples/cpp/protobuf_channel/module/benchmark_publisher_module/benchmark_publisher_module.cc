@@ -17,7 +17,7 @@ namespace aimrt::examples::cpp::protobuf_channel::benchmark_publisher_module {
 static std::mutex signal_mutex;
 static aimrt::protocols::example::BenchmarkSignal signal;
 
-bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
+bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -71,7 +71,7 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool BenchmarkPublisherModule::Start() noexcept {
+bool BenchmarkPublisherModule::Start() {
   try {
     scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
@@ -83,7 +83,7 @@ bool BenchmarkPublisherModule::Start() noexcept {
   return true;
 }
 
-void BenchmarkPublisherModule::Shutdown() noexcept {
+void BenchmarkPublisherModule::Shutdown() {
   try {
     run_flag_ = false;
 
