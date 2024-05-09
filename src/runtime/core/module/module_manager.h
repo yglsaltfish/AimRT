@@ -32,6 +32,7 @@ class ModuleManager {
 
     struct ModuleOptions {
       std::string name;
+      bool enable = true;
       aimrt_log_level_t log_lvl = aimrt_log_level_t::AIMRT_LOG_LEVEL_TRACE;
       bool use_default_log_lvl = true;
       std::string cfg_file_path;
@@ -90,6 +91,7 @@ class ModuleManager {
     std::unique_ptr<CoreProxy> core_proxy_ptr;  // 提供给模块的aimrt句柄
   };
 
+  std::optional<Options::ModuleOptions> GetModuleOptions(std::string_view module_name);
   void InitModule(ModuleWrapper* module_wrapper_ptr);
 
  private:

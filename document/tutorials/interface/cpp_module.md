@@ -10,7 +10,7 @@
 
 ## 一些通用性说明
 
-### AimRT接口中的引用类型
+### 接口中的引用类型
 
 - 大部分句柄是一种引用类型，类型命名一般以`Ref`结尾。
 - 这种引用类型一般比较轻量，拷贝传递不会有较大开销。
@@ -28,13 +28,21 @@
 &emsp;&emsp;在逻辑实现阶段，开发者只需要知道此接口在抽象意义上代表什么功能即可，至于在实际运行时的表现，则要根据部署运行配置而定，在逻辑开发阶段也不应该关心太多。例如，开发者可以使用log接口打印一行日志，但这个日志最终打印到文件里还是控制台上，则需要根据运行时配置而定，开发者在写业务逻辑时不需要关心。
 
 
-### AimRT接口层中的协程
+### 接口层中的协程
 
 &emsp;&emsp;AimRT中为执行器、RPC等功能提供了原生的异步回调形式的接口，同时也基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)，为使用者提供了一套协程形式的接口。C++ executors提案预计将于C++26时被加入C++标准中，届时可能会提供选项将libunifex更换为标准库的实现。
 
 &emsp;&emsp;AimRT中协程接口的代码位置：[aimrt_module_cpp_interface/co](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co)。关于协程接口的基本用法，将在执行器、RPC等功能具体章节进行简单介绍。关于C++20协程以及libunifex库的进阶用法，请参考[C++20协程的官方文档页面](https://en.cppreference.com/w/cpp/language/coroutines)和[libunifex的官方github页面](https://github.com/facebookexperimental/libunifex)。
 
 &emsp;&emsp;请注意，协程功能是一个AimRT框架中的一个可选项，如果使用者不想使用协程的方式，也仍然能够通过异步回调类型的接口使用AimRT框架的所有基础能力。
+
+
+### 接口层中的协议
+
+***TODO待完善***
+
+&emsp;&emsp;最纯粹的AimRT-CPP-Module接口，也就是**aimrt::interface::aimrt_module_cpp_interface**这个CMake Target是不包含任何特定的协议类型的。在AimRT中，通过[aimrt_module_c_interface/util/type_support_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_c_interface/util/type_support_base.h)文件中的`aimrt_type_support_base_t`类来定义一种数据类型。
+
 
 
 ## ModuleBase：模块基类
@@ -499,10 +507,39 @@ class HelloWorldModule : public aimrt::ModuleBase {
 - [aimrt_module_cpp_interface/co/sync_wait.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/sync_wait.h)
 - [aimrt_module_cpp_interface/co/task.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/task.h)
 
-&emsp;&emsp;AimRT框架中，为执行器封装了基于C++20协程和`libunifex`库的一个协程形式接口。关于协程和`libunifex`库的详细使用方式，请参考[libunifex官方文档](https://github.com/facebookexperimental/libunifex)。本节以一些简单的示例来说明执行器-协程接口的使用方式。
+&emsp;&emsp;AimRT框架中，为执行器封装了基于C++20协程和`libunifex`库的一个协程形式接口。关于协程和`libunifex`库的详细使用方式，请参考[libunifex官方文档](https://github.com/facebookexperimental/libunifex)。在AimRT框架中的[aimrt_module_cpp_interface/co/aimrt_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)文件中，提供了一个比较重要的类：`aimrt::co::AimRTScheduler`，可以由`aimrt::executor::ExecutorRef`句柄构造。这个类将原生的AimRT执行器句柄封装成协程形式的接口句柄，其中的接口如下：
+
+```cpp
+namespace aimrt::co {
+
+// 对应AimRT框架中的一个 ExecutorRef
+class AimRTScheduler {
+ public:
+  // 由 ExecutorRef 构造
+  explicit AimRTScheduler(executor::ExecutorRef executor_ref = {}) noexcept;
+
+  // 判断是否有效
+  explicit operator bool() const { return static_cast<bool>(executor_ref_); }
+};
+
+// 辅助类，对应AimRT框架中的一个 ExecutorManagerRef
+class AimRTContext {
+ public:
+  // 由 ExecutorManagerRef 构造
+  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref = {}) noexcept;
+
+  // 从执行器名称直接获取对应执行器的 AimRTScheduler 句柄
+  AimRTScheduler GetScheduler(std::string_view executor_name) const;
+
+  // 判断是否有效
+  explicit operator bool() const;
+};
+
+}  // namespace aimrt::co
+```
 
 
-&emsp;&emsp;以下是一个简单的使用示例，演示了如何启动一个协程，并在协程中调度到指定执行器中执行任务：
+&emsp;&emsp;有了`AimRTScheduler`句柄，就可以使用`aimrt::co`命名空间下的一系列协程工具了。以下是一个简单的使用示例，演示了如何启动一个协程，并在协程中调度到指定执行器中执行任务：
 ```cpp
 #include "aimrt_module_cpp_interface/co/async_scope.h"
 #include "aimrt_module_cpp_interface/co/task.h"
@@ -516,13 +553,13 @@ class HelloWorldModule : public aimrt::ModuleBase {
   bool Initialize(aimrt::CoreRef core) override {
     core_ = core;
 
-    // 获取名为 work_executor_1_ 的执行器句柄
-    work_executor_1_ = core_.GetExecutorManager().GetExecutor("work_executor_1_");
-    AIMRT_CHECK_ERROR_THROW(work_executor_1_, "Can not get work_executor_1_");
+    // 获取名为 work_executor_1 的执行器句柄
+    work_executor_1_ = core_.GetExecutorManager().GetExecutor("work_executor_1");
+    AIMRT_CHECK_ERROR_THROW(work_executor_1_, "Can not get work_executor_1");
 
-    // 获取名为 work_executor_2_ 的执行器句柄
-    work_executor_2_ = core_.GetExecutorManager().GetExecutor("work_executor_2_");
-    AIMRT_CHECK_ERROR_THROW(work_executor_2_, "Can not get work_executor_2_");
+    // 获取名为 work_executor_2 的执行器句柄
+    work_executor_2_ = core_.GetExecutorManager().GetExecutor("work_executor_2");
+    AIMRT_CHECK_ERROR_THROW(work_executor_2_, "Can not get work_executor_2");
 
     return true;
   }
@@ -567,6 +604,9 @@ class HelloWorldModule : public aimrt::ModuleBase {
   }
 
  private:
+  auto GetLogger() { return core_.GetLogger(); }
+
+ private:
   aimrt::CoreRef core_;
   aimrt::co::AsyncScope scope_;
 
@@ -577,11 +617,72 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 &emsp;&emsp;以下这个示例则演示了如何使用Time Schedule接口，基于协程来实现定时循环：
 ```cpp
+#include "aimrt_module_cpp_interface/co/async_scope.h"
+#include "aimrt_module_cpp_interface/co/task.h"
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+#include "aimrt_module_cpp_interface/co/on.h"
+#include "aimrt_module_cpp_interface/co/schedule.h"
+#include "aimrt_module_cpp_interface/module_base.h"
 
+class HelloWorldModule : public aimrt::ModuleBase {
+ public:
+  bool Initialize(aimrt::CoreRef core) override {
+    core_ = core;
+
+    // 获取名为 time_schedule_executor 的执行器句柄
+    auto time_scheduler = core_.GetExecutorManager().GetExecutor("time_schedule_executor");
+    AIMRT_CHECK_ERROR_THROW(time_scheduler && time_schedule_executor.SupportTimerSchedule(),
+                            "Can not get time_schedule_executor");
+
+    return true;
+  }
+
+  bool Start() override {
+    // 启动一个协程，使用当前执行器（当前的Start方法，是在主线程中运行）来初始执行该协程
+    scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
+
+    return true;
+  }
+
+  aimrt::co::Task<void> MainLoop() {
+    // 获取 scheduler 句柄。在init时已经判过空了
+    auto time_scheduler = ctx_.GetScheduler("time_schedule_executor");
+
+    // 调度到 time_schedule_executor 执行器中
+    co_await co::Schedule(time_scheduler);
+
+    uint32_t count = 0;
+    while (run_flag_) {
+      count++;
+      AIMRT_INFO("Loop count : {} -------------------------", count);
+
+      // 在一定时间后再调度到 time_schedule_executor 执行器中。等效于非阻塞的sleep
+      co_await co::ScheduleAfter(time_scheduler, std::chrono::seconds(1));
+    }
+
+    AIMRT_INFO("Exit loop.");
+
+    co_return;
+  }
+
+  void ExecutorCoModule::Shutdown() {
+    // 阻塞的等待scope中所有协程执行完毕
+    co::SyncWait(scope_.complete());
+
+    AIMRT_INFO("Shutdown succeeded.");
+  }
+
+ private:
+  auto GetLogger() { return core_.GetLogger(); }
+
+ private:
+  aimrt::CoreRef core_;
+  aimrt::co::AsyncScope scope_;
+  std::atomic_bool run_flag_ = true;
+
+  co::AimRTContext ctx_;
+};
 ```
-
-
-
 
 ## logger::LoggerRef：日志句柄
 

@@ -26,6 +26,7 @@ struct convert<aimrt::runtime::core::module::ModuleManager::Options> {
     for (const auto& module_options : rhs.modules_options) {
       Node module_options_node;
       module_options_node["name"] = module_options.name;
+      module_options_node["enable"] = module_options.enable;
       if (!module_options.use_default_log_lvl)
         module_options_node["log_lvl"] =
             aimrt::runtime::core::logger::LogLevelTool::GetLogLevelName(module_options.log_lvl);
@@ -60,6 +61,9 @@ struct convert<aimrt::runtime::core::module::ModuleManager::Options> {
         Options::ModuleOptions module_options{
             .name = module_options_node["name"].as<std::string>()};
 
+        if (module_options_node["enable"])
+          module_options.enable = module_options_node["enable"].as<bool>();
+
         if (module_options_node["log_lvl"]) {
           module_options.use_default_log_lvl = false;
           module_options.log_lvl = aimrt::runtime::core::logger::LogLevelTool::GetLogLevelFromName(
@@ -67,8 +71,7 @@ struct convert<aimrt::runtime::core::module::ModuleManager::Options> {
         }
 
         if (module_options_node["cfg_file_path"]) {
-          module_options.cfg_file_path =
-              module_options_node["cfg_file_path"].as<std::string>();
+          module_options.cfg_file_path = module_options_node["cfg_file_path"].as<std::string>();
         }
 
         rhs.modules_options.emplace_back(std::move(module_options));
@@ -125,6 +128,11 @@ void ModuleManager::Initialize(YAML::Node options_node) {
     auto info = module_ptr->info(module_ptr->impl);
     const std::string& module_name = aimrt::util::ToStdString(info.name);
 
+    auto module_options = GetModuleOptions(module_name);
+    if (module_options && !module_options->enable) {
+      continue;
+    }
+
     // 检查重复模块
     auto finditr = module_wrapper_map_.find(module_name);
     AIMRT_CHECK_ERROR_THROW(finditr == module_wrapper_map_.end(),
@@ -161,6 +169,11 @@ void ModuleManager::Initialize(YAML::Node options_node) {
 
     const auto& module_name_list = module_loader.GetLoadedModuleNameList();
     for (const auto& module_name : module_name_list) {
+      auto module_options = GetModuleOptions(module_name);
+      if (module_options && !module_options->enable) {
+        continue;
+      }
+
       // 检查重复模块
       AIMRT_CHECK_ERROR_THROW(
           module_wrapper_map_.find(module_name) == module_wrapper_map_.end(),
@@ -289,21 +302,29 @@ const std::vector<const util::ModuleDetailInfo*>& ModuleManager::GetModuleDetail
   return module_detail_info_vec_;
 }
 
-void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
-  const auto& module_name = module_wrapper_ptr->info.name;
-  const auto* module_ptr = module_wrapper_ptr->module_ptr;
-
+std::optional<ModuleManager::Options::ModuleOptions> ModuleManager::GetModuleOptions(std::string_view module_name) {
   auto find_module_options_itr = std::find_if(
       options_.modules_options.begin(), options_.modules_options.end(),
       [&module_name](const auto& module_options) {
         return module_options.name == module_name;
       });
 
+  if (find_module_options_itr != options_.modules_options.end())
+    return std::make_optional(*find_module_options_itr);
+
+  return {};
+}
+
+void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
+  const auto& module_name = module_wrapper_ptr->info.name;
+  const auto* module_ptr = module_wrapper_ptr->module_ptr;
+
+  auto module_options = GetModuleOptions(module_name);
   auto& detail_info = module_wrapper_ptr->info;
-  if (find_module_options_itr != options_.modules_options.end()) {
-    detail_info.log_lvl = find_module_options_itr->log_lvl;
-    detail_info.use_default_log_lvl = find_module_options_itr->use_default_log_lvl;
-    detail_info.cfg_file_path = find_module_options_itr->cfg_file_path;
+  if (module_options) {
+    detail_info.log_lvl = module_options->log_lvl;
+    detail_info.use_default_log_lvl = module_options->use_default_log_lvl;
+    detail_info.cfg_file_path = module_options->cfg_file_path;
   } else {
     options_.modules_options.emplace_back(Options::ModuleOptions{
         .name = module_name,
@@ -312,8 +333,7 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
         .cfg_file_path = detail_info.cfg_file_path});
   }
 
-  module_proxy_configurator_(detail_info,
-                             *(module_wrapper_ptr->core_proxy_ptr));
+  module_proxy_configurator_(detail_info, *(module_wrapper_ptr->core_proxy_ptr));
 
   // 初始化模块
   bool ret = module_ptr->initialize(
