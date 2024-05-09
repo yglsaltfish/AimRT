@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cassert>
 #include <memory>
 
 #include "aimrt_module_c_interface/parameter/parameter_handle_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "util/exception.h"
 
 namespace aimrt::parameter {
 
@@ -22,8 +22,8 @@ class ParameterHandleRef {
     return base_ptr_;
   }
 
-  std::string GetParameter(std::string_view key) {
-    assert(base_ptr_);
+  std::string GetParameter(std::string_view key) const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     auto view_holder = base_ptr_->get_parameter(base_ptr_->impl, util::ToAimRTStringView(key));
     if (view_holder.parameter_val.len) {
       std::string result = util::ToStdString(view_holder.parameter_val);
@@ -34,8 +34,8 @@ class ParameterHandleRef {
     return "";
   }
 
-  void SetParameter(std::string_view key, std::string_view val) {
-    assert(base_ptr_);
+  void SetParameter(std::string_view key, std::string_view val) const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->set_parameter(base_ptr_->impl, util::ToAimRTStringView(key), util::ToAimRTStringView(val));
   }
 

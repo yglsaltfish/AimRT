@@ -65,6 +65,7 @@ class ConfiguratorManager {
   YAML::Node* root_options_node_ptr_;
 
   std::unordered_map<std::string, std::unique_ptr<ConfiguratorProxy>> cfg_proxy_map_;
+  ConfiguratorProxy default_cfg_proxy;
 };
 
 }  // namespace aimrt::runtime::core::configurator

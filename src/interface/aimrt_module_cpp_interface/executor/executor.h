@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <chrono>
 #include <stdexcept>
 #include <string_view>
@@ -8,6 +7,8 @@
 #include "aimrt_module_c_interface/executor/executor_base.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "util/exception.h"
+#include "util/time_util.h"
 
 namespace aimrt::executor {
 
@@ -25,47 +26,46 @@ class ExecutorRef {
   const aimrt_executor_base_t* NativeHandle() const { return base_ptr_; }
 
   std::string_view Type() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return aimrt::util::ToStdStringView(base_ptr_->type(base_ptr_->impl));
   }
 
   std::string_view Name() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return aimrt::util::ToStdStringView(base_ptr_->name(base_ptr_->impl));
   }
 
   bool ThreadSafe() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->is_thread_safe(base_ptr_->impl);
   }
 
   bool IsInCurrentExecutor() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->is_in_current_executor(base_ptr_->impl);
   }
 
   bool SupportTimerSchedule() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->is_support_timer_schedule(base_ptr_->impl);
   }
 
-  void Execute(Task&& task) {
-    assert(base_ptr_);
+  void Execute(Task&& task) const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->execute(base_ptr_->impl, task.NativeHandle());
   }
 
   std::chrono::system_clock::time_point Now() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return std::chrono::system_clock::time_point(
         std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
             std::chrono::nanoseconds(base_ptr_->now(base_ptr_->impl))));
   }
 
-  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
-    assert(base_ptr_);
+  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
 
-    if (!SupportTimerSchedule()) [[unlikely]]
-      throw std::runtime_error("Current executor does not support timer scheduling.");
+    AIMRT_ASSERT(SupportTimerSchedule(), "Current executor does not support timer scheduling.");
 
     base_ptr_->execute_at_ns(
         base_ptr_->impl,
@@ -76,7 +76,7 @@ class ExecutorRef {
         task.NativeHandle());
   }
 
-  void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task) {
+  void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task) const {
     ExecuteAt(
         Now() + std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(dt),
         std::move(task));

@@ -14,6 +14,13 @@
 
 namespace aimrt::common::util {
 
+constexpr uint32_t kLogLevelTrace = 0;
+constexpr uint32_t kLogLevelDebug = 1;
+constexpr uint32_t kLogLevelInfo = 2;
+constexpr uint32_t kLogLevelWarn = 3;
+constexpr uint32_t kLogLevelError = 4;
+constexpr uint32_t kLogLevelFatal = 5;
+
 class SimpleLogger {
  public:
   static uint32_t GetLogLevel() { return 0; }
@@ -85,7 +92,8 @@ class SimpleAsyncLogger {
 
     static constexpr uint32_t lvl_name_array_size =
         sizeof(lvl_name_array) / sizeof(lvl_name_array[0]);
-    if (lvl >= lvl_name_array_size) lvl = lvl_name_array_size;
+    if (lvl >= lvl_name_array_size) [[unlikely]]
+      lvl = lvl_name_array_size;
 
     size_t tid;
 #if defined(_WIN32)
@@ -150,8 +158,7 @@ struct LoggerWrapper {
   }
 
   using GetLogLevelFunc = std::function<uint32_t(void)>;
-  using LogFunc = std::function<
-      void(uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, size_t)>;
+  using LogFunc = std::function<void(uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, size_t)>;
   using GetLogBufFunc = std::function<std::tuple<char*, size_t>(void)>;
 
   GetLogLevelFunc get_log_level_func = SimpleLogger::GetLogLevel;
@@ -241,40 +248,56 @@ inline void LogImpl(const Logger& logger,
   } while (0)
 
 #define AIMRT_HL_TRACE(__lgr__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG(__lgr__, 0, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(__lgr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_DEBUG(__lgr__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG(__lgr__, 1, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(__lgr__, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_INFO(__lgr__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG(__lgr__, 2, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(__lgr__, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_WARN(__lgr__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG(__lgr__, 3, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(__lgr__, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_ERROR(__lgr__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG(__lgr__, 4, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(__lgr__, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_FATAL(__lgr__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG(__lgr__, 5, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(__lgr__, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
 #define AIMRT_HL_CHECK_TRACE(__lgr__, __expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, 0, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_CHECK_DEBUG(__lgr__, __expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, 1, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_CHECK_INFO(__lgr__, __expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, 2, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_CHECK_WARN(__lgr__, __expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, 3, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_CHECK_ERROR(__lgr__, __expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, 4, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_CHECK_FATAL(__lgr__, __expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, 5, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(__lgr__, __expr__, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
+#define AIMRT_HL_TRACE_THROW(__lgr__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_THROW(__lgr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_DEBUG_THROW(__lgr__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_THROW(__lgr__, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_INFO_THROW(__lgr__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_THROW(__lgr__, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_WARN_THROW(__lgr__, __fmt__, ...) \
+  AIMRT_HANDLE_LOG_THROW(__lgr__, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_ERROR_THROW(__lgr__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_THROW(__lgr__, 4, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_THROW(__lgr__, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_FATAL_THROW(__lgr__, __fmt__, ...) \
-  AIMRT_HANDLE_LOG_THROW(__lgr__, 5, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_THROW(__lgr__, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
+#define AIMRT_HL_CHECK_TRACE_THROW(__lgr__, __expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG_THROW(__lgr__, __expr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_CHECK_DEBUG_THROW(__lgr__, __expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG_THROW(__lgr__, __expr__, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_CHECK_INFO_THROW(__lgr__, __expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG_THROW(__lgr__, __expr__, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_HL_CHECK_WARN_THROW(__lgr__, __expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG_THROW(__lgr__, __expr__, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_CHECK_ERROR_THROW(__lgr__, __expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG_THROW(__lgr__, __expr__, 4, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG_THROW(__lgr__, __expr__, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_HL_CHECK_FATAL_THROW(__lgr__, __expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG_THROW(__lgr__, __expr__, 5, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG_THROW(__lgr__, __expr__, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
 /// Log with the default logger handle in current scope
 #ifndef AIMRT_DEFAULT_LOGGER_HANDLE
@@ -282,37 +305,53 @@ inline void LogImpl(const Logger& logger,
 #endif
 
 #define AIMRT_TRACE(__fmt__, ...) \
-  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, 0, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
 #define AIMRT_DEBUG(__fmt__, ...) \
-  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, 1, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
 #define AIMRT_INFO(__fmt__, ...) \
-  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, 2, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
 #define AIMRT_WARN(__fmt__, ...) \
-  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, 3, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
 #define AIMRT_ERROR(__fmt__, ...) \
-  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, 4, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_FATAL(__fmt__, ...) \
-  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, 5, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
-#define AIMRT_CHECK_TRAC(__expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, 0, __fmt__, ##__VA_ARGS__)
+#define AIMRT_CHECK_TRACE(__expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
 #define AIMRT_CHECK_DEBUG(__expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, 1, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
 #define AIMRT_CHECK_INFO(__expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, 2, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
 #define AIMRT_CHECK_WARN(__expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, 3, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
 #define AIMRT_CHECK_ERROR(__expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, 4, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_CHECK_FATAL(__expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, 5, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
+#define AIMRT_TRACE_THROW(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
+#define AIMRT_DEBUG_THROW(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_INFO_THROW(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_WARN_THROW(__fmt__, ...) \
+  AIMRT_HANDLE_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
 #define AIMRT_ERROR_THROW(__fmt__, ...) \
-  AIMRT_HANDLE_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, 4, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_FATAL_THROW(__fmt__, ...) \
-  AIMRT_HANDLE_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, 5, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)
 
+#define AIMRT_CHECK_TRACE_THROW(__expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelTrace, __fmt__, ##__VA_ARGS__)
+#define AIMRT_CHECK_DEBUG_THROW(__expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelDebug, __fmt__, ##__VA_ARGS__)
+#define AIMRT_CHECK_INFO_THROW(__expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelInfo, __fmt__, ##__VA_ARGS__)
+#define AIMRT_CHECK_WARN_THROW(__expr__, __fmt__, ...) \
+  AIMRT_HANDLE_CHECK_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelWarn, __fmt__, ##__VA_ARGS__)
 #define AIMRT_CHECK_ERROR_THROW(__expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, 4, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelError, __fmt__, ##__VA_ARGS__)
 #define AIMRT_CHECK_FATAL_THROW(__expr__, __fmt__, ...) \
-  AIMRT_HANDLE_CHECK_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, 5, __fmt__, ##__VA_ARGS__)
+  AIMRT_HANDLE_CHECK_LOG_THROW(AIMRT_DEFAULT_LOGGER_HANDLE, __expr__, aimrt::common::util::kLogLevelFatal, __fmt__, ##__VA_ARGS__)

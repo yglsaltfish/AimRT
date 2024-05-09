@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "util/format.h"
+
 namespace aimrt::common::util {
 
 class AimRTException : public std::exception {
@@ -21,3 +23,10 @@ class AimRTException : public std::exception {
 };
 
 }  // namespace aimrt::common::util
+
+#define AIMRT_ASSERT(__expr__, __fmt__, ...)                                                  \
+  do {                                                                                        \
+    if (!(__expr__)) [[unlikely]] {                                                           \
+      throw aimrt::common::util::AimRTException(::aimrt_fmt::format(__fmt__, ##__VA_ARGS__)); \
+    }                                                                                         \
+  } while (0)

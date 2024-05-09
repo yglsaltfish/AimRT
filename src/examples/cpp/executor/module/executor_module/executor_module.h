@@ -2,8 +2,6 @@
 
 #include <atomic>
 
-#include "aimrt_module_cpp_interface/co/async_scope.h"
-#include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/module_base.h"
 
 namespace aimrt::examples::cpp::executor::executor_module {
@@ -13,23 +11,32 @@ class ExecutorModule : public aimrt::ModuleBase {
   ExecutorModule() = default;
   ~ExecutorModule() override = default;
 
-  ModuleInfo Info() const noexcept override {
+  ModuleInfo Info() const override {
     return ModuleInfo{.name = "ExecutorModule"};
   }
 
-  bool Initialize(aimrt::CoreRef aimrt_ptr) noexcept override;
+  bool Initialize(aimrt::CoreRef aimrt_ptr) override;
 
-  bool Start() noexcept override;
+  bool Start() override;
 
-  void Shutdown() noexcept override;
+  void Shutdown() override;
 
  private:
-  aimrt::logger::LoggerRef GetLogger() { return core_.GetLogger(); }
+  auto GetLogger() { return core_.GetLogger(); }
+
+  void SimpleExecuteDemo();
+  void ThreadSafeDemo();
+  void TimeScheduleDemo();
 
  private:
   aimrt::CoreRef core_;
-  co::AsyncScope scope_;
+
+  aimrt::executor::ExecutorRef work_executor_;
+  aimrt::executor::ExecutorRef thread_safe_executor_;
+
   std::atomic_bool run_flag_ = true;
+  uint32_t loop_count_ = 0;
+  aimrt::executor::ExecutorRef time_schedule_executor_;
 };
 
 }  // namespace aimrt::examples::cpp::executor::executor_module

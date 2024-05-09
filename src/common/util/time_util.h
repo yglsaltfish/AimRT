@@ -3,6 +3,7 @@
 #include <chrono>
 #include <ctime>
 #include <string>
+#include <string_view>
 
 namespace aimrt::common::util {
 
@@ -46,7 +47,9 @@ inline uint64_t GetCurTimestampMs() {
  * @return const std::chrono::system_clock::time_point
  */
 inline const std::chrono::system_clock::time_point GetTimePointFromTimestampMs(uint64_t ms) {
-  return std::chrono::system_clock::time_point(std::chrono::milliseconds(ms));
+  return std::chrono::system_clock::time_point(
+      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+          std::chrono::milliseconds(ms)));
 }
 
 /**
@@ -75,7 +78,9 @@ inline uint64_t GetCurTimestampSec() {
  * @return const std::chrono::system_clock::time_point
  */
 inline const std::chrono::system_clock::time_point GetTimePointFromTimestampSec(uint64_t sec) {
-  return std::chrono::system_clock::time_point(std::chrono::seconds(sec));
+  return std::chrono::system_clock::time_point(
+      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+          std::chrono::seconds(sec)));
 }
 
 /**

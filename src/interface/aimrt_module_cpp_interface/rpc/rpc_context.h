@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <chrono>
 #include <cinttypes>
 #include <memory>
@@ -8,6 +7,7 @@
 
 #include "aimrt_module_c_interface/rpc/rpc_context_base.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "util/exception.h"
 
 namespace aimrt::rpc {
 
@@ -28,14 +28,14 @@ class ContextRef {
 
   // Timeout manager
   std::chrono::system_clock::time_point Deadline() const {
-    assert(base_ptr_ && base_ptr_->ops);
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
     return std::chrono::system_clock::time_point(
         std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
             std::chrono::nanoseconds(base_ptr_->ops->get_deadline_ns(base_ptr_->impl))));
   }
 
   void SetDeadline(std::chrono::system_clock::time_point deadline) {
-    assert(base_ptr_ && base_ptr_->ops);
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
     base_ptr_->ops->set_deadline_ns(
         base_ptr_->impl,
         static_cast<uint64_t>(
@@ -55,13 +55,13 @@ class ContextRef {
 
   // Some frame fields
   std::string_view GetMetaValue(std::string_view key) const {
-    assert(base_ptr_ && base_ptr_->ops);
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
     return aimrt::util::ToStdStringView(
         base_ptr_->ops->get_meta_val(base_ptr_->impl, aimrt::util::ToAimRTStringView(key)));
   }
 
   void SetMetaValue(std::string_view key, std::string_view val) {
-    assert(base_ptr_ && base_ptr_->ops);
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
     base_ptr_->ops->set_meta_val(
         base_ptr_->impl, aimrt::util::ToAimRTStringView(key), aimrt::util::ToAimRTStringView(val));
   }

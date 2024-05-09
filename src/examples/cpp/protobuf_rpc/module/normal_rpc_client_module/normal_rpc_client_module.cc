@@ -10,7 +10,7 @@
 
 namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_client_module {
 
-bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
+bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -86,7 +86,7 @@ bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool NormalRpcClientModule::Start() noexcept {
+bool NormalRpcClientModule::Start() {
   try {
     scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
@@ -98,7 +98,7 @@ bool NormalRpcClientModule::Start() noexcept {
   return true;
 }
 
-void NormalRpcClientModule::Shutdown() noexcept {
+void NormalRpcClientModule::Shutdown() {
   try {
     run_flag_ = false;
     co::SyncWait(scope_.complete());

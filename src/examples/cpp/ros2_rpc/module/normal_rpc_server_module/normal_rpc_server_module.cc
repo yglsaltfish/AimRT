@@ -4,7 +4,7 @@
 
 namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_server_module {
 
-bool NormalRpcServerModule::Initialize(aimrt::CoreRef core) noexcept {
+bool NormalRpcServerModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   SetLogger(core_.GetLogger());
@@ -31,8 +31,8 @@ bool NormalRpcServerModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool NormalRpcServerModule::Start() noexcept { return true; }
+bool NormalRpcServerModule::Start() { return true; }
 
-void NormalRpcServerModule::Shutdown() noexcept {}
+void NormalRpcServerModule::Shutdown() {}
 
 }  // namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_server_module

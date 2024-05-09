@@ -61,7 +61,7 @@ std::string generateRandomString(int minLength, int maxLength) {
   return result;
 }
 
-bool BenchmarkRpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
+bool BenchmarkRpcClientModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -105,7 +105,7 @@ bool BenchmarkRpcClientModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool BenchmarkRpcClientModule::Start() noexcept {
+bool BenchmarkRpcClientModule::Start() {
   try {
     if (options_.perf_mod == Options::PerfMod::FixedFreq) {
       scope_.spawn(co::On(co::InlineScheduler(), FixedFreqStatisticsLoop()));
@@ -121,7 +121,7 @@ bool BenchmarkRpcClientModule::Start() noexcept {
   return true;
 }
 
-void BenchmarkRpcClientModule::Shutdown() noexcept {
+void BenchmarkRpcClientModule::Shutdown() {
   try {
     run_flag_ = false;
     co::SyncWait(scope_.complete());

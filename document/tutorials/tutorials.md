@@ -11,13 +11,13 @@
 - CLI工具
   - [CLI工具简介](cli_tool/cli_tool.md)
   - [为新项目生成脚手架代码](cli_tool/gen_prj.md)
-- 模块接口
-  - [CPP接口](module_interface/cpp.md)
-  - [Python接口](module_interface/py.md)
-- 运行时接口
-  - [配置](runtime_interface/cfg.md)
-  - [CPP-App接口](runtime_interface/cpp.md)
-  - [Python-App接口](runtime_interface/py.md)
+- 接口
+  - [接口概述](interface/interface.md)
+  - [CPP模块接口](interface/cpp_module.md)
+  - [Python模块接口](interface/py_module.md)
+  - [CPP运行时接口](interface/cpp_runtime.md)
+  - [Python运行时接口](interface/py_runtime.md)
+  - [配置](interface/cfg.md)
 - 插件
   - [net_plugin](plugins/net_plugin.md)
   - [mqtt_plugin](plugins/mqtt_plugin.md)

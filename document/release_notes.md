@@ -11,3 +11,4 @@
 - 调整了example体系。
 - 优化了main_executor的性能。
 - 提供了rpc/channel统一的backend开关，参考example。
+- 提供了每个模块独立的enable开关。

@@ -116,7 +116,7 @@ static std::string Evaluate(EvaluateData* data, EvaluateDataOutput& output) {
   return ss.str();
 }
 
-bool BenchmarkSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
+bool BenchmarkSubscriberModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -157,9 +157,9 @@ bool BenchmarkSubscriberModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool BenchmarkSubscriberModule::Start() noexcept { return true; }
+bool BenchmarkSubscriberModule::Start() { return true; }
 
-void BenchmarkSubscriberModule::Shutdown() noexcept {
+void BenchmarkSubscriberModule::Shutdown() {
   subscribers_.clear();
 
   EvaluateDataOutput all_output;

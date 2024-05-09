@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cassert>
 #include <string_view>
 
 #include "aimrt_module_c_interface/configurator/configurator_base.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "util/exception.h"
 
 namespace aimrt::configurator {
 
@@ -25,7 +25,7 @@ class ConfiguratorRef {
    * @return Config file path
    */
   std::string_view GetConfigFilePath() const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return aimrt::util::ToStdStringView(base_ptr_->config_file_path(base_ptr_->impl));
   }
 

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cassert>
-
 #include "aimrt_module_c_interface/allocator/allocator_base.h"
+#include "util/exception.h"
 
 namespace aimrt::allocator {
 
@@ -18,7 +17,7 @@ class AllocatorRef {
   const aimrt_allocator_base_t* NativeHandle() const { return base_ptr_; }
 
   void* GetThreadLocalBuf(size_t buf_size) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->get_thread_local_buf(base_ptr_->impl, buf_size);
   }
 

@@ -9,7 +9,7 @@
 
 namespace aimrt::examples::cpp::parameter::parameter_module {
 
-bool ParameterModule::Initialize(aimrt::CoreRef core) noexcept {
+bool ParameterModule::Initialize(aimrt::CoreRef core) {
   // Save aimrt framework handle
   core_ = core;
 
@@ -33,7 +33,7 @@ bool ParameterModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool ParameterModule::Start() noexcept {
+bool ParameterModule::Start() {
   try {
     scope_.spawn(co::On(co::AimRTScheduler(work_executor_), SetParameterLoop()));
     scope_.spawn(co::On(co::AimRTScheduler(work_executor_), GetParameterLoop()));
@@ -46,7 +46,7 @@ bool ParameterModule::Start() noexcept {
   return true;
 }
 
-void ParameterModule::Shutdown() noexcept {
+void ParameterModule::Shutdown() {
   try {
     // Wait all coroutine complete
     run_flag_ = false;

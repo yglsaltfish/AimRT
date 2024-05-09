@@ -1,9 +1,8 @@
 #pragma once
 
-#include <cassert>
-
 #include "aimrt_module_c_interface/util/buffer_base.h"
 #include "aimrt_module_cpp_interface/util/simple_buffer_array_allocator.h"
+#include "util/exception.h"
 
 namespace aimrt::util {
 
@@ -21,17 +20,17 @@ class BufferArrayAllocatorRef {
   }
 
   void Reserve(aimrt_buffer_array_t* buffer_array, size_t new_cap) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->reserve(base_ptr_->impl, buffer_array, new_cap);
   }
 
   aimrt_buffer_t Allocate(aimrt_buffer_array_t* buffer_array, size_t size) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->allocate(base_ptr_->impl, buffer_array, size);
   }
 
   void Release(aimrt_buffer_array_t* buffer_array) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->release(base_ptr_->impl, buffer_array);
   }
 

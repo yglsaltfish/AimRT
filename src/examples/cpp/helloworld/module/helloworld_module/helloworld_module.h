@@ -13,17 +13,19 @@ class HelloWorldModule : public aimrt::ModuleBase {
   HelloWorldModule() = default;
   ~HelloWorldModule() override = default;
 
-  ModuleInfo Info() const noexcept override {
+  ModuleInfo Info() const override {
     return ModuleInfo{.name = "HelloWorldModule"};
   }
 
-  bool Initialize(aimrt::CoreRef core) noexcept override;
+  bool Initialize(aimrt::CoreRef core) override;
 
-  bool Start() noexcept override;
+  bool Start() override;
 
-  void Shutdown() noexcept override;
+  void Shutdown() override;
 
  private:
+  auto GetLogger() { return core_.GetLogger(); }
+
   co::Task<void> MainLoop();
 
  private:

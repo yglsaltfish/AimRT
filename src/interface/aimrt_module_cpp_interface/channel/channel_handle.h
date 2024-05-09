@@ -1,12 +1,12 @@
 #pragma once
 
-#include <cassert>
 #include <string_view>
 
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
 #include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
+#include "util/exception.h"
 
 namespace aimrt::channel {
 
@@ -29,7 +29,7 @@ class ContextManagerRef {
    * @return ContextSharedPtr
    */
   ContextSharedPtr NewContextSharedPtr() {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return std::shared_ptr<const aimrt_channel_context_base_t>(
         base_ptr_->new_context(base_ptr_->impl),
         [base_ptr_ = base_ptr_](const aimrt_channel_context_base_t* ptr) {
@@ -61,7 +61,7 @@ class PublisherRef {
    * @return Register result
    */
   bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->register_publish_type(base_ptr_->impl, msg_type_support);
   }
 
@@ -74,12 +74,12 @@ class PublisherRef {
   void Publish(std::string_view msg_type,
                aimrt::channel::ContextRef ctx_ref,
                const void* msg_ptr) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx_ref.NativeHandle(), msg_ptr);
   }
 
   ContextManagerRef GetContextManager() {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return ContextManagerRef(base_ptr_->get_context_manager(base_ptr_->impl));
   }
 
@@ -110,7 +110,7 @@ class SubscriberRef {
   bool Subscribe(
       const aimrt_type_support_base_t* msg_type_support,
       aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->subscribe(base_ptr_->impl, msg_type_support, callback.NativeHandle());
   }
 
@@ -130,19 +130,19 @@ class ChannelHandleRef {
   const aimrt_channel_handle_base_t* NativeHandle() const { return base_ptr_; }
 
   PublisherRef GetPublisher(std::string_view topic) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return PublisherRef(
         base_ptr_->get_publisher(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
   }
 
   SubscriberRef GetSubscriber(std::string_view topic) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return SubscriberRef(
         base_ptr_->get_subscriber(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
   }
 
   ContextManagerRef GetContextManager() {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return ContextManagerRef(base_ptr_->get_context_manager(base_ptr_->impl));
   }
 

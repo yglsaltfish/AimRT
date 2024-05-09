@@ -74,7 +74,7 @@ class RpcHandleRef {
    * @return Register result
    */
   bool RegisterService(ServiceBase* service_ptr) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
 
     for (auto& itr : service_ptr->service_func_wrapper_map_) {
       if (!base_ptr_->register_service_func(
@@ -104,7 +104,7 @@ class RpcHandleRef {
       const void* custom_type_support_ptr,
       const aimrt_type_support_base_t* req_type_support,
       const aimrt_type_support_base_t* rsp_type_support) {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->register_client_func(
         base_ptr_->impl,
         aimrt::util::ToAimRTStringView(func_name),
@@ -128,7 +128,7 @@ class RpcHandleRef {
       const void* req_ptr,
       void* rsp_ptr,
       aimrt::util::Function<aimrt_function_client_callback_ops_t>&& callback) const {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->invoke(
         base_ptr_->impl,
         aimrt::util::ToAimRTStringView(func_name),
@@ -144,7 +144,7 @@ class RpcHandleRef {
    * @return ContextSharedPtr
    */
   ContextSharedPtr NewContextSharedPtr() {
-    assert(base_ptr_);
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return std::shared_ptr<const aimrt_rpc_context_base_t>(
         base_ptr_->new_context(base_ptr_->impl),
         [base_ptr_ = base_ptr_](const aimrt_rpc_context_base_t* ptr) {

@@ -9,7 +9,7 @@ namespace aimrt::runtime::core::configurator {
 
 class ConfiguratorProxy {
  public:
-  explicit ConfiguratorProxy(std::string_view config_file_path)
+  explicit ConfiguratorProxy(std::string_view config_file_path = "")
       : config_file_path_(config_file_path),
         base_(GenBase(this)) {}
   ~ConfiguratorProxy() = default;

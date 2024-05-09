@@ -9,6 +9,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(module/real_time_module)
 endif()
 add_subdirectory(module/executor_module)
+add_subdirectory(module/executor_co_module)
 
 # pkg
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")

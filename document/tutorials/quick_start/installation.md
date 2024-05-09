@@ -22,7 +22,7 @@ AimRT比较轻量，推荐用户直接基于源码进行引用。如果要使用
   - MSVC-19.36
 
 &emsp;&emsp;请注意：
-- 在编译构建时，AimRT可能通过源码方式引用一些第三方依赖，如果出现问题，可以参考[CMake](../concepts/cmake.md)文档进行处理。
+- 在编译构建时，AimRT可能通过源码方式引用一些第三方依赖，如果出现网络问题，可以参考[CMake](../concepts/cmake.md)文档进行处理。
 - 如果要编译ROS2相关接口/插件，AimRT会通过find_package的方式在本地寻找rclcpp等依赖，请确保本地安装有[ROS2 Humble](https://docs.ros.org/en/humble/)。
 - 如果要构建Python接口、cli工具等，AimRT会通过find_package的方式在本地寻找Python依赖，请确保本地安装有Python3。
 

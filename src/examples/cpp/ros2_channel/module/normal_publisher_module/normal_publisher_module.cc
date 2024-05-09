@@ -12,7 +12,7 @@
 
 namespace aimrt::examples::cpp::ros2_channel::normal_publisher_module {
 
-bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
+bool NormalPublisherModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -46,7 +46,7 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) noexcept {
   return true;
 }
 
-bool NormalPublisherModule::Start() noexcept {
+bool NormalPublisherModule::Start() {
   try {
     scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
@@ -58,7 +58,7 @@ bool NormalPublisherModule::Start() noexcept {
   return true;
 }
 
-void NormalPublisherModule::Shutdown() noexcept {
+void NormalPublisherModule::Shutdown() {
   try {
     run_flag_ = false;
     co::SyncWait(scope_.complete());

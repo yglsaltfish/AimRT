@@ -175,6 +175,8 @@ class AimRTScheduler {
     return a.executor_ref_.NativeHandle() != b.executor_ref_.NativeHandle();
   }
 
+  explicit operator bool() const { return static_cast<bool>(executor_ref_); }
+
  private:
   executor::ExecutorRef executor_ref_;
 };
@@ -182,12 +184,14 @@ class AimRTScheduler {
 // Context
 class AimRTContext {
  public:
-  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref) noexcept
+  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref = {}) noexcept
       : executor_manager_ref_(executor_manager_ref) {}
 
   AimRTScheduler GetScheduler(std::string_view executor_name) {
     return AimRTScheduler(executor_manager_ref_.GetExecutor(executor_name));
   }
+
+  explicit operator bool() const { return static_cast<bool>(executor_manager_ref_); }
 
  private:
   executor::ExecutorManagerRef executor_manager_ref_;
@@ -368,18 +372,16 @@ class AimRTScheduler {
   };
 
  public:
-  explicit AimRTScheduler(executor::ExecutorRef executor_ref) noexcept
+  explicit AimRTScheduler(executor::ExecutorRef executor_ref = {}) noexcept
       : executor_ref_(executor_ref) {}
 
   Task schedule() const noexcept { return Task(executor_ref_); }
 
-  SchedulerAfterTask schedule_after(
-      const std::chrono::nanoseconds& dt) const noexcept {
+  SchedulerAfterTask schedule_after(const std::chrono::nanoseconds& dt) const noexcept {
     return SchedulerAfterTask(executor_ref_, dt);
   }
 
-  SchedulerAtTask schedule_at(
-      const std::chrono::system_clock::time_point& tp) const noexcept {
+  SchedulerAtTask schedule_at(const std::chrono::system_clock::time_point& tp) const noexcept {
     return SchedulerAtTask(executor_ref_, tp);
   }
 
@@ -391,6 +393,8 @@ class AimRTScheduler {
     return a.executor_ref_.NativeHandle() != b.executor_ref_.NativeHandle();
   }
 
+  explicit operator bool() const { return static_cast<bool>(executor_ref_); }
+
  private:
   executor::ExecutorRef executor_ref_;
 };
@@ -398,12 +402,14 @@ class AimRTScheduler {
 // Context
 class AimRTContext {
  public:
-  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref) noexcept
+  explicit AimRTContext(executor::ExecutorManagerRef executor_manager_ref = {}) noexcept
       : executor_manager_ref_(executor_manager_ref) {}
 
-  AimRTScheduler GetScheduler(std::string_view executor_name) {
+  AimRTScheduler GetScheduler(std::string_view executor_name) const {
     return AimRTScheduler(executor_manager_ref_.GetExecutor(executor_name));
   }
+
+  explicit operator bool() const { return static_cast<bool>(executor_manager_ref_); }
 
  private:
   executor::ExecutorManagerRef executor_manager_ref_;
