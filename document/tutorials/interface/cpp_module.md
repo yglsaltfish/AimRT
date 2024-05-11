@@ -77,6 +77,8 @@ class ModuleBase {
 
 &emsp;&emsp;其中`aimrt::ModuleInfo`结构体声明如下：
 ```cpp
+namespace aimrt {
+
 struct ModuleInfo {
   std::string_view name;  // 必须项
 
@@ -88,35 +90,37 @@ struct ModuleInfo {
   std::string_view author;       // 可选
   std::string_view description;  // 可选
 };
+
+}  // namespace aimrt
 ```
 
 &emsp;&emsp;关于这些模块要实现虚接口，说明如下：
 - `ModuleInfo Info()`：用于AimRT框架获取模块信息，包括模块名称、模块版本等。
-  - AimRT框架会在加载模块时调用此接口，读取返回的模块信息。
-  - `ModuleInfo`结构中除了`name`是必须项，其余都是可选项。
-  - 如果模块在其中抛了异常，等效于给上层返回一个空ModuleInfo。
+  - AimRT框架会在加载模块时调用此接口，读取模块信息。
+  - `ModuleInfo`结构中除`name`是必须项，其余都是可选项。
+  - 如果模块在其中抛了异常，等效于返回一个空ModuleInfo。
 - `bool Initialize(CoreRef core)`：用于初始化模块。
-  - AimRT框架会在Initialize阶段依次调用各个模块的Initialize方法。
-  - AimRT框架会保证在主线程中调用模块的Initialize方法。模块不应阻塞Initialize方法太久。
-  - AimRT框架在调用模块的Initialize方法时，会传入一个CoreRef句柄，模块可以存储此句柄，并在后续通过此句柄来调用框架的组件。
-  - 在AimRT框架调用模块的Initialize方法之前，AimRT框架保证所有的组件（例如配置、日志等）都已经完成Initialize，但还未Start。
-  - 如果模块在Initialize方法中抛了异常，等效于返回了false。
+  - AimRT框架在Initialize阶段，依次调用各模块的Initialize方法。
+  - AimRT框架保证在主线程中调用模块的Initialize方法，模块不应阻塞Initialize方法太久。
+  - AimRT框架在调用模块Initialize方法时，会传入一个CoreRef句柄，模块可以存储此句柄，并在后续通过它调用框架的功能。
+  - 在AimRT框架调用模块的Initialize方法之前，保证所有的组件（例如配置、日志等）都已经完成Initialize，但还未Start。
+  - 如果模块在Initialize方法中抛了异常，等效于返回false。
   - 如果有任何模块在AimRT框架调用其Initialize方法时返回了false，则整个AimRT框架会Initialize失败。
 - `bool Start()`：用于启动模块。
-  - AimRT框架会在Start阶段依次调用各个模块的Start方法。
-  - AimRT框架会保证在主线程中调用模块的Start方法。模块不应阻塞Start方法太久。
-  - 在AimRT框架调用模块的Start方法之前，AimRT框架保证所有的组件（例如配置、日志等）都已经进入Start阶段。
+  - AimRT框架在Start阶段依次调用各模块的Start方法。
+  - AimRT框架保证在主线程中调用模块的Start方法，模块不应阻塞Start方法太久。
+  - 在AimRT框架调用模块的Start方法之前，保证所有的组件（例如配置、日志等）都已经进入Start阶段。
   - 如果模块在Start方法中抛了异常，等效于返回了false。
   - 如果有任何模块在AimRT框架调用其Start方法时返回了false，则整个AimRT框架会Start失败。
 - `void Shutdown()`：用于停止模块，一般用于整个进程的优雅退出。
-  - AimRT框架会在Shutdown阶段依次调用各个模块的Shutdown方法。
-  - AimRT框架会保证在主线程中调用模块的Shutdown方法。模块不应阻塞Shutdown方法太久。
+  - AimRT框架在Shutdown阶段依次调用各个模块的Shutdown方法。
+  - AimRT框架保证在主线程中调用模块的Shutdown方法，模块不应阻塞Shutdown方法太久。
   - AimRT框架可能在任何阶段直接进入Shutdown阶段。
-  - 如果模块在其中抛了异常，框架会catch住并直接返回。
-  - 在AimRT框架调用模块的Shutdown方法之后，AimRT框架的各个的组件才会Shutdown。
+  - 如果模块在Shutdown方法中抛了异常，框架会catch住并直接返回。
+  - 在AimRT框架调用模块的Shutdown方法之后，各个组件（例如配置、日志等）才会Shutdown。
 
 
-&emsp;&emsp;一个简单的示例如下：
+&emsp;&emsp;以下是一个简单的示例，实现了一个最基础的HelloWorld模块：
 ```cpp
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -126,15 +130,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
   ~HelloWorldModule() override = default;
 
   ModuleInfo Info() const override {
-    return ModuleInfo{
-        .name = "HelloWorldModule",      // 必须项
-        .major_version = MAJOR_VERSION,  // 可选
-        .minor_version = MINOR_VERSION,  // 可选
-        .patch_version = PATCH_VERSION,  // 可选
-        .build_version = BUILD_VERSION,  // 可选
-        .author = "wtduio",              // 可选
-        .description = "Demo module"     // 可选
-    };
+    return ModuleInfo{.name = "HelloWorldModule"};
   }
 
   bool Initialize(aimrt::CoreRef core) override { return true; }
@@ -149,16 +145,13 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 &emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/core.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/core.h)
 
-&emsp;&emsp;在模块的`Initialize`方法签名中，AimRT框架会传入一个`aimrt::CoreRef`句柄变量，模块通过该变量的一些接口调用框架的功能。`aimrt::CoreRef`中提供的接口如下：
+&emsp;&emsp;在模块的`Initialize`方法中，AimRT框架会传入一个`aimrt::CoreRef`句柄，模块通过该句柄的一些接口调用框架的功能。`aimrt::CoreRef`中提供的核心接口如下：
 
 ```cpp
 namespace aimrt {
 
 class CoreRef {
  public:
-  // 判断是否有效
-  explicit operator bool() const;
-
   // 获取所属模块的信息
   ModuleInfo Info() const;
 
@@ -209,16 +202,13 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
 &emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/configurator/configurator.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)
 
-&emsp;&emsp;模块可以通过调用`CoreRef`句柄的`GetConfigurator()`接口，获取`aimrt::configurator::ConfiguratorRef`句柄，并通过其完成一些配置相关的功能。其提供的接口如下：
+&emsp;&emsp;模块可以通过调用`CoreRef`句柄的`GetConfigurator()`接口，获取`aimrt::configurator::ConfiguratorRef`句柄，通过其使用一些配置相关的功能。其提供的核心接口如下：
 
 ```cpp
 namespace aimrt::configurator {
 
 class ConfiguratorRef {
  public:
-  // 判断是否有效
-  explicit operator bool() const;
-
   // 获取模块配置文件路径
   std::string_view GetConfigFilePath() const;
 };
@@ -243,7 +233,7 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
   // 获取配置路径
   std::string_view cfg_file_path = configurator.GetConfigFilePath();
 
-  // 基于yaml来解析此文件
+  // 根据用户实际使用的文件格式来解析配置文件。本例中基于yaml来解析
   YAML::Node cfg_node = YAML::LoadFile(std::string(cfg_file_path));
 
   // ...
@@ -275,9 +265,6 @@ namespace aimrt::executor {
 
 class ExecutorManagerRef {
  public:
-  // 判断是否有效
-  explicit operator bool() const;
-
   // 获取执行器句柄
   ExecutorRef GetExecutor(std::string_view executor_name) const;
 };
@@ -285,16 +272,13 @@ class ExecutorManagerRef {
 }  // namespace aimrt::executor
 ```
 
-&emsp;&emsp;使用者可以调用`ExecutorManagerRef`中的`GetExecutor`方法，获取指定名称的`aimrt::configurator::ExecutorRef`句柄，以调用执行器相关功能。`ExecutorRef`的接口如下：
+&emsp;&emsp;使用者可以调用`ExecutorManagerRef`中的`GetExecutor`方法，获取指定名称的`aimrt::configurator::ExecutorRef`句柄，以调用执行器相关功能。`ExecutorRef`的核心接口如下：
 
 ```cpp
 namespace aimrt::executor {
 
 class ExecutorRef {
  public:
-  // 判断是否有效
-  explicit operator bool() const;
-
   // 类型
   std::string_view Type() const;
 
@@ -506,7 +490,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
 - [aimrt_module_cpp_interface/co/sync_wait.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/sync_wait.h)
 - [aimrt_module_cpp_interface/co/task.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/task.h)
 
-&emsp;&emsp;AimRT框架中，为执行器封装了基于C++20协程和`libunifex`库的一个协程形式接口。关于协程和`libunifex`库的详细使用方式，请参考[libunifex官方文档](https://github.com/facebookexperimental/libunifex)。在AimRT框架中的[aimrt_module_cpp_interface/co/aimrt_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)文件中，提供了一个比较重要的类：`aimrt::co::AimRTScheduler`，可以由`aimrt::executor::ExecutorRef`句柄构造。这个类将原生的AimRT执行器句柄封装成协程形式的接口句柄，其中的接口如下：
+&emsp;&emsp;AimRT框架中，为执行器封装了基于C++20协程和`libunifex`库的一个协程形式接口。关于协程和`libunifex`库的详细使用方式，请参考[libunifex官方文档](https://github.com/facebookexperimental/libunifex)。在AimRT框架中的[aimrt_module_cpp_interface/co/aimrt_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)文件中，提供了一个比较重要的类：`aimrt::co::AimRTScheduler`，可以由`aimrt::executor::ExecutorRef`句柄构造。这个类将原生的AimRT执行器句柄封装成协程形式的接口句柄，其中的核心接口如下：
 
 ```cpp
 namespace aimrt::co {
@@ -516,9 +500,6 @@ class AimRTScheduler {
  public:
   // 由 ExecutorRef 构造
   explicit AimRTScheduler(executor::ExecutorRef executor_ref = {}) noexcept;
-
-  // 判断是否有效
-  explicit operator bool() const { return static_cast<bool>(executor_ref_); }
 };
 
 // 辅助类，对应AimRT框架中的一个 ExecutorManagerRef
@@ -529,9 +510,6 @@ class AimRTContext {
 
   // 从执行器名称直接获取对应执行器的 AimRTScheduler 句柄
   AimRTScheduler GetScheduler(std::string_view executor_name) const;
-
-  // 判断是否有效
-  explicit operator bool() const;
 };
 
 }  // namespace aimrt::co
@@ -782,15 +760,12 @@ int Main() {
 &emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/logger/logger.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/logger/logger.h)
 
 
-&emsp;&emsp;在AimRT中，模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`aimrt::logger::LoggerRef`句柄，这是一个包含`GetLogLevel`和`Log`接口的类，满足上一节中对日志句柄的要求，可以直接作为日志宏的参数。其接口定义如下：
+&emsp;&emsp;在AimRT中，模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`aimrt::logger::LoggerRef`句柄，这是一个包含`GetLogLevel`和`Log`接口的类，满足上一节中对日志句柄的要求，可以直接作为日志宏的参数。其核心接口如下：
 ```cpp
 namespace aimrt::logger {
 
 class LoggerRef {
  public:
-  // 判断是否有效
-  explicit operator bool() const;
-
   // 获取日志等级
   uint32_t GetLogLevel() const;
 
@@ -839,16 +814,13 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 &emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/parameter/parameter_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/parameter/parameter_handle.h)
 
-&emsp;&emsp;AimRT中提供了一个简单的模块级kv参数功能，模块可以通过调用`CoreRef`句柄的`GetParameterHandle()`接口，获取`aimrt::parameter::ParameterHandleRef`句柄，来使用此功能。该句柄提供的接口如下：
+&emsp;&emsp;AimRT中提供了一个简单的模块级kv参数功能，模块可以通过调用`CoreRef`句柄的`GetParameterHandle()`接口，获取`aimrt::parameter::ParameterHandleRef`句柄，来使用此功能。该句柄提供的核心接口如下：
 
 ```cpp
 namespace aimrt::parameter {
 
 class ParameterHandleRef {
  public:
-  // 判断是否有效
-  explicit operator bool() const { return (base_ptr_ != nullptr); }
-
   // 获取参数
   std::string GetParameter(std::string_view key) const;
 
@@ -872,8 +844,6 @@ class ParameterHandleRef {
 
 &emsp;&emsp;一个简单的使用示例如下：
 ```cpp
-#include "yaml-cpp/yaml.h"
-
 bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
   // 获取参数句柄
   auto parameter_handle = core_.GetParameterHandle();
