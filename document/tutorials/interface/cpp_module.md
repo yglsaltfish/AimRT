@@ -1,6 +1,8 @@
 
 # Module接口-Cpp版本
 
+[TOC]
+
 ## 简介
 
 &emsp;&emsp;AimRT为逻辑实现阶段的`Module`开发提供了一套CPP接口层，CMake Target名称为 **aimrt::interface::aimrt_module_cpp_interface**，代码见[aimrt_module_cpp_interface](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/interface/aimrt_module_cpp_interface)，使用者在开发`Module`时只需要链接这个接口层库即可，可以与AimRT的实现细节相隔离。此接口层库的依赖只有两个：
@@ -39,10 +41,11 @@
 
 ### 接口层中的协议
 
-***TODO待完善***
+&emsp;&emsp;最纯粹的AimRT-CPP-Module接口，也就是**aimrt::interface::aimrt_module_cpp_interface**这个CMake Target，是不包含任何特定的协议类型的。在AimRT中，通过[aimrt_module_c_interface/util/type_support_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_c_interface/util/type_support_base.h)文件中的`aimrt_type_support_base_t`类来定义一种数据类型，其中定义了一个数据类型的应该实现的基本接口，包括名称、创建/销毁、序列化/反序列化等。使用者可以通过实现这些接口来自定义一种数据类型，也可以直接使用AimRT官方支持的两种数据类型：**Protobuf**和**ROS2 Message**。如果要使用它们，需要分别引用对应的CMake Target：
+- 使用**Protobuf**类型需要引用的CMake Target：**aimrt::interface::aimrt_module_protobuf_interface**
+- 使用**ROS2 Message**类型需要引用的CMake Target：**aimrt::interface::aimrt_module_ros2_interface**
 
-&emsp;&emsp;最纯粹的AimRT-CPP-Module接口，也就是**aimrt::interface::aimrt_module_cpp_interface**这个CMake Target是不包含任何特定的协议类型的。在AimRT中，通过[aimrt_module_c_interface/util/type_support_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_c_interface/util/type_support_base.h)文件中的`aimrt_type_support_base_t`类来定义一种数据类型。
-
+&emsp;&emsp;一般在Channel或RPC功能中需要使用到具体的协议类型，所以具体的协议使用方式（包括代码生成、接口使用等）请参考Channel或RPC功能的对应文档章节。
 
 
 ## ModuleBase：模块基类
@@ -248,10 +251,6 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
   return true;
 }
 ```
-
-## allocator::AllocatorRef：内存分配器句柄
-
-***TODO：Allocator功能还在完善中，暂不推荐直接使用***
 
 ## executor::ExecutorManagerRef：执行器句柄
 
@@ -835,14 +834,6 @@ class HelloWorldModule : public aimrt::ModuleBase {
 };
 ```
 
-## rpc::RpcHandleRef：RPC句柄
-
-***TODO待完善***
-
-## channel::ChannelHandleRef：Channel句柄
-
-***TODO待完善***
-
 ## parameter::ParameterHandleRef：参数句柄
 
 
@@ -902,4 +893,17 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 ```
 
 &emsp;&emsp;除了通过本小节所介绍的CPP模块接口中的参数接口来设置/获取参数，使用者也可以通过parameter_plugin，实现通过RPC或者HTTP等方式来设置/获取参数的功能。具体请参考parameter_plugin的文档章节。
+
+
+## allocator::AllocatorRef：内存分配器句柄
+
+***TODO：Allocator功能还在完善中，暂不推荐直接使用***
+
+## rpc::RpcHandleRef：RPC句柄
+
+***TODO待完善***
+
+## channel::ChannelHandleRef：Channel句柄
+
+***TODO待完善***
 
