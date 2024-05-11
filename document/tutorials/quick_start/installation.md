@@ -1,6 +1,9 @@
 
 # 引用与安装
 
+[TOC]
+
+
 &emsp;&emsp;您可以通过两种方式引用AimRT：
 - 基于CMake FetchContent，通过源码进行引用【推荐】
 - 安装后，基于CMake find_package进行引用
