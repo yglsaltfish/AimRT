@@ -197,7 +197,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
                   .build_version = info.build_version,
                   .author = aimrt::util::ToStdString(info.author),
                   .description = aimrt::util::ToStdString(info.description)},
-              .loader_ptr = module_loader_itr.second.get(),
+              .loader_ptr = &module_loader,
               .module_ptr = module_ptr,
               .core_proxy_ptr = std::make_unique<CoreProxy>(info)});
 

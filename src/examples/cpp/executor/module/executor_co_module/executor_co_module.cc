@@ -83,7 +83,7 @@ co::Task<void> ExecutorCoModule::ThreadSafeDemo() {
     co_return;
   };
 
-  for (size_t ii; ii < 10000; ++ii) {
+  for (size_t ii = 0; ii < 10000; ++ii) {
     scope.spawn(co::On(thread_safe_scheduler, task()));
   }
 
