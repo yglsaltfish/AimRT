@@ -60,12 +60,11 @@ target_link_libraries(
 
 ## 安装后，基于CMake find_package进行引用
 
-***TODO待完善***
+***TODO，此方式还待完善，暂不建议使用***
 
 ### 安装方式一：从源码构建安装
 
 &emsp;&emsp;首先通过git等方式下载源码，然后基于CMake进行构建编译，在构建时传入`CMAKE_INSTALL_PREFIX`选项指定安装地址，构建完成后执行install安装。
-
 
 ### 安装方式二：从二进制包安装
 

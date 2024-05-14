@@ -98,14 +98,14 @@ BarModule:
   bar_key: bar_val
 ```
 
-&emsp;&emsp;使用时请注意：
-- `aimrt.module.pkgs[i].path`用于配置要加载的Pkg动态库路径。不允许出现重复的Pkg路径。如果Pkg文件不存在，AimRT进程会抛出异常。
-- `aimrt.module.pkgs[i].disable_module`用于屏蔽Pkg动态库中指定名称的模块。
-- `aimrt.module.modules[i].name`表示模块名称。不允许出现重复的模块名称。
-- `aimrt.module.modules[i].log_lvl`用以配置模块日志等级。
+&emsp;&emsp;使用时请注意，在`aimrt.module`节点下：
+- `pkgs[i].path`用于配置要加载的Pkg动态库路径。不允许出现重复的Pkg路径。如果Pkg文件不存在，AimRT进程会抛出异常。
+- `pkgs[i].disable_module`用于屏蔽Pkg动态库中指定名称的模块。
+- `modules[i].name`表示模块名称。不允许出现重复的模块名称。
+- `modules[i].log_lvl`用以配置模块日志等级。
   - 如果未配置此项，则默认值是`aimrt.log.default_module_lvl`节点所配置的值。
   - 关于可以配置的日志等级，请参考`aimrt.log`日志章节。
-- `aimrt.module.modules[i].cfg_file_path`用以配置自定义模块配置文件路径，此处配置关系到Module接口中`configurator`组件`config_file_path`方法返回的结果，其规则如下：
+- `modules[i].cfg_file_path`用以配置自定义模块配置文件路径，此处配置关系到Module接口中`configurator`组件`config_file_path`方法返回的结果，其规则如下：
   - 如果使用者配置了此项，则`configurator`组件的`config_file_path`方法将返回此处配置的字符串内容；
   - 如果使用者未配置此项，且AimRT框架配置文件中也不存在以该模块名称命名的根节点，则`configurator`组件的`config_file_path`方法将返回空字符串。
   - 如果使用者未配置此项，但AimRT框架配置文件中存在以该模块名称命名的根节点，则`configurator`组件的`config_file_path`方法将返回一个临时配置文件路径，此临时配置文件将包含AimRT框架配置文件该模块名称节点下的内容。
@@ -129,10 +129,10 @@ aimrt:
     temp_cfg_path: ./cfg/tmp # 【可选】生成的临时模块配置文件存放路径
 ```
 
-&emsp;&emsp;使用说明如下：
-- `aimrt.configurator.temp_cfg_path`用于配置生成的临时模块配置文件存放路径。
+&emsp;&emsp;`aimrt.configurator`节点的使用说明如下：
+- `temp_cfg_path`用于配置生成的临时模块配置文件存放路径。
   - 需要配置一个目录形式的路径。如果配置的目录不存在，则AimRT框架会创建一个。如果创建失败，会抛异常。
-  - 如果使用者未为某个模块配置该项，但AimRT框架配置文件中存在以该模块名称命名的根节点，框架会在`aimrt.configurator.temp_cfg_path`所配置的路径下为该模块生成一个临时配置文件，将AimRT框架配置文件中该模块的配置拷贝到此临时配置文件中。
+  - 如果使用者未为某个模块配置该项，但AimRT框架配置文件中存在以该模块名称命名的根节点，框架会在`temp_cfg_path`所配置的路径下为该模块生成一个临时配置文件，将AimRT框架配置文件中该模块的配置拷贝到此临时配置文件中。
 
 
 ## `aimrt.plugin`：插件
@@ -160,10 +160,10 @@ aimrt:
           yyy_key: yyy_val
 ```
 
-&emsp;&emsp;注意点如下：
-- `aimrt.plugin.plugins[i].name`用于配置插件名称。不允许出现重复的插件名称。
-- 如果配置了`aimrt.plugin.plugins[i].path`，AimRT框架会从该路径下加载对应的插件动态库文件。如果使用者基于App模式硬编码注册插件，则不需要配置此项。
-- `aimrt.plugin.plugins[i].options`是AimRT传递给插件的初始化参数，这部分配置格式由各个插件定义，请参考对应插件的文档。
+&emsp;&emsp;`aimrt.plugin`使用注意点如下：
+- `plugins[i].name`用于配置插件名称。不允许出现重复的插件名称。
+- 如果配置了`plugins[i].path`，AimRT框架会从该路径下加载对应的插件动态库文件。如果使用者基于App模式硬编码注册插件，则不需要配置此项。
+- `plugins[i].options`是AimRT传递给插件的初始化参数，这部分配置格式由各个插件定义，请参考对应插件的文档。
 
 
 
@@ -188,11 +188,11 @@ aimrt:
     thread_bind_cpu: [0, 1] # 【可选】绑核配置
 ```
 
-&emsp;&emsp;使用注意点如下：
-- `aimrt.main_thread.name`配置了主线程名称，在实现时调用了操作系统的一些API。如果操作系统不支持，则此项配置无效。
-- `aimrt.main_thread.thread_sched_policy`配置了线程调度策略，通过调用操作系统的API来实现。目前仅在Linux下支持，在其他操作系统上此配置无效。
+&emsp;&emsp;`aimrt.main_thread`使用注意点如下：
+- `name`配置了主线程名称，在实现时调用了操作系统的一些API。如果操作系统不支持，则此项配置无效。
+- `thread_sched_policy`配置了线程调度策略，通过调用操作系统的API来实现。目前仅在Linux下支持，在其他操作系统上此配置无效。
   - 在Linux下通过调用`pthread_setschedparam`这个API来配置。支持的方式包括：`SCHED_OTHER`、`SCHED_FIFO:xx`、`SCHED_RR:xx`。`xx`为该模式下的权重值。详细的解释请参考[pthread_setschedparam官方文档](https://man7.org/linux/man-pages/man3/pthread_setschedparam.3.html)。
-- `aimrt.main_thread.thread_bind_cpu`配置了绑核策略，通过调用操作系统的API来实现。目前仅在Linux下支持，在其他操作系统上此配置无效。
+- `thread_bind_cpu`配置了绑核策略，通过调用操作系统的API来实现。目前仅在Linux下支持，在其他操作系统上此配置无效。
   - 在Linux下通过调用`pthread_setaffinity_np`这个API来配置，直接在数组中配置CPU ID即可。参考[pthread_setaffinity_np官方文档](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html)。
 
 ## `aimrt.executor`：执行器
@@ -222,10 +222,10 @@ aimrt:
           thread_num: 1
 ```
 
-&emsp;&emsp;执行器的配置说明如下：
-- `aimrt.executor.executors[i].name`表示执行器名称。不允许出现重复的执行器名称。
-- `aimrt.executor.executors[i].type`表示执行器类型。AimRT官方提供了几种执行器类型，部分插件也提供了一些执行器类型。
-- `aimrt.executor.executors[i].options`是AimRT传递给各个执行器的初始化参数，这部分配置格式由各个执行器类型定义，请参考对应执行器类型的文档。
+&emsp;&emsp;`aimrt.executor`的配置说明如下：
+- `executors[i].name`表示执行器名称。不允许出现重复的执行器名称。
+- `executors[i].type`表示执行器类型。AimRT官方提供了几种执行器类型，部分插件也提供了一些执行器类型。
+- `executors[i].options`是AimRT传递给各个执行器的初始化参数，这部分配置格式由各个执行器类型定义，请参考对应执行器类型的文档。
 
 ### `asio_thread`执行器
 
@@ -414,11 +414,11 @@ aimrt:
           filename: examples_cpp_executor_real_time.log
 ```
 
-&emsp;&emsp;日志的配置说明如下：
-- `aimrt.log.core_lvl`表示AimRT运行时内核的日志等级，内核日志一般设为Info级别即可。
-- `aimrt.log.default_module_lvl`默认的模块日志等级。
-- `aimrt.log.backends[i].type`是日志后端的类型。AimRT官方提供了几种日志后端，部分插件也提供了一些日志后端类型。
-- `aimrt.log.backends[i].options`是AimRT传递给各个日志后端的初始化参数，这部分配置格式由各个日志后端类型定义，请参考对应日志后端类型的文档。
+&emsp;&emsp;`aimrt.log`的配置说明如下：
+- `core_lvl`表示AimRT运行时内核的日志等级，内核日志一般设为Info级别即可。
+- `default_module_lvl`默认的模块日志等级。
+- `backends[i].type`是日志后端的类型。AimRT官方提供了几种日志后端，部分插件也提供了一些日志后端类型。
+- `backends[i].options`是AimRT传递给各个日志后端的初始化参数，这部分配置格式由各个日志后端类型定义，请参考对应日志后端类型的文档。
 
 
 ### `console`控制台日志后端

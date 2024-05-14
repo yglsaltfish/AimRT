@@ -24,9 +24,30 @@
 - 请注意，AimRT仅验证了默认参数中配置的各个第三方依赖的版本，如果您需要升级或降级这些第三方依赖的版本，请自行保证兼容性和稳定性。
 
 ## AimRT的CMake选项
-&emsp;&emsp;AimRT框架由其interface层、runtime主体，加上多个插件、工具共同组成，在构建时可以通过配置CMake选项，选择其中一部分或全部进行构建。详细的CMake选项列表：
+&emsp;&emsp;AimRT框架由其interface层、runtime主体，加上多个插件、工具共同组成，在构建时可以通过配置CMake选项，选择其中一部分或全部进行构建。详细的CMake选项列表如下：
 
-***TODO待完善***
+|  CMake Option名称                     | 类型  | 默认值 | 作用 |
+|  ----                                 | ----  | ----  | ----  |
+|  AIMRT_BUILD_TESTS                    | BOOL  | OFF   | 是否编译测试  |
+|  AIMRT_BUILD_EXAMPLES                 | BOOL  | OFF   | 是否编译示例  |
+|  AIMRT_BUILD_DOCUMENT                 | BOOL  | OFF   | 是否构建文档  |
+|  AIMRT_BUILD_RUNTIME                  | BOOL  | ON    | 是否编译运行时  |
+|  AIMRT_BUILD_CLI_TOOLS                | BOOL  | OFF   | 是否编译cli工具  |
+|  AIMRT_BUILD_PYTHON_RUNTIME           | BOOL  | OFF   | 是否编译Python运行时  |
+|  AIMRT_USE_FMT_LIB                    | BOOL  | ON    | 是否使用Fmt库  |
+|  AIMRT_BUILD_WITH_PROTOBUF            | BOOL  | ON    | 是否使用Protobuf库  |
+|  AIMRT_USE_LOCAL_PROTOC_COMPILER      | BOOL  | OFF   | 是否使用本地的protoc工具  |
+|  AIMRT_USE_PROTOC_PYTHON_PLUGIN       | BOOL  | OFF   | 是否使用Python版本protoc插件  |
+|  AIMRT_BUILD_WITH_ROS2                | BOOL  | OFF   | 是否使用ROS2 Humble  |
+|  AIMRT_BUILD_NET_PLUGIN               | BOOL  | OFF   | 是否编译Net插件  |
+|  AIMRT_BUILD_SM_PLUGIN                | BOOL  | OFF   | 是否编译共享内存插件 |
+|  AIMRT_BUILD_ROS2_PLUGIN              | BOOL  | OFF   | 是否编译ROS2 Humble插件  |
+|  AIMRT_BUILD_LCM_PLUGIN               | BOOL  | OFF   | 是否编译LCM插件  |
+|  AIMRT_BUILD_MQTT_PLUGIN              | BOOL  | OFF   | 是否编译Mqtt插件  |
+|  AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN   | BOOL  | OFF   | 是否编译录播插件  |
+|  AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN  | BOOL  | OFF   | 是否编译time manipulator插件  |
+|  AIMRT_BUILD_PARAMETER_PLUGIN         | BOOL  | OFF   | 是否编译parameter插件  |
+|  AIMRT_EXECUTOR_USE_STDEXEC           | BOOL  | OFF   | 是否使用stdexec库（实验性）  |
 
 
 ## AimRT中的CMake Target

@@ -5,29 +5,37 @@
 
 ## `AimRT`框架包含的内容
 
-&emsp;&emsp;`AimRT`框架中包含的内容如下：
-- common: 一些基础的、可以直接使用的通用组件，例如string、log接口、buffer等。
-- interface: `AimRT`接口
-  - aimrt_module_c_interface： `Module`开发接口，C版本
-  - aimrt_module_cpp_interface： `Module`开发接口，CPP版本，对C版本的封装
-  - aimrt_module_ros2_interface： `Module`开发接口，与ROS2相关的部分，基于CPP版本接口
-  - aimrt_module_protobuf_interface: `Module`开发接口，与protobuf相关的部分，基于CPP版本接口
-  - aimrt_pkg_c_interface: `Pkg`开发接口，C版本
-  - aimrt_core_plugin_interface: 插件开发接口
-- runtime: `AimRT`运行时
-  - core: 运行时核心库
-  - main: 基于core实现的一个主进程`aimrt_main`
-  - python_runtime: 基于pybind11封装的python版本运行时
-- plugins: `AimRT`官方插件
-- protocols: 一些`AimRT`官方的标准协议
-- examples: 示例
-  - cpp: 基于CPP版本`Module`接口开发的相关示例
-  - python: 基于Python版本`Module`接口开发的相关示例
-  - plugins: 一些各方插件的使用示例
-- tools: 一些配套工具
+&emsp;&emsp;参考[src](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src)下的目录，`AimRT`框架中包含的内容如下：
+- **common**: 一些基础的、可以直接使用的通用组件，例如string、log接口、buffer等；
+- **interface**: `AimRT`接口层；
+  - **aimrt_module_c_interface**： `Module`开发接口，C版本；
+  - **aimrt_module_cpp_interface**： `Module`开发接口，CPP版本，对C版本的封装；
+  - **aimrt_module_ros2_interface**： `Module`开发接口，与ROS2相关的部分，基于CPP版本接口；
+  - **aimrt_module_protobuf_interface**: `Module`开发接口，与protobuf相关的部分，基于CPP版本接口；
+  - **aimrt_pkg_c_interface**: `Pkg`开发接口，C版本；
+  - **aimrt_core_plugin_interface**: 插件开发接口；
+- **runtime**: `AimRT`运行时；
+  - **core**: 运行时核心库；
+  - **main**: 基于core实现的一个主进程`aimrt_main`；
+  - **python_runtime**: 基于pybind11封装的python版本运行时；
+- **plugins**: `AimRT`官方插件；
+  - **lcm_plugin**: Lcm插件；
+  - **mqtt_plugin**: MQTT插件；
+  - **net_plugin**: Net插件；
+  - **parameter_plugin**: Parameter插件；
+  - **record_playback_plugin**: 录播插件；
+  - **ros2_plugin**: ROS2 Humble插件；
+  - **sm_plugin**: 共享内存插件；
+  - **time_manipulator_plugin**: 时间控制器插件；
+- **protocols**: 一些`AimRT`官方的标准协议；
+- **examples**: 示例
+  - **cpp**: 基于CPP版本`Module`接口开发的相关示例；
+  - **python**: 基于Python版本`Module`接口开发的相关示例；
+  - **plugins**: 一些各方插件的使用示例；
+- **tools**: 一些配套工具；
 
 ## `AimRT`中的`Module`概念
-&emsp;&emsp;与大多数框架一样，AimRT拥有一个用于标识独立逻辑单元的概念：`Module`。`Module`是一个逻辑层面的概念，代表一个逻辑上内聚的类。`Module`与`Module`之间可以在逻辑层通信，主要的逻辑层通信接口有两种：`Channel`、`RPC`。可以将`Module`看作一个对外提供一定接口的黑盒。
+&emsp;&emsp;与大多数框架一样，AimRT拥有一个用于标识独立逻辑单元的概念：`Module`。`Module`是一个逻辑层面的概念，代表一个逻辑上内聚的类。`Module`之间可以在逻辑层通信，主要的逻辑层通信接口有两种：`Channel`、`RPC`。可以将`Module`看作一个对外提供一定接口的黑盒。
 
 &emsp;&emsp;`Module`通过实现几个简单的模块接口来创建。一个`Module`通常对应一个硬件抽象，或者是一个独立算法、一项业务功能。`Module`可以使用框架提供的各项运行时功能，例如配置、日志、执行器等。
 
@@ -42,13 +50,14 @@
 
 ## `AimRT`框架加载`Moduel`的两种方式
 &emsp;&emsp;`AimRT`框架可以通过两种方式来加载、运行`Module`，其优势劣势如下，实际采用哪种方式需要根据具体场景进行判断：
-- **App模式**：在开发者自己的Main函数中硬编码注册各个模块，编译时直接将`Module`类编译进主程序：
+- **App模式**：在开发者自己的Main函数中硬编码注册各个模块，编译时直接将各个业务`Module`类编译进主程序：
   - 优势：没有dlopen这个步骤，没有so，只会有最终一个exe。
   - 劣势：可能会有第三方库的冲突；无法独立的发布`Module`，想要二进制发布只能直接发布exe。
 - **Pkg模式**：使用AimRT提供的**aimrt_main**可执行程序，在运行时根据配置文件加载动态库形式的`Pkg`，导入其中的`Module`类:
   - 优势：编译业务`Module`时只需要链接非常轻量的接口层，不需要链接运行时库；可以二进制发布so；独立性较好。
   - 劣势：框架基于dlopen加载`Pkg`，极少数场景下会有一些兼容性问题。
 
+&emsp;&emsp;无论采用哪种方式都不影响业务逻辑，且两种方式可以共存，也可以很简单的进行切换，实际采用哪种方式需要根据具体场景进行判断。
 
 &emsp;&emsp;注意，上述说的两种方式只是针对Cpp模块。如果是Python模块，则只支持通过Python代码硬编码注册这种**App模式**。
 
@@ -56,8 +65,21 @@
 &emsp;&emsp;`Channel`也叫数据通道，是一种典型的通信拓补概念，其通过`Topic`标识单个数据通道，由发布者`Publisher`和订阅者`Subscriber`组成，订阅者可以获取到发布者发布的数据。`Channel`是一种多对多的拓补结构，`Module`可以向任意数量的`Topic`发布数据，同时可以订阅任意数量的`Topic`。类似的概念如ROS中的Topic、Kafka/RabbitMQ等消息队列。
 
 
+&emsp;&emsp;在AimRT中，Channel由`接口层`和`后端`两部分组成，两者相互解耦。接口层定义了一层抽象的Api，表示逻辑层面上的`Channel`；而后端负责实际的Channel数据传输，可以有多种类型。AimRT官方提供了一些Channel后端，例如mqtt、ros等，使用者也可以自行开发新的Channel后端。
+
+&emsp;&emsp;开发者在使用AimRT中的Channel功能时，先在业务逻辑层调用接口层的API，往某个Topic中发布数据，或订阅某个Topic的数据。然后AimRT框架会根据一定的规则，选择一个或几个Channel后端进行处理，这些后端将数据通过一些特定的方式发送给其他节点，由其他节点上对应的Channel后端接收数据并传递给业务逻辑层。整个逻辑流程如下图所示：
+
+![](./picture/pic_3.png)
+
+
 ## `AimRT`中的`Rpc`概念
 &emsp;&emsp;`RPC`也叫远程过程调用，基于请求-回复模型，由客户端`Client`和服务端`Server`组成，`Module`可以创建客户端句柄，发起特定的RPC请求，由其指定的、或由框架根据一定规则指定的服务端来接收请求并回复。`Module`也可以创建服务端句柄，提供特定的RPC服务，接收处理系统路由过来的请求并回复。类似的概念如ROS中的Services、GRPC/Thrift等RPC框架。
+
+&emsp;&emsp;在AimRT中，RPC也由`接口层`和`后端`两部分组成，两者相互解耦。接口层定义了RPC的抽象Api，而后端则负责实际的RPC调用。AimRT官方提供了一些RPC后端，例如http、ros等，使用者也可以自行开发新的RPC后端。
+
+&emsp;&emsp;开发者使用AimRT的RPC功能时，先在业务逻辑层调用接口层API，通过Client发起一个RPC调用，AimRT框架会根据一定的规则选择一个RPC后端进行处理，它将数据通过一些特定的方式发送给Server节点，由Server节点上对应的Rpc后端接收数据并传递给业务层，并将业务层的回包传递回Client端。整个逻辑流程如下图所示：
+
+![](./picture/pic_4.png)
 
 
 ## `AimRT`中的`Protocol`概念
@@ -80,6 +102,14 @@ void Execute(std::function<void()>&& task);
 void ExecuteAt(std::chrono::system_clock::time_point tp, std::function<void()>&& task);
 void ExecuteAfter(std::chrono::nanoseconds dt, std::function<void()>&& task);
 ```
+
+
+&emsp;&emsp;在AimRT中，执行器功能由`接口层`和`实际执行器的实现`两部分组成，两者相互解耦。接口层定义了执行器的抽象Api，提供投递任务的接口。而实现层则负责实际的任务执行，根据实现类型的不同有不一样的表现。AimRT官方提供了几种执行器，例如基于Asio的线程池、基于Tbb的无锁线程池、基于时间轮的定时执行器等。
+
+&emsp;&emsp;开发者使用AimRT的执行器功能时，在业务层将任务打包成一个闭包，然后调用接口层的API，将任务投递到具体的执行器内，而执行器会根据自己的调度策略，在一定时机执行投递过来的任务。具体逻辑流程如下图所示：
+
+![](./picture/pic_5.png)
+
 
 ## `AimRT`中的`Plugin`概念
 &emsp;&emsp;`Plugin`指插件，是指一个可以向`AimRT`框架注册各种自定义功能的动态库，可以被框架运行时加载，或在用户自定义的可执行程序中通过硬编码的方式注册到框架中。`AimRT`框架暴露了大量插接点和查询接口，例如：
