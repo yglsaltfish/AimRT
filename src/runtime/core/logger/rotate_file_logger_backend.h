@@ -10,10 +10,10 @@ namespace aimrt::runtime::core::logger {
 class RotateFileLoggerBackend : public LoggerBackendBase {
  public:
   struct Options {
-    std::string path = "log";
-    std::string filename = "app.log";
+    std::string path = "./log";
+    std::string filename = "aimrt.log";
     uint32_t max_file_size_m = 16;
-    uint32_t max_file_num = 0;
+    uint32_t max_file_num = 100;
     std::string log_executor_name = "";
   };
 

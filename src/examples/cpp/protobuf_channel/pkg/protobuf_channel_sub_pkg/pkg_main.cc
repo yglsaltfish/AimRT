@@ -6,7 +6,7 @@
 #include "normal_publisher_module/normal_publisher_module.h"
 #include "normal_subscriber_module/normal_subscriber_module.h"
 
-static constexpr std::tuple<std::string_view, aimrt::ModuleBase* (*)()>
+static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>>
     aimrt_module_register_array[]{
         {"NormalSubscriberModule", []() -> aimrt::ModuleBase* {
            return new aimrt::examples::cpp::protobuf_channel::normal_subscriber_module::NormalSubscriberModule();

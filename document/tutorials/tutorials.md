@@ -18,10 +18,10 @@
 
 ## 接口文档
 - [接口概述](interface/interface.md)
-- 模块开发接口
+- 模块开发阶段
   - [CPP模块接口](interface/cpp_module.md)
   - [Python模块接口](interface/py_module.md)
-- 运行时接口/配置
+- 部署运行阶段
   - [CPP运行时接口](interface/cpp_runtime.md)
   - [Python运行时接口](interface/py_runtime.md)
   - [配置](interface/cfg.md)

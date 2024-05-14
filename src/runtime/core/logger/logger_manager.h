@@ -18,9 +18,8 @@ namespace aimrt::runtime::core::logger {
 class LoggerManager {
  public:
   struct Options {
-    aimrt_log_level_t core_lvl = aimrt_log_level_t::AIMRT_LOG_LEVEL_TRACE;
-    aimrt_log_level_t default_module_lvl =
-        aimrt_log_level_t::AIMRT_LOG_LEVEL_TRACE;
+    aimrt_log_level_t core_lvl = aimrt_log_level_t::AIMRT_LOG_LEVEL_INFO;
+    aimrt_log_level_t default_module_lvl = aimrt_log_level_t::AIMRT_LOG_LEVEL_INFO;
 
     struct BackendOptions {
       std::string type;
