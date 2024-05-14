@@ -25,14 +25,14 @@ void AimRTCore::Initialize(const Options& options) {
 
   options_ = options;
 
-  // init configurator
+  // Init configurator
   EnterState(State::PreInitConfigurator);
   configurator_manager_.SetLogger(logger_ptr_);
   configurator_manager_.Initialize(options_.cfg_file_path);
   AIMRT_INFO("Configurator init complete.");
   EnterState(State::PostInitConfigurator);
 
-  // init plugin
+  // Init plugin
   EnterState(State::PreInitPlugin);
   plugin_manager_.SetLogger(logger_ptr_);
   plugin_manager_.RegisterPluginInitFunc(
@@ -41,21 +41,21 @@ void AimRTCore::Initialize(const Options& options) {
   AIMRT_INFO("Plugin init complete.");
   EnterState(State::PostInitPlugin);
 
-  // init main thread executor
+  // Init main thread executor
   EnterState(State::PreInitMainThread);
   main_thread_executor_.SetLogger(logger_ptr_);
   main_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("main_thread"));
   AIMRT_INFO("Main thread executor init complete.");
   EnterState(State::PostInitMainThread);
 
-  // init allocator
+  // Init allocator
   EnterState(State::PreInitAllocator);
   allocator_manager_.SetLogger(logger_ptr_);
   allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
   AIMRT_INFO("Allocator init complete.");
   EnterState(State::PostInitAllocator);
 
-  // init executor
+  // Init executor
   EnterState(State::PreInitExecutor);
   executor_manager_.SetLogger(logger_ptr_);
   executor_manager_.SetUsedExecutorName(main_thread_executor_.Name());
@@ -63,7 +63,7 @@ void AimRTCore::Initialize(const Options& options) {
   AIMRT_INFO("Executor init complete.");
   EnterState(State::PostInitExecutor);
 
-  // init log
+  // Init log
   EnterState(State::PreInitLog);
   logger_manager_.SetLogger(logger_ptr_);
   logger_manager_.RegisterGetExecutorFunc(
@@ -73,7 +73,7 @@ void AimRTCore::Initialize(const Options& options) {
   AIMRT_INFO("Logger init complete.");
   EnterState(State::PostInitLog);
 
-  // init rpc
+  // Init rpc
   EnterState(State::PreInitRpc);
   rpc_manager_.SetLogger(logger_ptr_);
   rpc_manager_.RegisterGetExecutorFunc(
@@ -82,7 +82,7 @@ void AimRTCore::Initialize(const Options& options) {
   AIMRT_INFO("Rpc init complete.");
   EnterState(State::PostInitRpc);
 
-  // init channel
+  // Init channel
   EnterState(State::PreInitChannel);
   channel_manager_.SetLogger(logger_ptr_);
   channel_manager_.RegisterGetExecutorFunc(
@@ -91,14 +91,14 @@ void AimRTCore::Initialize(const Options& options) {
   AIMRT_INFO("Channel init complete.");
   EnterState(State::PostInitChannel);
 
-  // init parameter
+  // Init parameter
   EnterState(State::PreInitParameter);
   parameter_manager_.SetLogger(logger_ptr_);
   parameter_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("parameter"));
   AIMRT_INFO("Parameter init complete.");
   EnterState(State::PostInitParameter);
 
-  // init modules
+  // Init modules
   EnterState(State::PreInitModules);
   module_manager_.SetLogger(logger_ptr_);
   module_manager_.RegisterCoreProxyConfigurator(
@@ -115,7 +115,6 @@ void AimRTCore::Initialize(const Options& options) {
 }
 
 void AimRTCore::Start() {
-  // start modules
   EnterState(State::PreStart);
   configurator_manager_.Start();
   plugin_manager_.Start();

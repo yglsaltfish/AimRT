@@ -20,10 +20,10 @@ namespace aimrt::runtime::core {
 class AimRTCore {
  public:
   struct Options {
-    std::string cfg_file_path;
+    std::string cfg_file_path;  // 配置文件路径
 
-    bool dump_cfg_file = false;
-    std::string dump_cfg_file_path;
+    bool dump_cfg_file = false;      // 是否需要dump实际配置文件
+    std::string dump_cfg_file_path;  // dump配置文件的路径
   };
 
   enum class State : uint32_t {

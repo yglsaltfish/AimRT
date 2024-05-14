@@ -9,7 +9,7 @@
 #include "{{ remote_module.name }}/{{ remote_module.name }}.h"
 {%- endfor %}
 
-static constexpr std::tuple<std::string_view, aimrt::ModuleBase* (*)()>
+static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>>
     aimrt_module_register_array[]{
 {%- for module in pkg.local_modules %}
         {"{{ module.class_name }}",

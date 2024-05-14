@@ -4,7 +4,7 @@
 #include "normal_rpc_client_module/normal_rpc_client_module.h"
 #include "normal_rpc_server_module/normal_rpc_server_module.h"
 
-static constexpr std::tuple<std::string_view, aimrt::ModuleBase* (*)()>
+static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>>
     aimrt_module_register_array[]{
         {"NormalRpcClientModule", []() -> aimrt::ModuleBase* {
            return new aimrt::examples::cpp::protobuf_rpc::normal_rpc_client_module::NormalRpcClientModule();

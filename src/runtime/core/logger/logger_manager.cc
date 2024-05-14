@@ -10,8 +10,7 @@ struct convert<aimrt::runtime::core::logger::LoggerManager::Options> {
   static Node encode(const Options& rhs) {
     Node node;
     node["core_lvl"] = aimrt::runtime::core::logger::LogLevelTool::GetLogLevelName(rhs.core_lvl);
-    node["default_module_lvl"] =
-        aimrt::runtime::core::logger::LogLevelTool::GetLogLevelName(rhs.default_module_lvl);
+    node["default_module_lvl"] = aimrt::runtime::core::logger::LogLevelTool::GetLogLevelName(rhs.default_module_lvl);
 
     node["backends"] = YAML::Node();
     for (const auto& backend_options : rhs.backends_options) {
