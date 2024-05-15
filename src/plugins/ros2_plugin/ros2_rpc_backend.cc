@@ -1,7 +1,9 @@
 #include "ros2_plugin/ros2_rpc_backend.h"
-#include "ros2_plugin/global.h"
 
 #include <regex>
+
+#include "ros2_plugin/global.h"
+#include "ros2_plugin/ros2_name_encode.h"
 
 namespace YAML {
 template <>
@@ -80,6 +82,12 @@ void Ros2RpcBackend::Start() {
 
   for (auto& itr : ros2_adapter_server_map_)
     itr.second->Start();
+
+  for (auto& itr : ros2_adapter_wrapper_client_map_)
+    itr.second->Start();
+
+  for (auto& itr : ros2_adapter_wrapper_server_map_)
+    itr.second->Start();
 }
 
 void Ros2RpcBackend::Shutdown() {
@@ -92,8 +100,16 @@ void Ros2RpcBackend::Shutdown() {
   for (auto& itr : ros2_adapter_server_map_)
     itr.second->Shutdown();
 
+  for (auto& itr : ros2_adapter_wrapper_client_map_)
+    itr.second->Shutdown();
+
+  for (auto& itr : ros2_adapter_wrapper_server_map_)
+    itr.second->Shutdown();
+
   ros2_adapter_client_map_.clear();
   ros2_adapter_server_map_.clear();
+  ros2_adapter_wrapper_client_map_.clear();
+  ros2_adapter_wrapper_server_map_.clear();
 
   ros2_node_ptr_.reset();
 }
@@ -105,29 +121,67 @@ bool Ros2RpcBackend::RegisterServiceFunc(
     return false;
   }
 
-  // 只管前缀是ros2类型的消息
-  if (!CheckRosFunc(service_func_wrapper.func_name)) return true;
+  // 前缀是ros2类型的消息
+  if (CheckRosFunc(service_func_wrapper.func_name)) {
+    if (ros2_adapter_server_map_.find(service_func_wrapper.func_name) !=
+        ros2_adapter_server_map_.end()) {
+      // 重复注册
+      AIMRT_WARN(
+          "Service '{}' is registered repeatedly in ros2 rpc backend, module '{}', lib path '{}'",
+          service_func_wrapper.func_name,
+          service_func_wrapper.module_name,
+          service_func_wrapper.pkg_path);
+      return false;
+    }
 
-  if (ros2_adapter_server_map_.find(service_func_wrapper.func_name) !=
-      ros2_adapter_server_map_.end()) {
+    auto ros2_func_name = GetRealRosFuncName(service_func_wrapper.func_name);
+
+    auto ros2_adapter_server_ptr = std::make_shared<Ros2AdapterServer>(
+        ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
+        service_func_wrapper,
+        ros2_func_name,
+        context_manager_ptr_);
+    ros2_node_ptr_->get_node_services_interface()->add_service(
+        std::dynamic_pointer_cast<rclcpp::ServiceBase>(ros2_adapter_server_ptr),
+        nullptr);
+
+    ros2_adapter_server_map_.emplace(service_func_wrapper.func_name,
+                                     ros2_adapter_server_ptr);
+
+    AIMRT_INFO("Service '{}' is registered to ros2 rpc backend, ros2 func name is '{}'",
+               service_func_wrapper.func_name, ros2_func_name);
+
+    return true;
+  }
+
+  // 前缀不是ros2类型的消息
+  if (ros2_adapter_wrapper_server_map_.find(service_func_wrapper.func_name) !=
+      ros2_adapter_wrapper_server_map_.end()) {
     // 重复注册
     AIMRT_WARN(
         "Service '{}' is registered repeatedly in ros2 rpc backend, module '{}', lib path '{}'",
-        service_func_wrapper.func_name, service_func_wrapper.module_name,
+        service_func_wrapper.func_name,
+        service_func_wrapper.module_name,
         service_func_wrapper.pkg_path);
     return false;
   }
 
-  auto ros2_adapter_server_ptr = std::make_shared<Ros2AdapterServer>(
+  auto ros2_func_name = GetRealRosFuncName(Ros2NameEncode(service_func_wrapper.func_name));
+
+  auto ros2_adapter_wrapper_server_ptr = std::make_shared<Ros2AdapterWrapperServer>(
       ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
-      service_func_wrapper, GetRealRosFuncName(service_func_wrapper.func_name),
+      service_func_wrapper,
+      ros2_func_name,
       context_manager_ptr_);
   ros2_node_ptr_->get_node_services_interface()->add_service(
-      std::dynamic_pointer_cast<rclcpp::ServiceBase>(ros2_adapter_server_ptr),
+      std::dynamic_pointer_cast<rclcpp::ServiceBase>(ros2_adapter_wrapper_server_ptr),
       nullptr);
 
-  ros2_adapter_server_map_.emplace(service_func_wrapper.func_name,
-                                   ros2_adapter_server_ptr);
+  ros2_adapter_wrapper_server_map_.emplace(service_func_wrapper.func_name,
+                                           ros2_adapter_wrapper_server_ptr);
+
+  AIMRT_INFO("Service '{}' is registered to ros2 rpc backend, ros2 func name is '{}'",
+             service_func_wrapper.func_name, ros2_func_name);
 
   return true;
 }
@@ -139,11 +193,41 @@ bool Ros2RpcBackend::RegisterClientFunc(
     return false;
   }
 
-  // 只管前缀是ros2类型的消息
-  if (!CheckRosFunc(client_func_wrapper.func_name)) return true;
+  // 前缀是ros2类型的消息
+  if (CheckRosFunc(client_func_wrapper.func_name)) {
+    if (ros2_adapter_client_map_.find(client_func_wrapper.func_name) !=
+        ros2_adapter_client_map_.end()) {
+      // 重复注册
+      AIMRT_WARN(
+          "Client '{}' is registered repeatedly in ros2 rpc backend, module '{}', lib path '{}'",
+          client_func_wrapper.func_name, client_func_wrapper.module_name,
+          client_func_wrapper.pkg_path);
+      return false;
+    }
 
-  if (ros2_adapter_client_map_.find(client_func_wrapper.func_name) !=
-      ros2_adapter_client_map_.end()) {
+    auto ros2_func_name = GetRealRosFuncName(client_func_wrapper.func_name);
+
+    auto ros2_adapter_client_ptr = std::make_shared<Ros2AdapterClient>(
+        ros2_node_ptr_->get_node_base_interface().get(),
+        ros2_node_ptr_->get_node_graph_interface(),
+        client_func_wrapper,
+        ros2_func_name);
+    ros2_node_ptr_->get_node_services_interface()->add_client(
+        std::dynamic_pointer_cast<rclcpp::ClientBase>(ros2_adapter_client_ptr),
+        nullptr);
+
+    ros2_adapter_client_map_.emplace(client_func_wrapper.func_name,
+                                     ros2_adapter_client_ptr);
+
+    AIMRT_INFO("Client '{}' is registered to ros2 rpc backend, ros2 func name is '{}'",
+               client_func_wrapper.func_name, ros2_func_name);
+
+    return true;
+  }
+
+  // 前缀不是ros2类型的消息
+  if (ros2_adapter_wrapper_client_map_.find(client_func_wrapper.func_name) !=
+      ros2_adapter_wrapper_client_map_.end()) {
     // 重复注册
     AIMRT_WARN(
         "Client '{}' is registered repeatedly in ros2 rpc backend, module '{}', lib path '{}'",
@@ -152,16 +236,22 @@ bool Ros2RpcBackend::RegisterClientFunc(
     return false;
   }
 
-  auto ros2_adapter_client_ptr = std::make_shared<Ros2AdapterClient>(
+  auto ros2_func_name = GetRealRosFuncName(Ros2NameEncode(client_func_wrapper.func_name));
+
+  auto ros2_adapter_wrapper_client_ptr = std::make_shared<Ros2AdapterWrapperClient>(
       ros2_node_ptr_->get_node_base_interface().get(),
-      ros2_node_ptr_->get_node_graph_interface(), client_func_wrapper,
-      GetRealRosFuncName(client_func_wrapper.func_name));
+      ros2_node_ptr_->get_node_graph_interface(),
+      client_func_wrapper,
+      ros2_func_name);
   ros2_node_ptr_->get_node_services_interface()->add_client(
-      std::dynamic_pointer_cast<rclcpp::ClientBase>(ros2_adapter_client_ptr),
+      std::dynamic_pointer_cast<rclcpp::ClientBase>(ros2_adapter_wrapper_client_ptr),
       nullptr);
 
-  ros2_adapter_client_map_.emplace(client_func_wrapper.func_name,
-                                   ros2_adapter_client_ptr);
+  ros2_adapter_wrapper_client_map_.emplace(client_func_wrapper.func_name,
+                                           ros2_adapter_wrapper_client_ptr);
+
+  AIMRT_INFO("Client '{}' is registered to ros2 rpc backend, ros2 func name is '{}'",
+             client_func_wrapper.func_name, ros2_func_name);
 
   return true;
 }
@@ -169,13 +259,6 @@ bool Ros2RpcBackend::RegisterClientFunc(
 bool Ros2RpcBackend::TryInvoke(
     const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
   assert(state_.load() == State::Start);
-
-  // 只管前缀是ros2类型的消息
-  if (!CheckRosFunc(client_invoke_wrapper_ptr->func_name)) return false;
-
-  std::string_view func_name = client_invoke_wrapper_ptr->func_name;
-
-  auto real_func_name = GetRealRosFuncName(func_name);
 
   // 检查ctx
   std::string_view to_addr =
@@ -187,8 +270,37 @@ bool Ros2RpcBackend::TryInvoke(
     if (to_addr.substr(0, pos) != "ros2") return false;
   }
 
-  auto finditr = ros2_adapter_client_map_.find(client_invoke_wrapper_ptr->func_name);
-  if (finditr == ros2_adapter_client_map_.end()) {
+  // 前缀是ros2类型的消息
+  if (CheckRosFunc(client_invoke_wrapper_ptr->func_name)) {
+    auto finditr = ros2_adapter_client_map_.find(client_invoke_wrapper_ptr->func_name);
+    if (finditr == ros2_adapter_client_map_.end()) {
+      AIMRT_TRACE(
+          "Client '{}' unregistered in ros2 rpc backend, module '{}', lib path '{}'",
+          client_invoke_wrapper_ptr->func_name,
+          client_invoke_wrapper_ptr->module_name,
+          client_invoke_wrapper_ptr->pkg_path);
+
+      return false;
+    }
+
+    if (!(finditr->second->service_is_ready())) {
+      AIMRT_TRACE("Ros2 service '{}' not ready, module '{}', lib path '{}'",
+                  client_invoke_wrapper_ptr->func_name,
+                  client_invoke_wrapper_ptr->module_name,
+                  client_invoke_wrapper_ptr->pkg_path);
+
+      return false;
+    }
+
+    finditr->second->Invoke(client_invoke_wrapper_ptr);
+
+    return true;
+  }
+
+  // 前缀不是ros2类型的消息
+
+  auto finditr = ros2_adapter_wrapper_client_map_.find(client_invoke_wrapper_ptr->func_name);
+  if (finditr == ros2_adapter_wrapper_client_map_.end()) {
     AIMRT_TRACE(
         "Client '{}' unregistered in ros2 rpc backend, module '{}', lib path '{}'",
         client_invoke_wrapper_ptr->func_name,

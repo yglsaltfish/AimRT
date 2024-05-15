@@ -219,7 +219,7 @@ class ConfiguratorRef {
 &emsp;&emsp;使用注意点如下：
 - `std::string_view GetConfigFilePath()`接口：用于获取模块配置文件的路径。
   - 请注意，此接口仅返回一个模块配置文件的路径，模块开发者需要自己读取配置文件并解析。
-  - 这个接口具体会返回什么样的路径，请参考部署运行阶段的`configurator`配置章节。
+  - 这个接口具体会返回什么样的路径，请参考部署运行阶段[配置](./cfg.md)文档中的`aimrt.module`章节。
 
 
 &emsp;&emsp;一个简单的使用示例如下：
@@ -869,11 +869,136 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
 ***TODO：Allocator功能还在完善中，暂不推荐直接使用***
 
-## rpc::RpcHandleRef：RPC句柄
 
-***TODO待完善***
 
 ## channel::ChannelHandleRef：Channel句柄
+
+### Channel句柄概述
+
+&emsp;&emsp;相关文件链接：
+- [aimrt_module_cpp_interface/channel/channel_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/channel/channel_context.h)
+- [aimrt_module_cpp_interface/channel/channel_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/channel/channel_handle.h)
+
+
+&emsp;&emsp;Protobuf Channel接口文件（CMake需引用**aimrt::interface::aimrt_module_protobuf_interface**）：
+- [aimrt_module_protobuf_interface/channel/protobuf_channel.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_protobuf_interface/channel/protobuf_channel.h)
+
+
+&emsp;&emsp;Ros2 Channel接口文件（CMake需引用**aimrt::interface::aimrt_module_ros2_interface**）：
+- [aimrt_module_ros2_interface/channel/ros2_channel.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_ros2_interface/channel/ros2_channel.h)
+
+
+&emsp;&emsp;AimRT中，模块可以通过调用`CoreRef`句柄的`GetChannelHandle()`接口，获取`aimrt::channel::ChannelHandleRef`句柄，来使用Channel功能。其提供的核心接口如下：
+```cpp
+namespace aimrt::channel {
+
+class ChannelHandleRef {
+ public:
+  // 获取发布句柄
+  PublisherRef GetPublisher(std::string_view topic) const;
+
+  // 获取订阅句柄
+  SubscriberRef GetSubscriber(std::string_view topic) const;
+
+  // 获取Context管理句柄
+  ContextManagerRef GetContextManager() const;
+};
+
+}  // namespace aimrt::channel
+```
+
+&emsp;&emsp;使用者可以调用`ChannelHandleRef`中的`GetPublisher`方法和`GetSubscriber`方法，获取指定Topic名称的`aimrt::channel::PublisherRef`句柄和`aimrt::channel::SubscriberRef`句柄，分别用于Channel发布和订阅。
+
+&emsp;&emsp;这两个句柄提供了一个与具体协议类型无关的Api接口，但除非开发者想要使用自定义的消息类型，才需要直接调用它们提供的接口。AimRT官方支持两种协议类型：**Protobuf**和**Ros2 Message**，并提供了这两种协议类型的Channel接口封装。这两套Channel接口除了协议类型不同，其他的Api风格都一致，开发者一般直接使用这两套与协议类型绑定的Channel接口即可。
+
+&emsp;&emsp;使用者还可以调用`ChannelHandleRef`中的`GetContextManager`方法，获取一个`ContextManagerRef`句柄，它提供了一个`ContextSharedPtr NewContextSharedPtr() const`方法来新建`ContextSharedPtr`，用于在发布、订阅Channel消息时传递一些额外的信息。
+
+
+### 消息类型
+
+&emsp;&emsp;一般来说，协议都是使用一种与具体的编程语言无关的`IDL`(Interface description language)描述，然后由某种工具转换为各个语言的代码。此处简要介绍一下几种`IDL`如何转换为Cpp代码，进阶的使用方式请参考对应IDL的官网。
+
+#### Protobuf
+
+&emsp;&emsp;[Protobuf](https://protobuf.dev/)（Protocol Buffers）是一种由Google开发的用于序列化结构化数据的轻量级、高效的数据交换格式，是一种广泛使用的IDL。它类似于XML和JSON，但更为紧凑、快速、简单，且可扩展性强。
+
+&emsp;&emsp;在使用时，开发者需要先定义一个`.proto`文件，比如`example.proto`：
+
+```protobuf
+syntax = "proto3";
+
+message ExampleMsg {
+  string msg = 1;
+  int32 num = 2;
+}
+```
+&emsp;&emsp;然后使用Protobuf官方提供的protoc工具进行转换，生成C++桩代码，例如：
+```shell
+protoc --cpp_out=. example.proto
+```
+
+&emsp;&emsp;这将生成`example.pb.h`和`example.pb.cc`文件，包含了根据定义的消息类型生成的C++类和方法。
+
+&emsp;&emsp;请注意，以上这套原生的代码生成方式需要手动处理依赖和CMake封装等方面的问题。开发者也可以直接使用AimRT在[ProtobufGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/cmake/ProtobufGenCode.cmake)文件中提供的两个CMake方法：
+- `add_protobuf_gencode_target_for_proto_path`：为某个路径下的协议文件生成C++代码，参数如下：
+  - **TARGET_NAME**：生成的CMake Target名称；
+  - **PROTO_PATH**：协议存放目录；
+  - **GENCODE_PATH**：生成的桩代码存放路径；
+  - **DEP_PROTO_TARGETS**：依赖的Proto CMake Target；
+  - **OPTIONS**：传递给protoc的其他参数；
+- `add_protobuf_gencode_target_for_one_proto_file`：为单个协议文件生成C++代码；
+  - **TARGET_NAME**：生成的CMake Target名称；
+  - **PROTO_FILE**：单个协议文件的路径；
+  - **GENCODE_PATH**：生成的桩代码存放路径；
+  - **DEP_PROTO_TARGETS**：依赖的Proto CMake Target；
+  - **OPTIONS**：传递给protoc的其他参数；
+
+
+&emsp;&emsp;使用示例如下：
+```cmake
+# 为当前文件夹下所有.proto文件生成C++桩代码
+add_protobuf_gencode_target_for_proto_path(
+  TARGET_NAME example_pb_gencode
+  PROTO_PATH ${CMAKE_CURRENT_SOURCE_DIR}
+  GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR})
+add_library(my_namespace::example_pb_gencode ALIAS example_pb_gencode)
+```
+
+&emsp;&emsp;这样之后，只要链接`my_namespace::example_pb_gencode`这个CMake Target即可使用该协议。例如：
+```cmake
+target_link_libraries(my_lib PUBLIC my_namespace::example_pb_gencode)
+```
+
+#### ROS2 Message
+
+&emsp;&emsp;ROS2 Message是一种用于在 ROS2 中进行通信和数据交换的结构化数据格式。在使用时，开发者需要先定义一个ROS2 Package，在其中定义一个`.msg`文件，比如`example.msg`：
+
+```
+int32   num
+float32 num2
+char    data
+```
+
+&emsp;&emsp;然后直接通过ROS2提供的CMake方法`rosidl_generate_interfaces`，为消息生成C++代码``和CMake Target，例如：
+```cmake
+rosidl_generate_interfaces(example_msg_gencode
+  "msg/RosTestMsg.msg"
+  "msg/RosTestData.msg"
+  "srv/RosTestRpc.srv"
+)
+```
+
+&emsp;&emsp;在这之后就可以引用相关的CMake Target来使用生成的C++代码。详情请参考ROS2的官方文档和AimRT提供的Example。
+
+
+### Pub接口
+
+
+### Sub接口
+
+
+
+## rpc::RpcHandleRef：RPC句柄
 
 ***TODO待完善***
 

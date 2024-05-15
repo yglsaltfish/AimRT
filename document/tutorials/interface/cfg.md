@@ -498,6 +498,43 @@ aimrt:
 - 当单个日志文件尺寸超过`max_file_size_m`配置的大小后，就会新建一个日志文件，同时将老的日志文件重命名，加上`_x`这样的后缀。
 - 当日志文件数量超过`max_file_num`配置的值后，就会将最老的日志文件删除。如果配置为0，则表示永远不会删除。
 
+## `aimrt.channel`：Channel
+
+
+***TODO待完善***
+
+&emsp;&emsp;`aimrt.channel`配置项用于配置Channel功能。配置项说明如下：
+
+| 节点                                              | 类型      | 是否可选| 默认值 | 作用 |
+| ----                                              | ----      | ----  | ----  | ---- |
+| aimrt.channel                                     | map       | 可选  | -     | Channel配置根节点 |
+| aimrt.channel.backends                            | array     | 可选  | []    | Channel后端列表 |
+| aimrt.channel.backends[i].type                    | string    | 必选  | ""    | Channel后端类型 |
+| aimrt.channel.backends[i].options                 | map       | 可选  | -     | 具体Channel后端的配置 |
+| aimrt.channel.pub_topics_options                  | array     | 可选  | ""    | Channel Pub Topic配置 |
+| aimrt.channel.pub_topics_options[i].topic_name    | string    | 必选  | ""    | Channel Pub Topic名称，支持正则表达式 |
+| aimrt.channel.pub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Pub Topic允许使用的Channel后端列表 |
+| aimrt.channel.sub_topics_options                  | array     | 可选  | ""    | Channel Sub Topic配置 |
+| aimrt.channel.sub_topics_options[i].topic_name    | string    | 必选  | ""    | Channel Sub Topic名称，支持正则表达式 |
+| aimrt.channel.sub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Sub Topic允许使用的Channel后端列表 |
+
+
+&emsp;&emsp;以下是一个简单的示例：
+```yaml
+aimrt:
+  channel: # 【可选】Channel配置根节点
+    backends: # 【可选】Channel后端列表
+      - type: local # 【必选】Channel后端类型
+      - type: mqtt # 【必选】Channel后端类型
+    pub_topics_options: # 【可选】Channel Pub Topic配置
+      - topic_name: "(.*)" # 【必选】Channel Pub Topic名称，支持正则表达式
+        enable_backends: [local] # 【必选】Channel Pub Topic允许使用的Channel后端列表
+    sub_topics_options: # 【可选】Channel Sub Topic配置
+      - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
+        enable_backends: [local] # 【必选】Channel Sub Topic允许使用的Channel后端列表
+```
+
+
 ## `aimrt.rpc`：RPC
 
 ***TODO待完善***
@@ -535,41 +572,6 @@ aimrt:
 
 
 
-## `aimrt.channel`：Channel
-
-
-***TODO待完善***
-
-&emsp;&emsp;`aimrt.channel`配置项用于配置Channel功能。配置项说明如下：
-
-| 节点                                              | 类型      | 是否可选| 默认值 | 作用 |
-| ----                                              | ----      | ----  | ----  | ---- |
-| aimrt.channel                                     | map       | 可选  | -     | Channel配置根节点 |
-| aimrt.channel.backends                            | array     | 可选  | []    | Channel后端列表 |
-| aimrt.channel.backends[i].type                    | string    | 必选  | ""    | Channel后端类型 |
-| aimrt.channel.backends[i].options                 | map       | 可选  | -     | 具体Channel后端的配置 |
-| aimrt.channel.pub_topics_options                  | array     | 可选  | ""    | Channel Pub Topic配置 |
-| aimrt.channel.pub_topics_options[i].topic_name    | string    | 必选  | ""    | Channel Pub Topic名称，支持正则表达式 |
-| aimrt.channel.pub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Pub Topic允许使用的Channel后端列表 |
-| aimrt.channel.sub_topics_options                  | array     | 可选  | ""    | Channel Sub Topic配置 |
-| aimrt.channel.sub_topics_options[i].topic_name    | string    | 必选  | ""    | Channel Sub Topic名称，支持正则表达式 |
-| aimrt.channel.sub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Sub Topic允许使用的Channel后端列表 |
-
-
-&emsp;&emsp;以下是一个简单的示例：
-```yaml
-aimrt:
-  channel: # 【可选】Channel配置根节点
-    backends: # 【可选】Channel后端列表
-      - type: local # 【必选】Channel后端类型
-      - type: mqtt # 【必选】Channel后端类型
-    pub_topics_options: # 【可选】Channel Pub Topic配置
-      - topic_name: "(.*)" # 【必选】Channel Pub Topic名称，支持正则表达式
-        enable_backends: [local] # 【必选】Channel Pub Topic允许使用的Channel后端列表
-    sub_topics_options: # 【可选】Channel Sub Topic配置
-      - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
-        enable_backends: [local] # 【必选】Channel Sub Topic允许使用的Channel后端列表
-```
 
 
 ## `aimrt.parameter`：参数

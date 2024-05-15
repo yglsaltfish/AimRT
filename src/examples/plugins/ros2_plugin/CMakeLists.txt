@@ -10,6 +10,10 @@ add_subdirectory(assistant/native_ros2_channel_subscriber)
 add_subdirectory(assistant/native_ros2_rpc_benchmark_client)
 add_subdirectory(assistant/native_ros2_rpc_client)
 add_subdirectory(assistant/native_ros2_rpc_server)
+add_subdirectory(assistant/native_ros2_protobuf_channel_publisher)
+add_subdirectory(assistant/native_ros2_protobuf_channel_subscriber)
+add_subdirectory(assistant/native_ros2_protobuf_rpc_client)
+add_subdirectory(assistant/native_ros2_protobuf_rpc_server)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -36,3 +40,12 @@ add_custom_target(
           aimrt::examples::cpp::ros2_rpc::ros2_rpc_server_pkg
           aimrt::examples::cpp::ros2_channel::ros2_channel_pub_pkg
           aimrt::examples::cpp::ros2_channel::ros2_channel_sub_pkg)
+
+if(AIMRT_BUILD_WITH_PROTOBUF)
+  add_dependencies(
+    ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all #
+    aimrt::examples::cpp::protobuf_rpc::protobuf_rpc_client_pkg #
+    aimrt::examples::cpp::protobuf_rpc::protobuf_rpc_server_pkg #
+    aimrt::examples::cpp::protobuf_channel::protobuf_channel_pub_pkg #
+    aimrt::examples::cpp::protobuf_channel::protobuf_channel_sub_pkg)
+endif()
