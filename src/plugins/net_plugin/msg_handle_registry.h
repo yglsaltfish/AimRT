@@ -65,7 +65,8 @@ class MsgHandleRegistry {
     }
   }
 
-  std::unordered_map<std::string, MsgHandleFunc, aimrt::common::util::StringHash, std::equal_to<>> msg_handle_map_;
+  std::unordered_map<std::string, MsgHandleFunc, aimrt::common::util::StringHash, std::equal_to<>>
+      msg_handle_map_;
 };
 
 }  // namespace aimrt::plugins::net_plugin

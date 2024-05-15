@@ -28,7 +28,7 @@ class ContextManagerRef {
    *
    * @return ContextSharedPtr
    */
-  ContextSharedPtr NewContextSharedPtr() {
+  ContextSharedPtr NewContextSharedPtr() const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return std::shared_ptr<const aimrt_channel_context_base_t>(
         base_ptr_->new_context(base_ptr_->impl),
@@ -129,19 +129,19 @@ class ChannelHandleRef {
 
   const aimrt_channel_handle_base_t* NativeHandle() const { return base_ptr_; }
 
-  PublisherRef GetPublisher(std::string_view topic) {
+  PublisherRef GetPublisher(std::string_view topic) const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return PublisherRef(
         base_ptr_->get_publisher(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
   }
 
-  SubscriberRef GetSubscriber(std::string_view topic) {
+  SubscriberRef GetSubscriber(std::string_view topic) const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return SubscriberRef(
         base_ptr_->get_subscriber(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
   }
 
-  ContextManagerRef GetContextManager() {
+  ContextManagerRef GetContextManager() const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return ContextManagerRef(base_ptr_->get_context_manager(base_ptr_->impl));
   }

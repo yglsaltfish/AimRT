@@ -14,6 +14,8 @@
 
 #include "rcl/publisher.h"
 
+#include "ros2_plugin_proto/msg/ros_msg_wrapper.hpp"
+
 namespace aimrt::plugins::ros2_plugin {
 
 // todo：暂时只支持cdr序列化
@@ -108,14 +110,14 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
       std::unique_ptr<Ros2PublishWrapper>,
       ChannelTypeKeyHash,
       std::equal_to<>>
-      publish_type_wrapper_map_;
+      ros2_publish_type_wrapper_map_;
 
   std::unordered_map<
       ChannelTypeKey,
       std::shared_ptr<rclcpp::SubscriptionBase>,
       ChannelTypeKeyHash,
       std::equal_to<>>
-      subscribe_wrapper_map_;
+      ros2_subscribe_wrapper_map_;
 
   struct PublisherGidView {
     const rmw_gid_t& git;
@@ -144,6 +146,21 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::vector<std::unique_ptr<rmw_gid_t>> publisher_gid_vec_;
   std::unordered_set<PublisherGidView, PublisherGidViewHash, std::equal_to<>>
       publisher_gid_view_set_;
+
+  std::unordered_map<
+      std::string,
+      rclcpp::Publisher<ros2_plugin_proto::msg::RosMsgWrapper>::SharedPtr>
+      publisher_map_;
+
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
+      subscribe_wrapper_map_;
+
+  std::unordered_map<
+      std::string,
+      rclcpp::Subscription<ros2_plugin_proto::msg::RosMsgWrapper>::SharedPtr>
+      subscriber_map_;
 };
 
 }  // namespace aimrt::plugins::ros2_plugin

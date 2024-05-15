@@ -61,6 +61,15 @@
 
 &emsp;&emsp;注意，上述说的两种方式只是针对Cpp模块。如果是Python模块，则只支持通过Python代码硬编码注册这种**App模式**。
 
+## `AimRT`中的`Protocol`概念
+&emsp;&emsp;`Protocol`意为协议，代表`Module`之间通信的数据格式，用来描述数据的字段信息以及序列化、反序列化方式，例如`Channel`的订阅者和发布者之间制定的数据格式、或者`RPC`客户端和服务端之间制定的请求包/回包的数据格式。通常由一种`IDL`(Interface description language)描述，然后由某种工具转换为各个语言的代码。
+
+&emsp;&emsp;`AimRT`目前官方支持两种IDL：
+- Protobuf
+- ROS2 msg/srv
+
+&emsp;&emsp;但`AimRT`并不限定协议与IDL的具体类型，使用者可以实现其他的IDL，例如Thrift IDL、FlatBuffers等，甚至支持一些自定义的IDL。
+
 ## `AimRT`中的`Channel`概念
 &emsp;&emsp;`Channel`也叫数据通道，是一种典型的通信拓补概念，其通过`Topic`标识单个数据通道，由发布者`Publisher`和订阅者`Subscriber`组成，订阅者可以获取到发布者发布的数据。`Channel`是一种多对多的拓补结构，`Module`可以向任意数量的`Topic`发布数据，同时可以订阅任意数量的`Topic`。类似的概念如ROS中的Topic、Kafka/RabbitMQ等消息队列。
 
@@ -81,15 +90,6 @@
 
 ![](./picture/pic_4.png)
 
-
-## `AimRT`中的`Protocol`概念
-&emsp;&emsp;`Protocol`意为协议，代表`Module`之间通信的数据格式，用来描述数据的字段信息以及序列化、反序列化方式，例如`Channel`的订阅者和发布者之间制定的数据格式、或者`RPC`客户端和服务端之间制定的请求包/回包的数据格式。通常由一种`IDL`(Interface description language)描述，然后由某种工具转换为各个语言的代码。
-
-&emsp;&emsp;`AimRT`目前官方支持两种IDL：
-- Protobuf
-- ROS2 msg/srv
-
-&emsp;&emsp;但`AimRT`并不限定协议与IDL的具体类型，使用者可以实现其他的IDL，例如Thrift IDL、FlatBuffers等，甚至支持一些自定义的IDL。
 
 ## `AimRT`中的`Executor`概念
 &emsp;&emsp;`Executor`，或者叫执行器，是指一个可以运行任务的抽象概念，一个执行器可以是一个Fiber、Thread或者Thread Pool，我们平常写的代码也是默认的直接指定了一个执行器：Main线程。一般来说，能提供以下接口的就可以算是一个执行器：
