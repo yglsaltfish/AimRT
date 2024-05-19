@@ -907,11 +907,46 @@ class ChannelHandleRef {
 }  // namespace aimrt::channel
 ```
 
-&emsp;&emsp;使用者可以调用`ChannelHandleRef`中的`GetPublisher`方法和`GetSubscriber`方法，获取指定Topic名称的`aimrt::channel::PublisherRef`句柄和`aimrt::channel::SubscriberRef`句柄，分别用于Channel发布和订阅。
+&emsp;&emsp;使用者可以调用`ChannelHandleRef`中的`GetPublisher`方法和`GetSubscriber`方法，获取**指定Topic名称**的`aimrt::channel::PublisherRef`句柄和`aimrt::channel::SubscriberRef`句柄，分别用于Channel发布和订阅。关于这两个方法，有一些使用时的须知：
+  - 这两个接口是线程安全的。
+  - 这两个接口可以在`Initialize`阶段和`Start`阶段使用。
+
 
 &emsp;&emsp;这两个句柄提供了一个与具体协议类型无关的Api接口，但除非开发者想要使用自定义的消息类型，才需要直接调用它们提供的接口。AimRT官方支持两种协议类型：**Protobuf**和**Ros2 Message**，并提供了这两种协议类型的Channel接口封装。这两套Channel接口除了协议类型不同，其他的Api风格都一致，开发者一般直接使用这两套与协议类型绑定的Channel接口即可。
 
-&emsp;&emsp;使用者还可以调用`ChannelHandleRef`中的`GetContextManager`方法，获取一个`ContextManagerRef`句柄，它提供了一个`ContextSharedPtr NewContextSharedPtr() const`方法来新建`ContextSharedPtr`，用于在发布、订阅Channel消息时传递一些额外的信息。
+
+***TODO: CTX这部分的功能还在开发中，文档后续再补充***
+
+&emsp;&emsp;使用者还可以调用`ChannelHandleRef`中的`GetContextManager`方法，获取一个`ContextManagerRef`句柄，它提供了一个方法来创建CTX，用于在发布、订阅Channel消息时传递一些额外的信息：
+
+```cpp
+namespace aimrt::channel {
+
+class ContextManagerRef {
+ public:
+  // 创建一个CTX智能指针
+  ContextSharedPtr NewContextSharedPtr() const;
+
+  // 直接创建一个包含CTX智能指针的CTX引用
+  ContextRef NewContextRef() const;
+};
+
+class ContextRef {
+  // 获取设置的时间戳
+  std::chrono::system_clock::time_point GetMsgTimestamp() const;
+
+  // 设置一个时间戳
+  void SetMsgTimestamp(std::chrono::system_clock::time_point deadline);
+
+  // 获取一个K-V参数
+  std::string_view GetMetaValue(std::string_view key) const;
+
+  // 设置一个K-V参数
+  void SetMetaValue(std::string_view key, std::string_view val) 
+};
+
+}  // namespace aimrt::channel
+```
 
 
 ### 消息类型
@@ -979,7 +1014,7 @@ float32 num2
 char    data
 ```
 
-&emsp;&emsp;然后直接通过ROS2提供的CMake方法`rosidl_generate_interfaces`，为消息生成C++代码``和CMake Target，例如：
+&emsp;&emsp;然后直接通过ROS2提供的CMake方法`rosidl_generate_interfaces`，为消息生成C++代码和CMake Target，例如：
 ```cmake
 rosidl_generate_interfaces(example_msg_gencode
   "msg/RosTestMsg.msg"
@@ -993,12 +1028,85 @@ rosidl_generate_interfaces(example_msg_gencode
 
 ### Pub接口
 
+&emsp;&emsp;用户如果需要发布一个Msg，牵涉的接口主要有以下几个：
+```cpp
+namespace aimrt::channel {
+
+// 注册要发布的消息类型
+template <MsgType>
+bool RegisterPublishType(PublisherRef publisher);
+
+// 发布消息，带CTX
+template <MsgType>
+void Publish(PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const MsgType& msg);
+
+// 发布消息，不带CTX
+template <MsgType>
+void Publish(PublisherRef publisher, const MsgType& msg);
+
+}  // namespace aimrt::channel
+```
+
+&emsp;&emsp;用户需要两个步骤来实现逻辑层面的消息发布：
+- Step1：使用`RegisterPublishType`方法注册协议类型；
+  - 只能在`Initialize`阶段注册；
+  - 消息类型`MsgType`作为一个模板参数传入；
+  - 不允许在一个`PublisherRef`中重复注册同一种类型；
+  - 如果注册失败，会返回false；
+- Step2：使用`Publish`方法发布数据；
+  - 只能在`Start`阶段之后发布数据；
+  - 消息类型`MsgType`作为一个模板参数传入；
+  - 有两种`Publish`接口，其中一种多一个CTX参数，用于向后端、下游传递一些额外信息。CTX的具体功能由Channel后端决定。
+
+
+&emsp;&emsp;用户在逻辑层发布一个消息后，特定的Channel后端将处理具体的消息发布请求。具体的表现请参考具体的后端文档。
 
 ### Sub接口
 
+&emsp;&emsp;AimRT提供了两种订阅接口来订阅处理一种消息，一种是智能指针形式，另一种是协程形式，两者在逻辑上是等价的。另外在订阅时可以接收一个CTX作为参数，CTX内容也和具体的Channel后端相关：
 
+```cpp
+// 订阅，回调接收CTX和一个指针指针作为参数
+template <MsgType>
+bool Subscribe(
+    SubscriberRef subscriber,
+    aimrt::util::Function<void(aimrt::channel::ContextRef ctx_ref, const std::shared_ptr<const MsgType>&)>&& callback);
+
+// 订阅，回调接收一个指针指针作为参数
+template <MsgType>
+bool Subscribe(
+    SubscriberRef subscriber,
+    aimrt::util::Function<void(const std::shared_ptr<const MsgType>&)>&& callback);
+
+// 订阅，回调是协程形式，并接收一个CTX作为参数
+template <MsgType>
+bool SubscribeCo(
+    SubscriberRef subscriber,
+    aimrt::util::Function<co::Task<void>(aimrt::channel::ContextRef ctx_ref, const MsgType&)>&& callback);
+
+// 订阅，回调是协程形式
+template <MsgType>
+bool SubscribeCo(
+    SubscriberRef subscriber,
+    aimrt::util::Function<co::Task<void>(const MsgType&)>&& callback);
+```
+
+
+&emsp;&emsp;注意：
+- 只能在`Initialize`调用订阅接口；
+- 消息类型`MsgType`作为一个模板参数传入；
+- 不允许在一个`SubscriberRef`中重复订阅同一种类型；
+- 如果订阅失败，会返回false；
 
 ## rpc::RpcHandleRef：RPC句柄
 
-***TODO待完善***
+***TODO：待完善***
+
+### RPC句柄概述
+
+### 协议类型
+
+### Client接口
+
+### Server接口
 

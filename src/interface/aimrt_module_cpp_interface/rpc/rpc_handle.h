@@ -56,6 +56,42 @@ class ServiceBase {
   FilterManager filter_mgr_;
 };
 
+class AsyncServiceBase {
+  friend class RpcHandleRef;
+
+ public:
+  AsyncServiceBase() = default;
+  virtual ~AsyncServiceBase() = default;
+
+  AsyncServiceBase(const AsyncServiceBase&) = delete;
+  AsyncServiceBase& operator=(const AsyncServiceBase&) = delete;
+
+  void RegisterServiceFunc(
+      std::string_view func_name,
+      const void* custom_type_support_ptr,
+      const aimrt_type_support_base_t* req_type_support,
+      const aimrt_type_support_base_t* rsp_type_support,
+      aimrt::util::Function<aimrt_function_service_func_ops_t>&& service_func) {
+    service_func_wrapper_map_.emplace(
+        func_name,
+        ServiceFuncWrapper{
+            .custom_type_support_ptr = custom_type_support_ptr,
+            .req_type_support = req_type_support,
+            .rsp_type_support = rsp_type_support,
+            .service_func = std::move(service_func)});
+  }
+
+ protected:
+  struct ServiceFuncWrapper {
+    const void* custom_type_support_ptr;
+    const aimrt_type_support_base_t* req_type_support;
+    const aimrt_type_support_base_t* rsp_type_support;
+    aimrt::util::Function<aimrt_function_service_func_ops_t> service_func;
+  };
+
+  std::unordered_map<std::string_view, ServiceFuncWrapper> service_func_wrapper_map_;
+};
+
 class RpcHandleRef {
  public:
   RpcHandleRef() = default;
@@ -74,6 +110,29 @@ class RpcHandleRef {
    * @return Register result
    */
   bool RegisterService(ServiceBase* service_ptr) {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
+
+    for (auto& itr : service_ptr->service_func_wrapper_map_) {
+      if (!base_ptr_->register_service_func(
+              base_ptr_->impl,
+              aimrt::util::ToAimRTStringView(itr.first),
+              itr.second.custom_type_support_ptr,
+              itr.second.req_type_support,
+              itr.second.rsp_type_support,
+              itr.second.service_func.NativeHandle()))
+        return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * @brief Register service
+   *
+   * @param service_ptr
+   * @return Register result
+   */
+  bool RegisterAsyncService(AsyncServiceBase* service_ptr) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
 
     for (auto& itr : service_ptr->service_func_wrapper_map_) {
@@ -193,6 +252,27 @@ class ProxyBase {
  protected:
   RpcHandleRef rpc_handle_ref_;
   FilterManager filter_mgr_;
+};
+
+class AsyncProxyBase {
+ public:
+  explicit AsyncProxyBase(RpcHandleRef rpc_handle_ref)
+      : rpc_handle_ref_(rpc_handle_ref) {}
+  virtual ~AsyncProxyBase() = default;
+
+  AsyncProxyBase(const AsyncProxyBase&) = delete;
+  AsyncProxyBase& operator=(const AsyncProxyBase&) = delete;
+
+  ContextSharedPtr NewContextSharedPtr() {
+    return rpc_handle_ref_.NewContextSharedPtr();
+  }
+
+  ContextRef NewContextRef() {
+    return ContextRef(NewContextSharedPtr());
+  }
+
+ protected:
+  RpcHandleRef rpc_handle_ref_;
 };
 
 template <class ProxyType>
