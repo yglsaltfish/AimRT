@@ -37,6 +37,15 @@ class ContextManagerRef {
         });
   }
 
+  /**
+   * @brief Create context reference with context shared ptr in it
+   *
+   * @return ContextRef
+   */
+  ContextRef NewContextRef() const {
+    return ContextRef(NewContextSharedPtr());
+  }
+
  private:
   const aimrt_channel_context_manager_base_t* base_ptr_ = nullptr;
 };

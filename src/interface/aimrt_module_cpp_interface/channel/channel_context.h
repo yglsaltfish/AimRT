@@ -70,6 +70,7 @@ class ContextRef {
 
  private:
   const aimrt_channel_context_base_t* base_ptr_;
+  ContextSharedPtr ctx_shared_ptr_;
 };
 
 }  // namespace aimrt::channel

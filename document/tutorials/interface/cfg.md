@@ -21,13 +21,83 @@
 
 ### AimRT框架配置的基本结构
 
-&emsp;&emsp;AimRT的配置文件中，所有的框架相关配置都在`aimrt`根节点下。在`aimrt`根节点下包含各个组件的配置节点，基本风格是小写字母+下划线，示例如下：
+&emsp;&emsp;AimRT的配置文件中，所有的框架相关配置都在`aimrt`根节点下。在`aimrt`根节点下包含各个组件的配置节点，基本风格是小写字母+下划线，目前共有**10**个主要组件：
+
+
+| 节点            | 类型    | 是否可选| 作用 |
+| ----            | ----    | ----  | ---- |
+| configurator    | map     | 可选  | 配置工具的配置 |
+| plugin          | map     | 可选  | 插件配置 |
+| main_thread     | map     | 可选  | 主线程配置 |
+| allocator       | map     | 可选  | 内存分配器配置 |
+| executor        | map     | 可选  | 执行器配置 |
+| log             | map     | 可选  | 日志配置 |
+| rpc             | map     | 可选  | RPC配置 |
+| channel         | map     | 可选  | Channel配置 |
+| parameter       | map     | 可选  | 参数配置 |
+| module          | map     | 可选  | 模块配置 |
+
+&emsp;&emsp;以下是一个简单的示例，先给读者一个感性的印象。关于各个组件的详细配置方法，请参考后续章节：
 ```yaml
 aimrt: # AimRT框架的配置
-  module: # 模块配置
+  configurator: # 【可选】配置工具的配置
+    temp_cfg_path: ./cfg/tmp
+  plugin: # 【可选】插件配置
+    plugins:
+      - name: xxx_plugin
+        path: ./libmqtt_plugin.so
+        options:
+          xxx_key: xxx_val
+          yyy_key: yyy_val
+  main_thread: # 【可选】主线程配置
+    name: main_thread
+  allocator: # 【可选】内存分配器配置
     # ...
-  log: # 日志配置
+  executor: # 【可选】执行器配置
+    executors:
+      - name: work_executor
+        type: asio_thread
+        options:
+          thread_num: 2
+  log: # 【可选】日志配置
+    core_lvl: INFO
+    default_module_lvl: INFO
+    backends:
+      - type: console
+  rpc: # 【可选】RPC配置
+    backends:
+      - type: local
+      - type: mqtt
+    clients_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [local]
+  channel: # 【可选】Channel配置
+    backends:
+      - type: local
+      - type: mqtt
+    pub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [local]
+  parameter: # 【可选】参数配置
     # ...
+  module: # 【可选】模块配置
+    pkgs:
+      - path: /path/to/libxxx_pkg.so
+        disable_module: [XXXModule]
+    modules:
+      - name: FooModule
+        enable: True
+        log_lvl: INFO
+        cfg_file_path: /path/to/foo_module_cfg.yaml
+      - name: BarModule
+        enable: True
+        log_lvl: WARN
 ```
 
 
@@ -39,9 +109,18 @@ aimrt: # AimRT框架的配置
   # ...
 
 # 模块自定义配置，以模块名称为节点名
-MyModule:
-  foo_key: foo_val
-  bar_key: bar_val
+FooModule:
+  key_1: val_1
+  key_2: val_2
+
+BarModule:
+  array:
+    - val1
+    - val2
+  map:
+    key_1: val_1
+    key_2: val_2
+
 ```
 
 &emsp;&emsp;当然，如果用户不想要把业务模块配置与AimRT框架配置写在一个文件中，甚至不想要以Yaml格式来写配置，AimRT也可以支持。具体的使用方式请参考`aimrt.configurator：配置`一节。
@@ -60,20 +139,19 @@ MyModule:
 
 ## `aimrt.module`：模块
 
-&emsp;&emsp;`aimrt.module`配置项主要用于配置模块的加载信息，以及模块对各个其他组件的特殊配置。配置项说明如下：
+&emsp;&emsp;`aimrt.module`配置项主要用于配置模块的加载信息，以及模块对各个其他组件的特殊配置。这是一个可选配置项，其中的细节配置说明如下：
 
 
 | 节点                                  | 类型          | 是否可选| 默认值 | 作用 |
 | ----                                  | ----          | ----  | ----  | ---- |
-| aimrt.module                          | map           | 可选  | -     | 模块配置根节点 |
-| aimrt.module.pkgs                     | array         | 可选  | []    | 要加载的Pkg动态库配置 |
-| aimrt.module.pkgs[i].path             | string        | 必选  | ""    | 要加载的Pkg动态库路径 |
-| aimrt.module.pkgs[i].disable_module   | string array  | 可选  | []    | 此动态库中要屏蔽的模块名称 |
-| aimrt.module.modules                  | array         | 可选  | []    | 模块详细配置 |
-| aimrt.module.modules[i].name          | string        | 必选  | ""    | 模块名称 |
-| aimrt.module.modules[i].enable        | bool          | 可选  | True  | 是否启用 |
-| aimrt.module.modules[i].log_lvl       | string        | 可选  | ${aimrt.log.default_module_lvl}    | 模块日志级别 |
-| aimrt.module.modules[i].cfg_file_path | string        | 可选  | ""    | 自定义模块配置文件路径 |
+| pkgs                     | array         | 可选  | []    | 要加载的Pkg动态库配置 |
+| pkgs[i].path             | string        | 必选  | ""    | 要加载的Pkg动态库路径 |
+| pkgs[i].disable_module   | string array  | 可选  | []    | 此动态库中要屏蔽的模块名称 |
+| modules                  | array         | 可选  | []    | 模块详细配置 |
+| modules[i].name          | string        | 必选  | ""    | 模块名称 |
+| modules[i].enable        | bool          | 可选  | True  | 是否启用 |
+| modules[i].log_lvl       | string        | 可选  | ${aimrt.log.default_module_lvl}    | 模块日志级别 |
+| modules[i].cfg_file_path | string        | 可选  | ""    | 自定义模块配置文件路径 |
 
 
 &emsp;&emsp;以下是一个简单的示例：
@@ -99,16 +177,18 @@ BarModule:
 ```
 
 &emsp;&emsp;使用时请注意，在`aimrt.module`节点下：
-- `pkgs[i].path`用于配置要加载的Pkg动态库路径。不允许出现重复的Pkg路径。如果Pkg文件不存在，AimRT进程会抛出异常。
-- `pkgs[i].disable_module`用于屏蔽Pkg动态库中指定名称的模块。
-- `modules[i].name`表示模块名称。不允许出现重复的模块名称。
-- `modules[i].log_lvl`用以配置模块日志等级。
-  - 如果未配置此项，则默认值是`aimrt.log.default_module_lvl`节点所配置的值。
-  - 关于可以配置的日志等级，请参考`aimrt.log`日志章节。
-- `modules[i].cfg_file_path`用以配置自定义模块配置文件路径，此处配置关系到Module接口中`configurator`组件`config_file_path`方法返回的结果，其规则如下：
-  - 如果使用者配置了此项，则`configurator`组件的`config_file_path`方法将返回此处配置的字符串内容；
-  - 如果使用者未配置此项，且AimRT框架配置文件中也不存在以该模块名称命名的根节点，则`configurator`组件的`config_file_path`方法将返回空字符串。
-  - 如果使用者未配置此项，但AimRT框架配置文件中存在以该模块名称命名的根节点，则`configurator`组件的`config_file_path`方法将返回一个临时配置文件路径，此临时配置文件将包含AimRT框架配置文件该模块名称节点下的内容。
+- `pkg`是一个数组，用于要加载的Pkg动态库。
+  - `pkgs[i].path`用于配置要加载的Pkg动态库路径。不允许出现重复的Pkg路径。如果Pkg文件不存在，AimRT进程会抛出异常。
+  - `pkgs[i].disable_module`用于屏蔽Pkg动态库中指定名称的模块。
+- `modules`是一个数组，用于配置各个模块。
+  - `modules[i].name`表示模块名称。不允许出现重复的模块名称。
+  - `modules[i].log_lvl`用以配置模块日志等级。
+    - 如果未配置此项，则默认值是`aimrt.log.default_module_lvl`节点所配置的值。
+    - 关于可以配置的日志等级，请参考`aimrt.log`日志章节。
+  - `modules[i].cfg_file_path`用以配置自定义模块配置文件路径，此处配置关系到Module接口中`configurator`组件`config_file_path`方法返回的结果，其规则如下：
+    - 如果使用者配置了此项，则`configurator`组件的`config_file_path`方法将返回此处配置的字符串内容；
+    - 如果使用者未配置此项，且AimRT框架配置文件中也不存在以该模块名称命名的根节点，则`configurator`组件的`config_file_path`方法将返回空字符串。
+    - 如果使用者未配置此项，但AimRT框架配置文件中存在以该模块名称命名的根节点，则`configurator`组件的`config_file_path`方法将返回一个临时配置文件路径，此临时配置文件将包含AimRT框架配置文件该模块名称节点下的内容。
 
 
 ## `aimrt.configurator`：配置
@@ -116,10 +196,9 @@ BarModule:
 &emsp;&emsp;`aimrt.configurator`配置项比较简单，用于确定模块配置功能的一些细节。配置项说明如下：
 
 
-| 节点                                  | 类型          | 是否可选| 默认值 | 作用 |
-| ----                                  | ----          | ----  | ----  | ---- |
-| aimrt.configurator                    | map           | 可选  | -     | 配置功能根节点 |
-| aimrt.configurator.temp_cfg_path      | string        | 可选  | "./cfg/tmp" | 生成的临时模块配置文件存放路径 |
+| 节点            | 类型          | 是否可选| 默认值 | 作用 |
+| ----            | ----          | ----  | ----  | ---- |
+| temp_cfg_path   | string        | 可选  | "./cfg/tmp" | 生成的临时模块配置文件存放路径 |
 
 
 &emsp;&emsp;以下是一个简单的示例：
@@ -139,13 +218,12 @@ aimrt:
 
 &emsp;&emsp;`aimrt.plugin`配置项用于配置插件。配置项说明如下：
 
-| 节点                                  | 类型          | 是否可选| 默认值 | 作用 |
-| ----                                  | ----          | ----  | ----  | ---- |
-| aimrt.plugin                          | map           | 可选  | -     | 插件配置根节点 |
-| aimrt.plugin.plugins                  | array         | 可选  | []    | 各个插件的配置 |
-| aimrt.plugin.plugins[i].name          | string        | 必选  | ""    | 插件名称 |
-| aimrt.plugin.plugins[i].path          | string        | 可选  | ""    | 插件路径。如果是硬编码注册的插件不需要填 |
-| aimrt.plugin.plugins[i].options       | map           | 可选  | -     | 传递给插件的初始化配置，具体内容在各个插件章节介绍 |
+| 节点                    | 类型          | 是否可选| 默认值 | 作用 |
+| ----                    | ----          | ----  | ----  | ---- |
+| plugins                 | array         | 可选  | []    | 各个插件的配置 |
+| plugins[i].name         | string        | 必选  | ""    | 插件名称 |
+| plugins[i].path         | string        | 可选  | ""    | 插件路径。如果是硬编码注册的插件不需要填 |
+| plugins[i].options      | map           | 可选  | -     | 传递给插件的初始化配置，具体内容在各个插件章节介绍 |
 
 
 &emsp;&emsp;以下是一个简单的示例：
@@ -161,9 +239,10 @@ aimrt:
 ```
 
 &emsp;&emsp;`aimrt.plugin`使用注意点如下：
-- `plugins[i].name`用于配置插件名称。不允许出现重复的插件名称。
-- 如果配置了`plugins[i].path`，AimRT框架会从该路径下加载对应的插件动态库文件。如果使用者基于App模式硬编码注册插件，则不需要配置此项。
-- `plugins[i].options`是AimRT传递给插件的初始化参数，这部分配置格式由各个插件定义，请参考对应插件的文档。
+- `plugins`是一个数组，用于配置各个插件。
+  - `plugins[i].name`用于配置插件名称。不允许出现重复的插件名称。
+  - 如果配置了`plugins[i].path`，AimRT框架会从该路径下加载对应的插件动态库文件。如果使用者基于App模式硬编码注册插件，则不需要配置此项。
+  - `plugins[i].options`是AimRT传递给插件的初始化参数，这部分配置格式由各个插件定义，请参考对应插件的文档。
 
 
 
@@ -172,12 +251,11 @@ aimrt:
 
 &emsp;&emsp;`aimrt.main_thread`配置项用于配置主线程。配置项说明如下：
 
-| 节点                                  | 类型          | 是否可选| 默认值 | 作用 |
-| ----                                  | ----          | ----  | ----  | ---- |
-| aimrt.main_thread                     | map           | 可选  | -     | 主线程配置根节点 |
-| aimrt.main_thread.name                | string        | 可选  | "aimrt_main"    | 主线程名称 |
-| aimrt.main_thread.thread_sched_policy | string        | 可选  | ""    | 线程调度策略 |
-| aimrt.main_thread.thread_bind_cpu     | unsigned int array | 可选 | [] | 绑核配置 |
+| 节点                | 类型          | 是否可选| 默认值 | 作用 |
+| ----                | ----          | ----  | ----  | ---- |
+| name                | string        | 可选  | "aimrt_main"    | 主线程名称 |
+| thread_sched_policy | string        | 可选  | ""    | 线程调度策略 |
+| thread_bind_cpu     | unsigned int array | 可选 | [] | 绑核配置 |
 
 &emsp;&emsp;以下是一个简单的示例：
 ```yaml
@@ -199,13 +277,12 @@ aimrt:
 
 &emsp;&emsp;`aimrt.executor`配置项用于配置执行器。配置项说明如下：
 
-| 节点                                  | 类型      | 是否可选| 默认值 | 作用 |
-| ----                                  | ----      | ----  | ----  | ---- |
-| aimrt.executor                        | map       | 可选  | -     | 执行器配置根节点 |
-| aimrt.executor.executors              | array     | 可选  | []    | 执行器列表 |
-| aimrt.executor.executors[i].name      | string    | 必选  | ""    | 执行器名称 |
-| aimrt.executor.executors[i].type      | string    | 必选  | ""    | 执行器类型 |
-| aimrt.executor.executors[i].options   | map       | 可选  | -     | 具体执行器的配置 |
+| 节点                    | 类型      | 是否可选| 默认值 | 作用 |
+| ----                    | ----      | ----  | ----  | ---- |
+| executors               | array     | 可选  | []    | 执行器列表 |
+| executors[i].name       | string    | 必选  | ""    | 执行器名称 |
+| executors[i].type       | string    | 必选  | ""    | 执行器类型 |
+| executors[i].options    | map       | 可选  | -     | 具体执行器的配置 |
 
 &emsp;&emsp;以下是一个简单的示例：
 ```yaml
@@ -223,9 +300,10 @@ aimrt:
 ```
 
 &emsp;&emsp;`aimrt.executor`的配置说明如下：
-- `executors[i].name`表示执行器名称。不允许出现重复的执行器名称。
-- `executors[i].type`表示执行器类型。AimRT官方提供了几种执行器类型，部分插件也提供了一些执行器类型。
-- `executors[i].options`是AimRT传递给各个执行器的初始化参数，这部分配置格式由各个执行器类型定义，请参考对应执行器类型的文档。
+- `executors`是一个数组，用于配置各个执行器。
+  - `executors[i].name`表示执行器名称。不允许出现重复的执行器名称。
+  - `executors[i].type`表示执行器类型。AimRT官方提供了几种执行器类型，部分插件也提供了一些执行器类型。
+  - `executors[i].options`是AimRT传递给各个执行器的初始化参数，这部分配置格式由各个执行器类型定义，请参考对应执行器类型的文档。
 
 ### `asio_thread`执行器
 
@@ -382,14 +460,13 @@ aimrt:
 
 &emsp;&emsp;`aimrt.log`配置项用于配置日志。配置项说明如下：
 
-| 节点                          | 类型      | 是否可选| 默认值 | 作用 |
-| ----                          | ----      | ----  | ----  | ---- |
-| aimrt.log                     | map       | 可选  | -     | 日志配置根节点 |
-| aimrt.log.core_lvl            | string    | 可选  | "Info" | 框架日志等级 |
-| aimrt.log.default_module_lvl  | string    | 可选  | "Info" | 默认的模块日志等级 |
-| aimrt.log.backends            | array     | 可选  | ""    | 日志后端列表 |
-| aimrt.log.backends[i].type    | string    | 必选  | ""    | 日志后端类型 |
-| aimrt.log.backends[i].options | map       | 可选  | -     | 具体日志后端的配置 |
+| 节点                | 类型      | 是否可选| 默认值 | 作用 |
+| ----                | ----      | ----  | ----  | ---- |
+| core_lvl            | string    | 可选  | "Info" | 框架日志等级 |
+| default_module_lvl  | string    | 可选  | "Info" | 默认的模块日志等级 |
+| backends            | array     | 可选  | ""    | 日志后端列表 |
+| backends[i].type    | string    | 必选  | ""    | 日志后端类型 |
+| backends[i].options | map       | 可选  | -     | 具体日志后端的配置 |
 
 &emsp;&emsp;其中，日志等级可选项包括以下几种（不区分大小写）：
 - Trace
@@ -417,14 +494,15 @@ aimrt:
 &emsp;&emsp;`aimrt.log`的配置说明如下：
 - `core_lvl`表示AimRT运行时内核的日志等级，内核日志一般设为Info级别即可。
 - `default_module_lvl`默认的模块日志等级。
-- `backends[i].type`是日志后端的类型。AimRT官方提供了几种日志后端，部分插件也提供了一些日志后端类型。
-- `backends[i].options`是AimRT传递给各个日志后端的初始化参数，这部分配置格式由各个日志后端类型定义，请参考对应日志后端类型的文档。
+- `backends`是一个数组，用于配置各个日志后端。
+  - `backends[i].type`是日志后端的类型。AimRT官方提供了几种日志后端，部分插件也提供了一些日志后端类型。
+  - `backends[i].options`是AimRT传递给各个日志后端的初始化参数，这部分配置格式由各个日志后端类型定义，请参考对应日志后端类型的文档。
 
 
 ### `console`控制台日志后端
 
 
-&emsp;&emsp;`console`日志后端用于将日志打印到控制台上。其所有的配置项如下：
+&emsp;&emsp;`console`日志后端是AimRT官方提供的一种日志后端，用于将日志打印到控制台上。其所有的配置项如下：
 
 
 | 节点                  | 类型              | 是否可选| 默认值 | 作用 |
@@ -459,7 +537,7 @@ aimrt:
 
 ### `rotate_file`滚动文件日志后端
 
-&emsp;&emsp;`rotate_file`日志后端用于将日志打印到文件中。其所有的配置项如下：
+&emsp;&emsp;`rotate_file`日志后端是AimRT官方提供的一种日志后端，用于将日志打印到文件中。其所有的配置项如下：
 
 
 | 节点                  | 类型              | 是否可选| 默认值 | 作用 |
@@ -500,23 +578,19 @@ aimrt:
 
 ## `aimrt.channel`：Channel
 
+&emsp;&emsp;`aimrt.channel`配置项用于配置Channel功能。详细配置项说明如下：
 
-***TODO待完善***
-
-&emsp;&emsp;`aimrt.channel`配置项用于配置Channel功能。配置项说明如下：
-
-| 节点                                              | 类型      | 是否可选| 默认值 | 作用 |
-| ----                                              | ----      | ----  | ----  | ---- |
-| aimrt.channel                                     | map       | 可选  | -     | Channel配置根节点 |
-| aimrt.channel.backends                            | array     | 可选  | []    | Channel后端列表 |
-| aimrt.channel.backends[i].type                    | string    | 必选  | ""    | Channel后端类型 |
-| aimrt.channel.backends[i].options                 | map       | 可选  | -     | 具体Channel后端的配置 |
-| aimrt.channel.pub_topics_options                  | array     | 可选  | ""    | Channel Pub Topic配置 |
-| aimrt.channel.pub_topics_options[i].topic_name    | string    | 必选  | ""    | Channel Pub Topic名称，支持正则表达式 |
-| aimrt.channel.pub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Pub Topic允许使用的Channel后端列表 |
-| aimrt.channel.sub_topics_options                  | array     | 可选  | ""    | Channel Sub Topic配置 |
-| aimrt.channel.sub_topics_options[i].topic_name    | string    | 必选  | ""    | Channel Sub Topic名称，支持正则表达式 |
-| aimrt.channel.sub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Sub Topic允许使用的Channel后端列表 |
+| 节点                                | 类型      | 是否可选| 默认值 | 作用 |
+| ----                                | ----      | ----  | ----  | ---- |
+| backends                            | array     | 可选  | []    | Channel后端列表 |
+| backends[i].type                    | string    | 必选  | ""    | Channel后端类型 |
+| backends[i].options                 | map       | 可选  | -     | 具体Channel后端的配置 |
+| pub_topics_options                  | array     | 可选  | ""    | Channel Pub Topic配置 |
+| pub_topics_options[i].topic_name    | string    | 必选  | ""    | Channel Pub Topic名称，支持正则表达式 |
+| pub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Pub Topic允许使用的Channel后端列表 |
+| sub_topics_options                  | array     | 可选  | ""    | Channel Sub Topic配置 |
+| sub_topics_options[i].topic_name    | string    | 必选  | ""    | Channel Sub Topic名称，支持正则表达式 |
+| sub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Sub Topic允许使用的Channel后端列表 |
 
 
 &emsp;&emsp;以下是一个简单的示例：
@@ -534,25 +608,88 @@ aimrt:
         enable_backends: [local] # 【必选】Channel Sub Topic允许使用的Channel后端列表
 ```
 
+&emsp;&emsp;`aimrt.channel`的详细配置说明如下：
+- `backends`是一个数组，用于配置各个Channel后端。
+  - `backends[i].type`是Channel后端的类型。AimRT官方提供了`local`后端，部分插件也提供了一些Channel后端类型。
+  - `backends[i].options`是AimRT传递给各个Channel后端的初始化参数，这部分配置格式由各个Channel后端类型定义，请参考对应Channel后端类型的文档。
+- `pub_topics_options`和`sub_topics_options`是一个规则列表，用于控制各个`Topic`在发布或订阅消息时使用的Channel后端规则，其中：
+  - `topic_name`表示本条规则的`Topic`名称，以正则表达式形式配置，如果`Topic`名称命中了该正则表达式，则会应用该条规则。
+  - `enable_backends`是一个字符串数组，表示如果`Topic`名称命中了本条规则，则将该`Topic`下发布的所有消息投递到这个列表中的所有Channel后端进行处理。注意：
+    - 该数组中出现的名称都必须要在`backends`中配置过。
+    - 该数组配置的Channel后端顺序决定了消息投递到各个Channel后端进行处理的顺序。
+  - 采用由上往下的顺序检查命中的规则，当某个`Topic`命中某条规则后，则不会针对此`Topic`再检查后面的规则。
+
+
+&emsp;&emsp;在AimRT中，Channel的前端接口和后端实现是解耦的，在接口中`Publish`一个消息后最终是要Channel后端来进行正真的发布动作，消息通常会在调用`Publish`之后，在当前线程里顺序的投递到各个Channel后端中进行处理。大部分Channel后端是异步处理消息的，但有些特殊的后端-例如`local`后端，可以配置成阻塞的调用订阅端回调。因此，`Publish`方法到底会阻塞多久是未定义的，与具体的后端配置相关。
+
+
+***TODO: CTX这部分的功能还在开发中，文档后续再补充***
+
+&emsp;&emsp;此外，Channel的发布和订阅接口还可以包含一个Ctx参数，这个Ctx参数包含一个K-V形式的map，其中有一部分参数用于在运行阶段配置Channel的表现，这部分参数如下：
+
+| Key值                     | Val含义     | 作用 |
+| ----                      | ----        | ----  | 
+| TODO                      | TODO        |  TODO |
+
+&emsp;&emsp;此外还有一部分参数是给具体的Channel后端使用的，此部分详见各个Channel后端的文档。
+
+
+
+### `local`类型Channel后端
+
+
+&emsp;&emsp;`local`类型的Channel后端是AimRT官方提供的一种Channel后端，用于将消息发布到同进程中的其他模块，它会自动判断发布端和订阅端是否在同一个`Pkg`内，从而采用各种方式进行性能的优化。其所有的配置项如下：
+
+
+| 节点                            | 类型    | 是否可选| 默认值 | 作用 |
+| ----                            | ----    | ----  | ----  | ---- |
+| subscriber_use_inline_executor  | bool    | 可选  | true  | 订阅端回调是否使用inline执行器 |
+| subscriber_executor             | string  | subscriber_use_inline_executor为false时必选  | "" | 订阅端回调使用的执行器名称 |
+
+
+&emsp;&emsp;以下是一个简单的示例：
+```yaml
+aimrt:
+  executor:
+    executors:
+      - name: work_thread_pool
+        type: asio_thread
+        options:
+          thread_num: 4
+  channel: # 【可选】Channel配置根节点
+    backends: # 【可选】Channel后端列表
+      - type: local # 【必选】Channel后端类型
+        options: # 【可选】具体Channel后端的配置
+          subscriber_use_inline_executor: false # 【可选】订阅端回调是否使用inline执行器
+          subscriber_executor: work_thread_pool # 【subscriber_use_inline_executor为false时必选】订阅端回调使用的执行器名称
+    pub_topics_options: # 【可选】Channel Pub Topic配置
+      - topic_name: "(.*)" # 【必选】Channel Pub Topic名称，支持正则表达式
+        enable_backends: [local] # 【必选】Channel Pub Topic允许使用的Channel后端列表
+    sub_topics_options: # 【可选】Channel Sub Topic配置
+      - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
+        enable_backends: [local] # 【必选】Channel Sub Topic允许使用的Channel后端列表
+```
+
+&emsp;&emsp;使用注意点如下：
+- `subscriber_use_inline_executor`如果配置为true，则直接使用发布端的执行器来执行订阅端的回调，会阻塞发布端的Publish方法直到所有的订阅端回调都执行完成。
+- `subscriber_executor`仅在subscriber_use_inline_executor为false时生效，后端会将订阅端的回调都投递进此执行器中异步执行，发布端的Publish方法会立即返回。
 
 ## `aimrt.rpc`：RPC
 
-***TODO待完善***
+&emsp;&emsp;`aimrt.rpc`配置项用于配置RPC功能。详细配置项说明如下：
 
-&emsp;&emsp;`aimrt.rpc`配置项用于配置RPC功能。配置项说明如下：
 
-| 节点                                          | 类型      | 是否可选| 默认值 | 作用 |
-| ----                                          | ----      | ----  | ----  | ---- |
-| aimrt.rpc                                     | map       | 可选  | -     | RPC配置根节点 |
-| aimrt.rpc.backends                            | array     | 可选  | []    | RPC后端列表 |
-| aimrt.rpc.backends[i].type                    | string    | 必选  | ""    | RPC后端类型 |
-| aimrt.rpc.backends[i].options                 | map       | 可选  | -     | 具体RPC后端的配置 |
-| aimrt.rpc.clients_options                     | array     | 可选  | ""    | RPC Client配置 |
-| aimrt.rpc.clients_options[i].func_name        | string    | 必选  | ""    | RPC Client名称，支持正则表达式 |
-| aimrt.rpc.clients_options[i].enable_backends  | string array | 必选  | [] | RPC Client允许使用的RPC后端列表 |
-| aimrt.rpc.servers_options                     | array     | 可选  | ""    | RPC Server配置 |
-| aimrt.rpc.servers_options[i].func_name        | string    | 必选  | ""    | RPC Server名称，支持正则表达式 |
-| aimrt.rpc.servers_options[i].enable_backends  | string array | 必选  | [] | RPC Server允许使用的RPC后端列表 |
+| 节点                                | 类型      | 是否可选| 默认值 | 作用 |
+| ----                                | ----      | ----  | ----  | ---- |
+| backends                            | array     | 可选  | []    | RPC后端列表 |
+| backends[i].type                    | string    | 必选  | ""    | RPC后端类型 |
+| backends[i].options                 | map       | 可选  | -     | 具体RPC后端的配置 |
+| clients_options                     | array     | 可选  | ""    | RPC Client配置 |
+| clients_options[i].func_name        | string    | 必选  | ""    | RPC Client名称，支持正则表达式 |
+| clients_options[i].enable_backends  | string array | 必选  | [] | RPC Client允许使用的RPC后端列表 |
+| servers_options                     | array     | 可选  | ""    | RPC Server配置 |
+| servers_options[i].func_name        | string    | 必选  | ""    | RPC Server名称，支持正则表达式 |
+| servers_options[i].enable_backends  | string array | 必选  | [] | RPC Server允许使用的RPC后端列表 |
 
 
 &emsp;&emsp;以下是一个简单的示例：
@@ -572,6 +709,65 @@ aimrt:
 
 
 
+&emsp;&emsp;`aimrt.rpc`的配置说明如下：
+- `backends`是一个数组，用于配置各个Rpc后端。
+  - `backends[i].type`是Rpc后端的类型。AimRT官方提供了`local`后端，部分插件也提供了一些Rpc后端类型。
+  - `backends[i].options`是AimRT传递给各个Rpc后端的初始化参数，这部分配置格式由各个Rpc后端类型定义，请参考对应Rpc后端类型的文档。
+- `clients_options`和`servers_options`是一个规则列表，用于控制各个RPC方法在发起调用或处理调用时使用的Rpc后端规则，其中：
+  - `func_name`表示本条规则的RPC方法名称，以正则表达式形式配置，如果RPC方法名称命中了该正则表达式，则会应用该条规则。
+  - `enable_backends`是一个字符串数组，表示如果RPC方法名称命中了本条规则，则此数组就定义了该RPC方法能被处理的RPC后端。注意，该数组中出现的名称都必须要在`backends`中配置过。
+  - 采用由上往下的顺序检查命中的规则，当某个RPC方法命中某条规则后，则不会针对此RPC方法再检查后面的规则。
+
+
+&emsp;&emsp;在AimRT中，RPC的前端接口和后端实现是解耦的，当开发者使用接口发起一个RPC调用，最终是要RPC后端来执行正真的RPC调用操作。
+
+&emsp;&emsp;当Client端接口层发起一个RPC请求后，AimRT框架会根据以下规则，在多个RPC后端中选择一个进行实际的处理：
+- AimRT框架会先根据`clients_options`配置确定某个RPC方法能被处理的RPC后端列表。
+- AimRT框架会先解析传入的CTX里Meta参数中的`AIMRT_RPC_CONTEXT_KEY_TO_ADDR`项，如果其中手动配置了形如`xxx://yyy,zzz`这样的URL，则会解析出`xxx`字符串，并寻找同名的RPC后端进行处理。
+- 如果没有配置CTX参数，则根据该RPC方法能被处理的RPC后端列表顺序，依次尝试进行处理，直到遇到第一个真正进行处理的后端。
+
+&emsp;&emsp;Server端相对来说规则就比较简单，会根据`servers_options`的配置，接收并处理其中各个RPC后端传递过来的请求。
+
+
+***TODO: CTX这部分的功能还在开发中，文档后续再补充***
+
+&emsp;&emsp;此外，RPC的请求和处理接口还可以包含一个Ctx参数，这个Ctx参数包含一个K-V形式的map，其中有一部分参数用于在运行阶段配置Rpc的表现，这部分参数如下：
+
+| Key值                     | Val含义     | 作用 |
+| ----                      | ----        | ----  | 
+| TODO                      | TODO        |  TODO |
+
+&emsp;&emsp;此外还有一部分参数是给具体的Rpc后端使用的，此部分详见各个Rpc后端的文档。
+
+
+
+### `local`类型Rpc后端
+
+
+&emsp;&emsp;`local`类型的Rpc后端是AimRT官方提供的一种Rpc后端，用于请求同进程中的其他模块提供的RPC，它会自动判断Client端和Server端是否在同一个`Pkg`内，从而采用各种方式进行性能的优化。其所有的配置项如下：
+
+
+| 节点                            | 类型    | 是否可选| 默认值 | 作用 |
+| ----                            | ----    | ----  | ----  | ---- |
+| -  | -    | -  | -  | - |
+
+
+&emsp;&emsp;以下是一个简单的示例：
+```yaml
+aimrt:
+  rpc: # 【可选】RPC配置根节点
+    backends: # 【可选】RPC后端列表
+      - type: local # 【必选】RPC后端类型
+    clients_options: # 【可选】RPC Client配置
+      - func_name: "(.*)" # 【必选】RPC Client名称，支持正则表达式
+        enable_backends: [local] # 【必选】RPC Client允许使用的RPC后端列表
+    servers_options: # 【可选】RPC Server配置
+      - func_name: "(.*)" # 【必选】RPC Server名称，支持正则表达式
+        enable_backends: [local] # 【必选】RPC Server允许使用的RPC后端列表
+```
+
+&emsp;&emsp;使用注意点如下：
+- Server的执行器将使用Client调用时的执行器。同样，Client调用结束后的执行器将使用Server返回时的执行器。
 
 
 ## `aimrt.parameter`：参数

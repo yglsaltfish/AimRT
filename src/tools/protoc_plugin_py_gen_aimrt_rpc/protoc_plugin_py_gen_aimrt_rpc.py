@@ -130,12 +130,12 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}Proxy::{{rpc_func_name}}(
       -> aimrt::co::Task<aimrt::rpc::Status> {
     co_return co_await aimrt::co::AsyncWrapper<aimrt::rpc::Status>(
         [rpc_handle_ref, ctx_ref, req_ptr, rsp_ptr](
-            aimrt::util::Function<void(aimrt::rpc::Status)>&& call_back) {
+            aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
           rpc_handle_ref.Invoke(
               "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
               ctx_ref, req_ptr, rsp_ptr,
-              [call_back{std::move(call_back)}](uint32_t code) {
-                call_back(aimrt::rpc::Status(code));
+              [callback{std::move(callback)}](uint32_t code) {
+                callback(aimrt::rpc::Status(code));
               });
         });
   };

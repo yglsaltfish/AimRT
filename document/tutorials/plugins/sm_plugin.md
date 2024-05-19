@@ -1,5 +1,9 @@
 # 共享内存插件
 
+[TOC]
+
+***TODO待完善***
+
 ## 代码结构
 - sm_plugin
   - dispatcher：调度器，负责监听共享内存中可读状态，在读取数据后执行用户callback。
