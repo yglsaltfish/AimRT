@@ -22,19 +22,19 @@ class NetPlugin : public AimRTCorePluginBase {
     uint32_t thread_num = 2;
 
     struct HttpOptions {
-      std::string listen_ip;
+      std::string listen_ip = "0.0.0.0";
       uint16_t listen_port;
     };
     std::optional<HttpOptions> http_options;
 
     struct TcpOptions {
-      std::string listen_ip;
+      std::string listen_ip = "0.0.0.0";
       uint16_t listen_port;
     };
     std::optional<TcpOptions> tcp_options;
 
     struct UdpOptions {
-      std::string listen_ip;
+      std::string listen_ip = "0.0.0.0";
       uint16_t listen_port;
       uint32_t max_pkg_size = 1024;
     };
