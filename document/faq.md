@@ -28,6 +28,8 @@
 
 &emsp;&emsp;AimRT官方支持ROS2协议，只需要打开指定的CMake Option并引用特定的CMake Target即可，然后在逻辑层面就可以非常自然的使用ROS2作为RPC、Channel的消息类型。但此时，AimRT节点与其他AimRT节点之间的底层通信可能并不是基于ROS2，这将根据配置的RPC、Channel后端决定，可能是Mqtt、Tcp或者Http等。
 
+&emsp;&emsp;注意，截至到AimRT-v0.6.0版本，暂时还不支持与ROS2 Action的兼容。
+
 &emsp;&emsp;AimRT官方还支持ROS2（Humble）插件，此插件提供了ROS2的RPC和Channel后端，对外通过ROS2进行通信，在外界看来这个AimRT节点就是一个ROS2 Node。它们将基于以下原则工作：
 - 如果上层逻辑层使用ROS2协议，那么它们会将消息采用原生ROS2的形式发送出去，外部ROS2节点直接基于原生的ROS2协议即可。
 - 如果上层逻辑层使用的是非ROS2协议，例如Protobuf，那么它们会将消息序列化到一个特殊的ROS2协议中，外部ROS2节点需要订阅这个特殊的ROS2协议，并从中反序列化得到正真的Protobuf消息。

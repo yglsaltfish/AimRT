@@ -1059,7 +1059,7 @@ void Publish(PublisherRef publisher, const MsgType& msg);
   - 有两种`Publish`接口，其中一种多一个CTX参数，用于向后端、下游传递一些额外信息。CTX的具体功能由Channel后端决定。
 
 
-&emsp;&emsp;用户在逻辑层发布一个消息后，特定的Channel后端将处理具体的消息发布请求。具体的表现请参考具体的后端文档。
+&emsp;&emsp;用户在逻辑层`Publish`一个消息后，特定的Channel后端将处理具体的消息发布请求，此时根据后端的表现，有可能会阻塞一段时间，因此`Publish`方法耗费的时间是未定义的。但一般来说，Channel后端都不会阻塞`Publish`方法太久，详细的信息请参考您使用的后端的文档。
 
 ### Sub接口
 
@@ -1097,6 +1097,9 @@ bool SubscribeCo(
 - 消息类型`MsgType`作为一个模板参数传入；
 - 不允许在一个`SubscriberRef`中重复订阅同一种类型；
 - 如果订阅失败，会返回false；
+
+&emsp;&emsp;此外还需要注意的是，由哪个执行器来执行订阅的回调跟具体的Channel后端实现有关，这个是运行阶段通过配置才能确定的，使用者在编写逻辑代码时不应有任何假设。一般来说，如果回调中的任务非常轻量，那就可以直接在回调里处理；但如果回调中的任务比较重，那最好调度到其他专门执行任务的执行器里处理。
+
 
 ## rpc::RpcHandleRef：RPC句柄
 
