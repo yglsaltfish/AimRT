@@ -14,13 +14,10 @@ bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) {
 
   try {
     // Read cfg
-    const auto configurator = core_.GetConfigurator();
-    if (configurator) {
-      std::string file_path = std::string(configurator.GetConfigFilePath());
-      if (!file_path.empty()) {
-        YAML::Node cfg_node = YAML::LoadFile(file_path);
-        rpc_frq_ = cfg_node["rpc_frq"].as<double>();
-      }
+    std::string file_path = std::string(core_.GetConfigurator().GetConfigFilePath());
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path);
+      rpc_frq_ = cfg_node["rpc_frq"].as<double>();
     }
 
     // Get executor handle
@@ -33,12 +30,11 @@ bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) {
     AIMRT_CHECK_ERROR_THROW(rpc_handle, "Get rpc handle failed.");
 
     // Register rpc client
-    bool ret = aimrt::rpc::RegisterClientFunc<
-        example_ros2::srv::RosTestRpcProxy>(rpc_handle);
+    bool ret = example_ros2::srv::RegisterRosTestRpcClientFunc(rpc_handle);
     AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
 
     // Create rpc proxy
-    proxy_ = std::make_shared<example_ros2::srv::RosTestRpcProxy>(rpc_handle);
+    proxy_ = std::make_shared<example_ros2::srv::RosTestRpcCoProxy>(rpc_handle);
 
     // Register filter
     proxy_->RegisterFilter([this](aimrt::rpc::ContextRef ctx,
@@ -112,8 +108,7 @@ co::Task<void> NormalRpcClientModule::MainLoop() {
       example_ros2::srv::RosTestRpc_Response rsp;
       req.data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
-      AIMRT_INFO("start new rpc call. req:\n{}",
-                 example_ros2::srv::to_yaml(req));
+      AIMRT_INFO("start new rpc call. req:\n{}", example_ros2::srv::to_yaml(req));
 
       auto ctx = proxy_->NewContextRef();
       ctx.SetTimeout(std::chrono::seconds(3));

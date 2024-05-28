@@ -4,7 +4,7 @@
 
 namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_server_module {
 
-class RosTestRpcServiceImpl : public example_ros2::srv::RosTestRpcService {
+class RosTestRpcServiceImpl : public example_ros2::srv::RosTestRpcCoService {
  public:
   RosTestRpcServiceImpl() = default;
   ~RosTestRpcServiceImpl() override = default;

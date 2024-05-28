@@ -32,24 +32,105 @@ def gen_h_file(pkg_name, srv_filename):
 namespace {{pkg_name}} {
 namespace srv {
 
-class {{srv_filename}}Service : public aimrt::rpc::ServiceBase {
+class {{srv_filename}}SyncService : public aimrt::rpc::ServiceBase {
  public:
-  {{srv_filename}}Service();
-  ~{{srv_filename}}Service() override = default;
+  {{srv_filename}}SyncService();
+  ~{{srv_filename}}SyncService() override = default;
+
+  virtual aimrt::rpc::Status {{srv_filename}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp) {
+    return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
+  }
+};
+
+class {{srv_filename}}AsyncService : public aimrt::rpc::ServiceBase {
+ public:
+  {{srv_filename}}AsyncService();
+  ~{{srv_filename}}AsyncService() override = default;
+
+  virtual void {{srv_filename}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp,
+      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+    callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED));
+  }
+};
+
+class {{srv_filename}}CoService : public aimrt::rpc::CoServiceBase {
+ public:
+  {{srv_filename}}CoService();
+  ~{{srv_filename}}CoService() override = default;
 
   virtual aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}(
       aimrt::rpc::ContextRef ctx_ref,
       const {{srv_filename}}_Request& req,
-      {{srv_filename}}_Response& rsp);
+      {{srv_filename}}_Response& rsp) {
+    co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
+  }
 };
 
-class {{srv_filename}}Proxy : public aimrt::rpc::ProxyBase {
- public:
-  explicit {{srv_filename}}Proxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
-  ~{{srv_filename}}Proxy() = default;
+using {{srv_filename}}Service [[deprecated("Using {{srv_filename}}CoService.")]] = {{srv_filename}}CoService;
 
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);
+bool Register{{srv_filename}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);
+
+class {{srv_filename}}SyncProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{srv_filename}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{srv_filename}}SyncProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref);
+  }
+
+  aimrt::rpc::Status {{srv_filename}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp);
+
+  aimrt::rpc::Status {{srv_filename}}(
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp) {
+    return {{srv_filename}}(aimrt::rpc::ContextRef(), req, rsp);
+  }
+};
+
+class {{srv_filename}}AsyncProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{srv_filename}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{srv_filename}}AsyncProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref);
+  }
+
+  void {{srv_filename}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp,
+      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback);
+
+  void {{srv_filename}}(
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp,
+      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+    {{srv_filename}}(aimrt::rpc::ContextRef(), req, rsp, std::move(callback));
+  }
+};
+
+class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
+ public:
+  explicit {{srv_filename}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::CoProxyBase(rpc_handle_ref) {}
+  ~{{srv_filename}}CoProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref);
+  }
 
   aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}(
       aimrt::rpc::ContextRef ctx_ref,
@@ -62,6 +143,8 @@ class {{srv_filename}}Proxy : public aimrt::rpc::ProxyBase {
     return {{srv_filename}}(aimrt::rpc::ContextRef(), req, rsp);
   }
 };
+
+using {{srv_filename}}Proxy [[deprecated("Using {{srv_filename}}CoProxy.")]] = {{srv_filename}}CoProxy;
 
 }  // namespace srv
 }  // namespace {{pkg_name}}
@@ -83,6 +166,8 @@ def gen_cc_file(pkg_name, srv_filename):
 
 #include "{{srv_filename}}.aimrt_rpc.srv.h"
 
+#include <future>
+
 #include "aimrt_module_cpp_interface/co/async_wrapper.h"
 #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
 #include "aimrt_module_cpp_interface/co/on.h"
@@ -96,58 +181,147 @@ def gen_cc_file(pkg_name, srv_filename):
 namespace {{pkg_name}} {
 namespace srv {
 
-{{srv_filename}}Service::{{srv_filename}}Service() {
-  {
-    aimrt::util::Function<aimrt_function_service_func_ops_t> callback(
-        [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* callback) {
-          const aimrt::rpc::RpcHandle h =
-              [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
-              -> aimrt::co::Task<aimrt::rpc::Status> {
-            return {{srv_filename}}(
-                ctx_ref,
-                *static_cast<const {{srv_filename}}_Request*>(req_ptr),
-                *static_cast<{{srv_filename}}_Response*>(rsp_ptr));
-          };
+{{srv_filename}}SyncService::{{srv_filename}}SyncService() {
+  aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+      [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
+        aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
 
-          aimrt::util::Function<aimrt_function_service_callback_ops_t> f(callback);
+        auto status = {{srv_filename}}(
+            aimrt::rpc::ContextRef(ctx),
+            *static_cast<const {{srv_filename}}_Request*>(req),
+            *static_cast<{{srv_filename}}_Response*>(rsp));
 
-          aimrt::co::StartDetached(
-              aimrt::co::On(
-                  aimrt::co::InlineScheduler(),
-                  filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp)) |
-              aimrt::co::Then(
-                  [f{std::move(f)}](aimrt::rpc::Status status) {
-                    f(status.Code());
-                  }));
-        });
-    RegisterServiceFunc(
-        "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-        rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
-        aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
-        aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>(),
-        std::move(callback));
-  }
+        result_callback(status.Code());
+      });
+  RegisterServiceFunc(
+      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
+      aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
+      aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>(),
+      std::move(service_callback));
 }
 
-aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}Service::{{srv_filename}}(
+{{srv_filename}}AsyncService::{{srv_filename}}AsyncService() {
+  aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+      [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
+        aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
+
+        {{srv_filename}}(
+            aimrt::rpc::ContextRef(ctx),
+            *static_cast<const {{srv_filename}}_Request*>(req),
+            *static_cast<{{srv_filename}}_Response*>(rsp),
+            [result_callback{std::move(result_callback)}](aimrt::rpc::Status status) {
+              result_callback(status.Code());
+            });
+      });
+  RegisterServiceFunc(
+      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
+      aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
+      aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>(),
+      std::move(service_callback));
+}
+
+{{srv_filename}}CoService::{{srv_filename}}CoService() {
+  aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+      [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
+        const aimrt::rpc::RpcHandle h =
+            [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
+            -> aimrt::co::Task<aimrt::rpc::Status> {
+          return {{srv_filename}}(
+              ctx_ref,
+              *static_cast<const {{srv_filename}}_Request*>(req_ptr),
+              *static_cast<{{srv_filename}}_Response*>(rsp_ptr));
+        };
+
+        aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
+
+        aimrt::co::StartDetached(
+            aimrt::co::On(
+                aimrt::co::InlineScheduler(),
+                filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp)) |
+            aimrt::co::Then(
+                [result_callback{std::move(result_callback)}](aimrt::rpc::Status status) {
+                  result_callback(status.Code());
+                }));
+      });
+  RegisterServiceFunc(
+      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
+      aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
+      aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>(),
+      std::move(service_callback));
+}
+
+bool Register{{srv_filename}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+  return rpc_handle_ref.RegisterClientFunc(
+      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
+      aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
+      aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>());
+}
+
+aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp) {
-  co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
+  if (ctx_ref) {
+    if (ctx_ref.GetSerializationType().empty())
+      ctx_ref.SetSerializationType("ros2");
+  } else {
+    ctx_ref = rpc_handle_ref_.NewContextRef();
+    ctx_ref.SetSerializationType("ros2");
+  }
+
+  std::promise<aimrt::rpc::Status> result_promise;
+
+  rpc_handle_ref_.Invoke(
+      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      ctx_ref,
+      &req,
+      &rsp,
+      [&result_promise](uint32_t code) {
+        result_promise.set_value(aimrt::rpc::Status(code));
+      });
+
+  return result_promise.get_future().get();
 }
 
-bool {{srv_filename}}Proxy::RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-  if (!(rpc_handle_ref.RegisterClientFunc(
-          "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-          rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
-          aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
-          aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>())))
-    return false;
+void {{srv_filename}}AsyncProxy::{{srv_filename}}(
+    aimrt::rpc::ContextRef ctx_ref,
+    const {{srv_filename}}_Request& req,
+    {{srv_filename}}_Response& rsp,
+    aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+  if (ctx_ref) {
+    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
 
-  return true;
+    rpc_handle_ref_.Invoke(
+        "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+        ctx_ref,
+        &req,
+        &rsp,
+        [callback{std::move(callback)}](uint32_t code) {
+          callback(aimrt::rpc::Status(code));
+        });
+
+    return;
+  }
+
+  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
+  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
+  ctx_ref.SetSerializationType("ros2");
+
+  rpc_handle_ref_.Invoke(
+      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      ctx_ref,
+      &req,
+      &rsp,
+      [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
+        callback(aimrt::rpc::Status(code));
+      });
 }
 
-aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}Proxy::{{srv_filename}}(
+aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp) {

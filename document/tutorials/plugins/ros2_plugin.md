@@ -103,8 +103,9 @@ byte[]  data
 
 &emsp;&emsp;如果此时原生的ROS2节点需要和AimRT的节点对接，原生ROS2节点的开发者需要搭配此协议Req/Rsp的data字段来序列化/反序列化真正的请求包/回包。
 
+&emsp;&emsp;此外，由于ROS2对`service_name`有一些特殊要求，AimRT与ROS2互通时的`service_name`由AimRT Func根据一个类似于URL编码的规则来生成：将所有除数字、字母和'/'的符号的ascii码以HEX编码，加上'_'作为前缀。例如，如果AimRT Func名称为`/aaa.bbb.ccc/ddd`，则编码后的ROS2 service name就是`/aaa_2Ebbb_2Eccc/ddd`。具体值也会在ros2_plugin启动时打印出来。
 
-&emsp;&emsp;基于这个特性，`ros2`类型的RPC后端可以用于打通与原生ROS2节点的RPC链路，从而实现AimRT对ROS2的兼容。
+&emsp;&emsp;基于以上特性，`ros2`类型的RPC后端可以用于打通与原生ROS2节点的RPC链路，从而实现AimRT对ROS2的兼容。
 
 ## `ros2` Channel后端
 
@@ -163,5 +164,6 @@ byte[]  data
 
 &emsp;&emsp;如果此时原生的ROS2节点需要和AimRT的节点对接，原生ROS2节点的开发者需要搭配此协议的data字段来序列化/反序列化真正的消息。
 
+&emsp;&emsp;此外，AimRT与ROS2互通时的`Topic`名称由以下规则生成：`${aimrt_topic}/${ros2_encode_aimrt_msg_type}`。其中`${aimrt_topic}`是AimRT Topic名称，`${ros2_encode_aimrt_msg_type}`根据AimRT Msg名称由一个类似于URL编码的规则来生成：将所有除数字、字母和'/'的符号的ascii码以HEX编码，加上'_'作为前缀。例如，如果AimRT Topic名称是`test_topic`，AimRT Msg名称为`pb:aaa.bbb.ccc`，则最终ROS2 Topic值就是`test_topic/pb_3Aaaa_2Ebbb_2Eccc`。具体值也会在ros2_plugin启动时打印出来。
 
 &emsp;&emsp;基于这个特性，`ros2`类型的Channel后端可以用于打通与原生ROS2节点的Channel链路，从而实现AimRT对ROS2的兼容。

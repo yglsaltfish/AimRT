@@ -8,6 +8,10 @@ set_namespace()
 add_subdirectory(module/normal_rpc_client_module)
 add_subdirectory(module/benchmark_rpc_client_module)
 add_subdirectory(module/normal_rpc_server_module)
+add_subdirectory(module/normal_rpc_sync_client_module)
+add_subdirectory(module/normal_rpc_sync_server_module)
+add_subdirectory(module/normal_rpc_async_client_module)
+add_subdirectory(module/normal_rpc_async_server_module)
 
 # pkg
 add_subdirectory(pkg/ros2_rpc_pkg)

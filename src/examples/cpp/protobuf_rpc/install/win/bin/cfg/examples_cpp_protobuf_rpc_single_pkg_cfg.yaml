@@ -32,7 +32,13 @@ aimrt:
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./protobuf_rpc_pkg.dll # so/dll地址
-        disable_module: [] # 此动态库中要屏蔽的模块名称。默认全部加载
+        disable_module: # 此动态库中要屏蔽的模块名称。默认全部加载
+          [
+            NormalRpcAsyncClientModule,
+            NormalRpcAsyncServerModule,
+            NormalRpcSyncClientModule,
+            NormalRpcSyncServerModule,
+          ]
     modules: # 模块
       - name: NormalRpcClientModule # 模块Name接口返回的名称
         log_lvl: INFO # 模块日志级别

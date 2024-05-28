@@ -4,8 +4,6 @@
 #include "core/util/rpc_client_tool.h"
 #include "mqtt_plugin/msg_handle_registry.h"
 
-#include "tbb/concurrent_hash_map.h"
-
 namespace aimrt::plugins::mqtt_plugin {
 
 class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {

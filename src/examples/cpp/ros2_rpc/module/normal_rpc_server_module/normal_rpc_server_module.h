@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "aimrt_module_cpp_interface/module_base.h"
 #include "normal_rpc_server_module/service.h"
 

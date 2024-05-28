@@ -123,7 +123,6 @@ aimrt:
     servers_options: # 【可选】RPC Server配置
       - func_name: "(.*)" # 【必选】RPC Server名称，支持正则表达式
         enable_backends: [http] # 【必选】RPC Server允许使用的RPC后端列表
-
 ```
 
 &emsp;&emsp;以上示例中，Server端监听了本地的50080端口，Client端则配置了所有的RPC请求都通过http后端请求到`http://127.0.0.1:50080`这个地址，也就是服务端监听的地址，从而完成RPC的调用闭环。
@@ -207,7 +206,7 @@ aimrt:
         enable_backends: [http] # 【必选】Channel Sub Topic允许使用的Channel后端列表
 ```
 
-&emsp;&emsp;以上示例中，订阅端监听了本地的50080端口，发布端则配置了所有的Topic消息都通过http后端请求到`127.0.0.1:50080`这个地址，也就是服务端监听的地址，从而打通消息发布订阅的链路。
+&emsp;&emsp;以上示例中，订阅端监听了本地的50080端口，发布端则配置了所有的Topic消息都通过http后端请求到`127.0.0.1:50080`这个地址，也就是服务端监听的地址，订阅端也配置了所有消息都可以从http后端触发回调，从而打通消息发布订阅的链路。
 
 &emsp;&emsp;发布端向订阅端发布消息时，遵循的格式如下：
 - 使用HTTP POST方式发送，Body中填充消息序列化后的数据；

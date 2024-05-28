@@ -6,13 +6,14 @@
 #include "normal_publisher_module/normal_publisher_module.h"
 #include "normal_subscriber_module/normal_subscriber_module.h"
 
-static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>>
-    aimrt_module_register_array[]{
-        {"NormalPublisherModule", []() -> aimrt::ModuleBase* {
-           return new aimrt::examples::cpp::protobuf_channel::normal_publisher_module::NormalPublisherModule();
-         }},
-        {"BenchmarkPublisherModule", []() -> aimrt::ModuleBase* {
-           return new aimrt::examples::cpp::protobuf_channel::benchmark_publisher_module::BenchmarkPublisherModule();
-         }}};
+using namespace aimrt::examples::cpp::protobuf_channel;
+
+static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>> aimrt_module_register_array[]{
+    {"NormalPublisherModule", []() -> aimrt::ModuleBase* {
+       return new normal_publisher_module::NormalPublisherModule();
+     }},
+    {"BenchmarkPublisherModule", []() -> aimrt::ModuleBase* {
+       return new benchmark_publisher_module::BenchmarkPublisherModule();
+     }}};
 
 AIMRT_PKG_MAIN(aimrt_module_register_array)

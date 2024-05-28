@@ -8,7 +8,7 @@
 
 namespace aimrt::plugins::time_manipulator_plugin {
 
-class TimeManipulatorServiceImpl : public aimrt::protocols::time_manipulator_plugin::TimeManipulatorService {
+class TimeManipulatorServiceImpl : public aimrt::protocols::time_manipulator_plugin::TimeManipulatorServiceCoService {
  public:
   TimeManipulatorServiceImpl() = default;
   ~TimeManipulatorServiceImpl() override = default;
