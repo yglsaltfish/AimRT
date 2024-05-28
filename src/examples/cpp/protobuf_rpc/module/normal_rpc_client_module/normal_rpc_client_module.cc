@@ -15,13 +15,10 @@ bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) {
 
   try {
     // Read cfg
-    const auto configurator = core_.GetConfigurator();
-    if (configurator) {
-      std::string file_path = std::string(configurator.GetConfigFilePath());
-      if (!file_path.empty()) {
-        YAML::Node cfg_node = YAML::LoadFile(file_path);
-        rpc_frq_ = cfg_node["rpc_frq"].as<double>();
-      }
+    std::string file_path = std::string(core_.GetConfigurator().GetConfigFilePath());
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path);
+      rpc_frq_ = cfg_node["rpc_frq"].as<double>();
     }
 
     // Get executor handle
@@ -34,12 +31,11 @@ bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) {
     AIMRT_CHECK_ERROR_THROW(rpc_handle, "Get rpc handle failed.");
 
     // Register rpc client
-    bool ret = aimrt::rpc::RegisterClientFunc<
-        aimrt::protocols::example::ExampleServiceProxy>(rpc_handle);
+    bool ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(rpc_handle);
     AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
 
     // Create rpc proxy
-    proxy_ = std::make_shared<aimrt::protocols::example::ExampleServiceProxy>(rpc_handle);
+    proxy_ = std::make_shared<aimrt::protocols::example::ExampleServiceCoProxy>(rpc_handle);
 
     // Register filter
     proxy_->RegisterFilter([this](aimrt::rpc::ContextRef ctx,
@@ -51,9 +47,8 @@ bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) {
                  aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(req_ptr)));
       const auto& status = co_await next(ctx, req_ptr, rsp_ptr);
       if (status.OK()) {
-        AIMRT_INFO(
-            "Client get rpc ret, status: {}, rsp: {}", status.ToString(),
-            aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(rsp_ptr)));
+        AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
+                   aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(rsp_ptr)));
       } else {
         AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
       }

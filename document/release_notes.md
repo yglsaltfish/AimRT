@@ -12,6 +12,8 @@
 - 优化了main_executor的性能；
 - 提供了rpc/channel统一的backend开关；
 - 提供了每个Module独立的enable开关；
+- 提供了同步RPC接口和异步RPC接口，以及相关example；
+- 原来的协程RPC Proxy接口重命名为CoProxy，之前老的命名将在后几个版本中删除；
 - ros2_plugin：
   - ros2 RPC Backend现在支持非ros2协议；
   - ros2 Channel Backend现在支持非ros2协议；

@@ -39,8 +39,8 @@ class NormalRpcClientModule : public aimrt::ModuleBase {
   co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
 
-  double rpc_frq_;
-  std::shared_ptr<aimrt::protocols::example::ExampleServiceProxy> proxy_;
+  double rpc_frq_ = 1.0;
+  std::shared_ptr<aimrt::protocols::example::ExampleServiceCoProxy> proxy_;
 };
 
 }  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_client_module

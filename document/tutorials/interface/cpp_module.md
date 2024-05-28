@@ -52,6 +52,8 @@
 
 &emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/module_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/module_base.h)
 
+&emsp;&emsp;参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+
 &emsp;&emsp;所有的业务模块，都需要继承`aimrt::ModuleBase`基类，它定义了业务模块所需要实现的几个接口，具体接口如下：
 
 ```cpp
@@ -145,6 +147,8 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 &emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/core.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/core.h)
 
+&emsp;&emsp;参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+
 &emsp;&emsp;在模块的`Initialize`方法中，AimRT框架会传入一个`aimrt::CoreRef`句柄，模块通过该句柄的一些接口调用框架的功能。`aimrt::CoreRef`中提供的核心接口如下：
 
 ```cpp
@@ -202,6 +206,8 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
 &emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/configurator/configurator.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)
 
+&emsp;&emsp;参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+
 &emsp;&emsp;模块可以通过调用`CoreRef`句柄的`GetConfigurator()`接口，获取`aimrt::configurator::ConfiguratorRef`句柄，通过其使用一些配置相关的功能。其提供的核心接口如下：
 
 ```cpp
@@ -249,6 +255,8 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 &emsp;&emsp;相关文件链接：
 - [aimrt_module_cpp_interface/executor/executor_manager.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/executor/executor_manager.h)
 - [aimrt_module_cpp_interface/executor/executor.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/executor/executor.h)
+
+&emsp;&emsp;参考示例：[executor_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/executor/module/executor_module/executor_module.cc)
 
 &emsp;&emsp;执行器`Executor`是一个很早就有的概念，它表示一个可以执行逻辑代码的抽象概念，一个执行器可以是一个线程池、可以是一个协程/纤程，可以是CPU、GPU、甚至是远端的一个服务器。我们平常写的最简单的代码也有一个默认的执行器：主线程。一般来说，执行器都会有类似这样的一个接口：
 ```cpp
@@ -489,6 +497,8 @@ class HelloWorldModule : public aimrt::ModuleBase {
 - [aimrt_module_cpp_interface/co/schedule.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/schedule.h)
 - [aimrt_module_cpp_interface/co/sync_wait.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/sync_wait.h)
 - [aimrt_module_cpp_interface/co/task.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/task.h)
+
+&emsp;&emsp;参考示例：[executor_co_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/executor/module/executor_co_module/executor_co_module.cc)
 
 &emsp;&emsp;AimRT框架中，为执行器封装了基于C++20协程和`libunifex`库的一个协程形式接口。关于协程和`libunifex`库的详细使用方式，请参考[libunifex官方文档](https://github.com/facebookexperimental/libunifex)。在AimRT框架中的[aimrt_module_cpp_interface/co/aimrt_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)文件中，提供了一个比较重要的类：`aimrt::co::AimRTScheduler`，可以由`aimrt::executor::ExecutorRef`句柄构造。这个类将原生的AimRT执行器句柄封装成协程形式的接口句柄，其中的核心接口如下：
 
@@ -814,6 +824,8 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 &emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/parameter/parameter_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/parameter/parameter_handle.h)
 
+&emsp;&emsp;参考示例：[parameter_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/parameter/module/parameter_module/parameter_module.cc)
+
 &emsp;&emsp;AimRT中提供了一个简单的模块级kv参数功能，模块可以通过调用`CoreRef`句柄的`GetParameterHandle()`接口，获取`aimrt::parameter::ParameterHandleRef`句柄，来使用此功能。该句柄提供的核心接口如下：
 
 ```cpp
@@ -888,6 +900,10 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 - [aimrt_module_ros2_interface/channel/ros2_channel.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_ros2_interface/channel/ros2_channel.h)
 
 
+&emsp;&emsp;参考示例：
+- [protobuf_channel](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/protobuf_channel)
+- [ros2_channel](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/ros2_channel)
+
 &emsp;&emsp;AimRT中，模块可以通过调用`CoreRef`句柄的`GetChannelHandle()`接口，获取`aimrt::channel::ChannelHandleRef`句柄，来使用Channel功能。其提供的核心接口如下：
 ```cpp
 namespace aimrt::channel {
@@ -957,7 +973,7 @@ class ContextRef {
 
 &emsp;&emsp;[Protobuf](https://protobuf.dev/)（Protocol Buffers）是一种由Google开发的用于序列化结构化数据的轻量级、高效的数据交换格式，是一种广泛使用的IDL。它类似于XML和JSON，但更为紧凑、快速、简单，且可扩展性强。
 
-&emsp;&emsp;在使用时，开发者需要先定义一个`.proto`文件，比如`example.proto`：
+&emsp;&emsp;在使用时，开发者需要先定义一个`.proto`文件，在其中定义一个消息结构。例如`example.proto`：
 
 ```protobuf
 syntax = "proto3";
@@ -967,6 +983,7 @@ message ExampleMsg {
   int32 num = 2;
 }
 ```
+
 &emsp;&emsp;然后使用Protobuf官方提供的protoc工具进行转换，生成C++桩代码，例如：
 ```shell
 protoc --cpp_out=. example.proto
@@ -974,7 +991,7 @@ protoc --cpp_out=. example.proto
 
 &emsp;&emsp;这将生成`example.pb.h`和`example.pb.cc`文件，包含了根据定义的消息类型生成的C++类和方法。
 
-&emsp;&emsp;请注意，以上这套原生的代码生成方式需要手动处理依赖和CMake封装等方面的问题。开发者也可以直接使用AimRT在[ProtobufGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/cmake/ProtobufGenCode.cmake)文件中提供的两个CMake方法：
+&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/cmake/ProtobufGenCode.cmake)文件中提供的两个CMake方法：
 - `add_protobuf_gencode_target_for_proto_path`：为某个路径下的协议文件生成C++代码，参数如下：
   - **TARGET_NAME**：生成的CMake Target名称；
   - **PROTO_PATH**：协议存放目录；
@@ -1017,9 +1034,7 @@ char    data
 &emsp;&emsp;然后直接通过ROS2提供的CMake方法`rosidl_generate_interfaces`，为消息生成C++代码和CMake Target，例如：
 ```cmake
 rosidl_generate_interfaces(example_msg_gencode
-  "msg/RosTestMsg.msg"
-  "msg/RosTestData.msg"
-  "srv/RosTestRpc.srv"
+  "msg/example.msg"
 )
 ```
 
@@ -1027,6 +1042,11 @@ rosidl_generate_interfaces(example_msg_gencode
 
 
 ### Pub接口
+
+&emsp;&emsp;参考示例：
+- protobuf_channel:[normal_publisher_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)
+- ros2_channel:[normal_publisher_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_channel/module/normal_publisher_module/normal_publisher_module.cc)
+
 
 &emsp;&emsp;用户如果需要发布一个Msg，牵涉的接口主要有以下几个：
 ```cpp
@@ -1062,6 +1082,11 @@ void Publish(PublisherRef publisher, const MsgType& msg);
 &emsp;&emsp;用户在逻辑层`Publish`一个消息后，特定的Channel后端将处理具体的消息发布请求，此时根据后端的表现，有可能会阻塞一段时间，因此`Publish`方法耗费的时间是未定义的。但一般来说，Channel后端都不会阻塞`Publish`方法太久，详细的信息请参考您使用的后端的文档。
 
 ### Sub接口
+
+&emsp;&emsp;参考示例：
+- protobuf_channel:[normal_subscriber_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+- ros2_channel:[normal_subscriber_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+
 
 &emsp;&emsp;AimRT提供了两种订阅接口来订阅处理一种消息，一种是智能指针形式，另一种是协程形式，两者在逻辑上是等价的。另外在订阅时可以接收一个CTX作为参数，CTX内容也和具体的Channel后端相关：
 
@@ -1103,13 +1128,506 @@ bool SubscribeCo(
 
 ## rpc::RpcHandleRef：RPC句柄
 
-***TODO：待完善***
 
 ### RPC句柄概述
 
+&emsp;&emsp;相关文件链接：
+- [aimrt_module_cpp_interface/rpc/rpc_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_handle.h)
+- [aimrt_module_cpp_interface/rpc/rpc_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_context.h)
+- [aimrt_module_cpp_interface/rpc/rpc_status.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_status.h)
+- [aimrt_module_cpp_interface/rpc/rpc_filter.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_filter.h)
+
+
+&emsp;&emsp;参考示例：
+- [protobuf_rpc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/protobuf_rpc)
+- [ros2_rpc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/ros2_rpc)
+
+&emsp;&emsp;AimRT中，模块可以通过调用`CoreRef`句柄的`GetRpcHandle()`接口，获取`aimrt::rpc::RpcHandleRef`句柄。开发者在使用RPC功能时必须要按照一定的步骤，调用`aimrt::rpc::RpcHandleRef`中的几个核心接口：
+- Client端：
+  - 在`Initialize`阶段，调用**注册RPC Client方法**的接口；
+  - 在`Start`阶段，调用**RPC Invoke**的接口，以实现RPC调用；
+- Server端：
+  - 在`Initialize`阶段，**注册RPC Server服务**的接口；
+
+&emsp;&emsp;一般情况下，使用者不会直接使用`aimrt::rpc::RpcHandleRef`直接提供的那些接口，而是根据RPC IDL文件生成一些桩代码，对`aimrt::rpc::RpcHandleRef`句柄进行一些封装，然后在业务代码中使用这些桩代码提供的接口。AimRT官方支持两种协议IDL：**Protobuf**和**Ros2 Srv**，并提供了针对这两种协议IDL生成桩代码的工具。生成出来的RPC接口除了协议类型不同，其他的Api风格都一致。
+
+
+
+***TODO: CTX这部分的功能文档待补充***
+
+&emsp;&emsp;使用者还可以调用`RpcHandleRef`中的`NewContextSharedPtr`方法和`NewContextRef`，创建一个RPC CTX，用于在调用、处理RPC请求时传递一些额外的信息。
+
+
+&emsp;&emsp;此外，在RPC调用或者RPC处理时，使用者还可以通过一个`status`变量获取RPC请求时框架的错误情况，其中最主要的是一个错误码字段，其枚举值可以参考[rpc_status_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)文件中的定义。
+
 ### 协议类型
+
+&emsp;&emsp;一般来说，协议都是使用一种与具体的编程语言无关的`IDL`(Interface description language)描述，然后由某种工具转换为各个语言的代码。对于RPC来说，这里需要两个步骤：
+- 参考上一节`Channel`中的介绍，开发者需要先利用一些官方的工具为协议文件中的**消息类型**生成指定编程语言中的代码；
+- 开发者需要使用AimRT提供的工具，为协议文件中**服务定义**生成指定编程语言中的代码；
+
+#### Protobuf
+
+&emsp;&emsp;[Protobuf](https://protobuf.dev/)（Protocol Buffers）是一种由Google开发的用于序列化结构化数据的轻量级、高效的数据交换格式，是一种广泛使用的IDL。它不仅能够描述消息结构，还提供了`service`语句来定义RPC服务。
+
+
+&emsp;&emsp;在使用时，开发者需要先定义一个`.proto`文件，在其中定义一个RPC服务。例如`rpc.proto`：
+
+```protobuf
+syntax = "proto3";
+
+message ExampleReq {
+  string msg = 1;
+  int32 num = 2;
+}
+
+message ExampleRsp {
+  uint64 code = 1;
+  string msg = 2;
+}
+
+service ExampleService {
+  rpc ExampleFunc(ExampleReq) returns (ExampleRsp);
+}
+```
+
+&emsp;&emsp;然后使用Protobuf官方提供的protoc工具进行转换，生成消息结构部分的C++桩代码，例如：
+```shell
+protoc --cpp_out=. rpc.proto
+```
+
+&emsp;&emsp;这将生成`rpc.pb.h`和`rpc.pb.cc`文件，包含了根据定义的消息类型生成的C++类和方法。
+
+&emsp;&emsp;在这之后，还需要使用AimRT提供的protoc插件，生成服务定义部分的C++桩代码，例如：
+```shell
+protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_aimrt_rpc.py rpc.proto
+```
+
+&emsp;&emsp;这将生成`rpc.aimrt_rpc.pb.h`和`rpc.aimrt_rpc.pb.cc`文件，包含了根据定义的服务生成的C++类和方法。
+
+&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufAimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/protoc_plugin_cpp_gen_aimrt_rpc/ProtobufAimRTRpcGenCode.cmake)文件中提供的CMake方法：`add_protobuf_aimrt_rpc_gencode_target_for_proto_files`，该方法可以直接为某些proto文件生成C++代码，其参数如下：
+- **TARGET_NAME**：生成的CMake Target名称；
+- **PROTO_FILES**：协议文件的路径；
+- **GENCODE_PATH**：生成的桩代码存放路径；
+- **DEP_PROTO_TARGETS**：依赖的Proto CMake Target；
+- **OPTIONS**：传递给protoc的其他参数；
+
+
+&emsp;&emsp;使用示例如下：
+```cmake
+# 为当前文件夹下所有.proto文件生成消息结构C++桩代码
+add_protobuf_gencode_target_for_proto_path(
+  TARGET_NAME example_pb_gencode
+  PROTO_PATH ${CMAKE_CURRENT_SOURCE_DIR}
+  GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR})
+add_library(my_namespace::example_pb_gencode ALIAS example_pb_gencode)
+
+# 为rpc.proto文件生成RPC服务C++桩代码。需要依赖example_pb_gencode
+add_protobuf_aimrt_rpc_gencode_target_for_proto_files(
+  TARGET_NAME example_rpc_aimrt_rpc_gencode
+  PROTO_FILES ${CMAKE_CURRENT_SOURCE_DIR}/rpc.proto
+  GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR}
+  DEP_PROTO_TARGETS my_namespace::example_pb_gencode)
+add_library(my_namespace::example_rpc_aimrt_rpc_gencode ALIAS example_rpc_aimrt_rpc_gencode)
+```
+
+
+&emsp;&emsp;这样之后，只要链接`my_namespace::example_rpc_aimrt_rpc_gencode`这个CMake Target即可使用该协议。例如：
+```cmake
+target_link_libraries(my_lib PUBLIC my_namespace::example_rpc_aimrt_rpc_gencode)
+```
+
+
+#### ROS2 Srv
+
+&emsp;&emsp;ROS2 Srv是一种用于在 ROS2 中进行RPC定义的格式。在使用时，开发者需要先定义一个ROS2 Package，在其中定义一个`.srv`文件，比如`example.srv`：
+
+```
+byte[]  data
+---
+int64   code
+```
+
+&emsp;&emsp;其中，以`---`来分割Req和Rsp的定义。然后直接通过ROS2提供的CMake方法`rosidl_generate_interfaces`，为Req和Rsp消息生成C++代码和CMake Target，例如：
+```cmake
+rosidl_generate_interfaces(example_srv_gencode
+  "srv/example.srv"
+)
+```
+
+&emsp;&emsp;在这之后就可以引用相关的CMake Target来使用生成的Req和Rsp消息结构C++代码。详情请参考ROS2的官方文档和AimRT提供的Example。
+
+&emsp;&emsp;在这之后，开发者还需要使用AimRT提供的Python脚本工具，生成服务定义部分的C++桩代码，例如：
+```shell
+python3 ARGS ./ros2_py_gen_aimrt_rpc.py --pkg_name=example_pkg --srv_file=./example.srv --output_path=./
+```
+
+&emsp;&emsp;这将生成`example.aimrt_rpc.srv.h`和`example.aimrt_rpc.srv.cc`文件，包含了根据定义的服务生成的C++类和方法。
+
+
+&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[Ros2AimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/ros2_py_gen_aimrt_rpc/Ros2AimRTRpcGenCode.cmake)文件中提供的CMake方法：`add_ros2_aimrt_rpc_gencode_target_for_one_file`，该方法可以为单个srv文件生成RPC服务C++代码，其参数如下：
+- **TARGET_NAME**：生成的CMake Target名称；
+- **PACKAGE_NAME**：ROS2协议PKG的名称；
+- **PROTO_FILE**：协议文件的路径；
+- **GENCODE_PATH**：生成的桩代码存放路径；
+- **DEP_PROTO_TARGETS**：依赖的协议 CMake Target；
+- **OPTIONS**：传递给工具的其他参数；
+
+
+&emsp;&emsp;使用示例如下：
+```cmake
+# 为example.srv文件生成RPC服务C++桩代码。需要依赖ROS2消息相关CMake Target，在此统一定义在${ROS2_EXAMPLE_CMAKE_TARGETS}变量内
+add_ros2_aimrt_rpc_gencode_target_for_one_file(
+  TARGET_NAME example_ros2_rpc_aimrt_rpc_gencode
+  PACKAGE_NAME example_pkg
+  PROTO_FILE ${CMAKE_CURRENT_SOURCE_DIR}/srv/example.srv
+  GENCODE_PATH ${CMAKE_CURRENT_BINARY_DIR}
+  DEP_PROTO_TARGETS
+    rclcpp::rclcpp
+    ${ROS2_EXAMPLE_CMAKE_TARGETS})
+add_library(my_namespace::example_ros2_rpc_aimrt_rpc_gencode ALIAS example_ros2_rpc_aimrt_rpc_gencode)
+```
+
+
+&emsp;&emsp;这样之后，只要链接`my_namespace::example_ros2_rpc_aimrt_rpc_gencode`这个CMake Target即可使用该协议。例如：
+```cmake
+target_link_libraries(my_lib PUBLIC my_namespace::example_ros2_rpc_aimrt_rpc_gencode)
+```
+
 
 ### Client接口
 
+&emsp;&emsp;在AimRT RPC桩代码工具生成的代码里，如`rpc.aimrt_rpc.pb.h`或者`example.aimrt_rpc.srv.h`里，提供了三种类型的Client Proxy接口，开发者基于这些Proxy接口类来发起RPC调用：
+- **同步型接口**：名称一般为`XXXSyncProxy`；
+- **异步型接口**：名称一般为`XXXAsyncProxy`；
+- **无栈协程型接口**：名称一般为`XXXCoProxy`；
+
+&emsp;&emsp;这三种类型可以混合使用，开发者可以根据自身需求选用。
+
+#### 同步型接口
+
+&emsp;&emsp;参考示例：TODO
+
+
+
+&emsp;&emsp;同步型接口在使用上最简单，但在运行效率上是最低的。它通过阻塞当前线程，等待RPC接口返回。一般可以在一些不要求性能的场合为了提高开发效率而使用这种方式，但不推荐在高性能要求的场景使用。
+
+&emsp;&emsp;使用同步型接口发起RPC调用非常简单，一般分为以下几个步骤：
+- Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有同步接口的句柄`XXXSyncProxy`；
+- Step1：在`Initialize`阶段调用`RegisterClientFunc`方法注册RPC Client；
+- Step2：在`Start`阶段里某个业务函数里发起RPC调用：
+  - Step2-1：创建一个`XXXSyncProxy`，构造参数是`aimrt::rpc::RpcHandleRef`。proxy非常轻量，可以随用随创建；
+  - Step2-2：创建Req、Rsp，并填充Req内容；
+  - Step2-3：【可选】创建ctx，设置超时等信息；
+  - Step2-4：基于proxy，传入ctx、Req、Rsp，发起RPC调用，同步等待RPC调用结束，获取返回的status；
+  - Step2-5：解析status和Rsp；
+
+
+
+&emsp;&emsp;以下是一个简单的基于protobuf的示例，基于ROS2 Srv的语法也基本类似：
+```cpp
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
+  core_ = core;
+
+  // Step1：在Initialize阶段调用RegisterClientFunc方法注册RPC Client
+  bool ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(core_.GetRpcHandle());
+  AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
+
+  return true;
+}
+
+// 在Step2：在Start阶段里某个业务函数里发起RPC调用
+void HelloWorldModule::Foo() {
+  // Step2-1：创建一个proxy，构造参数是 aimrt::rpc::RpcHandleRef 。proxy非常轻量，可以随用随创建
+  ExampleServiceSyncProxy proxy(core_.GetRpcHandle());
+
+  // Step2-2：创建Req、Rsp，并填充Req内容
+  ExampleReq req;
+  ExampleRsp rsp;
+  req.set_msg("hello world");
+
+  // Step2-3：【可选】创建ctx，设置超时等信息
+  auto ctx = proxy.NewContextRef();
+  ctx.SetTimeout(std::chrono::seconds(3));
+
+  // Step2-4：基于proxy，传入ctx、Req、Rsp，发起RPC调用，同步等待RPC调用结束，获取返回的status
+  auto status = proxy.ExampleFunc(ctx, req, rsp);
+
+  // Step2-5：解析status和Rsp
+  if (status.OK()) {
+    auto msg = rsp.msg();
+    // ...
+  } else {
+    // ...
+  }
+}
+```
+
+
+#### 异步型接口
+
+&emsp;&emsp;参考示例：TODO
+
+
+&emsp;&emsp;异步型接口使用回调来返回异步结果，在性能上表现最好，但开发友好度是最低的，很容易陷入回调地狱。
+
+&emsp;&emsp;使用异步型接口发起RPC调用一般分为以下几个步骤：
+- Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有异步接口的句柄`XXXAsyncProxy`；
+- Step1：在`Initialize`阶段调用`RegisterClientFunc`方法注册RPC Client；
+- Step2：在`Start`阶段里某个业务函数里发起RPC调用：
+  - Step2-1：创建一个`XXXAsyncProxy`，构造参数是`aimrt::rpc::RpcHandleRef`。proxy非常轻量，可以随用随创建；
+  - Step2-2：创建Req、Rsp，并填充Req内容；
+  - Step2-3：【可选】创建ctx，设置超时等信息；
+  - Step2-4：基于proxy，传入ctx、Req、Rsp和结果回调，发起RPC调用，并保证在整个调用周期里ctx、Req、Rsp都保持生存；
+  - Step2-5：在回调函数中获取返回的status，解析status和Rsp；
+
+&emsp;&emsp;前几个步骤与同步型接口基本一致，区别在于Step2-4需要使用异步回调的方式来获取结果。以下是一个简单的基于protobuf的示例，基于ROS2 Srv的语法也基本类似：
+```cpp
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
+  core_ = core;
+
+  // Step1：在Initialize阶段调用RegisterClientFunc方法注册RPC Client
+  bool ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(core_.GetRpcHandle());
+  AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
+
+  return true;
+}
+
+// 在Step2：在Start阶段里某个业务函数里发起RPC调用
+void HelloWorldModule::Foo() {
+  // Step2-1：创建一个proxy，构造参数是 aimrt::rpc::RpcHandleRef 。proxy非常轻量，可以随用随创建
+  ExampleServiceAsyncProxy proxy(core_.GetRpcHandle());
+
+  // Step2-2：创建Req、Rsp，并填充Req内容
+  // 由于要保证req、rsp的生命周期比RPC调用的周期长，此处可以利用智能指针来实现
+  auto req = std::make_shared<ExampleReq>();
+  auto rsp = std::make_shared<ExampleRsp>();
+  req->set_msg("hello world");
+
+  // Step2-3：【可选】创建ctx，设置超时等信息
+  // 由于要保证ctx的生命周期比RPC调用的周期长，此处可以利用智能指针来实现
+  auto ctx_ptr = proxy.NewContextSharedPtr();
+  aimrt::rpc::ContextRef ctx(ctx_ptr.get());
+  ctx.SetTimeout(std::chrono::seconds(3));
+
+  // Step2-4：基于proxy，传入ctx、Req、Rsp和结果回调，发起RPC调用，并保证在整个调用周期里ctx、Req、Rsp都保持生存
+  proxy.GetBarData(
+      ctx, *req, *rsp,
+      [this, ctx_ptr, req, rsp](aimrt::rpc::Status status) {
+        // Step2-5：在回调函数中获取返回的status，解析status和Rsp
+        if (status.OK()) {
+          auto msg = rsp->msg();
+          // ...
+        } else {
+          // ...
+        }
+      });
+}
+```
+
+
+#### 无栈协程型接口
+
+&emsp;&emsp;参考示例：TODO
+
+&emsp;&emsp;AimRT为RPC Client端提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步型接口的封装，在性能上基本与异步型接口一致，但大大提升了开发友好度。
+
+&emsp;&emsp;使用协程型接口发起RPC调用一般分为以下几个步骤：
+- Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有协程接口的句柄`XXXCoProxy`；
+- Step1：在`Initialize`阶段调用`RegisterClientFunc`方法注册RPC Client；
+- Step2：在`Start`阶段里某个业务协程里发起RPC调用：
+  - Step2-1：创建一个`XXXCoProxy`，构造参数是`aimrt::rpc::RpcHandleRef`。proxy非常轻量，可以随用随创建；
+  - Step2-2：创建Req、Rsp，并填充Req内容；
+  - Step2-3：【可选】创建ctx，设置超时等信息；
+  - Step2-4：基于proxy，传入ctx、Req、Rsp和结果回调，发起RPC调用，在协程中等待RPC调用结束，获取返回的status；
+  - Step2-5：解析status和Rsp；
+
+
+&emsp;&emsp;整个接口风格与同步型接口几乎一样，但必须要在协程中调用。以下是一个简单的基于protobuf的示例，基于ROS2 Srv的语法也基本类似：
+```cpp
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
+  core_ = core;
+
+  // Step1：在Initialize阶段调用RegisterClientFunc方法注册RPC Client
+  bool ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(core_.GetRpcHandle());
+  AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
+
+  return true;
+}
+
+// Step2：在`Start`阶段里某个业务协程里发起RPC调用
+co::Task<void> HelloWorldModule::Foo() {
+  // Step2-1：创建一个proxy，构造参数是 aimrt::rpc::RpcHandleRef 。proxy非常轻量，可以随用随创建
+  ExampleServiceCoProxy proxy(core_.GetRpcHandle());
+
+  // Step2-2：创建Req、Rsp，并填充Req内容
+  ExampleReq req;
+  ExampleRsp rsp;
+  req.set_msg("hello world");
+
+  // Step2-3：【可选】创建ctx，设置超时等信息
+  auto ctx = proxy.NewContextRef();
+  ctx.SetTimeout(std::chrono::seconds(3));
+
+  // Step2-4：基于proxy，传入ctx、Req、Rsp和结果回调，发起RPC调用，在协程中等待RPC调用结束，获取返回的status；
+  auto status = co_await proxy.ExampleFunc(ctx, req, rsp);
+
+  // Step2-5：解析status和Rsp
+  if (status.OK()) {
+    auto msg = rsp.msg();
+    // ...
+  } else {
+    // ...
+  }
+}
+```
+
 ### Server接口
 
+&emsp;&emsp;在AimRT RPC桩代码工具生成的代码里，如`rpc.aimrt_rpc.pb.h`或者`example.aimrt_rpc.srv.h`里，提供了三种类型的Service基类，开发者继承这些Service基类，实现其中的虚接口来提供实际的RPC服务：
+- **同步型接口**：名称一般为`XXXSyncService`；
+- **异步型接口**：名称一般为`XXXAsyncService`；
+- **无栈协程型接口**：名称一般为`XXXCoService`；
+
+&emsp;&emsp;在单个service内，这三种类型的不能混合使用，只能选择一种，开发者可以根据自身需求选用。
+
+
+#### 同步型接口
+
+&emsp;&emsp;参考示例：TODO
+
+&emsp;&emsp;同步型接口在使用上最简单，但很多时候实现的service中需要请求下游，会有一些异步调用，这种情况下只能阻塞的等待下游调用完成，可能会造成运行效率上的降低。一般可以在处理一些简单的请求、不需要发起其他异步调用的场景下使用同步型接口。
+
+&emsp;&emsp;使用同步型接口实现RPC服务，一般分为以下几个步骤：
+- Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有同步接口的Service基类`XXXSyncService`；
+- Step1：开发者实现一个Impl类，继承`XXXSyncService`，并实现其中的虚接口；
+  - Step1-1：解析Req，并填充Rsp；
+  - Step1-2：返回`Status`；
+- Step2：在`Initialize`阶段调用`RegisterService`方法注册RPC Service；
+
+
+
+&emsp;&emsp;以下是一个简单的基于protobuf的示例，基于ROS2 Srv的语法也基本类似：
+```cpp
+// Step1：开发者实现一个Impl类，继承`XXXSyncService`，并实现其中的虚接口
+class ExampleServiceSyncServiceImpl : public ExampleServiceSyncService {
+ public:
+  ExampleServiceSyncServiceImpl() = default;
+  ~ExampleServiceSyncServiceImpl() override = default;
+
+  aimrt::rpc::Status ExampleFunc(
+      aimrt::rpc::ContextRef ctx, const ExampleReq& req, ExampleRsp& rsp) override {
+    // Step1-1：解析Req，并填充Rsp
+    rsp.set_msg("echo " + req.msg());
+
+    // Step1-2：返回`Status`
+    return aimrt::rpc::Status();
+  }
+};
+
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
+  core_ = core;
+
+  // Step2：在`Initialize`阶段调用`RegisterService`方法注册RPC Service
+  service_ptr_ = std::make_shared<ExampleServiceSyncServiceImpl>();
+
+  bool ret = core_.GetRpcHandle().RegisterService(service_ptr_.get());
+  AIMRT_CHECK_ERROR_THROW(ret, "Register service failed.");
+
+  return true;
+}
+```
+
+#### 异步型接口
+
+&emsp;&emsp;参考示例：TODO
+
+&emsp;&emsp;异步型接口会传递一个回调给开发者，开发者在RPC处理完成后调用这个回调来传递最终处理结果。这种方式可以在RPC中发起其他异步调用，由于不会阻塞，因此性能表现通常最好，但通常会导致开发出的代码难以阅读和维护。
+
+&emsp;&emsp;使用异步型接口实现RPC服务，一般分为以下几个步骤：
+- Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有异步接口的Service基类`XXXAsyncService`；
+- Step1：开发者实现一个Impl类，继承`XXXAsyncService`，并实现其中的虚接口；
+  - Step1-1：解析Req，并填充Rsp；
+  - Step1-2：调用callback将`Status`传递回去；
+- Step2：在`Initialize`阶段调用`RegisterService`方法注册RPC Service；
+
+
+&emsp;&emsp;以下是一个简单的基于protobuf的示例，基于ROS2 Srv的语法也基本类似：
+```cpp
+// Step1：开发者实现一个Impl类，继承`XXXSyncService`，并实现其中的虚接口
+class ExampleServiceAsyncServiceImpl : public ExampleServiceAsyncService {
+ public:
+  ExampleServiceAsyncServiceImpl() = default;
+  ~ExampleServiceAsyncServiceImpl() override = default;
+
+  void ExampleFunc(
+      aimrt::rpc::ContextRef ctx, const ExampleReq& req, ExampleRsp& rsp,
+      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) override {
+    // Step1-1：解析Req，并填充Rsp
+    rsp.set_msg("echo " + req.msg());
+
+    // Step1-2：调用callback将`Status`传递回去；
+    callback(aimrt::rpc::Status());
+  }
+};
+
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
+  core_ = core;
+
+  // Step2：在`Initialize`阶段调用`RegisterService`方法注册RPC Service
+  service_ptr_ = std::make_shared<ExampleServiceAsyncServiceImpl>();
+
+  bool ret = core_.GetRpcHandle().RegisterService(service_ptr_.get());
+  AIMRT_CHECK_ERROR_THROW(ret, "Register service failed.");
+
+  return true;
+}
+```
+
+
+#### 无栈协程型接口
+
+&emsp;&emsp;参考示例：TODO
+
+&emsp;&emsp;与RPC Client端一样，在RPC Service端，AimRT也提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步型接口的封装，在性能上基本与异步型接口一致，但大大提升了开发友好度。
+
+
+&emsp;&emsp;使用协程型接口实现RPC服务，一般分为以下几个步骤：
+- Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有异步接口的Service基类`XXXCoService`；
+- Step1：开发者实现一个Impl类，继承`XXXCoService`，并实现其中的虚接口；
+  - Step1-1：解析Req，并填充Rsp；
+  - Step1-2：使用co_return返回`Status`；
+- Step2：在`Initialize`阶段调用`RegisterService`方法注册RPC Service；
+
+
+
+&emsp;&emsp;整个接口风格与同步型接口几乎一样。以下是一个简单的基于protobuf的示例，基于ROS2 Srv的语法也基本类似：
+```cpp
+// Step1：开发者实现一个Impl类，继承`XXXSyncService`，并实现其中的虚接口
+class ExampleServiceCoServiceImpl : public ExampleServiceCoService {
+ public:
+  ExampleServiceCoServiceImpl() = default;
+  ~ExampleServiceCoServiceImpl() override = default;
+
+  co::Task<aimrt::rpc::Status> ExampleFunc(
+      aimrt::rpc::ContextRef ctx, const ExampleReq& req, ExampleRsp& rsp) override {
+    // Step1-1：解析Req，并填充Rsp
+    rsp.set_msg("echo " + req.msg());
+
+    // Step1-2：使用co_return返回`Status`；
+    co_return aimrt::rpc::Status();
+  }
+};
+
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
+  core_ = core;
+
+  // Step2：在`Initialize`阶段调用`RegisterService`方法注册RPC Service
+  service_ptr_ = std::make_shared<ExampleServiceCoServiceImpl>();
+
+  bool ret = core_.GetRpcHandle().RegisterService(service_ptr_.get());
+  AIMRT_CHECK_ERROR_THROW(ret, "Register service failed.");
+
+  return true;
+}
+```

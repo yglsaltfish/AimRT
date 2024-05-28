@@ -57,7 +57,7 @@ class BenchmarkRpcClientModule : public aimrt::ModuleBase {
   co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
 
-  std::shared_ptr<example_ros2::srv::RosTestRpcProxy> proxy_;
+  std::shared_ptr<example_ros2::srv::RosTestRpcCoProxy> proxy_;
 
   std::string msg_;
   std::vector<std::vector<double> > time_consumption_statistics_;

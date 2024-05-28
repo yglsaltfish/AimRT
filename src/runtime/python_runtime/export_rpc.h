@@ -90,51 +90,43 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
   py_ts_vec.emplace_back(rsp_type_support);
 
   aimrt::util::Function<aimrt_function_service_func_ops_t> aimrt_service_func(
-      [service_ptr{&service}, service_func{std::move(service_func)}](
-          const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* callback) {
-        aimrt::rpc::RpcHandle h =
-            [&service_func](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
-            -> aimrt::co::Task<aimrt::rpc::Status> {
-          try {
-            const std::string& req_buf = *static_cast<const std::string*>(req_ptr);
-            std::string& rsp_buf = *static_cast<std::string*>(rsp_ptr);
+      [service_func{std::move(service_func)}](
+          const aimrt_rpc_context_base_t* ctx, const void* req_ptr, void* rsp_ptr, aimrt_function_base_t* callback) {
+        aimrt::util::Function<aimrt_function_service_callback_ops_t> callback_f(callback);
 
-            // TODO，未知原因，在此处使用空字符串构造pybind11::bytes时会挂掉。但是在外面构造没有问题
-            if (req_buf.empty()) [[unlikely]] {
-              auto [status, rsp_buf_tmp] = service_func(ctx_ref, rpc_empty_py_bytes);
+        aimrt::rpc::ContextRef ctx_ref(ctx);
 
-              rsp_buf = std::move(rsp_buf_tmp);
+        try {
+          const std::string& req_buf = *static_cast<const std::string*>(req_ptr);
+          std::string& rsp_buf = *static_cast<std::string*>(rsp_ptr);
 
-              co_return status;
-            } else {
-              auto req_buf_bytes = pybind11::bytes(req_buf);
+          // TODO，未知原因，在此处使用空字符串构造pybind11::bytes时会挂掉。但是在外面构造没有问题
+          if (req_buf.empty()) [[unlikely]] {
+            auto [status, rsp_buf_tmp] = service_func(ctx_ref, rpc_empty_py_bytes);
 
-              auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
+            rsp_buf = std::move(rsp_buf_tmp);
 
-              pybind11::gil_scoped_acquire acquire;
-              req_buf_bytes.release();
-              pybind11::gil_scoped_release release;
+            callback_f(status.Code());
+            return;
+          } else {
+            auto req_buf_bytes = pybind11::bytes(req_buf);
 
-              rsp_buf = std::move(rsp_buf_tmp);
+            auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
 
-              co_return status;
-            }
+            pybind11::gil_scoped_acquire acquire;
+            req_buf_bytes.release();
+            pybind11::gil_scoped_release release;
 
-          } catch (const std::exception& e) {
-            co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_HANDLE_FAILDE);
+            rsp_buf = std::move(rsp_buf_tmp);
+
+            callback_f(status.Code());
+            return;
           }
-        };
 
-        aimrt::util::Function<aimrt_function_service_callback_ops_t> f(callback);
-
-        aimrt::co::StartDetached(
-            aimrt::co::On(
-                aimrt::co::InlineScheduler(),
-                service_ptr->GetFilterManager().InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp)) |
-            aimrt::co::Then(
-                [f{std::move(f)}](aimrt::rpc::Status status) {
-                  f(status.Code());
-                }));
+        } catch (const std::exception& e) {
+          callback_f(AIMRT_RPC_STATUS_SVR_HANDLE_FAILDE);
+          return;
+        }
       });
 
   service.RegisterServiceFunc(

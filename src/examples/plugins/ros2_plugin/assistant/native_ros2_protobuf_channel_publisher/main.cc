@@ -12,7 +12,8 @@ class RosTestWrapperChannelPublisher : public rclcpp::Node {
       : Node("native_ros2_protobuf_channel_publisher") {
     using namespace std::chrono_literals;
 
-    publisher_ = this->create_publisher<ros2_plugin_proto::msg::RosMsgWrapper>("test_topic/pb_3Aaimrt_2Eprotocols_2Eexample_2EExampleEventMsg", 10);
+    publisher_ = this->create_publisher<ros2_plugin_proto::msg::RosMsgWrapper>(
+        "test_topic/pb_3Aaimrt_2Eprotocols_2Eexample_2EExampleEventMsg", 10);
     timer_ = this->create_wall_timer(
         500ms,
         [this]() -> void {

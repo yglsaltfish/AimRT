@@ -88,12 +88,11 @@ bool BenchmarkRpcClientModule::Initialize(aimrt::CoreRef core) {
     AIMRT_CHECK_ERROR_THROW(rpc_handle, "Get rpc handle failed.");
 
     // Register rpc client
-    bool ret = aimrt::rpc::RegisterClientFunc<
-        example_ros2::srv::RosTestRpcProxy>(rpc_handle);
+    bool ret = example_ros2::srv::RegisterRosTestRpcClientFunc(rpc_handle);
     AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
 
     // Create rpc proxy
-    proxy_ = std::make_shared<example_ros2::srv::RosTestRpcProxy>(rpc_handle);
+    proxy_ = std::make_shared<example_ros2::srv::RosTestRpcCoProxy>(rpc_handle);
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Init failed, {}", e.what());

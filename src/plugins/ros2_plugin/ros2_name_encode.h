@@ -19,7 +19,7 @@ inline std::string Ros2NameEncode(std::string_view str, bool up = true) {
   size_t len = str.length();
   ret_str.reserve(len << 1);
   for (size_t i = 0; i < len; ++i) {
-    if (isalnum((unsigned char)str[i]) || (str[i] == '/') || (str[i] == '{') || (str[i] == '}')) {
+    if (isalnum((unsigned char)str[i]) || (str[i] == '/')) {
       ret_str += str[i];
     } else {
       ret_str += '_';

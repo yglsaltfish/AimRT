@@ -6,7 +6,7 @@
 
 namespace aimrt::plugins::parameter_plugin {
 
-class ParameterServiceImpl : public aimrt::protocols::parameter_plugin::ParameterService {
+class ParameterServiceImpl : public aimrt::protocols::parameter_plugin::ParameterServiceCoService {
  public:
   ParameterServiceImpl() = default;
   ~ParameterServiceImpl() override = default;

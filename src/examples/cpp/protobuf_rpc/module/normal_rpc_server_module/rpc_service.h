@@ -4,7 +4,7 @@
 
 namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_server_module {
 
-class ExampleServiceImpl : public aimrt::protocols::example::ExampleService {
+class ExampleServiceImpl : public aimrt::protocols::example::ExampleServiceCoService {
  public:
   ExampleServiceImpl() = default;
   ~ExampleServiceImpl() override = default;
