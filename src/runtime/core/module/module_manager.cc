@@ -210,6 +210,8 @@ void ModuleManager::Initialize(YAML::Node options_node) {
   }
 
   options_node = options_;
+
+  AIMRT_INFO("All modules init complete.");
 }
 
 void ModuleManager::Start() {
@@ -233,6 +235,8 @@ void ModuleManager::Start() {
 void ModuleManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown modules.");
 
   // 按照反顺序执行Shutdown
   for (auto itr = module_init_order_.rbegin(); itr != module_init_order_.rend(); ++itr) {

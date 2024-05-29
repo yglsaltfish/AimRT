@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
-#include "time_manipulator_plugin/rpc_service.h"
+#include "time_manipulator_plugin/service.h"
 
 namespace aimrt::plugins::time_manipulator_plugin {
 

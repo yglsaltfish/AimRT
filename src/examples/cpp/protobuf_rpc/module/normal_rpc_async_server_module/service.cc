@@ -1,4 +1,4 @@
-#include "normal_rpc_async_server_module/rpc_service.h"
+#include "normal_rpc_async_server_module/service.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 #include "normal_rpc_async_server_module/global.h"
 

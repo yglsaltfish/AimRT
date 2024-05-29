@@ -1,4 +1,4 @@
-#include "time_manipulator_plugin/rpc_service.h"
+#include "time_manipulator_plugin/service.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 #include "time_manipulator_plugin/global.h"
 

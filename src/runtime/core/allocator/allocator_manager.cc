@@ -30,6 +30,8 @@ void AllocatorManager::Initialize(YAML::Node options_node) {
     options_ = options_node.as<Options>();
 
   options_node = options_;
+
+  AIMRT_INFO("Allocator init complete.");
 }
 
 void AllocatorManager::Start() {
@@ -41,6 +43,8 @@ void AllocatorManager::Start() {
 void AllocatorManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown allocator.");
 }
 
 const AllocatorProxy& AllocatorManager::GetAllocatorProxy(

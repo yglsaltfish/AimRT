@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "aimrt_module_cpp_interface/module_base.h"
-#include "normal_rpc_async_server_module/rpc_service.h"
+#include "normal_rpc_async_server_module/service.h"
 
 namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_async_server_module {
 

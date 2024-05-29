@@ -30,6 +30,8 @@ void ParameterManager::Initialize(YAML::Node options_node) {
     options_ = options_node.as<Options>();
 
   options_node = options_;
+
+  AIMRT_INFO("Parameter init complete.");
 }
 
 void ParameterManager::Start() {
@@ -41,6 +43,8 @@ void ParameterManager::Start() {
 void ParameterManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown parameter.");
 
   parameter_handle_proxy_wrap_map_.clear();
 }

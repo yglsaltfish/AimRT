@@ -136,6 +136,8 @@ void PluginManager::Initialize(YAML::Node options_node) {
   }
 
   options_node = options_;
+
+  AIMRT_INFO("Plugin init complete.");
 }
 
 void PluginManager::Start() {
@@ -147,6 +149,8 @@ void PluginManager::Start() {
 void PluginManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown plugin.");
 
   // 按照反顺序执行Shutdown
   for (auto itr = plugin_loader_vec_.rbegin(); itr != plugin_loader_vec_.rend(); ++itr) {

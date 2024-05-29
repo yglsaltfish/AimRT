@@ -67,6 +67,8 @@ void ConfiguratorManager::Initialize(
   }
 
   configurator_options_node = options_;
+
+  AIMRT_INFO("Configurator init complete.");
 }
 
 void ConfiguratorManager::Start() {
@@ -78,6 +80,8 @@ void ConfiguratorManager::Start() {
 void ConfiguratorManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown configurator.");
 
   cfg_proxy_map_.clear();
 }

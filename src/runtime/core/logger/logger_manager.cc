@@ -82,6 +82,8 @@ void LoggerManager::Initialize(YAML::Node options_node) {
   }
 
   options_node = options_;
+
+  AIMRT_INFO("Logger init complete.");
 }
 
 void LoggerManager::Start() {
@@ -93,6 +95,8 @@ void LoggerManager::Start() {
 void LoggerManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown logger.");
 
   // logger_proxy_map_不能清，有些插件还会打日志
   // logger_proxy_map_.clear();
