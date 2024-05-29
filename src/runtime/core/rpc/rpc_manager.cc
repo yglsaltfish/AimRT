@@ -152,6 +152,8 @@ void RpcManager::Initialize(YAML::Node options_node) {
               aimrt::common::util::Vec2Str(rpc_backend_name_vec_));
 
   options_node = options_;
+
+  AIMRT_INFO("Rpc init complete.");
 }
 
 void RpcManager::Start() {
@@ -165,6 +167,8 @@ void RpcManager::Start() {
 void RpcManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown rpc.");
 
   rpc_handle_proxy_map_.clear();
 

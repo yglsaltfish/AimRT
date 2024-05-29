@@ -91,6 +91,8 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
   }
 
   options_node = options_;
+
+  AIMRT_INFO("Executor init complete.");
 }
 
 void ExecutorManager::Start() {
@@ -106,6 +108,8 @@ void ExecutorManager::Start() {
 void ExecutorManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown executor.");
 
   executor_manager_proxy_map_.clear();
   executor_proxy_map_.clear();

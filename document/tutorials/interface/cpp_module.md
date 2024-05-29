@@ -1306,8 +1306,9 @@ target_link_libraries(my_lib PUBLIC my_namespace::example_ros2_rpc_aimrt_rpc_gen
 
 #### 同步型接口
 
-&emsp;&emsp;参考示例：TODO
-
+&emsp;&emsp;参考示例：
+- protobuf_rpc:[normal_rpc_sync_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
+- ros2_rpc:[normal_rpc_sync_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
 
 
 &emsp;&emsp;同步型接口在使用上最简单，但在运行效率上是最低的。它通过阻塞当前线程，等待RPC接口返回。一般可以在一些不要求性能的场合为了提高开发效率而使用这种方式，但不推荐在高性能要求的场景使用。
@@ -1366,7 +1367,9 @@ void HelloWorldModule::Foo() {
 
 #### 异步型接口
 
-&emsp;&emsp;参考示例：TODO
+&emsp;&emsp;参考示例：
+- protobuf_rpc:[normal_rpc_async_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
+- ros2_rpc:[normal_rpc_async_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
 
 
 &emsp;&emsp;异步型接口使用回调来返回异步结果，在性能上表现最好，但开发友好度是最低的，很容易陷入回调地狱。
@@ -1428,7 +1431,10 @@ void HelloWorldModule::Foo() {
 
 #### 无栈协程型接口
 
-&emsp;&emsp;参考示例：TODO
+&emsp;&emsp;参考示例：
+- protobuf_rpc:[normal_rpc_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_client_module/normal_rpc_client_module.cc)
+- ros2_rpc:[normal_rpc_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_client_module/normal_rpc_client_module.cc)
+
 
 &emsp;&emsp;AimRT为RPC Client端提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步型接口的封装，在性能上基本与异步型接口一致，但大大提升了开发友好度。
 
@@ -1494,7 +1500,9 @@ co::Task<void> HelloWorldModule::Foo() {
 
 #### 同步型接口
 
-&emsp;&emsp;参考示例：TODO
+&emsp;&emsp;参考示例：
+- protobuf_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_server_module/service.cc)
+- ros2_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_server_module/service.cc)
 
 &emsp;&emsp;同步型接口在使用上最简单，但很多时候实现的service中需要请求下游，会有一些异步调用，这种情况下只能阻塞的等待下游调用完成，可能会造成运行效率上的降低。一般可以在处理一些简单的请求、不需要发起其他异步调用的场景下使用同步型接口。
 
@@ -1540,7 +1548,9 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
 #### 异步型接口
 
-&emsp;&emsp;参考示例：TODO
+&emsp;&emsp;参考示例：
+- protobuf_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_server_module/service.cc)
+- ros2_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)
 
 &emsp;&emsp;异步型接口会传递一个回调给开发者，开发者在RPC处理完成后调用这个回调来传递最终处理结果。这种方式可以在RPC中发起其他异步调用，由于不会阻塞，因此性能表现通常最好，但通常会导致开发出的代码难以阅读和维护。
 
@@ -1587,7 +1597,9 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
 #### 无栈协程型接口
 
-&emsp;&emsp;参考示例：TODO
+&emsp;&emsp;参考示例：
+- protobuf_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_server_module/service.cc)
+- ros2_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_server_module/service.cc)
 
 &emsp;&emsp;与RPC Client端一样，在RPC Service端，AimRT也提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步型接口的封装，在性能上基本与异步型接口一致，但大大提升了开发友好度。
 

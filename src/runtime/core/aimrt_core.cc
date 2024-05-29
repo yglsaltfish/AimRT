@@ -29,7 +29,6 @@ void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PreInitConfigurator);
   configurator_manager_.SetLogger(logger_ptr_);
   configurator_manager_.Initialize(options_.cfg_file_path);
-  AIMRT_INFO("Configurator init complete.");
   EnterState(State::PostInitConfigurator);
 
   // Init plugin
@@ -38,21 +37,18 @@ void AimRTCore::Initialize(const Options& options) {
   plugin_manager_.RegisterPluginInitFunc(
       [this](AimRTCorePluginBase* plugin_ptr) { return plugin_ptr->Initialize(this); });
   plugin_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("plugin"));
-  AIMRT_INFO("Plugin init complete.");
   EnterState(State::PostInitPlugin);
 
   // Init main thread executor
   EnterState(State::PreInitMainThread);
   main_thread_executor_.SetLogger(logger_ptr_);
   main_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("main_thread"));
-  AIMRT_INFO("Main thread executor init complete.");
   EnterState(State::PostInitMainThread);
 
   // Init allocator
   EnterState(State::PreInitAllocator);
   allocator_manager_.SetLogger(logger_ptr_);
   allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
-  AIMRT_INFO("Allocator init complete.");
   EnterState(State::PostInitAllocator);
 
   // Init executor
@@ -60,7 +56,6 @@ void AimRTCore::Initialize(const Options& options) {
   executor_manager_.SetLogger(logger_ptr_);
   executor_manager_.SetUsedExecutorName(main_thread_executor_.Name());
   executor_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("executor"));
-  AIMRT_INFO("Executor init complete.");
   EnterState(State::PostInitExecutor);
 
   // Init log
@@ -70,7 +65,6 @@ void AimRTCore::Initialize(const Options& options) {
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
   SetCoreLogger();
-  AIMRT_INFO("Logger init complete.");
   EnterState(State::PostInitLog);
 
   // Init rpc
@@ -79,7 +73,6 @@ void AimRTCore::Initialize(const Options& options) {
   rpc_manager_.RegisterGetExecutorFunc(
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   rpc_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("rpc"));
-  AIMRT_INFO("Rpc init complete.");
   EnterState(State::PostInitRpc);
 
   // Init channel
@@ -88,14 +81,12 @@ void AimRTCore::Initialize(const Options& options) {
   channel_manager_.RegisterGetExecutorFunc(
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   channel_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("channel"));
-  AIMRT_INFO("Channel init complete.");
   EnterState(State::PostInitChannel);
 
   // Init parameter
   EnterState(State::PreInitParameter);
   parameter_manager_.SetLogger(logger_ptr_);
   parameter_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("parameter"));
-  AIMRT_INFO("Parameter init complete.");
   EnterState(State::PostInitParameter);
 
   // Init modules
@@ -104,7 +95,6 @@ void AimRTCore::Initialize(const Options& options) {
   module_manager_.RegisterCoreProxyConfigurator(
       std::bind(&AimRTCore::InitCoreProxy, this, std::placeholders::_1, std::placeholders::_2));
   module_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("module"));
-  AIMRT_INFO("All modules init complete.");
   EnterState(State::PostInitModules);
 
   // dump cfg file
@@ -137,35 +127,25 @@ void AimRTCore::Shutdown() {
   auto stop_work = [this]() {
     EnterState(State::PreShutdown);
 
-    AIMRT_INFO("Shutdown modules.");
     module_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown parameter.");
     parameter_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown channel.");
     channel_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown rpc.");
     rpc_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown logger.");
     ResetCoreLogger();
     logger_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown executor.");
     executor_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown allocator.");
     allocator_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown plugin.");
     plugin_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown configurator.");
     configurator_manager_.Shutdown();
 
-    AIMRT_INFO("Shutdown main thread.");
     main_thread_executor_.Shutdown();
 
     EnterState(State::PostShutdown);

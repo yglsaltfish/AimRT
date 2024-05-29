@@ -152,6 +152,8 @@ void ChannelManager::Initialize(YAML::Node options_node) {
               aimrt::common::util::Vec2Str(channel_backend_name_vec_));
 
   options_node = options_;
+
+  AIMRT_INFO("Channel init complete.");
 }
 
 void ChannelManager::Start() {
@@ -166,6 +168,8 @@ void ChannelManager::Start() {
 void ChannelManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown channel.");
 
   channel_handle_proxy_wrap_map_.clear();
 

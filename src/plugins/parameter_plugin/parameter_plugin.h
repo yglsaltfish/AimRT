@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
-#include "parameter_plugin/rpc_service.h"
+#include "parameter_plugin/service.h"
 
 namespace aimrt::plugins::parameter_plugin {
 

@@ -54,6 +54,8 @@ void MainThreadExecutor::Initialize(YAML::Node options_node) {
   }
 
   options_node = options_;
+
+  AIMRT_INFO("Main thread executor init complete.");
 }
 
 void MainThreadExecutor::Start() {
@@ -101,6 +103,8 @@ void MainThreadExecutor::Start() {
 void MainThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  AIMRT_INFO("Shutdown main thread.");
 
   // 对主线程来说，shutdown一定跑在task内
   // 并不是真正的shutdown，任务队列还要跑，不能全清了

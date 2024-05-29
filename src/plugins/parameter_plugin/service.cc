@@ -1,4 +1,4 @@
-#include "parameter_plugin/rpc_service.h"
+#include "parameter_plugin/service.h"
 #include "aimrt_module_cpp_interface/parameter/parameter_handle.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 #include "parameter_plugin/global.h"
