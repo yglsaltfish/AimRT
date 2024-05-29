@@ -27,7 +27,7 @@ class LogLevelTool {
 
  private:
   static constexpr std::string_view
-      lvl_name_array_[aimrt_log_level_t::AIMRT_LOG_LEVEL_OFF] = {
-          "Trace", "Debug", "Info", "Warn", "Error", "Fatal"};
+      lvl_name_array_[aimrt_log_level_t::AIMRT_LOG_LEVEL_OFF + 1] = {
+          "Trace", "Debug", "Info", "Warn", "Error", "Fatal", "Off"};
 };
 }  // namespace aimrt::runtime::core::logger
