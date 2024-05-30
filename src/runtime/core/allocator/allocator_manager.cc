@@ -31,20 +31,28 @@ void AllocatorManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO("Allocator init complete.");
+  AIMRT_INFO(R"str(Allocator manager init complete. options:
+----------------------------- aimrt.allocator ----------------------------------
+{}
+----------------------------- aimrt.allocator ----------------------------------
+
+)str",
+             YAML::Dump(options_node));
 }
 
 void AllocatorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Function can only be called when state is 'Init'.");
+
+  AIMRT_INFO("Allocator manager start complete.");
 }
 
 void AllocatorManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  AIMRT_INFO("Shutdown allocator.");
+  AIMRT_INFO("Allocator manager shutdown.");
 }
 
 const AllocatorProxy& AllocatorManager::GetAllocatorProxy(

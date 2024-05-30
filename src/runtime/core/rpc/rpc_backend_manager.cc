@@ -89,6 +89,9 @@ bool RpcBackendManager::RegisterServiceFunc(
   for (auto& itr : backend_ptr_vec) {
     ret &= itr->RegisterServiceFunc(service_func_wrapper_ref);
   }
+
+  servers_backend_index_map_.emplace(func_name, std::move(backend_ptr_vec));
+
   return ret;
 }
 
@@ -220,6 +223,34 @@ std::vector<RpcBackendBase*> RpcBackendManager::GetBackendsByRules(
   }
 
   return {};
+}
+
+std::unordered_map<std::string_view, std::vector<std::string_view>>
+RpcBackendManager::GetClientsBackendInfo() const {
+  std::unordered_map<std::string_view, std::vector<std::string_view>> result;
+  for (auto& itr : clients_backend_index_map_) {
+    std::vector<std::string_view> backends_name;
+    for (auto& item : itr.second)
+      backends_name.emplace_back(item->Name());
+
+    result.emplace(itr.first, std::move(backends_name));
+  }
+
+  return result;
+}
+
+std::unordered_map<std::string_view, std::vector<std::string_view>>
+RpcBackendManager::GetServersBackendInfo() const {
+  std::unordered_map<std::string_view, std::vector<std::string_view>> result;
+  for (auto& itr : servers_backend_index_map_) {
+    std::vector<std::string_view> backends_name;
+    for (auto& item : itr.second)
+      backends_name.emplace_back(item->Name());
+
+    result.emplace(itr.first, std::move(backends_name));
+  }
+
+  return result;
 }
 
 }  // namespace aimrt::runtime::core::rpc

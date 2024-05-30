@@ -181,7 +181,8 @@ import {{py_package_name}}
 
             pyfile_import_dependency_py_package: str = ""
             for dependency_proto_file in proto_file.dependency:
-                import_dependency_py_package: str = "import " + dependency_proto_file.replace('.proto', '_pb2')
+                import_dependency_py_package: str = "import " + \
+                    dependency_proto_file.replace('.proto', '_pb2').replace("/", ".")
                 pyfile_import_dependency_py_package = pyfile_import_dependency_py_package + import_dependency_py_package + "\n"
 
             pyfile_service_class: str = ""

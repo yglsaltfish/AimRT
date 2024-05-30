@@ -68,20 +68,28 @@ void ConfiguratorManager::Initialize(
 
   configurator_options_node = options_;
 
-  AIMRT_INFO("Configurator init complete.");
+  AIMRT_INFO(R"str(Configurator manager init complete. options:
+----------------------------- aimrt.configurator -------------------------------
+{}
+----------------------------- aimrt.configurator -------------------------------
+
+)str",
+             YAML::Dump(configurator_options_node));
 }
 
 void ConfiguratorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Function can only be called when state is 'Init'.");
+
+  AIMRT_INFO("Configurator manager start complete.");
 }
 
 void ConfiguratorManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  AIMRT_INFO("Shutdown configurator.");
+  AIMRT_INFO("Configurator manager shutdown.");
 
   cfg_proxy_map_.clear();
 }
@@ -107,6 +115,8 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
+
+  AIMRT_TRACE("Get configurator proxy for module '{}'.", module_info.name);
 
   auto itr = cfg_proxy_map_.find(module_info.name);
   if (itr != cfg_proxy_map_.end()) return *(itr->second);
@@ -172,6 +182,7 @@ std::string ConfiguratorManager::ReplaceEnvVars(const std::string& input) {
       AIMRT_WARN("Can not get env '{}'.", env_name);
       env_val = "";
     }
+    AIMRT_TRACE("Replace env '{}' with val '{}'.", env_name, env_val);
     result.replace(match.position(0), match.length(0), env_val);
     search_start = result.begin() + match.position(0) + strlen(env_val);
   }

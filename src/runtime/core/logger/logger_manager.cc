@@ -55,8 +55,8 @@ struct convert<aimrt::runtime::core::logger::LoggerManager::Options> {
 namespace aimrt::runtime::core::logger {
 
 void LoggerManager::Initialize(YAML::Node options_node) {
-  RegisterConsoleLoggerBackend();
-  RegisterRotateFileLoggerBackend();
+  RegisterConsoleLoggerBackendGenFunc();
+  RegisterRotateFileLoggerBackendGenFunc();
 
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
@@ -65,47 +65,71 @@ void LoggerManager::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
+  // 生成logger
   for (auto& backend_options : options_.backends_options) {
-    auto finditr = std::find_if(
-        logger_backend_ptr_vec_.begin(), logger_backend_ptr_vec_.end(),
-        [&backend_options](const auto& ptr) {
-          return backend_options.type == ptr->Name();
-        });
-
-    AIMRT_CHECK_ERROR_THROW(finditr != logger_backend_ptr_vec_.end(),
-                            "Invalid logger backend type '{}'",
+    auto finditr = logger_backend_gen_func_map_.find(backend_options.type);
+    AIMRT_CHECK_ERROR_THROW(finditr != logger_backend_gen_func_map_.end(),
+                            "Invalid logger backend type '{}'.",
                             backend_options.type);
 
-    (*finditr)->Initialize(backend_options.options);
+    auto logger_backend_ptr = finditr->second();
+    AIMRT_CHECK_ERROR_THROW(
+        logger_backend_ptr,
+        "Gen logger backend failed, logger backend type '{}'.",
+        backend_options.type);
 
-    used_logger_backend_ptr_vec_.emplace_back(finditr->get());
+    if (!logger_backend_ptr->AllowDuplicates()) {
+      AIMRT_CHECK_ERROR_THROW(
+          std::find_if(logger_backend_vec_.begin(), logger_backend_vec_.end(),
+                       [type = backend_options.type](const auto& backend_ptr) -> bool {
+                         return backend_ptr->Type() == type;
+                       }) == logger_backend_vec_.end(),
+          "Logger backend type'{}' do not allow duplicate.", backend_options.type);
+    }
+
+    logger_backend_ptr->Initialize(backend_options.options);
+
+    logger_backend_vec_.emplace_back(std::move(logger_backend_ptr));
   }
 
   options_node = options_;
 
-  AIMRT_INFO("Logger init complete.");
+  AIMRT_INFO(R"str(Logger manager init complete. options:
+----------------------------- aimrt.log ----------------------------------------
+{}
+----------------------------- aimrt.log ----------------------------------------
+
+)str",
+             YAML::Dump(options_node));
 }
 
 void LoggerManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Function can only be called when state is 'Init'.");
+
+  for (auto& backend : logger_backend_vec_) {
+    backend->Start();
+  }
+
+  AIMRT_INFO("Logger manager start complete.");
 }
 
 void LoggerManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  AIMRT_INFO("Shutdown logger.");
+  AIMRT_INFO("Logger manager shutdown.");
 
   // logger_proxy_map_不能清，有些插件还会打日志
-  // logger_proxy_map_.clear();
 
-  for (auto& backend : used_logger_backend_ptr_vec_) {
+  for (auto& backend : logger_backend_vec_) {
     backend->Shutdown();
   }
 
   // logger_backend不能清，可能会有未完成的日志任务
+
+  logger_backend_gen_func_map_.clear();
 
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
@@ -119,13 +143,14 @@ void LoggerManager::RegisterGetExecutorFunc(
   get_executor_func_ = get_executor_func;
 }
 
-void LoggerManager::RegisterLoggerBackend(
-    std::unique_ptr<LoggerBackendBase>&& logger_backend_ptr) {
+void LoggerManager::RegisterLoggerBackendGenFunc(
+    std::string_view type,
+    LoggerBackendGenFunc&& logger_backend_gen_func) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Function can only be called when state is 'PreInit'.");
 
-  logger_backend_ptr_vec_.emplace_back(std::move(logger_backend_ptr));
+  logger_backend_gen_func_map_.emplace(type, std::move(logger_backend_gen_func));
 }
 
 LoggerProxy& LoggerManager::GetLoggerProxy(
@@ -149,8 +174,7 @@ LoggerProxy& LoggerManager::GetLoggerProxy(
 
   auto emplace_ret = logger_proxy_map_.emplace(
       real_module_name,
-      std::make_unique<LoggerProxy>(real_module_name, log_lvl,
-                                    used_logger_backend_ptr_vec_));
+      std::make_unique<LoggerProxy>(real_module_name, log_lvl, logger_backend_vec_));
 
   return *(emplace_ret.first->second);
 }
@@ -170,28 +194,25 @@ LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   // 统一使用core_lvl
   auto emplace_ret = logger_proxy_map_.emplace(
       real_logger_name,
-      std::make_unique<LoggerProxy>(real_logger_name, options_.core_lvl,
-                                    used_logger_backend_ptr_vec_));
+      std::make_unique<LoggerProxy>(real_logger_name, options_.core_lvl, logger_backend_vec_));
 
   return *(emplace_ret.first->second);
 }
 
-void LoggerManager::RegisterConsoleLoggerBackend() {
-  std::unique_ptr<LoggerBackendBase> ptr =
-      std::make_unique<ConsoleLoggerBackend>();
-
-  static_cast<ConsoleLoggerBackend*>(ptr.get())->RegisterGetExecutorFunc(get_executor_func_);
-
-  RegisterLoggerBackend(std::move(ptr));
+void LoggerManager::RegisterConsoleLoggerBackendGenFunc() {
+  RegisterLoggerBackendGenFunc("console", [this]() -> std::unique_ptr<LoggerBackendBase> {
+    auto ptr = std::make_unique<ConsoleLoggerBackend>();
+    ptr->RegisterGetExecutorFunc(get_executor_func_);
+    return ptr;
+  });
 }
 
-void LoggerManager::RegisterRotateFileLoggerBackend() {
-  std::unique_ptr<LoggerBackendBase> ptr =
-      std::make_unique<RotateFileLoggerBackend>();
-
-  static_cast<RotateFileLoggerBackend*>(ptr.get())->RegisterGetExecutorFunc(get_executor_func_);
-
-  RegisterLoggerBackend(std::move(ptr));
+void LoggerManager::RegisterRotateFileLoggerBackendGenFunc() {
+  RegisterLoggerBackendGenFunc("rotate_file", [this]() -> std::unique_ptr<LoggerBackendBase> {
+    auto ptr = std::make_unique<RotateFileLoggerBackend>();
+    ptr->RegisterGetExecutorFunc(get_executor_func_);
+    return ptr;
+  });
 }
 
 }  // namespace aimrt::runtime::core::logger

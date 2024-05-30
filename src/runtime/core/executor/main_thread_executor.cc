@@ -55,13 +55,21 @@ void MainThreadExecutor::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO("Main thread executor init complete.");
+  AIMRT_INFO(R"str(Main thread executor init complete. options:
+----------------------------- aimrt.main_thread --------------------------------
+{}
+----------------------------- aimrt.main_thread --------------------------------
+
+)str",
+             YAML::Dump(options_node));
 }
 
 void MainThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Main thread executor can only run when state is 'Init'.");
+
+  AIMRT_INFO("Main thread executor start complete, will blocks current thread until shutdown.");
 
   while (state_.load() != State::Shutdown) {
     // 多生产-单消费优化
@@ -104,7 +112,7 @@ void MainThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  AIMRT_INFO("Shutdown main thread.");
+  AIMRT_INFO("Main thread executor shutdown.");
 
   // 对主线程来说，shutdown一定跑在task内
   // 并不是真正的shutdown，任务队列还要跑，不能全清了

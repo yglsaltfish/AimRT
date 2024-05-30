@@ -14,10 +14,13 @@ class LoggerBackendBase {
   LoggerBackendBase(const LoggerBackendBase&) = delete;
   LoggerBackendBase& operator=(const LoggerBackendBase&) = delete;
 
-  virtual std::string_view Name() const = 0;
+  virtual std::string_view Type() const = 0;
 
   virtual void Initialize(YAML::Node options_node) = 0;
+  virtual void Start() = 0;
   virtual void Shutdown() = 0;
+
+  virtual bool AllowDuplicates() const = 0;
 
   // 可以复用前一个backend的format结果
   virtual void Log(const LogDataWrapper& log_data_wrapper,

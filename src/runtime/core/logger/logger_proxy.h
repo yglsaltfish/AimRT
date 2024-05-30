@@ -11,11 +11,12 @@ namespace aimrt::runtime::core::logger {
 class LoggerProxy {
  public:
   LoggerProxy(
-      std::string_view module_name, aimrt_log_level_t lvl,
-      const std::vector<LoggerBackendBase*>& used_logger_backend_ptr_vec)
+      std::string_view module_name,
+      aimrt_log_level_t lvl,
+      const std::vector<std::unique_ptr<LoggerBackendBase>>& logger_backend_vec)
       : module_name_(module_name),
         lvl_(lvl),
-        used_logger_backend_ptr_vec_(used_logger_backend_ptr_vec),
+        logger_backend_vec_(logger_backend_vec),
         base_(GenBase(this)) {}
 
   ~LoggerProxy() = default;
@@ -56,7 +57,7 @@ class LoggerProxy {
           .log_data_size = log_data_size};
 
       auto format_log_str_ptr = std::make_shared<std::string>();
-      for (auto& logger_backend_ptr : used_logger_backend_ptr_vec_) {
+      for (auto& logger_backend_ptr : logger_backend_vec_) {
         logger_backend_ptr->Log(log_data_wrapper, format_log_str_ptr);
       }
     }
@@ -90,7 +91,7 @@ class LoggerProxy {
  private:
   const std::string module_name_;
   const aimrt_log_level_t lvl_;
-  const std::vector<LoggerBackendBase*>& used_logger_backend_ptr_vec_;
+  const std::vector<std::unique_ptr<LoggerBackendBase>>& logger_backend_vec_;
 
   const aimrt_logger_base_t base_;
 };

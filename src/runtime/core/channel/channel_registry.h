@@ -56,6 +56,9 @@ class ChannelRegistry {
       std::string_view topic_name,
       std::string_view msg_type) const;
 
+  const auto& GetPubTopicIndexMap() const { return pub_topic_index_map_; }
+  const auto& GetSubTopicIndexMap() const { return sub_topic_index_map_; }
+
  private:
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
@@ -66,12 +69,18 @@ class ChannelRegistry {
   using PublishTypePkgMap = std::unordered_map<std::string_view, PublishTypeModuleMap>;
   PublishTypePkgMap publish_type_wrapper_map_;
 
+  // 索引表，topic:wrapper
+  std::unordered_map<std::string_view, std::vector<PublishTypeWrapper*>> pub_topic_index_map_;
+
   // 订阅回调注册表: pkg_path:module_name:topic:msg_type:wrapper
   using SubscribeMsgTypeMap = std::unordered_map<std::string_view, std::unique_ptr<SubscribeWrapper>>;
   using SubscribeTopicMap = std::unordered_map<std::string_view, SubscribeMsgTypeMap>;
   using SubscribeModuleMap = std::unordered_map<std::string_view, SubscribeTopicMap>;
   using SubscribePkgMap = std::unordered_map<std::string_view, SubscribeModuleMap>;
   SubscribePkgMap subscribe_wrapper_map_;
+
+  // 索引表，topic:wrapper
+  std::unordered_map<std::string_view, std::vector<SubscribeWrapper*>> sub_topic_index_map_;
 };
 
 }  // namespace aimrt::runtime::core::channel

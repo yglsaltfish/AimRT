@@ -14,9 +14,11 @@ namespace aimrt::runtime::core::logger {
 
 class LoggerBackendMock : public LoggerBackendBase {
  public:
-  MOCK_CONST_METHOD0(Name, std::string_view());
+  MOCK_CONST_METHOD0(Type, std::string_view());
   MOCK_METHOD1(Initialize, void(YAML::Node));
+  MOCK_METHOD0(Start, void());
   MOCK_METHOD0(Shutdown, void());
+  MOCK_CONST_METHOD0(AllowDuplicates, bool());
   MOCK_METHOD2(Log, void(const LogDataWrapper&, const std::shared_ptr<std::string>&));
 };
 
@@ -39,19 +41,21 @@ class LoggerManagerTest : public ::testing::Test {
         });
 
     // register the mocked backend, register can only in PreInit state.
-    std::unique_ptr<LoggerBackendBase> mocked_backend_ptr = std::make_unique<LoggerBackendMock>();
-    EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Name)
-        .WillRepeatedly(testing::Return("mocked_backend"));
-    EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Log)
-        .WillRepeatedly([this](const LogDataWrapper& logger_wrapper, const std::shared_ptr<std::string>&) {  //
-          this->log_res_ = std::string(logger_wrapper.log_data, logger_wrapper.log_data_size);
-        });
-    EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Initialize)
-        .WillRepeatedly([](YAML::Node) {});
-    EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Shutdown)
-        .WillRepeatedly([]() {});
+    logger_manager_.RegisterLoggerBackendGenFunc("mocked_backend", [this]() -> std::unique_ptr<LoggerBackendBase> {
+      std::unique_ptr<LoggerBackendBase> mocked_backend_ptr = std::make_unique<LoggerBackendMock>();
+      EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Type)
+          .WillRepeatedly(testing::Return("mocked_backend"));
+      EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Log)
+          .WillRepeatedly([this](const LogDataWrapper& logger_wrapper, const std::shared_ptr<std::string>&) {  //
+            this->log_res_ = std::string(logger_wrapper.log_data, logger_wrapper.log_data_size);
+          });
+      EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Initialize)
+          .WillRepeatedly([](YAML::Node) {});
+      EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Shutdown)
+          .WillRepeatedly([]() {});
 
-    logger_manager_.RegisterLoggerBackend(std::move(mocked_backend_ptr));
+      return mocked_backend_ptr;
+    });
 
     YAML::Node logger_manager_options_node = YAML::Load(R"str(
         log: # log配置
@@ -110,10 +114,7 @@ TEST_F(LoggerManagerTest, initialize_using_default_log_lvl) {
 }
 
 TEST_F(LoggerManagerTest, log_with_backends) {
-  const util::ModuleDetailInfo module_info = {
-      .name = "logger_manager_test",
-  };
-  auto logger = logger_manager_.GetLoggerProxy(module_info).NativeHandle();
+  auto logger = logger_manager_.GetLoggerProxy("logger_manager_test").NativeHandle();
   ASSERT_NE(logger, nullptr);
 
   executor_manager_.Start();

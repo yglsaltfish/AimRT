@@ -18,14 +18,14 @@ TEST(STL_TOOL_TEST, Vec2Str_test) {
       TestCase{
           .name = "case 1",
           .v = {},
-          .want_result = R"str(vec size = 0
+          .want_result = R"str(size = 0
 )str"});
   test_cases.emplace_back(
       TestCase{
           .name = "case 2",
           .v = {"", "v1", "v2\nv2", "12345678901234567890123456789012",
                 "123456789012345678901234567890123", "v3"},
-          .want_result = R"str(vec size = 6
+          .want_result = R"str(size = 6
 [index=0]:<empty string>
 [index=1]:v1
 [index=2]:
@@ -58,13 +58,13 @@ TEST(STL_TOOL_TEST, Vec2Str_bool_test) {
       TestCase{
           .name = "case 1",
           .v = {},
-          .want_result = R"str(vec size = 0
+          .want_result = R"str(size = 0
 )str"});
   test_cases.emplace_back(
       TestCase{
           .name = "case 2",
           .v = {true, true, false, false, true, true},
-          .want_result = R"str(vec size = 6
+          .want_result = R"str(size = 6
 [index=0]:1
 [index=1]:1
 [index=2]:0
@@ -94,14 +94,14 @@ TEST(STL_TOOL_TEST, Set2Str_test) {
       TestCase{
           .name = "case 1",
           .s = {},
-          .want_result = R"str(set size = 0
+          .want_result = R"str(size = 0
 )str"});
   test_cases.emplace_back(
       TestCase{
           .name = "case 2",
           .s = {"", "v1", "v2\nv2", "12345678901234567890123456789012",
                 "123456789012345678901234567890123", "v3"},
-          .want_result = R"str(set size = 6
+          .want_result = R"str(size = 6
 [index=0]:<empty string>
 [index=1]:12345678901234567890123456789012
 [index=2]:
@@ -134,7 +134,7 @@ TEST(STL_TOOL_TEST, Map2Str_test) {
       TestCase{
           .name = "case 1",
           .m = {},
-          .want_result = R"str(map size = 0
+          .want_result = R"str(size = 0
 )str"});
   test_cases.emplace_back(
       TestCase{
@@ -144,7 +144,7 @@ TEST(STL_TOOL_TEST, Map2Str_test) {
                 {"", "v3"},
                 {"k4\nk4", "v4"},
                 {"k5", "v5\nv5"}},
-          .want_result = R"str(map size = 5
+          .want_result = R"str(size = 5
 [index=0]:
   [key]:<empty string>
   [val]:v3
@@ -170,7 +170,7 @@ v5
           .name = "case 3",
           .m = {{"123456789012345678901234567890123", "v1"},
                 {"k2", "123456789012345678901234567890123"}},
-          .want_result = R"str(map size = 2
+          .want_result = R"str(size = 2
 [index=0]:
   [key]:
 123456789012345678901234567890123

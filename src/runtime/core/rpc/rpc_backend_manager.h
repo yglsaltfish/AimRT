@@ -44,6 +44,9 @@ class RpcBackendManager {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
+  std::unordered_map<std::string_view, std::vector<std::string_view>> GetClientsBackendInfo() const;
+  std::unordered_map<std::string_view, std::vector<std::string_view>> GetServersBackendInfo() const;
+
  private:
   std::vector<RpcBackendBase*> GetBackendsByRules(
       std::string_view func_name,
@@ -66,5 +69,10 @@ class RpcBackendManager {
       aimrt::common::util::StringHash,
       std::equal_to<>>
       clients_backend_index_map_;
+
+  std::unordered_map<
+      std::string,
+      std::vector<RpcBackendBase*>>
+      servers_backend_index_map_;
 };
 }  // namespace aimrt::runtime::core::rpc

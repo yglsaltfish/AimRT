@@ -16,7 +16,7 @@ struct convert<aimrt::runtime::core::plugin::PluginManager::Options> {
       plugin_options_node["name"] = plugin_options.name;
       plugin_options_node["path"] = plugin_options.path;
       plugin_options_node["options"] = plugin_options.options;
-      node["backends"].push_back(plugin_options_node);
+      node["plugins"].push_back(plugin_options_node);
     }
 
     return node;
@@ -59,7 +59,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
   auto tmp_registered_plugin_vec = registered_plugin_vec_;
 
   // 加载并初始化所有插件
-  for (const auto& plugin_options : options_.plugins_options) {
+  for (auto& plugin_options : options_.plugins_options) {
     // 检查重复插件名称
     auto finditr = std::find_if(
         options_.plugins_options.begin(), options_.plugins_options.end(),
@@ -73,16 +73,6 @@ void PluginManager::Initialize(YAML::Node options_node) {
     AimRTCorePluginBase* plugin_ptr = nullptr;
 
     if (!plugin_options.path.empty()) {
-      // 检查重复动态库
-      auto finditr = std::find_if(
-          options_.plugins_options.begin(), options_.plugins_options.end(),
-          [&plugin_options](const auto& op) {
-            if (&plugin_options == &op) return false;
-            return op.path == plugin_options.path;
-          });
-      AIMRT_CHECK_ERROR_THROW(finditr == options_.plugins_options.end(),
-                              "Duplicate load plugin lib {}", plugin_options.path);
-
       // 加载插件
       auto plugin_loader_ptr = std::make_unique<PluginLoader>();
       plugin_loader_ptr->SetLogger(logger_ptr_);
@@ -98,9 +88,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
           "Require plugin name '{}', but get plugin name '{}' in lib {}.",
           plugin_options.name, plugin_name, plugin_options.path);
 
-      AIMRT_INFO("Load plugin lib succeeded.\ncfg path: {}\nfull path: {}\n",
-                 plugin_options.path,
-                 plugin_loader_ptr->GetDynamicLib().GetLibFullPath());
+      plugin_options.path = plugin_loader_ptr->GetDynamicLib().GetLibFullPath();
 
       plugin_loader_vec_.emplace_back(std::move(plugin_loader_ptr));
 
@@ -122,9 +110,9 @@ void PluginManager::Initialize(YAML::Node options_node) {
 
     // 初始化插件
     bool ret = plugin_init_func_(plugin_ptr);
-    AIMRT_CHECK_ERROR_THROW(ret, "Init plugin '{}' failed.", plugin_options.path);
+    AIMRT_CHECK_ERROR_THROW(ret, "Init plugin '{}' failed.", plugin_options.name);
 
-    AIMRT_INFO("Load plugin '{}' succeeded.", plugin_options.path);
+    AIMRT_TRACE("Load plugin '{}' succeeded.", plugin_options.name);
   }
 
   if (!tmp_registered_plugin_vec.empty()) {
@@ -137,20 +125,28 @@ void PluginManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO("Plugin init complete.");
+  AIMRT_INFO(R"str(Plugin manager init complete. options:
+----------------------------- aimrt.plugin -------------------------------------
+{}
+----------------------------- aimrt.plugin -------------------------------------
+
+)str",
+             YAML::Dump(options_node));
 }
 
 void PluginManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Function can only be called when state is 'Init'.");
+
+  AIMRT_INFO("Plugin manager start complete.");
 }
 
 void PluginManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  AIMRT_INFO("Shutdown plugin.");
+  AIMRT_INFO("Plugin manager shutdown.");
 
   // 按照反顺序执行Shutdown
   for (auto itr = plugin_loader_vec_.rbegin(); itr != plugin_loader_vec_.rend(); ++itr) {

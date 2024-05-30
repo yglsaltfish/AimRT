@@ -31,20 +31,28 @@ void ParameterManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO("Parameter init complete.");
+  AIMRT_INFO(R"str(Parameter manager init complete. options:
+----------------------------- aimrt.parameter ----------------------------------
+{}
+----------------------------- aimrt.parameter ----------------------------------
+
+)str",
+             YAML::Dump(options_node));
 }
 
 void ParameterManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Function can only be called when state is 'Init'.");
+
+  AIMRT_INFO("Parameter manager start complete.");
 }
 
 void ParameterManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  AIMRT_INFO("Shutdown parameter.");
+  AIMRT_INFO("Parameter manager shutdown.");
 
   parameter_handle_proxy_wrap_map_.clear();
 }

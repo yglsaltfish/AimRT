@@ -47,6 +47,9 @@ class ChannelBackendManager {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
+  std::unordered_map<std::string_view, std::vector<std::string_view>> GetPubTopicBackendInfo() const;
+  std::unordered_map<std::string_view, std::vector<std::string_view>> GetSubTopicBackendInfo() const;
+
  private:
   std::vector<ChannelBackendBase*> GetBackendsByRules(
       std::string_view topic_name,
@@ -68,6 +71,11 @@ class ChannelBackendManager {
       aimrt::common::util::StringHash,
       std::equal_to<>>
       pub_topics_backend_index_map_;
+
+  std::unordered_map<
+      std::string,
+      std::vector<ChannelBackendBase*>>
+      sub_topics_backend_index_map_;
 };
 
 }  // namespace aimrt::runtime::core::channel

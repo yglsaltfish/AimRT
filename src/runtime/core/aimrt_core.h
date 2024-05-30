@@ -35,6 +35,9 @@ class AimRTCore {
     PreInitPlugin,
     PostInitPlugin,
 
+    PreInitLog,
+    PostInitLog,
+
     PreInitMainThread,
     PostInitMainThread,
 
@@ -43,9 +46,6 @@ class AimRTCore {
 
     PreInitExecutor,
     PostInitExecutor,
-
-    PreInitLog,
-    PostInitLog,
 
     PreInitRpc,
     PostInitRpc,
@@ -101,14 +101,14 @@ class AimRTCore {
   auto& GetPluginManager() { return plugin_manager_; }
   const auto& GetPluginManager() const { return plugin_manager_; }
 
+  auto& GetLoggerManager() { return logger_manager_; }
+  const auto& GetLoggerManager() const { return logger_manager_; }
+
   auto& GetAllocatorManager() { return allocator_manager_; }
   const auto& GetAllocatorManager() const { return allocator_manager_; }
 
   auto& GetExecutorManager() { return executor_manager_; }
   const auto& GetExecutorManager() const { return executor_manager_; }
-
-  auto& GetLoggerManager() { return logger_manager_; }
-  const auto& GetLoggerManager() const { return logger_manager_; }
 
   auto& GetRpcManager() { return rpc_manager_; }
   const auto& GetRpcManager() const { return rpc_manager_; }
@@ -127,7 +127,9 @@ class AimRTCore {
  private:
   void EnterState(State state);
   void SetCoreLogger();
+  void SetCoreLoggerAllocator();
   void ResetCoreLogger();
+  void ResetCoreLoggerAllocator();
   aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
   void DumpCfgFile(const std::string& path = "");
@@ -144,9 +146,9 @@ class AimRTCore {
 
   configurator::ConfiguratorManager configurator_manager_;
   plugin::PluginManager plugin_manager_;
+  logger::LoggerManager logger_manager_;
   allocator::AllocatorManager allocator_manager_;
   executor::ExecutorManager executor_manager_;
-  logger::LoggerManager logger_manager_;
   rpc::RpcManager rpc_manager_;
   channel::ChannelManager channel_manager_;
   parameter::ParameterManager parameter_manager_;
