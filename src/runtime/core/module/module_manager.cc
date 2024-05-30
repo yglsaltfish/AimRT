@@ -98,25 +98,17 @@ void ModuleManager::Initialize(YAML::Node options_node) {
     options_ = options_node.as<Options>();
 
   // 加载所有动态库
-  for (const auto& pkg_options : options_.pkgs_options) {
-    // 检查重复动态库
-    auto finditr =
-        std::find_if(options_.pkgs_options.begin(), options_.pkgs_options.end(),
-                     [&pkg_options](const auto& op) {
-                       if (&pkg_options == &op) return false;
-                       return op.path == pkg_options.path;
-                     });
-    AIMRT_CHECK_ERROR_THROW(finditr == options_.pkgs_options.end(),
-                            "Duplicate load pkg lib {}", pkg_options.path);
-
+  for (auto& pkg_options : options_.pkgs_options) {
     auto module_loader_ptr = std::make_unique<ModuleLoader>();
     module_loader_ptr->SetLogger(logger_ptr_);
     module_loader_ptr->LoadPkg(pkg_options.path, pkg_options.disable_modules);
 
-    AIMRT_INFO("Load pkg succeeded.\ncfg path: {}\nfull path: {}\nload module: {}",
-               pkg_options.path,
-               module_loader_ptr->GetDynamicLib().GetLibFullPath(),
-               aimrt::common::util::Vec2Str(module_loader_ptr->GetLoadedModuleNameList()));
+    AIMRT_TRACE("Load pkg succeeded.\ncfg path: {}\nfull path: {}\nload modules: {}",
+                pkg_options.path,
+                module_loader_ptr->GetDynamicLib().GetLibFullPath(),
+                aimrt::common::util::Vec2Str(module_loader_ptr->GetLoadedModuleNameList()));
+
+    pkg_options.path = module_loader_ptr->GetDynamicLib().GetLibFullPath();
 
     module_loader_map_.emplace(pkg_options.path, std::move(module_loader_ptr));
   }
@@ -211,7 +203,34 @@ void ModuleManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO("All modules init complete.");
+  if (GetLogger().GetLogLevel() <= aimrt::common::util::kLogLevelInfo) {
+    std::vector<std::vector<std::string>> module_info_table =
+        {{"name", "pkg", "version", "author", "description"}};
+
+    for (auto& item : module_detail_info_vec_) {
+      std::vector<std::string> cur_module_info(5);
+      cur_module_info[0] = item->name;
+      cur_module_info[1] = item->pkg_path;
+      cur_module_info[2] =
+          std::to_string(item->major_version) + "." +
+          std::to_string(item->minor_version) + "." +
+          std::to_string(item->patch_version) + "." +
+          std::to_string(item->build_version);
+      cur_module_info[3] = item->author;
+      cur_module_info[4] = item->description;
+      module_info_table.emplace_back(std::move(cur_module_info));
+    }
+
+    AIMRT_INFO(R"str(Module manager init complete. options:
+----------------------------- aimrt.module -------------------------------------
+{}
+----------------------------- aimrt.module -------------------------------------
+
+module info table:{}
+)str",
+               YAML::Dump(options_node),
+               aimrt::common::util::DrawTable(module_info_table));
+  }
 }
 
 void ModuleManager::Start() {
@@ -228,15 +247,17 @@ void ModuleManager::Start() {
     bool start_ret = module_ptr->start(module_ptr->impl);
     AIMRT_CHECK_ERROR_THROW(start_ret, "Start module '{}' failed.", module_name);
 
-    AIMRT_INFO("Start module '{}' succeeded.", module_name);
+    AIMRT_TRACE("Start module '{}' succeeded.", module_name);
   }
+
+  AIMRT_INFO("Module manager start complete.");
 }
 
 void ModuleManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  AIMRT_INFO("Shutdown modules.");
+  AIMRT_INFO("Module manager shutdown.");
 
   // 按照反顺序执行Shutdown
   for (auto itr = module_init_order_.rbegin(); itr != module_init_order_.rend(); ++itr) {
@@ -244,9 +265,9 @@ void ModuleManager::Shutdown() {
     auto find_itr = module_wrapper_map_.find(module_name);
     assert(find_itr != module_wrapper_map_.end());
 
-    AIMRT_INFO("Start shutdown module '{}'.", module_name);
+    AIMRT_TRACE("Start shutdown module '{}'.", module_name);
     find_itr->second->module_ptr->shutdown(find_itr->second->module_ptr->impl);
-    AIMRT_INFO("Shutdown module '{}'.", module_name);
+    AIMRT_TRACE("Shutdown module '{}'.", module_name);
   }
 
   module_wrapper_map_.clear();
@@ -345,7 +366,7 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
 
   AIMRT_CHECK_ERROR_THROW(ret, "Init module '{}' failed.", module_name);
 
-  AIMRT_INFO("Init module '{}' succeeded.", module_name);
+  AIMRT_TRACE("Init module '{}' succeeded.", module_name);
 }
 
 }  // namespace aimrt::runtime::core::module

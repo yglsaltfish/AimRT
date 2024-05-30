@@ -9,9 +9,8 @@ bool ChannelRegistry::RegisterPublishType(
   std::string_view module_name = publish_type_wrapper_ptr->module_name;
   std::string_view topic_name = publish_type_wrapper_ptr->topic_name;
 
-  auto emplace_ret =
-      publish_type_wrapper_map_[pkg_path][module_name][topic_name].emplace(
-          msg_type, std::move(publish_type_wrapper_ptr));
+  auto emplace_ret = publish_type_wrapper_map_[pkg_path][module_name][topic_name].emplace(
+      msg_type, std::move(publish_type_wrapper_ptr));
 
   if (!emplace_ret.second) [[unlikely]] {
     AIMRT_WARN(
@@ -19,6 +18,8 @@ bool ChannelRegistry::RegisterPublishType(
         msg_type, topic_name, module_name, pkg_path);
     return false;
   }
+
+  pub_topic_index_map_[topic_name].emplace_back(emplace_ret.first->second.get());
 
   return true;
 }
@@ -30,9 +31,8 @@ bool ChannelRegistry::Subscribe(
   std::string_view module_name = subscribe_wrapper_ptr->module_name;
   std::string_view topic_name = subscribe_wrapper_ptr->topic_name;
 
-  auto emplace_ret =
-      subscribe_wrapper_map_[pkg_path][module_name][topic_name].emplace(
-          msg_type, std::move(subscribe_wrapper_ptr));
+  auto emplace_ret = subscribe_wrapper_map_[pkg_path][module_name][topic_name].emplace(
+      msg_type, std::move(subscribe_wrapper_ptr));
 
   if (!emplace_ret.second) [[unlikely]] {
     AIMRT_WARN(
@@ -40,6 +40,8 @@ bool ChannelRegistry::Subscribe(
         msg_type, topic_name, module_name, pkg_path);
     return false;
   }
+
+  sub_topic_index_map_[topic_name].emplace_back(emplace_ret.first->second.get());
 
   return true;
 }

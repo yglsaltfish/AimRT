@@ -39,6 +39,15 @@ void AimRTCore::Initialize(const Options& options) {
   plugin_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("plugin"));
   EnterState(State::PostInitPlugin);
 
+  // Init log
+  EnterState(State::PreInitLog);
+  logger_manager_.SetLogger(logger_ptr_);
+  logger_manager_.RegisterGetExecutorFunc(
+      std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
+  logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
+  SetCoreLogger();
+  EnterState(State::PostInitLog);
+
   // Init main thread executor
   EnterState(State::PreInitMainThread);
   main_thread_executor_.SetLogger(logger_ptr_);
@@ -49,6 +58,7 @@ void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PreInitAllocator);
   allocator_manager_.SetLogger(logger_ptr_);
   allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
+  SetCoreLoggerAllocator();
   EnterState(State::PostInitAllocator);
 
   // Init executor
@@ -57,15 +67,6 @@ void AimRTCore::Initialize(const Options& options) {
   executor_manager_.SetUsedExecutorName(main_thread_executor_.Name());
   executor_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("executor"));
   EnterState(State::PostInitExecutor);
-
-  // Init log
-  EnterState(State::PreInitLog);
-  logger_manager_.SetLogger(logger_ptr_);
-  logger_manager_.RegisterGetExecutorFunc(
-      std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
-  logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
-  SetCoreLogger();
-  EnterState(State::PostInitLog);
 
   // Init rpc
   EnterState(State::PreInitRpc);
@@ -106,16 +107,25 @@ void AimRTCore::Initialize(const Options& options) {
 
 void AimRTCore::Start() {
   EnterState(State::PreStart);
+
   configurator_manager_.Start();
+
   plugin_manager_.Start();
-  allocator_manager_.Start();
-  executor_manager_.Start();
+
   logger_manager_.Start();
+
+  allocator_manager_.Start();
+
+  executor_manager_.Start();
+
   rpc_manager_.Start();
+
   channel_manager_.Start();
+
   parameter_manager_.Start();
+
   module_manager_.Start();
-  AIMRT_INFO("All modules start complete.");
+
   EnterState(State::PostStart);
 
   main_thread_executor_.Start();
@@ -135,12 +145,13 @@ void AimRTCore::Shutdown() {
 
     rpc_manager_.Shutdown();
 
-    ResetCoreLogger();
-    logger_manager_.Shutdown();
-
     executor_manager_.Shutdown();
 
+    ResetCoreLoggerAllocator();
     allocator_manager_.Shutdown();
+
+    ResetCoreLogger();
+    logger_manager_.Shutdown();
 
     plugin_manager_.Shutdown();
 
@@ -167,7 +178,6 @@ void AimRTCore::EnterState(State state) {
 
 void AimRTCore::SetCoreLogger() {
   const auto* core_logger_ptr = logger_manager_.GetLoggerProxy("core").NativeHandle();
-  const auto* core_allocator_ptr = allocator_manager_.GetAllocatorProxy().NativeHandle();
 
   logger_ptr_->get_log_level_func = [core_logger_ptr]() -> uint32_t {
     return core_logger_ptr->get_log_level(core_logger_ptr->impl);
@@ -188,6 +198,10 @@ void AimRTCore::SetCoreLogger() {
             line, column, file_name, function_name,
             log_data, log_data_size);  //
       };
+}
+
+void AimRTCore::SetCoreLoggerAllocator() {
+  const auto* core_allocator_ptr = allocator_manager_.GetAllocatorProxy().NativeHandle();
 
   logger_ptr_->get_log_buf_func =
       [core_allocator_ptr]() -> std::tuple<char*, size_t> {
@@ -200,6 +214,9 @@ void AimRTCore::SetCoreLogger() {
 void AimRTCore::ResetCoreLogger() {
   logger_ptr_->get_log_level_func = aimrt::common::util::SimpleLogger::GetLogLevel;
   logger_ptr_->log_func = aimrt::common::util::SimpleLogger::Log;
+}
+
+void AimRTCore::ResetCoreLoggerAllocator() {
   logger_ptr_->get_log_buf_func = []() -> std::tuple<char*, size_t> { return {nullptr, 0}; };
 }
 
@@ -230,9 +247,7 @@ void AimRTCore::DumpCfgFile(const std::string& path) {
     ofs.clear();
     ofs.close();
   } else {
-    std::cout << "dump cfg file:\n\n"
-              << dump_node << "\n\n"
-              << std::endl;
+    AIMRT_INFO("Dump cfg file:\n\n{}\n\n", YAML::Dump(dump_node));
   }
 }
 

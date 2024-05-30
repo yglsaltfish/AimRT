@@ -3,6 +3,8 @@
 #include <chrono>
 #include <filesystem>
 #include <map>
+#include <mutex>
+#include <regex>
 
 #include "core/logger/log_level_tool.h"
 #include "util/exception.h"
@@ -21,6 +23,7 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
     node["filename"] = rhs.filename;
     node["max_file_size_m"] = rhs.max_file_size_m;
     node["max_file_num"] = rhs.max_file_num;
+    node["module_filter"] = rhs.module_filter;
     node["log_executor_name"] = rhs.log_executor_name;
 
     return node;
@@ -35,7 +38,8 @@ struct convert<aimrt::runtime::core::logger::RotateFileLoggerBackend::Options> {
       rhs.max_file_size_m = node["max_file_size_m"].as<uint32_t>();
     if (node["max_file_num"])
       rhs.max_file_num = node["max_file_num"].as<uint32_t>();
-
+    if (node["module_filter"])
+      rhs.module_filter = node["module_filter"].as<std::string>();
     if (node["log_executor_name"])
       rhs.log_executor_name = node["log_executor_name"].as<std::string>();
 
@@ -66,6 +70,12 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
     std::filesystem::create_directories(log_path);
   }
 
+  options_node = options_;
+
+  run_flag_.store(true);
+}
+
+void RotateFileLoggerBackend::Start() {
   log_executor_ = get_executor_func_(options_.log_executor_name);
   if (!log_executor_) {
     throw aimrt::common::util::AimRTException(
@@ -76,16 +86,15 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
     throw aimrt::common::util::AimRTException(
         "Log executor must be thread safe. Log executor name: " + options_.log_executor_name);
   }
-
-  options_node = options_;
-
-  run_flag_.store(true);
 }
 
 void RotateFileLoggerBackend::Log(
     const LogDataWrapper& log_data_wrapper,
     const std::shared_ptr<std::string>& format_log_str_ptr) {
   if (!run_flag_.load()) [[unlikely]]
+    return;
+
+  if (!CheckLog(log_data_wrapper)) [[unlikely]]
     return;
 
   if (format_log_str_ptr->empty()) {
@@ -113,7 +122,7 @@ void RotateFileLoggerBackend::Log(
     ofs_ << *format_log_str_ptr << std::endl;
   };
 
-  if (log_executor_.IsInCurrentExecutor()) {
+  if (!log_executor_ || log_executor_.IsInCurrentExecutor()) [[unlikely]] {
     log_work();
   } else {
     log_executor_.Execute(std::move(log_work));
@@ -204,4 +213,32 @@ uint32_t RotateFileLoggerBackend::GetNextIndex() {
   return idx;
 }
 
+bool RotateFileLoggerBackend::CheckLog(const LogDataWrapper& log_data_wrapper) {
+  {
+    std::shared_lock lock(module_filter_map_mutex_);
+    auto find_itr = module_filter_map_.find(log_data_wrapper.module_name);
+    if (find_itr != module_filter_map_.end()) {
+      return find_itr->second;
+    }
+  }
+
+  bool if_log = false;
+
+  try {
+    if (std::regex_match(
+            log_data_wrapper.module_name.begin(),
+            log_data_wrapper.module_name.end(),
+            std::regex(options_.module_filter, std::regex::ECMAScript))) {
+      if_log = true;
+    }
+  } catch (const std::exception& e) {
+    fprintf(stderr, "Regex get exception, expr: %s, string: %s, exception info: %s",
+            options_.module_filter.c_str(), log_data_wrapper.module_name.data(), e.what());
+  }
+
+  std::unique_lock lock(module_filter_map_mutex_);
+  module_filter_map_.emplace(log_data_wrapper.module_name, if_log);
+
+  return if_log;
+}
 }  // namespace aimrt::runtime::core::logger

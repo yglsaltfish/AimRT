@@ -606,7 +606,68 @@ TEST(STRING_UTIL_TEST, GetMapKeys_test) {
 }
 
 template <class StringType>
-void SplitToVec() {
+void TestDrawTable() {
+  struct TestCase {
+    std::string name;
+
+    std::vector<std::vector<StringType>> table;
+    bool with_header;
+
+    std::string want_result;
+  };
+  std::vector<TestCase> test_cases;
+
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 1",
+          .table = {},
+          .with_header = true,
+          .want_result = "<empty table>"});
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 2",
+          .table = {{"111", "222", "333"},
+                    {"4444", "5555", "6666"},
+                    {"77777", "88888", "99999"}},
+          .with_header = true,
+          .want_result = R"str(
++-------+-------+-------+
+| 111   | 222   | 333   |
++-------+-------+-------+
+| 4444  | 5555  | 6666  |
+| 77777 | 88888 | 99999 |
++-------+-------+-------+
+)str"});
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 3",
+          .table = {{"111"},
+                    {"4444", "5555", "6666"},
+                    {"77777", "88888"}},
+          .with_header = false,
+          .want_result = R"str(
++-------+-------+------+
+| 111   |       |      |
+| 4444  | 5555  | 6666 |
+| 77777 | 88888 |      |
++-------+-------+------+
+)str"});
+
+  for (size_t ii = 0; ii < test_cases.size(); ++ii) {
+    TestCase& cur_test_case = test_cases[ii];
+    auto ret = DrawTable<StringType>(cur_test_case.table, cur_test_case.with_header);
+    EXPECT_EQ(ret, cur_test_case.want_result)
+        << "Test " << cur_test_case.name << " failed, index " << ii;
+  }
+}
+
+TEST(STRING_UTIL_TEST, DrawTable_test) {
+  TestDrawTable<std::string>();
+  TestDrawTable<std::string_view>();
+}
+
+template <class StringType>
+void TestSplitToVec() {
   struct TestCase {
     std::string name;
 
@@ -727,12 +788,12 @@ void SplitToVec() {
 }
 
 TEST(STRING_UTIL_TEST, SplitToVec_test) {
-  SplitToVec<std::string>();
-  SplitToVec<std::string_view>();
+  TestSplitToVec<std::string>();
+  TestSplitToVec<std::string_view>();
 }
 
 template <class StringType>
-void JoinVec() {
+void TestJoinVec() {
   struct TestCase {
     std::string name;
 
@@ -789,8 +850,8 @@ void JoinVec() {
 }
 
 TEST(STRING_UTIL_TEST, JoinVec_test) {
-  JoinVec<std::string>();
-  JoinVec<std::string_view>();
+  TestJoinVec<std::string>();
+  TestJoinVec<std::string_view>();
 }
 
 TEST(STRING_UTIL_TEST, CheckIfInList_test) {
@@ -930,7 +991,7 @@ TEST(STRING_UTIL_TEST, CheckIfInList_test) {
 }
 
 template <class StringType>
-void SplitToSet() {
+void TestSplitToSet() {
   struct TestCase {
     std::string name;
 
@@ -1051,12 +1112,12 @@ void SplitToSet() {
 }
 
 TEST(STRING_UTIL_TEST, SplitToSet_test) {
-  SplitToSet<std::string>();
-  SplitToSet<std::string_view>();
+  TestSplitToSet<std::string>();
+  TestSplitToSet<std::string_view>();
 }
 
 template <class StringType>
-void JoinSet() {
+void TestJoinSet() {
   struct TestCase {
     std::string name;
 
@@ -1113,8 +1174,8 @@ void JoinSet() {
 }
 
 TEST(STRING_UTIL_TEST, JoinSet_test) {
-  JoinSet<std::string>();
-  JoinSet<std::string_view>();
+  TestJoinSet<std::string>();
+  TestJoinSet<std::string_view>();
 }
 
 TEST(STRING_UTIL_TEST, CmpVersion_test) {

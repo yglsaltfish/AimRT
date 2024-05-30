@@ -92,7 +92,29 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO("Executor init complete.");
+  if (GetLogger().GetLogLevel() <= aimrt::common::util::kLogLevelInfo) {
+    std::vector<std::vector<std::string>> executor_info_table =
+        {{"name", "type", "thread safe", "support time schedule"}};
+
+    for (auto& item : executor_vec_) {
+      std::vector<std::string> cur_executor_info(4);
+      cur_executor_info[0] = item->Name();
+      cur_executor_info[1] = item->Type();
+      cur_executor_info[2] = item->ThreadSafe() ? "Y" : "N";
+      cur_executor_info[3] = item->SupportTimerSchedule() ? "Y" : "N";
+      executor_info_table.emplace_back(std::move(cur_executor_info));
+    }
+
+    AIMRT_INFO(R"str(Executor manager init complete. options:
+----------------------------- aimrt.executor -----------------------------------
+{}
+----------------------------- aimrt.executor -----------------------------------
+
+executor info table:{}
+)str",
+               YAML::Dump(options_node),
+               aimrt::common::util::DrawTable(executor_info_table));
+  }
 }
 
 void ExecutorManager::Start() {
@@ -103,13 +125,15 @@ void ExecutorManager::Start() {
   for (auto& itr : executor_vec_) {
     itr->Start();
   }
+
+  AIMRT_INFO("Executor manager start complete.");
 }
 
 void ExecutorManager::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  AIMRT_INFO("Shutdown executor.");
+  AIMRT_INFO("Executor manager shutdown.");
 
   executor_manager_proxy_map_.clear();
   executor_proxy_map_.clear();

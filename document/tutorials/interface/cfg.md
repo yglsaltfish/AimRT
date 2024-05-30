@@ -494,8 +494,8 @@ aimrt:
 &emsp;&emsp;`aimrt.log`的配置说明如下：
 - `core_lvl`表示AimRT运行时内核的日志等级，内核日志一般设为Info级别即可。
 - `default_module_lvl`默认的模块日志等级。
-- `backends`是一个数组，用于配置各个日志后端。
-  - `backends[i].type`是日志后端的类型。AimRT官方提供了几种日志后端，部分插件也提供了一些日志后端类型。
+- `backends`是一个数组，用于注册各个日志后端。
+  - `backends[i].type`是日志后端的类型。AimRT官方提供了几种日志后端，部分插件也提供了一些日志后端类型。部分后端允许重复注册，详情请参考对应后端类型的文档。
   - `backends[i].options`是AimRT传递给各个日志后端的初始化参数，这部分配置格式由各个日志后端类型定义，请参考对应日志后端类型的文档。
 
 
@@ -508,6 +508,7 @@ aimrt:
 | 节点                  | 类型              | 是否可选| 默认值 | 作用 |
 | ----                  | ----              | ----  | ----  | ---- |
 | color                 | bool              | 可选  | true  | 是否要彩色打印 |
+| module_filter         | string            | 可选  | "(.*)"| 模块过滤器 |
 | log_executor_name     | string            | 可选  | ""    | 日志执行器。默认使用主线程 |
 
 
@@ -527,11 +528,14 @@ aimrt:
       - type: console # 【必选】日志后端类型
         options: # 【可选】具体日志后端的配置
           color: true # 【可选】是否要彩色打印
+          module_filter: "(.*)" # 【可选】模块过滤器
           log_executor_name: test_log_executor.log # 【可选】日志执行器。默认使用主线程
 ```
 
 &emsp;&emsp;使用注意点如下：
+- `console`日志后端不允许重复注册，一个AimRT实例中只允许注册一个。
 - `color`配置了是否要彩色打印。此项配置有可能在一些操作系统不支持。
+- `module_filter`支持以正则表达式的形式，来配置哪些模块的日志可以通过本后端处理。这与模块日志等级不同，模块日志等级是全局的、先决的、影响所有日志后端的，而这里的配置只影响本后端。
 - `log_executor_name`配置了日志执行器。要求日志执行器是线程安全的，如果没有配置，则默认使用主线程打印日志。
 
 
@@ -546,6 +550,7 @@ aimrt:
 | filename              | string            | 必选  | "aimrt.log" | 日志文件基础名称 |
 | max_file_size_m       | unsigned int      | 可选  | 16    | 日志文件最大尺寸，单位：Mb |
 | max_file_num          | unsigned int      | 可选  | 100   | 日志文件最大数量。0表示无上限 |
+| module_filter         | string            | 可选  | "(.*)"| 模块过滤器 |
 | log_executor_name     | string            | 可选  | ""    | 日志执行器。默认使用主线程 |
 
 
@@ -568,13 +573,17 @@ aimrt:
           filename: example.log # 【必选】日志文件基础名称
           max_file_size_m: 4 # 【可选】日志文件最大尺寸，单位：Mb
           max_file_num: 10 # 【可选】日志文件最大数量。0表示无上限
+          module_filter: "(.*)" # 【可选】模块过滤器
+          log_executor_name: test_log_executor.log # 【可选】日志执行器。默认使用主线程
 ```
 
 &emsp;&emsp;使用注意点如下：
+- `rotate_file`日志后端允许重复注册，业务可以基于这个特点，将不同模块的日志打印到不同文件中。
 - `path`配置了日志文件的存放路径。如果路径不存在，则会创建一个。如果创建失败，会抛异常。
 - `filename`配置了日志文件基础名称。
 - 当单个日志文件尺寸超过`max_file_size_m`配置的大小后，就会新建一个日志文件，同时将老的日志文件重命名，加上`_x`这样的后缀。
 - 当日志文件数量超过`max_file_num`配置的值后，就会将最老的日志文件删除。如果配置为0，则表示永远不会删除。
+- `module_filter`支持以正则表达式的形式，来配置哪些模块的日志可以通过本后端处理。这与模块日志等级不同，模块日志等级是全局的、先决的、影响所有日志后端的，而这里的配置只影响本后端。
 
 ## `aimrt.channel`：Channel
 

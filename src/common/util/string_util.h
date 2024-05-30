@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <iomanip>
 #include <map>
 #include <set>
 #include <sstream>
@@ -498,6 +499,74 @@ inline std::set<KeyType> GetMapKeys(const std::map<KeyType, ValType>& m) {
   std::set<KeyType> re;
   for (const auto& it : m) re.emplace(it.first);
   return re;
+}
+
+/**
+ * @brief 画一个表格
+ *
+ * @param table 表格数据
+ * @param with_header 是否要画表头
+ * @return std::string 结果字符串，可以直接打印
+ */
+template <class StringType = std::string_view>
+  requires(std::is_same_v<StringType, std::string_view> ||
+           std::is_same_v<StringType, std::string>)
+inline std::string DrawTable(
+    const std::vector<std::vector<StringType>>& table, bool with_header = true) {
+  size_t row = table.size();
+  if (row == 0) return "<empty table>";
+
+  std::vector<size_t> column_width;
+
+  for (auto& row_item : table) {
+    if (column_width.size() < row_item.size())
+      column_width.resize(row_item.size());
+
+    for (size_t ii = 0; ii < row_item.size(); ++ii)
+      column_width[ii] = std::max(column_width[ii], row_item[ii].size());
+  }
+
+  for (auto& item : column_width)
+    item += 2;
+
+  size_t column = column_width.size();
+
+  std::stringstream result;
+  result << "\n";
+
+  // first line
+  for (size_t jj = 0; jj < column; ++jj) {
+    result << "+" << std::setfill('-') << std::setw(column_width[jj]) << "-";
+  }
+  result << "+\n";
+
+  for (size_t ii = 0; ii < row; ++ii) {
+    for (size_t jj = 0; jj < column; ++jj) {
+      std::string cur_data = " ";
+
+      if (table[ii].size() > jj)
+        cur_data += table[ii][jj];
+
+      result << "|" << std::left << std::setfill(' ') << std::setw(column_width[jj]) << cur_data;
+    }
+    result << "|\n";
+
+    // table header
+    if (with_header && ii == 0) {
+      for (size_t jj = 0; jj < column; ++jj) {
+        result << "+" << std::setfill('-') << std::setw(column_width[jj]) << "-";
+      }
+      result << "+\n";
+    }
+  }
+
+  // last line
+  for (size_t jj = 0; jj < column; ++jj) {
+    result << "+" << std::setfill('-') << std::setw(column_width[jj]) << "-";
+  }
+  result << "+\n";
+
+  return result.str();
 }
 
 /**

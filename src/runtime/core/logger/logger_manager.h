@@ -10,6 +10,7 @@
 #include "core/logger/logger_proxy.h"
 #include "core/util/module_detail_info.h"
 #include "util/log_util.h"
+#include "util/string_util.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -35,6 +36,8 @@ class LoggerManager {
     Shutdown,
   };
 
+  using LoggerBackendGenFunc = std::function<std::unique_ptr<LoggerBackendBase>()>;
+
  public:
   LoggerManager()
       : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
@@ -50,8 +53,9 @@ class LoggerManager {
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
-  void RegisterLoggerBackend(
-      std::unique_ptr<LoggerBackendBase>&& logger_backend_ptr);
+  void RegisterLoggerBackendGenFunc(
+      std::string_view type,
+      LoggerBackendGenFunc&& logger_backend_gen_func);
 
   LoggerProxy& GetLoggerProxy(const util::ModuleDetailInfo& module_info);
   LoggerProxy& GetLoggerProxy(std::string_view logger_name);
@@ -62,8 +66,8 @@ class LoggerManager {
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
  private:
-  void RegisterConsoleLoggerBackend();
-  void RegisterRotateFileLoggerBackend();
+  void RegisterConsoleLoggerBackendGenFunc();
+  void RegisterRotateFileLoggerBackendGenFunc();
 
  private:
   Options options_;
@@ -72,10 +76,16 @@ class LoggerManager {
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 
-  std::vector<std::unique_ptr<LoggerBackendBase>> logger_backend_ptr_vec_;
-  std::vector<LoggerBackendBase*> used_logger_backend_ptr_vec_;
+  std::unordered_map<std::string, LoggerBackendGenFunc> logger_backend_gen_func_map_;
 
-  std::unordered_map<std::string, std::unique_ptr<LoggerProxy>> logger_proxy_map_;
+  std::vector<std::unique_ptr<LoggerBackendBase>> logger_backend_vec_;
+
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<LoggerProxy>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
+      logger_proxy_map_;
 };
 
 }  // namespace aimrt::runtime::core::logger

@@ -116,6 +116,9 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
   for (auto& itr : backend_ptr_vec) {
     ret &= itr->Subscribe(subscribe_wrapper_ref);
   }
+
+  sub_topics_backend_index_map_.emplace(topic_name, std::move(backend_ptr_vec));
+
   return ret;
 }
 
@@ -182,6 +185,34 @@ std::vector<ChannelBackendBase*> ChannelBackendManager::GetBackendsByRules(
   }
 
   return {};
+}
+
+std::unordered_map<std::string_view, std::vector<std::string_view>>
+ChannelBackendManager::GetPubTopicBackendInfo() const {
+  std::unordered_map<std::string_view, std::vector<std::string_view>> result;
+  for (auto& itr : pub_topics_backend_index_map_) {
+    std::vector<std::string_view> backends_name;
+    for (auto& item : itr.second)
+      backends_name.emplace_back(item->Name());
+
+    result.emplace(itr.first, std::move(backends_name));
+  }
+
+  return result;
+}
+
+std::unordered_map<std::string_view, std::vector<std::string_view>>
+ChannelBackendManager::GetSubTopicBackendInfo() const {
+  std::unordered_map<std::string_view, std::vector<std::string_view>> result;
+  for (auto& itr : sub_topics_backend_index_map_) {
+    std::vector<std::string_view> backends_name;
+    for (auto& item : itr.second)
+      backends_name.emplace_back(item->Name());
+
+    result.emplace(itr.first, std::move(backends_name));
+  }
+
+  return result;
 }
 
 }  // namespace aimrt::runtime::core::channel
