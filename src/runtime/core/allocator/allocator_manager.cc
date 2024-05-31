@@ -31,13 +31,7 @@ void AllocatorManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO(R"str(Allocator manager init complete. options:
------------------------------ aimrt.allocator ----------------------------------
-{}
------------------------------ aimrt.allocator ----------------------------------
-
-)str",
-             YAML::Dump(options_node));
+  AIMRT_INFO("Allocator manager init complete");
 }
 
 void AllocatorManager::Start() {
@@ -62,6 +56,11 @@ const AllocatorProxy& AllocatorManager::GetAllocatorProxy(
       "Function can only be called when state is 'Init'.");
 
   return allocator_proxy_;
+}
+
+std::vector<std::pair<std::string, std::string>>
+AllocatorManager::GenInitializationReport() const {
+  return {};
 }
 
 }  // namespace aimrt::runtime::core::allocator

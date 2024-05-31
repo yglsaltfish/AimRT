@@ -92,29 +92,7 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  if (GetLogger().GetLogLevel() <= aimrt::common::util::kLogLevelInfo) {
-    std::vector<std::vector<std::string>> executor_info_table =
-        {{"name", "type", "thread safe", "support time schedule"}};
-
-    for (auto& item : executor_vec_) {
-      std::vector<std::string> cur_executor_info(4);
-      cur_executor_info[0] = item->Name();
-      cur_executor_info[1] = item->Type();
-      cur_executor_info[2] = item->ThreadSafe() ? "Y" : "N";
-      cur_executor_info[3] = item->SupportTimerSchedule() ? "Y" : "N";
-      executor_info_table.emplace_back(std::move(cur_executor_info));
-    }
-
-    AIMRT_INFO(R"str(Executor manager init complete. options:
------------------------------ aimrt.executor -----------------------------------
-{}
------------------------------ aimrt.executor -----------------------------------
-
-executor info table:{}
-)str",
-               YAML::Dump(options_node),
-               aimrt::common::util::DrawTable(executor_info_table));
-  }
+  AIMRT_INFO("Executor manager init complete");
 }
 
 void ExecutorManager::Start() {
@@ -227,6 +205,23 @@ void ExecutorManager::RegisterTimwWheelExecutorGenFunc() {
     });
     return ptr;
   });
+}
+
+std::vector<std::pair<std::string, std::string>>
+ExecutorManager::GenInitializationReport() const {
+  std::vector<std::vector<std::string>> executor_info_table =
+      {{"name", "type", "thread safe", "support time schedule"}};
+
+  for (auto& item : executor_vec_) {
+    std::vector<std::string> cur_executor_info(4);
+    cur_executor_info[0] = item->Name();
+    cur_executor_info[1] = item->Type();
+    cur_executor_info[2] = item->ThreadSafe() ? "Y" : "N";
+    cur_executor_info[3] = item->SupportTimerSchedule() ? "Y" : "N";
+    executor_info_table.emplace_back(std::move(cur_executor_info));
+  }
+
+  return {{"Executor List", aimrt::common::util::DrawTable(executor_info_table)}};
 }
 
 }  // namespace aimrt::runtime::core::executor

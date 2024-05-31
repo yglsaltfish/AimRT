@@ -55,13 +55,7 @@ void MainThreadExecutor::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO(R"str(Main thread executor init complete. options:
------------------------------ aimrt.main_thread --------------------------------
-{}
------------------------------ aimrt.main_thread --------------------------------
-
-)str",
-             YAML::Dump(options_node));
+  AIMRT_INFO("Main thread executor init complete");
 }
 
 void MainThreadExecutor::Start() {
@@ -124,6 +118,11 @@ void MainThreadExecutor::Execute(Task&& task) {
   std::unique_lock<std::mutex> lck(mutex_);
   queue_.emplace(std::move(task));
   cond_.notify_one();
+}
+
+std::vector<std::pair<std::string, std::string>>
+MainThreadExecutor::GenInitializationReport() const {
+  return {};
 }
 
 }  // namespace aimrt::runtime::core::executor

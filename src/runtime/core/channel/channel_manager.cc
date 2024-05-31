@@ -1,6 +1,5 @@
 #include "core/channel/channel_manager.h"
 #include "core/channel/local_channel_backend.h"
-#include "util/stl_tool.h"
 
 namespace YAML {
 template <>
@@ -150,15 +149,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO(R"str(Channel manager init complete. options:
------------------------------ aimrt.channel ------------------------------------
-{}
------------------------------ aimrt.channel ------------------------------------
-
-channel backends list: {}
-)str",
-             YAML::Dump(options_node),
-             aimrt::common::util::Vec2Str(channel_backend_name_vec_));
+  AIMRT_INFO("Channel manager init complete");
 }
 
 void ChannelManager::Start() {
@@ -169,56 +160,7 @@ void ChannelManager::Start() {
   channel_backend_manager_.Start();
   channel_handle_proxy_start_flag_.store(true);
 
-  if (GetLogger().GetLogLevel() <= aimrt::common::util::kLogLevelInfo) {
-    std::vector<std::vector<std::string>> pub_topic_info_table =
-        {{"topic", "msg type", "module", "backends"}};
-
-    const auto& pub_topic_backend_info = channel_backend_manager_.GetPubTopicBackendInfo();
-    const auto& pub_topic_index_map = channel_registry_ptr_->GetPubTopicIndexMap();
-
-    for (const auto& pub_topic_index_itr : pub_topic_index_map) {
-      auto pub_topic_backend_itr = pub_topic_backend_info.find(pub_topic_index_itr.first);
-      AIMRT_CHECK_ERROR_THROW(pub_topic_backend_itr != pub_topic_backend_info.end(),
-                              "Invalid channel registry info.");
-
-      for (const auto& item : pub_topic_index_itr.second) {
-        std::vector<std::string> cur_topic_info(4);
-        cur_topic_info[0] = pub_topic_index_itr.first;
-        cur_topic_info[1] = item->msg_type;
-        cur_topic_info[2] = item->module_name;
-        cur_topic_info[3] = aimrt::common::util::JoinVec(pub_topic_backend_itr->second, ",");
-        pub_topic_info_table.emplace_back(std::move(cur_topic_info));
-      }
-    }
-
-    std::vector<std::vector<std::string>> sub_topic_info_table =
-        {{"topic", "msg type", "module", "backends"}};
-
-    const auto& sub_topic_backend_info = channel_backend_manager_.GetSubTopicBackendInfo();
-    const auto& sub_topic_index_map = channel_registry_ptr_->GetSubTopicIndexMap();
-
-    for (const auto& sub_topic_index_itr : sub_topic_index_map) {
-      auto sub_topic_backend_itr = sub_topic_backend_info.find(sub_topic_index_itr.first);
-      AIMRT_CHECK_ERROR_THROW(sub_topic_backend_itr != sub_topic_backend_info.end(),
-                              "Invalid channel registry info.");
-
-      for (const auto& item : sub_topic_index_itr.second) {
-        std::vector<std::string> cur_topic_info(4);
-        cur_topic_info[0] = sub_topic_index_itr.first;
-        cur_topic_info[1] = item->msg_type;
-        cur_topic_info[2] = item->module_name;
-        cur_topic_info[3] = aimrt::common::util::JoinVec(sub_topic_backend_itr->second, ",");
-        sub_topic_info_table.emplace_back(std::move(cur_topic_info));
-      }
-    }
-
-    AIMRT_INFO(R"str(Channel manager start complete.
-pub topic info table:{}
-sub topic info table:{}
-)str",
-               aimrt::common::util::DrawTable(pub_topic_info_table),
-               aimrt::common::util::DrawTable(sub_topic_info_table));
-  }
+  AIMRT_INFO("Channel manager start complete.");
 }
 
 void ChannelManager::Shutdown() {
@@ -307,6 +249,62 @@ void ChannelManager::RegisterLocalChannelBackend() {
       ->SetLogger(logger_ptr_);
 
   RegisterChannelBackend(std::move(local_channel_backend_ptr));
+}
+
+std::vector<std::pair<std::string, std::string>>
+ChannelManager::GenInitializationReport() const {
+  std::vector<std::vector<std::string>> pub_topic_info_table =
+      {{"topic", "msg type", "module", "backends"}};
+
+  const auto& pub_topic_backend_info = channel_backend_manager_.GetPubTopicBackendInfo();
+  const auto& pub_topic_index_map = channel_registry_ptr_->GetPubTopicIndexMap();
+
+  for (const auto& pub_topic_index_itr : pub_topic_index_map) {
+    auto pub_topic_backend_itr = pub_topic_backend_info.find(pub_topic_index_itr.first);
+    AIMRT_CHECK_ERROR_THROW(pub_topic_backend_itr != pub_topic_backend_info.end(),
+                            "Invalid channel registry info.");
+
+    for (const auto& item : pub_topic_index_itr.second) {
+      std::vector<std::string> cur_topic_info(4);
+      cur_topic_info[0] = pub_topic_index_itr.first;
+      cur_topic_info[1] = item->msg_type;
+      cur_topic_info[2] = item->module_name;
+      cur_topic_info[3] = aimrt::common::util::JoinVec(pub_topic_backend_itr->second, ",");
+      pub_topic_info_table.emplace_back(std::move(cur_topic_info));
+    }
+  }
+
+  std::vector<std::vector<std::string>> sub_topic_info_table =
+      {{"topic", "msg type", "module", "backends"}};
+
+  const auto& sub_topic_backend_info = channel_backend_manager_.GetSubTopicBackendInfo();
+  const auto& sub_topic_index_map = channel_registry_ptr_->GetSubTopicIndexMap();
+
+  for (const auto& sub_topic_index_itr : sub_topic_index_map) {
+    auto sub_topic_backend_itr = sub_topic_backend_info.find(sub_topic_index_itr.first);
+    AIMRT_CHECK_ERROR_THROW(sub_topic_backend_itr != sub_topic_backend_info.end(),
+                            "Invalid channel registry info.");
+
+    for (const auto& item : sub_topic_index_itr.second) {
+      std::vector<std::string> cur_topic_info(4);
+      cur_topic_info[0] = sub_topic_index_itr.first;
+      cur_topic_info[1] = item->msg_type;
+      cur_topic_info[2] = item->module_name;
+      cur_topic_info[3] = aimrt::common::util::JoinVec(sub_topic_backend_itr->second, ",");
+      sub_topic_info_table.emplace_back(std::move(cur_topic_info));
+    }
+  }
+
+  std::string channel_backend_name_list;
+  if (channel_backend_name_vec_.empty()) {
+    channel_backend_name_list = "<empty>";
+  } else {
+    channel_backend_name_list = "[ " + aimrt::common::util::JoinVec(channel_backend_name_vec_, " , ") + " ]";
+  }
+
+  return {{"Channel Backend List", channel_backend_name_list},
+          {"Channel Pub Topic Info", aimrt::common::util::DrawTable(pub_topic_info_table)},
+          {"Channel Sub Topic Info", aimrt::common::util::DrawTable(sub_topic_info_table)}};
 }
 
 }  // namespace aimrt::runtime::core::channel

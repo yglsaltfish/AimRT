@@ -2,7 +2,8 @@
 
 #include <cstdlib>
 #include <fstream>
-#include <regex>
+
+#include "util/string_util.h"
 
 namespace YAML {
 template <>
@@ -49,7 +50,7 @@ void ConfiguratorManager::Initialize(
 
     std::stringstream file_data;
     file_data << file_stream.rdbuf();
-    ori_root_options_node_ = YAML::Load(ReplaceEnvVars(file_data.str()));
+    ori_root_options_node_ = YAML::Load(aimrt::common::util::ReplaceEnvVars(file_data.str()));
   }
 
   if (!ori_root_options_node_["aimrt"]) {
@@ -68,13 +69,7 @@ void ConfiguratorManager::Initialize(
 
   configurator_options_node = options_;
 
-  AIMRT_INFO(R"str(Configurator manager init complete. options:
------------------------------ aimrt.configurator -------------------------------
-{}
------------------------------ aimrt.configurator -------------------------------
-
-)str",
-             YAML::Dump(configurator_options_node));
+  AIMRT_INFO("Configurator manager init complete");
 }
 
 void ConfiguratorManager::Start() {
@@ -168,26 +163,9 @@ YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
   return root_options_node_["aimrt"][key] = ori_root_options_node_["aimrt"][key];
 }
 
-std::string ConfiguratorManager::ReplaceEnvVars(const std::string& input) {
-  // 正则表达式以匹配形如 ${XXX_ENV}
-  std::regex pattern(R"(\$\{([^}]+)\})");
-  std::smatch match;
-  std::string result = input;
-  std::string::const_iterator search_start(result.cbegin());
-
-  while (std::regex_search(search_start, result.cend(), match, pattern)) {
-    std::string env_name = match[1].str();  // 获取环境变量的值
-    const char* env_val = std::getenv(env_name.c_str());
-    if (env_val == nullptr) {
-      AIMRT_WARN("Can not get env '{}'.", env_name);
-      env_val = "";
-    }
-    AIMRT_TRACE("Replace env '{}' with val '{}'.", env_name, env_val);
-    result.replace(match.position(0), match.length(0), env_val);
-    search_start = result.begin() + match.position(0) + strlen(env_val);
-  }
-
-  return result;
+std::vector<std::pair<std::string, std::string>>
+ConfiguratorManager::GenInitializationReport() const {
+  return {{"AimRT Core Option", YAML::Dump((*root_options_node_ptr_)["aimrt"])}};
 }
 
 }  // namespace aimrt::runtime::core::configurator

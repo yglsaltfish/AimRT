@@ -22,6 +22,68 @@ enum TimeConstant {
 };
 
 /**
+ * @brief 获取纳秒时间戳
+ *
+ * @param t 时间点
+ * @return uint64_t 纳秒时间戳
+ */
+inline uint64_t GetTimestampNs(std::chrono::system_clock::time_point t) {
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(t.time_since_epoch()).count();
+}
+
+/**
+ * @brief 获取当前时间纳秒时间戳
+ *
+ * @return uint64_t 当前时间纳秒时间戳
+ */
+inline uint64_t GetCurTimestampNs() {
+  return GetTimestampNs(std::chrono::system_clock::now());
+}
+
+/**
+ * @brief 从纳秒时间戳转换为system_clock::time_point
+ *
+ * @param ns 纳秒时间戳
+ * @return const std::chrono::system_clock::time_point
+ */
+inline const std::chrono::system_clock::time_point GetTimePointFromTimestampNs(uint64_t ns) {
+  return std::chrono::system_clock::time_point(
+      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+          std::chrono::nanoseconds(ns)));
+}
+
+/**
+ * @brief 获取微秒时间戳
+ *
+ * @param t 时间点
+ * @return uint64_t 微秒时间戳
+ */
+inline uint64_t GetTimestampUs(std::chrono::system_clock::time_point t) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(t.time_since_epoch()).count();
+}
+
+/**
+ * @brief 获取当前时间微秒时间戳
+ *
+ * @return uint64_t 当前时间微秒时间戳
+ */
+inline uint64_t GetCurTimestampUs() {
+  return GetTimestampUs(std::chrono::system_clock::now());
+}
+
+/**
+ * @brief 从微秒时间戳转换为system_clock::time_point
+ *
+ * @param us 微秒时间戳
+ * @return const std::chrono::system_clock::time_point
+ */
+inline const std::chrono::system_clock::time_point GetTimePointFromTimestampUs(uint64_t us) {
+  return std::chrono::system_clock::time_point(
+      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
+          std::chrono::microseconds(us)));
+}
+
+/**
  * @brief 获取毫秒时间戳
  *
  * @param t 时间点

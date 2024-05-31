@@ -124,6 +124,8 @@ class AimRTCore {
 
   const auto& GetLogger() const { return *logger_ptr_; }
 
+  std::string GenInitializationReport() const;
+
  private:
   void EnterState(State state);
   void SetCoreLogger();
@@ -132,7 +134,7 @@ class AimRTCore {
   void ResetCoreLoggerAllocator();
   aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
-  void DumpCfgFile(const std::string& path = "");
+  void DumpCfgFile() const;
 
  private:
   Options options_;

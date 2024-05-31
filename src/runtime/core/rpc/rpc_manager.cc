@@ -1,6 +1,5 @@
 #include "core/rpc/rpc_manager.h"
 #include "core/rpc/local_rpc_backend.h"
-#include "util/stl_tool.h"
 
 namespace YAML {
 template <>
@@ -150,15 +149,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO(R"str(Rpc manager init complete. options:
------------------------------ aimrt.rpc ----------------------------------------
-{}
------------------------------ aimrt.rpc ----------------------------------------
-
-rpc backends list: {}
-)str",
-             YAML::Dump(options_node),
-             aimrt::common::util::Vec2Str(rpc_backend_name_vec_));
+  AIMRT_INFO("Rpc manager init complete");
 }
 
 void RpcManager::Start() {
@@ -168,54 +159,7 @@ void RpcManager::Start() {
 
   rpc_backend_manager_.Start();
 
-  if (GetLogger().GetLogLevel() <= aimrt::common::util::kLogLevelInfo) {
-    std::vector<std::vector<std::string>> client_info_table =
-        {{"func", "module", "backends"}};
-
-    const auto& client_backend_info = rpc_backend_manager_.GetClientsBackendInfo();
-    const auto& client_index_map = rpc_registry_ptr_->GetClientIndexMap();
-
-    for (const auto& client_index_itr : client_index_map) {
-      auto client_backend_itr = client_backend_info.find(client_index_itr.first);
-      AIMRT_CHECK_ERROR_THROW(client_backend_itr != client_backend_info.end(),
-                              "Invalid rpc registry info.");
-
-      for (const auto& item : client_index_itr.second) {
-        std::vector<std::string> cur_client_info(3);
-        cur_client_info[0] = client_index_itr.first;
-        cur_client_info[1] = item->module_name;
-        cur_client_info[2] = aimrt::common::util::JoinVec(client_backend_itr->second, ",");
-        client_info_table.emplace_back(std::move(cur_client_info));
-      }
-    }
-
-    std::vector<std::vector<std::string>> server_info_table =
-        {{"func", "module", "backends"}};
-
-    const auto& server_backend_info = rpc_backend_manager_.GetServersBackendInfo();
-    const auto& server_index_map = rpc_registry_ptr_->GetServiceIndexMap();
-
-    for (const auto& server_index_itr : server_index_map) {
-      auto server_backend_itr = server_backend_info.find(server_index_itr.first);
-      AIMRT_CHECK_ERROR_THROW(server_backend_itr != server_backend_info.end(),
-                              "Invalid rpc registry info.");
-
-      for (const auto& item : server_index_itr.second) {
-        std::vector<std::string> cur_server_info(3);
-        cur_server_info[0] = server_index_itr.first;
-        cur_server_info[1] = item->module_name;
-        cur_server_info[2] = aimrt::common::util::JoinVec(server_backend_itr->second, ",");
-        server_info_table.emplace_back(std::move(cur_server_info));
-      }
-    }
-
-    AIMRT_INFO(R"str(Rpc manager start complete.
-client info table:{}
-server info table:{}
-)str",
-               aimrt::common::util::DrawTable(client_info_table),
-               aimrt::common::util::DrawTable(server_info_table));
-  }
+  AIMRT_INFO("Rpc manager start complete.");
 }
 
 void RpcManager::Shutdown() {
@@ -296,4 +240,59 @@ void RpcManager::RegisterLocalRpcBackend() {
 
   RegisterRpcBackend(std::move(local_rpc_backend_ptr));
 }
+
+std::vector<std::pair<std::string, std::string>>
+RpcManager::GenInitializationReport() const {
+  std::vector<std::vector<std::string>> client_info_table =
+      {{"func", "module", "backends"}};
+
+  const auto& client_backend_info = rpc_backend_manager_.GetClientsBackendInfo();
+  const auto& client_index_map = rpc_registry_ptr_->GetClientIndexMap();
+
+  for (const auto& client_index_itr : client_index_map) {
+    auto client_backend_itr = client_backend_info.find(client_index_itr.first);
+    AIMRT_CHECK_ERROR_THROW(client_backend_itr != client_backend_info.end(),
+                            "Invalid rpc registry info.");
+
+    for (const auto& item : client_index_itr.second) {
+      std::vector<std::string> cur_client_info(3);
+      cur_client_info[0] = client_index_itr.first;
+      cur_client_info[1] = item->module_name;
+      cur_client_info[2] = aimrt::common::util::JoinVec(client_backend_itr->second, ",");
+      client_info_table.emplace_back(std::move(cur_client_info));
+    }
+  }
+
+  std::vector<std::vector<std::string>> server_info_table =
+      {{"func", "module", "backends"}};
+
+  const auto& server_backend_info = rpc_backend_manager_.GetServersBackendInfo();
+  const auto& server_index_map = rpc_registry_ptr_->GetServiceIndexMap();
+
+  for (const auto& server_index_itr : server_index_map) {
+    auto server_backend_itr = server_backend_info.find(server_index_itr.first);
+    AIMRT_CHECK_ERROR_THROW(server_backend_itr != server_backend_info.end(),
+                            "Invalid rpc registry info.");
+
+    for (const auto& item : server_index_itr.second) {
+      std::vector<std::string> cur_server_info(3);
+      cur_server_info[0] = server_index_itr.first;
+      cur_server_info[1] = item->module_name;
+      cur_server_info[2] = aimrt::common::util::JoinVec(server_backend_itr->second, ",");
+      server_info_table.emplace_back(std::move(cur_server_info));
+    }
+  }
+
+  std::string rpc_backend_name_list;
+  if (rpc_backend_name_vec_.empty()) {
+    rpc_backend_name_list = "<empty>";
+  } else {
+    rpc_backend_name_list = "[ " + aimrt::common::util::JoinVec(rpc_backend_name_vec_, " , ") + " ]";
+  }
+
+  return {{"Rpc Backend List", rpc_backend_name_list},
+          {"Rpc Client Info", aimrt::common::util::DrawTable(client_info_table)},
+          {"Rpc Server Info", aimrt::common::util::DrawTable(server_info_table)}};
+}
+
 }  // namespace aimrt::runtime::core::rpc
