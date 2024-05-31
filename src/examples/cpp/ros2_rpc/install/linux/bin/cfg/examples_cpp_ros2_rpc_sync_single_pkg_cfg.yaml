@@ -8,12 +8,6 @@ aimrt:
       - type: console # 控制台日志
         options:
           color: true # 是否彩色打印
-      - type: rotate_file # 文件日志
-        options:
-          path: ./log # 日志文件路径
-          filename: examples_cpp_ros2_rpc_single_pkg.log # 日志文件名称
-          max_file_size_m: 4 # 日志文件最大尺寸，单位m
-          max_file_num: 10 # 最大日志文件数量，0代表无限
   executor: # 执行器配置
     executors: # 当前先支持thread型，未来可根据加载的网络模块提供更多类型
       - name: work_thread_pool # 线程池
@@ -39,11 +33,12 @@ aimrt:
             NormalRpcAsyncServerModule,
             NormalRpcClientModule,
             NormalRpcServerModule,
+            NormalRpcFutureClientModule,
           ]
     modules: # 模块
-      - name: NormalRpcClientModule # 模块Name接口返回的名称
+      - name: NormalRpcSyncClientModule # 模块Name接口返回的名称
         log_lvl: INFO # 模块日志级别
-      - name: NormalRpcServerModule # 模块Name接口返回的名称
+      - name: NormalRpcSyncServerModule # 模块Name接口返回的名称
         log_lvl: INFO # 模块日志级别
 
 # 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径

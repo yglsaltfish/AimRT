@@ -6,10 +6,11 @@ set_namespace()
 
 # module
 add_subdirectory(module/normal_rpc_client_module)
-add_subdirectory(module/normal_rpc_server_module)
 add_subdirectory(module/normal_rpc_sync_client_module)
-add_subdirectory(module/normal_rpc_sync_server_module)
 add_subdirectory(module/normal_rpc_async_client_module)
+add_subdirectory(module/normal_rpc_future_client_module)
+add_subdirectory(module/normal_rpc_server_module)
+add_subdirectory(module/normal_rpc_sync_server_module)
 add_subdirectory(module/normal_rpc_async_server_module)
 
 # pkg

@@ -116,6 +116,31 @@ class {{service_name}}AsyncProxy : public aimrt::rpc::ProxyBase {
 {{hfile_service_async_proxy_func}}
 };"""
 
+    t_hfile_one_service_future_proxy_func: str = r"""
+  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp);
+
+  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
+  }"""
+
+    t_hfile_one_service_future_proxy_class: str = r"""
+class {{service_name}}FutureProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{service_name}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}FutureProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{hfile_service_future_proxy_func}}
+};"""
+
     t_hfile_one_service_proxy_func: str = r"""
   aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
       aimrt::rpc::ContextRef ctx_ref,
@@ -149,6 +174,8 @@ using {{service_name}}Proxy [[deprecated("Using {{service_name}}CoProxy.")]] = {
  */
 #pragma once
 
+#include <future>
+
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 
@@ -163,6 +190,7 @@ using {{service_name}}Proxy [[deprecated("Using {{service_name}}CoProxy.")]] = {
 {{hfile_service_register_client_func}}
 {{hfile_service_sync_proxy_class}}
 {{hfile_service_async_proxy_class}}
+{{hfile_service_future_proxy_class}}
 {{hfile_service_proxy_class}}
 {{namespace_end}}
 """
@@ -336,6 +364,45 @@ void {{service_name}}AsyncProxy::{{rpc_func_name}}(
       });
 }"""
 
+    t_ccfile_one_service_future_proxy_func: str = r"""
+std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
+    aimrt::rpc::ContextRef ctx_ref,
+    const {{rpc_req_name}}& req,
+    {{rpc_rsp_name}}& rsp) {
+  std::promise<aimrt::rpc::Status> status_promise;
+  std::future<aimrt::rpc::Status> status_future = status_promise.get_future();
+
+  if (ctx_ref) {
+    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
+
+    rpc_handle_ref_.Invoke(
+        "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+        ctx_ref,
+        &req,
+        &rsp,
+        [status_promise{std::move(status_promise)}](uint32_t code) mutable {
+          status_promise.set_value(aimrt::rpc::Status(code));
+        });
+
+    return status_future;
+  }
+
+  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
+  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
+  ctx_ref.SetSerializationType("pb");
+
+  rpc_handle_ref_.Invoke(
+      "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+      ctx_ref,
+      &req,
+      &rsp,
+      [ctx_ptr, status_promise{std::move(status_promise)}](uint32_t code) mutable {
+        status_promise.set_value(aimrt::rpc::Status(code));
+      });
+
+  return status_future;
+}"""
+
     t_ccfile_one_service_proxy_func: str = r"""
 aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
@@ -375,6 +442,10 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
 {{ccfile_service_async_proxy_func}}
 """
 
+    t_ccfile_one_service_future_proxy_class: str = r"""
+{{ccfile_service_future_proxy_func}}
+"""
+
     t_ccfile_one_service_proxy_class: str = r"""
 {{ccfile_service_proxy_func}}
 """
@@ -385,8 +456,6 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
  */
 
 #include "{{file_name}}.aimrt_rpc.pb.h"
-
-#include <future>
 
 #include "aimrt_module_cpp_interface/co/async_wrapper.h"
 #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
@@ -405,6 +474,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
 {{ccfile_service_register_client_func}}
 {{ccfile_service_sync_proxy_class}}
 {{ccfile_service_async_proxy_class}}
+{{ccfile_service_future_proxy_class}}
 {{ccfile_service_proxy_class}}
 {{namespace_end}}
 """
@@ -452,6 +522,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
             hfile_service_register_client_func: str = ""
             hfile_service_sync_proxy_class: str = ""
             hfile_service_async_proxy_class: str = ""
+            hfile_service_future_proxy_class: str = ""
             hfile_service_proxy_class: str = ""
 
             ccfile_sync_service_class: str = ""
@@ -460,6 +531,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
             ccfile_service_register_client_func: str = ""
             ccfile_service_sync_proxy_class: str = ""
             ccfile_service_async_proxy_class: str = ""
+            ccfile_service_future_proxy_class: str = ""
             ccfile_service_proxy_class: str = ""
 
             for ii in range(0, len(proto_file.service)):
@@ -471,6 +543,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                     hfile_service_register_client_func += "\n"
                     hfile_service_sync_proxy_class += "\n"
                     hfile_service_async_proxy_class += "\n"
+                    hfile_service_future_proxy_class += "\n"
                     hfile_service_proxy_class += "\n"
 
                     ccfile_sync_service_class += "\n"
@@ -479,6 +552,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                     ccfile_service_register_client_func += "\n"
                     ccfile_service_sync_proxy_class += "\n"
                     ccfile_service_async_proxy_class += "\n"
+                    ccfile_service_future_proxy_class += "\n"
                     ccfile_service_proxy_class += "\n"
 
                 service_name: str = service.name
@@ -488,6 +562,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                 hfile_service_func: str = ""
                 hfile_service_sync_proxy_func: str = ""
                 hfile_service_async_proxy_func: str = ""
+                hfile_service_future_proxy_func: str = ""
                 hfile_service_proxy_func: str = ""
 
                 ccfile_sync_service_register_func: str = ""
@@ -496,6 +571,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                 ccfile_service_one_register_client_func: str = ""
                 ccfile_service_sync_proxy_func: str = ""
                 ccfile_service_async_proxy_func: str = ""
+                ccfile_service_future_proxy_func: str = ""
                 ccfile_service_proxy_func: str = ""
 
                 for jj in range(0, len(service.method)):
@@ -507,6 +583,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                         hfile_service_func += "\n"
                         hfile_service_sync_proxy_func += "\n"
                         hfile_service_async_proxy_func += "\n"
+                        hfile_service_future_proxy_func += "\n"
                         hfile_service_proxy_func += "\n"
 
                         ccfile_sync_service_register_func += "\n"
@@ -515,6 +592,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                         ccfile_service_one_register_client_func += "\n"
                         ccfile_service_sync_proxy_func += "\n"
                         ccfile_service_async_proxy_func += "\n"
+                        ccfile_service_future_proxy_func += "\n"
                         ccfile_service_proxy_func += "\n"
 
                     rpc_func_name = method.name
@@ -542,6 +620,11 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                         .replace("{{rpc_func_name}}", rpc_func_name)
 
                     hfile_service_async_proxy_func += self.t_hfile_one_service_async_proxy_func \
+                        .replace("{{rpc_req_name}}", rpc_req_name) \
+                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
+                        .replace("{{rpc_func_name}}", rpc_func_name)
+
+                    hfile_service_future_proxy_func += self.t_hfile_one_service_future_proxy_func \
                         .replace("{{rpc_req_name}}", rpc_req_name) \
                         .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
                         .replace("{{rpc_func_name}}", rpc_func_name)
@@ -581,6 +664,11 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                         .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
                         .replace("{{rpc_func_name}}", rpc_func_name)
 
+                    ccfile_service_future_proxy_func += self.t_ccfile_one_service_future_proxy_func \
+                        .replace("{{rpc_req_name}}", rpc_req_name) \
+                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
+                        .replace("{{rpc_func_name}}", rpc_func_name)
+
                     ccfile_service_proxy_func += self.t_ccfile_one_service_proxy_func \
                         .replace("{{rpc_req_name}}", rpc_req_name) \
                         .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
@@ -607,6 +695,10 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
 
                 hfile_service_async_proxy_class += self.t_hfile_one_service_async_proxy_class \
                     .replace("{{hfile_service_async_proxy_func}}", hfile_service_async_proxy_func) \
+                    .replace("{{service_name}}", service_name)
+
+                hfile_service_future_proxy_class += self.t_hfile_one_service_future_proxy_class \
+                    .replace("{{hfile_service_future_proxy_func}}", hfile_service_future_proxy_func) \
                     .replace("{{service_name}}", service_name)
 
                 hfile_service_proxy_class += self.t_hfile_one_service_proxy_class \
@@ -637,6 +729,10 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                     .replace("{{ccfile_service_async_proxy_func}}", ccfile_service_async_proxy_func) \
                     .replace("{{service_name}}", service_name)
 
+                ccfile_service_future_proxy_class += self.t_ccfile_one_service_future_proxy_class \
+                    .replace("{{ccfile_service_future_proxy_func}}", ccfile_service_future_proxy_func) \
+                    .replace("{{service_name}}", service_name)
+
                 ccfile_service_proxy_class += self.t_ccfile_one_service_proxy_class \
                     .replace("{{ccfile_service_proxy_func}}", ccfile_service_proxy_func) \
                     .replace("{{service_name}}", service_name)
@@ -651,6 +747,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                 .replace("{{hfile_service_register_client_func}}", hfile_service_register_client_func) \
                 .replace("{{hfile_service_sync_proxy_class}}", hfile_service_sync_proxy_class) \
                 .replace("{{hfile_service_async_proxy_class}}", hfile_service_async_proxy_class) \
+                .replace("{{hfile_service_future_proxy_class}}", hfile_service_future_proxy_class) \
                 .replace("{{hfile_service_proxy_class}}", hfile_service_proxy_class) \
                 .replace("{{file_name}}", file_name.replace('.proto', '')) \
                 .replace("{{namespace_begin}}", namespace_begin) \
@@ -668,6 +765,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                 .replace("{{ccfile_service_register_client_func}}", ccfile_service_register_client_func) \
                 .replace("{{ccfile_service_sync_proxy_class}}", ccfile_service_sync_proxy_class) \
                 .replace("{{ccfile_service_async_proxy_class}}", ccfile_service_async_proxy_class) \
+                .replace("{{ccfile_service_future_proxy_class}}", ccfile_service_future_proxy_class) \
                 .replace("{{ccfile_service_proxy_class}}", ccfile_service_proxy_class) \
                 .replace("{{file_name}}", file_name.replace('.proto', '')) \
                 .replace("{{namespace_begin}}", namespace_begin) \

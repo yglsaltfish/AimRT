@@ -17,12 +17,6 @@ aimrt:
       - type: console # 控制台日志
         options:
           color: true # 是否彩色打印
-      - type: rotate_file # 文件日志
-        options:
-          path: ./log # 日志文件路径
-          filename: examples_plugins_net_plugin_ros2_channel_http_sub.log # 日志文件名称
-          max_file_size_m: 4 # 日志文件最大尺寸，单位m
-          max_file_num: 10 # 最大日志文件数量，0代表无限
   executor: # 执行器配置
   channel: # 消息队列相关配置
     backends: # 消息队列后端配置

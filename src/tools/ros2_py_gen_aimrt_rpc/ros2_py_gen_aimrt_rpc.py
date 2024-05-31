@@ -22,6 +22,8 @@ def gen_h_file(pkg_name, srv_filename):
  */
 #pragma once
 
+#include <future>
+
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 
@@ -122,6 +124,28 @@ class {{srv_filename}}AsyncProxy : public aimrt::rpc::ProxyBase {
   }
 };
 
+class {{srv_filename}}FutureProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{srv_filename}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{srv_filename}}FutureProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref);
+  }
+
+  std::future<aimrt::rpc::Status> {{srv_filename}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp);
+
+  std::future<aimrt::rpc::Status> {{srv_filename}}(
+      const {{srv_filename}}_Request& req,
+      {{srv_filename}}_Response& rsp) {
+    return {{srv_filename}}(aimrt::rpc::ContextRef(), req, rsp);
+  }
+};
+
 class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
  public:
   explicit {{srv_filename}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
@@ -165,8 +189,6 @@ def gen_cc_file(pkg_name, srv_filename):
  */
 
 #include "{{srv_filename}}.aimrt_rpc.srv.h"
-
-#include <future>
 
 #include "aimrt_module_cpp_interface/co/async_wrapper.h"
 #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
@@ -319,6 +341,44 @@ void {{srv_filename}}AsyncProxy::{{srv_filename}}(
       [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
         callback(aimrt::rpc::Status(code));
       });
+}
+
+std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
+    aimrt::rpc::ContextRef ctx_ref,
+    const {{srv_filename}}_Request& req,
+    {{srv_filename}}_Response& rsp) {
+  std::promise<aimrt::rpc::Status> status_promise;
+  std::future<aimrt::rpc::Status> status_future = status_promise.get_future();
+
+  if (ctx_ref) {
+    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
+
+    rpc_handle_ref_.Invoke(
+        "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+        ctx_ref,
+        &req,
+        &rsp,
+        [status_promise{std::move(status_promise)}](uint32_t code) mutable {
+          status_promise.set_value(aimrt::rpc::Status(code));
+        });
+
+    return status_future;
+  }
+
+  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
+  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
+  ctx_ref.SetSerializationType("ros2");
+
+  rpc_handle_ref_.Invoke(
+      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      ctx_ref,
+      &req,
+      &rsp,
+      [ctx_ptr, status_promise{std::move(status_promise)}](uint32_t code) mutable {
+        status_promise.set_value(aimrt::rpc::Status(code));
+      });
+
+  return status_future;
 }
 
 aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(

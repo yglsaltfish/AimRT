@@ -39,15 +39,6 @@ void AimRTCore::Initialize(const Options& options) {
   plugin_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("plugin"));
   EnterState(State::PostInitPlugin);
 
-  // Init log
-  EnterState(State::PreInitLog);
-  logger_manager_.SetLogger(logger_ptr_);
-  logger_manager_.RegisterGetExecutorFunc(
-      std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
-  logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
-  SetCoreLogger();
-  EnterState(State::PostInitLog);
-
   // Init main thread executor
   EnterState(State::PreInitMainThread);
   main_thread_executor_.SetLogger(logger_ptr_);
@@ -58,7 +49,6 @@ void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PreInitAllocator);
   allocator_manager_.SetLogger(logger_ptr_);
   allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
-  SetCoreLoggerAllocator();
   EnterState(State::PostInitAllocator);
 
   // Init executor
@@ -67,6 +57,15 @@ void AimRTCore::Initialize(const Options& options) {
   executor_manager_.SetUsedExecutorName(main_thread_executor_.Name());
   executor_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("executor"));
   EnterState(State::PostInitExecutor);
+
+  // Init log
+  EnterState(State::PreInitLog);
+  logger_manager_.SetLogger(logger_ptr_);
+  logger_manager_.RegisterGetExecutorFunc(
+      std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
+  logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
+  SetCoreLogger();
+  EnterState(State::PostInitLog);
 
   // Init rpc
   EnterState(State::PreInitRpc);
@@ -115,11 +114,11 @@ void AimRTCore::Start() {
 
   plugin_manager_.Start();
 
-  logger_manager_.Start();
-
   allocator_manager_.Start();
 
   executor_manager_.Start();
+
+  logger_manager_.Start();
 
   rpc_manager_.Start();
 
@@ -148,13 +147,12 @@ void AimRTCore::Shutdown() {
 
     rpc_manager_.Shutdown();
 
-    executor_manager_.Shutdown();
-
-    ResetCoreLoggerAllocator();
-    allocator_manager_.Shutdown();
-
     ResetCoreLogger();
     logger_manager_.Shutdown();
+
+    executor_manager_.Shutdown();
+
+    allocator_manager_.Shutdown();
 
     plugin_manager_.Shutdown();
 
@@ -181,6 +179,7 @@ void AimRTCore::EnterState(State state) {
 
 void AimRTCore::SetCoreLogger() {
   const auto* core_logger_ptr = logger_manager_.GetLoggerProxy("core").NativeHandle();
+  const auto* core_allocator_ptr = allocator_manager_.GetAllocatorProxy().NativeHandle();
 
   logger_ptr_->get_log_level_func = [core_logger_ptr]() -> uint32_t {
     return core_logger_ptr->get_log_level(core_logger_ptr->impl);
@@ -201,14 +200,10 @@ void AimRTCore::SetCoreLogger() {
             line, column, file_name, function_name,
             log_data, log_data_size);  //
       };
-}
-
-void AimRTCore::SetCoreLoggerAllocator() {
-  const auto* core_allocator_ptr = allocator_manager_.GetAllocatorProxy().NativeHandle();
 
   logger_ptr_->get_log_buf_func =
       [core_allocator_ptr]() -> std::tuple<char*, size_t> {
-    constexpr size_t kMaxLogBufSize = 1024 * 4;
+    constexpr size_t kMaxLogBufSize = 1024 * 1024;
     void* buf = core_allocator_ptr->get_thread_local_buf(core_allocator_ptr->impl, kMaxLogBufSize);
     return {static_cast<char*>(buf), kMaxLogBufSize};
   };
@@ -217,9 +212,6 @@ void AimRTCore::SetCoreLoggerAllocator() {
 void AimRTCore::ResetCoreLogger() {
   logger_ptr_->get_log_level_func = aimrt::common::util::SimpleLogger::GetLogLevel;
   logger_ptr_->log_func = aimrt::common::util::SimpleLogger::Log;
-}
-
-void AimRTCore::ResetCoreLoggerAllocator() {
   logger_ptr_->get_log_buf_func = []() -> std::tuple<char*, size_t> { return {nullptr, 0}; };
 }
 
@@ -266,9 +258,6 @@ std::string AimRTCore::GenInitializationReport() const {
   auto plugin_manager_report = plugin_manager_.GenInitializationReport();
   report.insert(report.end(), plugin_manager_report.begin(), plugin_manager_report.end());
 
-  auto logger_manager_report = logger_manager_.GenInitializationReport();
-  report.insert(report.end(), logger_manager_report.begin(), logger_manager_report.end());
-
   auto main_thread_executor_report = main_thread_executor_.GenInitializationReport();
   report.insert(report.end(), main_thread_executor_report.begin(), main_thread_executor_report.end());
 
@@ -277,6 +266,9 @@ std::string AimRTCore::GenInitializationReport() const {
 
   auto executor_manager_report = executor_manager_.GenInitializationReport();
   report.insert(report.end(), executor_manager_report.begin(), executor_manager_report.end());
+
+  auto logger_manager_report = logger_manager_.GenInitializationReport();
+  report.insert(report.end(), logger_manager_report.begin(), logger_manager_report.end());
 
   auto rpc_manager_report = rpc_manager_.GenInitializationReport();
   report.insert(report.end(), rpc_manager_report.begin(), rpc_manager_report.end());
@@ -291,12 +283,14 @@ std::string AimRTCore::GenInitializationReport() const {
   report.insert(report.end(), module_manager_report.begin(), module_manager_report.end());
 
   std::stringstream result;
-  result << "-------------------------- AimRT Initialization Report -------------------------\n\n";
+  result << "\n----------------------- AimRT Initialization Report Begin ----------------------\n\n";
 
   for (size_t ii = 0; ii < report.size(); ++ii) {
     result << "[" << ii + 1 << "]. " << report[ii].first << "\n"
            << report[ii].second << "\n\n";
   }
+
+  result << "\n----------------------- AimRT Initialization Report End ------------------------\n\n";
 
   return result.str();
 }

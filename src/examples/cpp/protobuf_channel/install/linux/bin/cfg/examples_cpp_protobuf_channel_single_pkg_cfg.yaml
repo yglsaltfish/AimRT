@@ -8,12 +8,6 @@ aimrt:
       - type: console # 控制台日志
         options:
           color: true # 是否彩色打印
-      - type: rotate_file # 文件日志
-        options:
-          path: ./log # 日志文件路径
-          filename: examples_cpp_protobuf_channel_single_pkg.log # 日志文件名称
-          max_file_size_m: 4 # 日志文件最大尺寸，单位m
-          max_file_num: 10 # 最大日志文件数量，0代表无限
   executor: # 执行器配置
     executors: # 当前先支持thread型，未来可根据加载的网络模块提供更多类型
       - name: work_thread_pool # 线程池
