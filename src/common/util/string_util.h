@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iomanip>
 #include <map>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <string>
@@ -532,7 +533,6 @@ inline std::string DrawTable(
   size_t column = column_width.size();
 
   std::stringstream result;
-  result << "\n";
 
   // first line
   for (size_t jj = 0; jj < column; ++jj) {
@@ -567,6 +567,30 @@ inline std::string DrawTable(
   result << "+\n";
 
   return result.str();
+}
+
+/**
+ * @brief 将字符串中形如 ${XXX_ENV} 的部分替换为对应环境变量的值
+ *
+ * @param input
+ * @return std::string
+ */
+inline std::string ReplaceEnvVars(std::string_view input) {
+  std::regex pattern(R"(\$\{([^}]+)\})");
+  std::smatch match;
+  std::string result(input);
+  std::string::const_iterator search_start(result.cbegin());
+
+  while (std::regex_search(search_start, result.cend(), match, pattern)) {
+    std::string env_name = match[1].str();
+    const char* env_val = std::getenv(env_name.c_str());
+    if (env_val == nullptr) env_val = "";
+
+    result.replace(match.position(0), match.length(0), env_val);
+    search_start = result.begin() + match.position(0) + strlen(env_val);
+  }
+
+  return result;
 }
 
 /**

@@ -98,9 +98,12 @@ void AimRTCore::Initialize(const Options& options) {
   module_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("module"));
   EnterState(State::PostInitModules);
 
-  // dump cfg file
-  if (options_.dump_cfg_file)
-    DumpCfgFile(options_.dump_cfg_file_path);
+  // Dump cfg file
+  DumpCfgFile();
+
+  // Gen initialization report
+  auto report = GenInitializationReport();
+  AIMRT_INFO("gen initialization report:\n{}", report);
 
   EnterState(State::PostInit);
 }
@@ -236,19 +239,66 @@ void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CorePr
   proxy.SetParameterHandle(parameter_manager_.GetParameterHandleProxy(info).NativeHandle());
 }
 
-void AimRTCore::DumpCfgFile(const std::string& path) {
-  YAML::Node dump_node = configurator_manager_.DumpRootOptionsNode();
+void AimRTCore::DumpCfgFile() const {
+  if (!options_.dump_cfg_file) return;
 
-  if (!path.empty()) {
-    std::ofstream ofs;
-    ofs.open(path, std::ios::trunc);
-    ofs << dump_node;
-    ofs.flush();
-    ofs.clear();
-    ofs.close();
-  } else {
-    AIMRT_INFO("Dump cfg file:\n\n{}\n\n", YAML::Dump(dump_node));
+  std::filesystem::path path =
+      options_.dump_cfg_file_path.empty() ? "./dump_cfg.yaml" : options_.dump_cfg_file_path;
+
+  std::ofstream ofs;
+  ofs.open(path, std::ios::trunc);
+
+  YAML::Node dump_node = configurator_manager_.DumpRootOptionsNode();
+  ofs << dump_node;
+  ofs.flush();
+  ofs.clear();
+  ofs.close();
+
+  AIMRT_INFO("Dump cfg to file {}", path.string());
+}
+
+std::string AimRTCore::GenInitializationReport() const {
+  std::vector<std::pair<std::string, std::string>> report;
+
+  auto configurator_manager_report = configurator_manager_.GenInitializationReport();
+  report.insert(report.end(), configurator_manager_report.begin(), configurator_manager_report.end());
+
+  auto plugin_manager_report = plugin_manager_.GenInitializationReport();
+  report.insert(report.end(), plugin_manager_report.begin(), plugin_manager_report.end());
+
+  auto logger_manager_report = logger_manager_.GenInitializationReport();
+  report.insert(report.end(), logger_manager_report.begin(), logger_manager_report.end());
+
+  auto main_thread_executor_report = main_thread_executor_.GenInitializationReport();
+  report.insert(report.end(), main_thread_executor_report.begin(), main_thread_executor_report.end());
+
+  auto allocator_manager_report = allocator_manager_.GenInitializationReport();
+  report.insert(report.end(), allocator_manager_report.begin(), allocator_manager_report.end());
+
+  auto executor_manager_report = executor_manager_.GenInitializationReport();
+  report.insert(report.end(), executor_manager_report.begin(), executor_manager_report.end());
+
+  auto rpc_manager_report = rpc_manager_.GenInitializationReport();
+  report.insert(report.end(), rpc_manager_report.begin(), rpc_manager_report.end());
+
+  auto channel_manager_report = channel_manager_.GenInitializationReport();
+  report.insert(report.end(), channel_manager_report.begin(), channel_manager_report.end());
+
+  auto parameter_manager_report = parameter_manager_.GenInitializationReport();
+  report.insert(report.end(), parameter_manager_report.begin(), parameter_manager_report.end());
+
+  auto module_manager_report = module_manager_.GenInitializationReport();
+  report.insert(report.end(), module_manager_report.begin(), module_manager_report.end());
+
+  std::stringstream result;
+  result << "-------------------------- AimRT Initialization Report -------------------------\n\n";
+
+  for (size_t ii = 0; ii < report.size(); ++ii) {
+    result << "[" << ii + 1 << "]. " << report[ii].first << "\n"
+           << report[ii].second << "\n\n";
   }
+
+  return result.str();
 }
 
 }  // namespace aimrt::runtime::core

@@ -94,13 +94,7 @@ void LoggerManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO(R"str(Logger manager init complete. options:
------------------------------ aimrt.log ----------------------------------------
-{}
------------------------------ aimrt.log ----------------------------------------
-
-)str",
-             YAML::Dump(options_node));
+  AIMRT_INFO("Logger manager init complete");
 }
 
 void LoggerManager::Start() {
@@ -215,4 +209,20 @@ void LoggerManager::RegisterRotateFileLoggerBackendGenFunc() {
   });
 }
 
+std::vector<std::pair<std::string, std::string>>
+LoggerManager::GenInitializationReport() const {
+  std::vector<std::string> logger_backend_type_vec;
+  for (auto& logger_backend : logger_backend_vec_) {
+    logger_backend_type_vec.emplace_back(logger_backend->Type());
+  }
+
+  std::string log_backend_name_list;
+  if (logger_backend_type_vec.empty()) {
+    log_backend_name_list = "<empty>";
+  } else {
+    log_backend_name_list = "[ " + aimrt::common::util::JoinVec(logger_backend_type_vec, " , ") + " ]";
+  }
+
+  return {{"Log Backend List", log_backend_name_list}};
+}
 }  // namespace aimrt::runtime::core::logger

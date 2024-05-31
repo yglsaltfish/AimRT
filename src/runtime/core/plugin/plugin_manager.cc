@@ -1,6 +1,6 @@
 #include "core/plugin/plugin_manager.h"
 
-#include "util/stl_tool.h"
+#include "util/string_util.h"
 
 namespace YAML {
 template <>
@@ -120,18 +120,12 @@ void PluginManager::Initialize(YAML::Node options_node) {
     for (auto itr : tmp_registered_plugin_vec)
       unconfigured_plugins.emplace_back(itr->Name());
     AIMRT_ERROR_THROW("Some plugins are not configured, {}",
-                      aimrt::common::util::Vec2Str(unconfigured_plugins));
+                      aimrt::common::util::JoinVec(unconfigured_plugins, ","));
   }
 
   options_node = options_;
 
-  AIMRT_INFO(R"str(Plugin manager init complete. options:
------------------------------ aimrt.plugin -------------------------------------
-{}
------------------------------ aimrt.plugin -------------------------------------
-
-)str",
-             YAML::Dump(options_node));
+  AIMRT_INFO("Plugin manager init complete");
 }
 
 void PluginManager::Start() {
@@ -190,6 +184,21 @@ YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) con
     return finditr->options;
 
   return YAML::Node();
+}
+
+std::vector<std::pair<std::string, std::string>>
+PluginManager::GenInitializationReport() const {
+  std::vector<std::vector<std::string>> plugin_info_table =
+      {{"name", "path"}};
+
+  for (const auto& plugin_options : options_.plugins_options) {
+    std::vector<std::string> cur_plugin_info(2);
+    cur_plugin_info[0] = plugin_options.name;
+    cur_plugin_info[1] = plugin_options.path;
+    plugin_info_table.emplace_back(std::move(cur_plugin_info));
+  }
+
+  return {{"Plugin List", aimrt::common::util::DrawTable(plugin_info_table)}};
 }
 
 }  // namespace aimrt::runtime::core::plugin

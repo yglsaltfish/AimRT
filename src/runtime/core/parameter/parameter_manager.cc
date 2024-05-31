@@ -31,13 +31,7 @@ void ParameterManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  AIMRT_INFO(R"str(Parameter manager init complete. options:
------------------------------ aimrt.parameter ----------------------------------
-{}
------------------------------ aimrt.parameter ----------------------------------
-
-)str",
-             YAML::Dump(options_node));
+  AIMRT_INFO("Parameter manager init complete");
 }
 
 void ParameterManager::Start() {
@@ -85,6 +79,11 @@ ParameterHandle* ParameterManager::GetParameterHandle(std::string_view module_na
   if (itr != parameter_handle_proxy_wrap_map_.end()) return &(itr->second->parameter_handle);
 
   return nullptr;
+}
+
+std::vector<std::pair<std::string, std::string>>
+ParameterManager::GenInitializationReport() const {
+  return {};
 }
 
 }  // namespace aimrt::runtime::core::parameter

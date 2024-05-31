@@ -4,7 +4,6 @@
 
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "core/logger/log_level_tool.h"
-#include "util/stl_tool.h"
 
 namespace YAML {
 template <>
@@ -103,10 +102,10 @@ void ModuleManager::Initialize(YAML::Node options_node) {
     module_loader_ptr->SetLogger(logger_ptr_);
     module_loader_ptr->LoadPkg(pkg_options.path, pkg_options.disable_modules);
 
-    AIMRT_TRACE("Load pkg succeeded.\ncfg path: {}\nfull path: {}\nload modules: {}",
+    AIMRT_TRACE("Load pkg succeeded.\ncfg path: {}\nfull path: {}\nload modules: [{}]",
                 pkg_options.path,
                 module_loader_ptr->GetDynamicLib().GetLibFullPath(),
-                aimrt::common::util::Vec2Str(module_loader_ptr->GetLoadedModuleNameList()));
+                aimrt::common::util::JoinVec(module_loader_ptr->GetLoadedModuleNameList(), ","));
 
     pkg_options.path = module_loader_ptr->GetDynamicLib().GetLibFullPath();
 
@@ -203,34 +202,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  if (GetLogger().GetLogLevel() <= aimrt::common::util::kLogLevelInfo) {
-    std::vector<std::vector<std::string>> module_info_table =
-        {{"name", "pkg", "version", "author", "description"}};
-
-    for (auto& item : module_detail_info_vec_) {
-      std::vector<std::string> cur_module_info(5);
-      cur_module_info[0] = item->name;
-      cur_module_info[1] = item->pkg_path;
-      cur_module_info[2] =
-          std::to_string(item->major_version) + "." +
-          std::to_string(item->minor_version) + "." +
-          std::to_string(item->patch_version) + "." +
-          std::to_string(item->build_version);
-      cur_module_info[3] = item->author;
-      cur_module_info[4] = item->description;
-      module_info_table.emplace_back(std::move(cur_module_info));
-    }
-
-    AIMRT_INFO(R"str(Module manager init complete. options:
------------------------------ aimrt.module -------------------------------------
-{}
------------------------------ aimrt.module -------------------------------------
-
-module info table:{}
-)str",
-               YAML::Dump(options_node),
-               aimrt::common::util::DrawTable(module_info_table));
-  }
+  AIMRT_INFO("Module manager init complete");
 }
 
 void ModuleManager::Start() {
@@ -367,6 +339,28 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
   AIMRT_CHECK_ERROR_THROW(ret, "Init module '{}' failed.", module_name);
 
   AIMRT_TRACE("Init module '{}' succeeded.", module_name);
+}
+
+std::vector<std::pair<std::string, std::string>>
+ModuleManager::GenInitializationReport() const {
+  std::vector<std::vector<std::string>> module_info_table =
+      {{"name", "pkg", "version", "author", "description"}};
+
+  for (auto& item : module_detail_info_vec_) {
+    std::vector<std::string> cur_module_info(5);
+    cur_module_info[0] = item->name;
+    cur_module_info[1] = item->pkg_path;
+    cur_module_info[2] =
+        std::to_string(item->major_version) + "." +
+        std::to_string(item->minor_version) + "." +
+        std::to_string(item->patch_version) + "." +
+        std::to_string(item->build_version);
+    cur_module_info[3] = item->author;
+    cur_module_info[4] = item->description;
+    module_info_table.emplace_back(std::move(cur_module_info));
+  }
+
+  return {{"Module Info List", aimrt::common::util::DrawTable(module_info_table)}};
 }
 
 }  // namespace aimrt::runtime::core::module
