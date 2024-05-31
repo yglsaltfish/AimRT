@@ -5,6 +5,7 @@
 #include "normal_rpc_async_client_module/normal_rpc_async_client_module.h"
 #include "normal_rpc_async_server_module/normal_rpc_async_server_module.h"
 #include "normal_rpc_client_module/normal_rpc_client_module.h"
+#include "normal_rpc_future_client_module/normal_rpc_future_client_module.h"
 #include "normal_rpc_server_module/normal_rpc_server_module.h"
 #include "normal_rpc_sync_client_module/normal_rpc_sync_client_module.h"
 #include "normal_rpc_sync_server_module/normal_rpc_sync_server_module.h"
@@ -32,6 +33,9 @@ static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>> aimrt_m
      }},
     {"NormalRpcSyncServerModule", []() -> aimrt::ModuleBase* {
        return new normal_rpc_sync_server_module::NormalRpcSyncServerModule();
+     }},
+    {"NormalRpcFutureClientModule", []() -> aimrt::ModuleBase* {
+       return new normal_rpc_future_client_module::NormalRpcFutureClientModule();
      }}};
 
 AIMRT_PKG_MAIN(aimrt_module_register_array)

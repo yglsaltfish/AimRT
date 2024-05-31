@@ -120,12 +120,6 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
   if (options_.print_color) set_console_window();
 #endif
 
-  options_node = options_;
-
-  run_flag_.store(true);
-}
-
-void ConsoleLoggerBackend::Start() {
   log_executor_ = get_executor_func_(options_.log_executor_name);
   if (!log_executor_) {
     throw aimrt::common::util::AimRTException(
@@ -136,6 +130,10 @@ void ConsoleLoggerBackend::Start() {
     throw aimrt::common::util::AimRTException(
         "Log executor must be thread safe. Log executor name: " + options_.log_executor_name);
   }
+
+  options_node = options_;
+
+  run_flag_.store(true);
 }
 
 void ConsoleLoggerBackend::Log(

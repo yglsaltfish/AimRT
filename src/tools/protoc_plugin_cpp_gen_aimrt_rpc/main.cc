@@ -165,6 +165,31 @@ class {{service_name}}AsyncProxy : public aimrt::rpc::ProxyBase {
 {{hfile_service_async_proxy_func}}
 };)str";
 
+  constexpr static std::string_view t_hfile_one_service_future_proxy_func = R"str(
+  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp);
+
+  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
+  })str";
+
+  constexpr static std::string_view t_hfile_one_service_future_proxy_class = R"str(
+class {{service_name}}FutureProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{service_name}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}FutureProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{hfile_service_future_proxy_func}}
+};)str";
+
   constexpr static std::string_view t_hfile_one_service_proxy_func = R"str(
   aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
       aimrt::rpc::ContextRef ctx_ref,
@@ -198,6 +223,8 @@ using {{service_name}}Proxy [[deprecated("Using {{service_name}}CoProxy.")]] = {
  */
 #pragma once
 
+#include <future>
+
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 
@@ -212,6 +239,7 @@ using {{service_name}}Proxy [[deprecated("Using {{service_name}}CoProxy.")]] = {
 {{hfile_service_register_client_func}}
 {{hfile_service_sync_proxy_class}}
 {{hfile_service_async_proxy_class}}
+{{hfile_service_future_proxy_class}}
 {{hfile_service_proxy_class}}
 {{namespace_end}}
 )str";
@@ -385,6 +413,45 @@ void {{service_name}}AsyncProxy::{{rpc_func_name}}(
       });
 })str";
 
+  constexpr static std::string_view t_ccfile_one_service_future_proxy_func = R"str(
+std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
+    aimrt::rpc::ContextRef ctx_ref,
+    const {{rpc_req_name}}& req,
+    {{rpc_rsp_name}}& rsp) {
+  std::promise<aimrt::rpc::Status> status_promise;
+  std::future<aimrt::rpc::Status> status_future = status_promise.get_future();
+
+  if (ctx_ref) {
+    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
+
+    rpc_handle_ref_.Invoke(
+        "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+        ctx_ref,
+        &req,
+        &rsp,
+        [status_promise{std::move(status_promise)}](uint32_t code) mutable {
+          status_promise.set_value(aimrt::rpc::Status(code));
+        });
+
+    return status_future;
+  }
+
+  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
+  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
+  ctx_ref.SetSerializationType("pb");
+
+  rpc_handle_ref_.Invoke(
+      "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+      ctx_ref,
+      &req,
+      &rsp,
+      [ctx_ptr, status_promise{std::move(status_promise)}](uint32_t code) mutable {
+        status_promise.set_value(aimrt::rpc::Status(code));
+      });
+
+  return status_future;
+})str";
+
   constexpr static std::string_view t_ccfile_one_service_proxy_func = R"str(
 aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
@@ -424,6 +491,10 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
 {{ccfile_service_async_proxy_func}}
 )str";
 
+  constexpr static std::string_view t_ccfile_one_service_future_proxy_class = R"str(
+{{ccfile_service_future_proxy_func}}
+)str";
+
   constexpr static std::string_view t_ccfile_one_service_proxy_class = R"str(
 {{ccfile_service_proxy_func}}
 )str";
@@ -434,8 +505,6 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
  */
 
 #include "{{file_name}}.aimrt_rpc.pb.h"
-
-#include <future>
 
 #include "aimrt_module_cpp_interface/co/async_wrapper.h"
 #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
@@ -454,6 +523,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
 {{ccfile_service_register_client_func}}
 {{ccfile_service_sync_proxy_class}}
 {{ccfile_service_async_proxy_class}}
+{{ccfile_service_future_proxy_class}}
 {{ccfile_service_proxy_class}}
 {{namespace_end}}
 )str";
@@ -510,6 +580,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     std::string hfile_service_register_client_func;
     std::string hfile_service_sync_proxy_class;
     std::string hfile_service_async_proxy_class;
+    std::string hfile_service_future_proxy_class;
     std::string hfile_service_proxy_class;
 
     std::string ccfile_sync_service_class;
@@ -518,6 +589,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     std::string ccfile_service_register_client_func;
     std::string ccfile_service_sync_proxy_class;
     std::string ccfile_service_async_proxy_class;
+    std::string ccfile_service_future_proxy_class;
     std::string ccfile_service_proxy_class;
 
     for (int ii = 0; ii < file->service_count(); ++ii) {
@@ -531,6 +603,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
         hfile_service_register_client_func += "\n";
         hfile_service_sync_proxy_class += "\n";
         hfile_service_async_proxy_class += "\n";
+        hfile_service_future_proxy_class += "\n";
         hfile_service_proxy_class += "\n";
 
         ccfile_sync_service_class += "\n";
@@ -539,6 +612,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
         ccfile_service_register_client_func += "\n";
         ccfile_service_sync_proxy_class += "\n";
         ccfile_service_async_proxy_class += "\n";
+        ccfile_service_future_proxy_class += "\n";
         ccfile_service_proxy_class += "\n";
       }
 
@@ -549,6 +623,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
       std::string hfile_service_func;
       std::string hfile_service_sync_proxy_func;
       std::string hfile_service_async_proxy_func;
+      std::string hfile_service_future_proxy_func;
       std::string hfile_service_proxy_func;
 
       std::string ccfile_sync_service_register_func;
@@ -557,6 +632,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
       std::string ccfile_service_one_register_client_func;
       std::string ccfile_service_sync_proxy_func;
       std::string ccfile_service_async_proxy_func;
+      std::string ccfile_service_future_proxy_func;
       std::string ccfile_service_proxy_func;
 
       for (int jj = 0; jj < service->method_count(); ++jj) {
@@ -569,6 +645,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
           hfile_service_func += "\n";
           hfile_service_sync_proxy_func += "\n";
           hfile_service_async_proxy_func += "\n";
+          hfile_service_future_proxy_func += "\n";
           hfile_service_proxy_func += "\n";
 
           ccfile_sync_service_register_func += "\n";
@@ -577,6 +654,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
           ccfile_service_one_register_client_func += "\n";
           ccfile_service_sync_proxy_func += "\n";
           ccfile_service_async_proxy_func += "\n";
+          ccfile_service_future_proxy_func += "\n";
           ccfile_service_proxy_func += "\n";
         }
 
@@ -594,6 +672,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
         hfile_service_func += ReplaceMultiString(t_hfile_one_service_func, replace_info_map);
         hfile_service_sync_proxy_func += ReplaceMultiString(t_hfile_one_service_sync_proxy_func, replace_info_map);
         hfile_service_async_proxy_func += ReplaceMultiString(t_hfile_one_service_async_proxy_func, replace_info_map);
+        hfile_service_future_proxy_func += ReplaceMultiString(t_hfile_one_service_future_proxy_func, replace_info_map);
         hfile_service_proxy_func += ReplaceMultiString(t_hfile_one_service_proxy_func, replace_info_map);
 
         ccfile_sync_service_register_func += ReplaceMultiString(t_ccfile_one_sync_service_register_func, replace_info_map);
@@ -602,6 +681,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
         ccfile_service_one_register_client_func += ReplaceMultiString(t_ccfile_one_service_one_register_client_func, replace_info_map);
         ccfile_service_sync_proxy_func += ReplaceMultiString(t_ccfile_one_service_sync_proxy_func, replace_info_map);
         ccfile_service_async_proxy_func += ReplaceMultiString(t_ccfile_one_service_async_proxy_func, replace_info_map);
+        ccfile_service_future_proxy_func += ReplaceMultiString(t_ccfile_one_service_future_proxy_func, replace_info_map);
         ccfile_service_proxy_func += ReplaceMultiString(t_ccfile_one_service_proxy_func, replace_info_map);
       }
 
@@ -632,6 +712,11 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
       hfile_service_async_proxy_class += ReplaceMultiString(
           t_hfile_one_service_async_proxy_class,
           {{"{{hfile_service_async_proxy_func}}", hfile_service_async_proxy_func},
+           {"{{service_name}}", service_name}});
+
+      hfile_service_future_proxy_class += ReplaceMultiString(
+          t_hfile_one_service_future_proxy_class,
+          {{"{{hfile_service_future_proxy_func}}", hfile_service_future_proxy_func},
            {"{{service_name}}", service_name}});
 
       hfile_service_proxy_class += ReplaceMultiString(
@@ -669,6 +754,11 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
           {{"{{ccfile_service_async_proxy_func}}", ccfile_service_async_proxy_func},
            {"{{service_name}}", service_name}});
 
+      ccfile_service_future_proxy_class += ReplaceMultiString(
+          t_ccfile_one_service_future_proxy_class,
+          {{"{{ccfile_service_future_proxy_func}}", ccfile_service_future_proxy_func},
+           {"{{service_name}}", service_name}});
+
       ccfile_service_proxy_class += ReplaceMultiString(
           t_ccfile_one_service_proxy_class,
           {{"{{ccfile_service_proxy_func}}", ccfile_service_proxy_func},
@@ -683,6 +773,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     ReplaceString(hfile, "{{hfile_service_register_client_func}}", hfile_service_register_client_func);
     ReplaceString(hfile, "{{hfile_service_sync_proxy_class}}", hfile_service_sync_proxy_class);
     ReplaceString(hfile, "{{hfile_service_async_proxy_class}}", hfile_service_async_proxy_class);
+    ReplaceString(hfile, "{{hfile_service_future_proxy_class}}", hfile_service_future_proxy_class);
     ReplaceString(hfile, "{{hfile_service_proxy_class}}", hfile_service_proxy_class);
     ReplaceString(hfile, "{{file_name}}", file_name);
     ReplaceString(hfile, "{{namespace_begin}}", namespace_begin);
@@ -698,6 +789,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     ReplaceString(ccfile, "{{ccfile_service_register_client_func}}", ccfile_service_register_client_func);
     ReplaceString(ccfile, "{{ccfile_service_sync_proxy_class}}", ccfile_service_sync_proxy_class);
     ReplaceString(ccfile, "{{ccfile_service_async_proxy_class}}", ccfile_service_async_proxy_class);
+    ReplaceString(ccfile, "{{ccfile_service_future_proxy_class}}", ccfile_service_future_proxy_class);
     ReplaceString(ccfile, "{{ccfile_service_proxy_class}}", ccfile_service_proxy_class);
     ReplaceString(ccfile, "{{file_name}}", file_name);
     ReplaceString(ccfile, "{{namespace_begin}}", namespace_begin);

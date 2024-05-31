@@ -24,7 +24,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
   std::string_view Type() const override { return "console"; }
 
   void Initialize(YAML::Node options_node) override;
-  void Start() override;
+  void Start() override {}
   void Shutdown() override { run_flag_.store(false); }
 
   void RegisterGetExecutorFunc(

@@ -1297,9 +1297,10 @@ target_link_libraries(my_lib PUBLIC my_namespace::example_ros2_rpc_aimrt_rpc_gen
 
 ### Client接口
 
-&emsp;&emsp;在AimRT RPC桩代码工具生成的代码里，如`rpc.aimrt_rpc.pb.h`或者`example.aimrt_rpc.srv.h`里，提供了三种类型的Client Proxy接口，开发者基于这些Proxy接口类来发起RPC调用：
+&emsp;&emsp;在AimRT RPC桩代码工具生成的代码里，如`rpc.aimrt_rpc.pb.h`或者`example.aimrt_rpc.srv.h`里，提供了四种类型的Client Proxy接口，开发者基于这些Proxy接口类来发起RPC调用：
 - **同步型接口**：名称一般为`XXXSyncProxy`；
-- **异步型接口**：名称一般为`XXXAsyncProxy`；
+- **异步回调型接口**：名称一般为`XXXAsyncProxy`；
+- **异步Future型接口**：名称一般为`XXXFutureProxy`；
 - **无栈协程型接口**：名称一般为`XXXCoProxy`；
 
 &emsp;&emsp;这三种类型可以混合使用，开发者可以根据自身需求选用。
@@ -1365,16 +1366,16 @@ void HelloWorldModule::Foo() {
 ```
 
 
-#### 异步型接口
+#### 异步回调型接口
 
 &emsp;&emsp;参考示例：
 - protobuf_rpc:[normal_rpc_async_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
 - ros2_rpc:[normal_rpc_async_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
 
 
-&emsp;&emsp;异步型接口使用回调来返回异步结果，在性能上表现最好，但开发友好度是最低的，很容易陷入回调地狱。
+&emsp;&emsp;异步回调型接口使用回调来返回异步结果，在性能上表现最好，但开发友好度是最低的，很容易陷入回调地狱。
 
-&emsp;&emsp;使用异步型接口发起RPC调用一般分为以下几个步骤：
+&emsp;&emsp;使用异步回调型接口发起RPC调用一般分为以下几个步骤：
 - Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有异步接口的句柄`XXXAsyncProxy`；
 - Step1：在`Initialize`阶段调用`RegisterClientFunc`方法注册RPC Client；
 - Step2：在`Start`阶段里某个业务函数里发起RPC调用：
@@ -1428,6 +1429,70 @@ void HelloWorldModule::Foo() {
 }
 ```
 
+#### 异步Future型接口
+
+&emsp;&emsp;参考示例：
+- protobuf_rpc:[normal_rpc_future_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)
+- ros2_rpc:[normal_rpc_future_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)
+
+
+&emsp;&emsp;异步Future型接口基于`std::future`来返回异步结果，开发者可以在发起RPC调用后先去做其他事情，等需要RPC结果时在调用`std::future::get`方法来阻塞的获取结果。它在一定程度上兼顾了性能和开发友好度，属于同步型和异步回调型中间的一个选择。
+
+
+&emsp;&emsp;使用异步Future型接口发起RPC调用一般分为以下几个步骤：
+- Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有异步接口的句柄`XXXFutureProxy`；
+- Step1：在`Initialize`阶段调用`RegisterClientFunc`方法注册RPC Client；
+- Step2：在`Start`阶段里某个业务函数里发起RPC调用：
+  - Step2-1：创建一个`XXXFutureProxy`，构造参数是`aimrt::rpc::RpcHandleRef`。proxy非常轻量，可以随用随创建；
+  - Step2-2：创建Req、Rsp，并填充Req内容；
+  - Step2-3：【可选】创建ctx，设置超时等信息；
+  - Step2-4：基于proxy，传入ctx、Req、Rsp和结果回调，发起RPC调用，获取一个`std::future<Status>`句柄；
+  - Step2-5：在后续某个时间，阻塞的调用`std::future<Status>`句柄的`get()`方法，获取status值，并解析status和Rsp。需要保证在整个调用周期里ctx、Req、Rsp都保持生存；
+
+
+
+&emsp;&emsp;以下是一个简单的基于protobuf的示例，基于ROS2 Srv的语法也基本类似：
+```cpp
+bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
+  core_ = core;
+
+  // Step1：在Initialize阶段调用RegisterClientFunc方法注册RPC Client
+  bool ret = aimrt::protocols::example::RegisterExampleServiceClientFunc(core_.GetRpcHandle());
+  AIMRT_CHECK_ERROR_THROW(ret, "Register client failed.");
+
+  return true;
+}
+
+// 在Step2：在Start阶段里某个业务函数里发起RPC调用
+void HelloWorldModule::Foo() {
+  // Step2-1：创建一个proxy，构造参数是 aimrt::rpc::RpcHandleRef 。proxy非常轻量，可以随用随创建
+  ExampleServiceFutureProxy proxy(core_.GetRpcHandle());
+
+  // Step2-2：创建Req、Rsp，并填充Req内容
+  ExampleReq req;
+  ExampleRsp rsp;
+  req.set_msg("hello world");
+
+  // Step2-3：【可选】创建ctx，设置超时等信息
+  auto ctx = proxy.NewContextRef();
+  ctx.SetTimeout(std::chrono::seconds(3));
+
+  // Step2-4：基于proxy，传入ctx、Req、Rsp和结果回调，发起RPC调用，获取一个`std::future<Status>`句柄
+  auto status_future = proxy.ExampleFunc(ctx, req, rsp);
+
+  // ...
+
+  // Step2-5：在后续某个时间，阻塞的调用`std::future<Status>`句柄的`get()`方法，获取status值，并解析status和Rsp。需要保证在整个调用周期里ctx、Req、Rsp都保持生存
+  auto status = status_future.get();
+  if (status.OK()) {
+    auto msg = rsp.msg();
+    // ...
+  } else {
+    // ...
+  }
+}
+```
+
 
 #### 无栈协程型接口
 
@@ -1436,7 +1501,7 @@ void HelloWorldModule::Foo() {
 - ros2_rpc:[normal_rpc_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_client_module/normal_rpc_client_module.cc)
 
 
-&emsp;&emsp;AimRT为RPC Client端提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步型接口的封装，在性能上基本与异步型接口一致，但大大提升了开发友好度。
+&emsp;&emsp;AimRT为RPC Client端提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步回调型接口的封装，在性能上基本与异步回调型接口一致，但大大提升了开发友好度。
 
 &emsp;&emsp;使用协程型接口发起RPC调用一般分为以下几个步骤：
 - Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有协程接口的句柄`XXXCoProxy`；
@@ -1492,7 +1557,7 @@ co::Task<void> HelloWorldModule::Foo() {
 
 &emsp;&emsp;在AimRT RPC桩代码工具生成的代码里，如`rpc.aimrt_rpc.pb.h`或者`example.aimrt_rpc.srv.h`里，提供了三种类型的Service基类，开发者继承这些Service基类，实现其中的虚接口来提供实际的RPC服务：
 - **同步型接口**：名称一般为`XXXSyncService`；
-- **异步型接口**：名称一般为`XXXAsyncService`；
+- **异步回调型接口**：名称一般为`XXXAsyncService`；
 - **无栈协程型接口**：名称一般为`XXXCoService`；
 
 &emsp;&emsp;在单个service内，这三种类型的不能混合使用，只能选择一种，开发者可以根据自身需求选用。
@@ -1546,15 +1611,15 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 }
 ```
 
-#### 异步型接口
+#### 异步回调型接口
 
 &emsp;&emsp;参考示例：
 - protobuf_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_server_module/service.cc)
 - ros2_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)
 
-&emsp;&emsp;异步型接口会传递一个回调给开发者，开发者在RPC处理完成后调用这个回调来传递最终处理结果。这种方式可以在RPC中发起其他异步调用，由于不会阻塞，因此性能表现通常最好，但通常会导致开发出的代码难以阅读和维护。
+&emsp;&emsp;异步回调型接口会传递一个回调给开发者，开发者在RPC处理完成后调用这个回调来传递最终处理结果。这种方式可以在RPC中发起其他异步调用，由于不会阻塞，因此性能表现通常最好，但通常会导致开发出的代码难以阅读和维护。
 
-&emsp;&emsp;使用异步型接口实现RPC服务，一般分为以下几个步骤：
+&emsp;&emsp;使用异步回调型接口实现RPC服务，一般分为以下几个步骤：
 - Step0：引用桩代码头文件，例如`xxx.aimrt_rpc.pb.h`或者`xxx.aimrt_rpc.srv.h`，其中有异步接口的Service基类`XXXAsyncService`；
 - Step1：开发者实现一个Impl类，继承`XXXAsyncService`，并实现其中的虚接口；
   - Step1-1：解析Req，并填充Rsp；
@@ -1601,7 +1666,7 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 - protobuf_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_server_module/service.cc)
 - ros2_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_server_module/service.cc)
 
-&emsp;&emsp;与RPC Client端一样，在RPC Service端，AimRT也提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步型接口的封装，在性能上基本与异步型接口一致，但大大提升了开发友好度。
+&emsp;&emsp;与RPC Client端一样，在RPC Service端，AimRT也提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步回调型接口的封装，在性能上基本与异步回调型接口一致，但大大提升了开发友好度。
 
 
 &emsp;&emsp;使用协程型接口实现RPC服务，一般分为以下几个步骤：

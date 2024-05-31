@@ -36,20 +36,20 @@ class DynamicLib {
 #if defined(_WIN32)
     handle_ = LoadLibraryEx(libname_.c_str(), NULL, 0);
 
+    if (nullptr == handle_) return false;
+
     TCHAR buf[MAX_PATH];
     DWORD re = GetModuleFileName(handle_, buf, MAX_PATH);
     if (re != 0) lib_full_path_ = std::string(buf);
 #else
     handle_ = dlopen(libname_.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
 
+    if (nullptr == handle_) return false;
+
     char buf[1024];
     dlinfo(handle_, RTLD_DI_ORIGIN, &buf);
     lib_full_path_ = std::filesystem::canonical(std::filesystem::path(buf) / libname_).string();
 #endif
-
-    if (nullptr == handle_) {
-      return false;
-    }
 
     return true;
   }

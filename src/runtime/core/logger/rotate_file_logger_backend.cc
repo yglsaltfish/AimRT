@@ -70,12 +70,6 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
     std::filesystem::create_directories(log_path);
   }
 
-  options_node = options_;
-
-  run_flag_.store(true);
-}
-
-void RotateFileLoggerBackend::Start() {
   log_executor_ = get_executor_func_(options_.log_executor_name);
   if (!log_executor_) {
     throw aimrt::common::util::AimRTException(
@@ -86,6 +80,10 @@ void RotateFileLoggerBackend::Start() {
     throw aimrt::common::util::AimRTException(
         "Log executor must be thread safe. Log executor name: " + options_.log_executor_name);
   }
+
+  options_node = options_;
+
+  run_flag_.store(true);
 }
 
 void RotateFileLoggerBackend::Log(

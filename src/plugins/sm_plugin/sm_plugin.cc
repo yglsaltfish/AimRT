@@ -60,7 +60,8 @@ void SmPlugin::Shutdown() noexcept {
 }
 
 void SmPlugin::SetPluginLogger() {
-  SetLogger(aimrt::logger::LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(Name()).NativeHandle()));
+  std::string log_module_name = "core/" + std::string(Name());
+  SetLogger(aimrt::logger::LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(log_module_name).NativeHandle()));
 }
 
 void SmPlugin::RegisterSmRpcBackend() {
