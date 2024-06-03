@@ -622,7 +622,7 @@ void TestDrawTable() {
           .name = "case 1",
           .table = {},
           .with_header = true,
-          .want_result = "<empty table>"});
+          .want_result = "\n<empty table>"});
   test_cases.emplace_back(
       TestCase{
           .name = "case 2",
@@ -655,7 +655,7 @@ void TestDrawTable() {
 
   for (size_t ii = 0; ii < test_cases.size(); ++ii) {
     TestCase& cur_test_case = test_cases[ii];
-    auto ret = DrawTable<StringType>(cur_test_case.table, cur_test_case.with_header);
+    auto ret = "\n" + DrawTable<StringType>(cur_test_case.table, cur_test_case.with_header);
     EXPECT_EQ(ret, cur_test_case.want_result)
         << "Test " << cur_test_case.name << " failed, index " << ii;
   }
