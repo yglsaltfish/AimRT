@@ -18,9 +18,9 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) {
 
   try {
     // Read cfg
-    const auto configurator = core_.GetConfigurator();
-    if (configurator) {
-      YAML::Node cfg_node = YAML::LoadFile(std::string(configurator.GetConfigFilePath()));
+    auto file_path = core_.GetConfigurator().GetConfigFilePath();
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
       topic_name_ = cfg_node["topic_name"].as<std::string>();
       channel_frq_ = cfg_node["channel_frq"].as<double>();
     }

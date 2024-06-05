@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <string>
 #include <vector>
 
@@ -80,7 +81,10 @@ class AimRTCore {
   AimRTCore& operator=(const AimRTCore&) = delete;
 
   void Initialize(const Options& options);
+
   void Start();
+  std::future<void> AsyncStart();
+
   void Shutdown();
 
   State GetState() const { return state_; }

@@ -22,17 +22,14 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
 
   try {
     // Read cfg
-    const auto configurator = core_.GetConfigurator();
-    if (configurator) {
-      std::string file_path = std::string(configurator.GetConfigFilePath());
-      if (!file_path.empty()) {
-        YAML::Node cfg_node = YAML::LoadFile(file_path);
-        channel_frq_ = cfg_node["channel_frq"].as<double>();
-        msg_size_ = cfg_node["msg_size"].as<uint32_t>();
-        msg_count_ = cfg_node["msg_count"].as<uint32_t>();
-        topic_number_ = cfg_node["topic_number"].as<uint32_t>();
-        topic_name_prefix_ = cfg_node["topic_name_prefix"].as<std::string>();
-      }
+    auto file_path = core_.GetConfigurator().GetConfigFilePath();
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+      channel_frq_ = cfg_node["channel_frq"].as<double>();
+      msg_size_ = cfg_node["msg_size"].as<uint32_t>();
+      msg_count_ = cfg_node["msg_count"].as<uint32_t>();
+      topic_number_ = cfg_node["topic_number"].as<uint32_t>();
+      topic_name_prefix_ = cfg_node["topic_name_prefix"].as<std::string>();
     }
 
     // Get executor handle

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/module_base.h"
 
 #include "example_ros2/msg/ros_test_msg.hpp"
@@ -25,7 +24,7 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
  private:
   auto GetLogger() { return core_.GetLogger(); }
 
-  co::Task<void> EventHandle(const example_ros2::msg::RosTestMsg& data);
+  void EventHandle(const std::shared_ptr<const example_ros2::msg::RosTestMsg>& data);
 
  private:
   aimrt::CoreRef core_;

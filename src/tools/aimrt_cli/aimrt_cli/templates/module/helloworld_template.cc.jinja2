@@ -11,18 +11,15 @@ bool {{ class_name }}::Initialize(aimrt::CoreRef core) {
 
   try {
     // Read cfg
-    auto configurator = core_.GetConfigurator();
-    if (configurator) {
-      std::string file_path = std::string(configurator.GetConfigFilePath());
-      if (!file_path.empty()) {
-        YAML::Node cfg_node = YAML::LoadFile(file_path);
-        for (const auto& itr : cfg_node) {
+    auto file_path = core_.GetConfigurator().GetConfigFilePath();
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+      for (const auto& itr : cfg_node) {
 {%- raw %}
-          std::string k = itr.first.as<std::string>();
-          std::string v = itr.second.as<std::string>();
+        std::string k = itr.first.as<std::string>();
+        std::string v = itr.second.as<std::string>();
 {%- endraw %}
-          AIMRT_HL_INFO(core_.GetLogger(), "cfg [{} : {}]", k, v);
-        }
+        AIMRT_HL_INFO(core_.GetLogger(), "cfg [{} : {}]", k, v);
       }
     }
 

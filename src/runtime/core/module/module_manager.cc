@@ -254,7 +254,7 @@ void ModuleManager::Shutdown() {
 }
 
 void ModuleManager::RegisterModule(
-    const std::string& pkg, const aimrt_module_base_t* module) {
+    std::string_view pkg, const aimrt_module_base_t* module) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Function can only be called when state is 'PreInit'.");
@@ -265,13 +265,45 @@ void ModuleManager::RegisterModule(
 }
 
 const aimrt_core_base_t* ModuleManager::CreateModule(
-    const std::string& pkg, aimrt_module_info_t module_info) {
+    std::string_view pkg, aimrt_module_info_t module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
-  // TODO
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
 
-  return nullptr;
+  const std::string& module_name = aimrt::util::ToStdString(module_info.name);
+
+  // 手动create的module，enable开关不起作用
+
+  // 检查重复模块
+  auto finditr = module_wrapper_map_.find(module_name);
+  AIMRT_CHECK_ERROR_THROW(finditr == module_wrapper_map_.end(),
+                          "Duplicate module '{}' in core and lib {}.",
+                          module_name, finditr->second->info.pkg_path);
+
+  // 初始化module wrapper
+  auto module_wrapper_ptr = std::make_unique<ModuleWrapper>(
+      ModuleWrapper{
+          .info = util::ModuleDetailInfo{
+              .name = module_name,
+              .pkg_path = std::string(pkg),
+              .major_version = module_info.major_version,
+              .minor_version = module_info.minor_version,
+              .patch_version = module_info.patch_version,
+              .build_version = module_info.build_version,
+              .author = aimrt::util::ToStdString(module_info.author),
+              .description = aimrt::util::ToStdString(module_info.description)},
+          .loader_ptr = nullptr,
+          .module_ptr = nullptr,
+          .core_proxy_ptr = std::make_unique<CoreProxy>(module_info)});
+
+  auto core_base_ptr = module_wrapper_ptr->core_proxy_ptr->NativeHandle();
+
+  InitModule(module_wrapper_ptr.get());
+
+  module_detail_info_vec_.emplace_back(&(module_wrapper_ptr->info));
+  module_wrapper_map_.emplace(module_name, std::move(module_wrapper_ptr));
+
+  return core_base_ptr;
 }
 
 void ModuleManager::RegisterCoreProxyConfigurator(
@@ -333,10 +365,12 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
   module_proxy_configurator_(detail_info, *(module_wrapper_ptr->core_proxy_ptr));
 
   // 初始化模块
-  bool ret = module_ptr->initialize(
-      module_ptr->impl, module_wrapper_ptr->core_proxy_ptr->NativeHandle());
+  if (module_ptr != nullptr) {
+    bool ret = module_ptr->initialize(
+        module_ptr->impl, module_wrapper_ptr->core_proxy_ptr->NativeHandle());
 
-  AIMRT_CHECK_ERROR_THROW(ret, "Init module '{}' failed.", module_name);
+    AIMRT_CHECK_ERROR_THROW(ret, "Init module '{}' failed.", module_name);
+  }
 
   AIMRT_TRACE("Init module '{}' succeeded.", module_name);
 }
@@ -344,10 +378,10 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
 std::vector<std::pair<std::string, std::string>>
 ModuleManager::GenInitializationReport() const {
   std::vector<std::vector<std::string>> module_info_table =
-      {{"name", "pkg", "version", "author", "description"}};
+      {{"name", "pkg", "version"}};
 
   for (auto& item : module_detail_info_vec_) {
-    std::vector<std::string> cur_module_info(5);
+    std::vector<std::string> cur_module_info(3);
     cur_module_info[0] = item->name;
     cur_module_info[1] = item->pkg_path;
     cur_module_info[2] =
@@ -355,8 +389,6 @@ ModuleManager::GenInitializationReport() const {
         std::to_string(item->minor_version) + "." +
         std::to_string(item->patch_version) + "." +
         std::to_string(item->build_version);
-    cur_module_info[3] = item->author;
-    cur_module_info[4] = item->description;
     module_info_table.emplace_back(std::move(cur_module_info));
   }
 
