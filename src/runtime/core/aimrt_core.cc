@@ -100,37 +100,56 @@ void AimRTCore::Initialize(const Options& options) {
   // Dump cfg file
   DumpCfgFile();
 
-  // Gen initialization report
-  auto report = GenInitializationReport();
-  AIMRT_INFO("gen initialization report:\n{}", report);
-
   EnterState(State::PostInit);
 }
 
 void AimRTCore::Start() {
+  AIMRT_INFO("Gen initialization report:\n{}", GenInitializationReport());
+
   EnterState(State::PreStart);
-
   configurator_manager_.Start();
-
   plugin_manager_.Start();
-
   allocator_manager_.Start();
-
   executor_manager_.Start();
-
   logger_manager_.Start();
-
   rpc_manager_.Start();
-
   channel_manager_.Start();
-
   parameter_manager_.Start();
-
   module_manager_.Start();
-
   EnterState(State::PostStart);
 
   main_thread_executor_.Start();
+}
+
+std::future<void> AimRTCore::AsyncStart() {
+  AIMRT_INFO("Gen initialization report:\n{}", GenInitializationReport());
+
+  EnterState(State::PreStart);
+  configurator_manager_.Start();
+  plugin_manager_.Start();
+  allocator_manager_.Start();
+  executor_manager_.Start();
+  logger_manager_.Start();
+  rpc_manager_.Start();
+  channel_manager_.Start();
+  parameter_manager_.Start();
+  module_manager_.Start();
+  EnterState(State::PostStart);
+
+  std::promise<void> thread_exit_promise;
+  auto fu = thread_exit_promise.get_future();
+  std::thread(
+      [thread_exit_promise{std::move(thread_exit_promise)}, this]() mutable {
+        try {
+          main_thread_executor_.Start();
+          thread_exit_promise.set_value_at_thread_exit();
+        } catch (std::exception_ptr p) {
+          thread_exit_promise.set_exception_at_thread_exit(p);
+        }
+      })
+      .detach();
+
+  return fu;
 }
 
 void AimRTCore::Shutdown() {

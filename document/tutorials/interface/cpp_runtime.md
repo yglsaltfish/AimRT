@@ -8,9 +8,9 @@
 
 &emsp;&emsp;如果说[Module接口](./cpp_module.md)主要是让用户开发具体的业务逻辑，产出物是一个个`Module`类，那么本文档所介绍的**运行时接口**则是让用户决定如何部署、集成、运行这些包含业务逻辑的`Module`。
 
-&emsp;&emsp;AimRT为CPP版本的Module提供了两种部署集成方式：**App模式**和**Pkg模式**，前者是开发者在自己的Main函数中硬编码注册各个模块，编译时直接将`Module`类编译进主程序；后者则是使用AimRT提供的**aimrt_main**可执行程序，在运行时根据配置文件加载动态库形式的`Pkg`，导入其中的`Module`。
+&emsp;&emsp;AimRT为CPP版本的Module提供了两种部署集成方式：**App模式**和**Pkg模式**，前者是开发者在自己的Main函数中注册/创建各个模块，编译时直接将模块逻辑编译进主程序；后者则是使用AimRT提供的**aimrt_main**可执行程序，在运行时根据配置文件加载动态库形式的`Pkg`，导入其中的`Module`。
 
-&emsp;&emsp;无论采用哪种方式都不影响业务逻辑，且两种方式可以共存，也可以很简单的进行切换，实际采用哪种方式需要根据具体场景进行判断。
+&emsp;&emsp;无论采用哪种方式都不影响业务逻辑，且两种方式可以共存，也可以比较简单的进行切换，实际采用哪种方式需要根据具体场景进行判断。
 
 
 ## App模式
@@ -59,13 +59,20 @@ class AimRTCore {
 - `void Start()`：启动框架。
   - 如果启动失败，会抛出一个异常。
   - 必须在Initialize方法之后调用，否则行为未定义。
-  - 必须要和Initialize方法在一个线程中调用，否则行为未定义。
   - 如果启动成功，会阻塞当前线程，并将当前线程作为本`AimRTCore`实例的主线程。
+- `std::future<void> AsyncStart()`：异步启动框架。
+  - 如果启动失败，会抛出一个异常。
+  - 必须在Initialize方法之后调用，否则行为未定义。
+  - 如果启动成功，会返回一个`std::future<void>`句柄，在外部可以调用该句柄的`wait`方法阻塞等待结束。
+  - 该方法会在内部新启动一个线程作为本`AimRTCore`实例的主线程。
 - `void Shutdown()`：停止框架。
   - 可以在任意线程、任意阶段调用此方法，也可以调用任意次数。
   - 调用此方法后，`Start`方法将在执行完主线程中的所有任务后，退出阻塞。但需要注意，有时候业务会阻塞住主线程中的任务，导致`Start`方法无法退出阻塞。这种情况下意味着无法优雅结束整个框架，需要强制kill。
 
-&emsp;&emsp;`GetModuleManager`方法返回的`ModuleManager`句柄可以用来注册模块，App模式下需要使用其提供的`RegisterModule`接口：
+
+&emsp;&emsp;开发者可以在自己的Main函数中创建一个`AimRTCore`实例，然后调用其`GetModuleManager`方法获取`ModuleManager`句柄，通过它注册或创建自己的业务模块。开发者需要依次调用`AimRTCore`实例的`Initialize`、`Start`/`AsyncStart`方法，并可以自己捕获`Ctrl-C`信号来调用`Shutdown`方法，以实现`AimRTCore`实例的优雅退出。
+
+&emsp;&emsp;`GetModuleManager`方法返回的`ModuleManager`句柄可以用来注册或创建模块，App模式下需要使用其提供的`RegisterModule`接口或`CreateModule`接口：
 ```cpp
 namespace aimrt::runtime::core::module {
 
@@ -73,13 +80,20 @@ class ModuleManager {
  public:
   // 注册一个模块
   void RegisterModule(const aimrt_module_base_t* module);
+
+  // 创建一个模块
+  const aimrt_core_base_t* CreateModule(std::string_view module_name);
 };
 
 }  // namespace aimrt::runtime::core::module
 ```
 
+&emsp;&emsp;`RegisterModule`和`CreateModule`代表了App模式下编写逻辑的两种方式：**注册模块**与**创建模块**，前者仍然需要编写一个`Module`类，后者则更加自由。
 
-&emsp;&emsp;使用者可以在自己的Main函数中创建一个`AimRTCore`实例，然后调用其`GetModuleManager`方法获取`ModuleManager`句柄，通过它注册自己的业务模块。然后再依次调用它的`Initialize`、`Start`方法，在调用`Start`方法后将阻塞当前线程。使用者可以捕获`Ctrl-C`信号来调用`Shutdown`方法，以实现进程的优雅退出。
+### 注册模块
+
+
+&emsp;&emsp;通过`RegisterModule`可以注册一个标准模块。开发者需要先实现一个包含`Initialize`、`Start`等方法的`Module`，然后在`AimRTCore`实例调用`Initialize`方法之前将该`Module`注册到`AimRTCore`实例中。在此方式下仍然有一个比较清晰的`Module`边界。
 
 
 &emsp;&emsp;以下是一个简单的例子，开发者需要编写的`main.cc`文件如下：
@@ -147,6 +161,60 @@ int32_t main(int32_t argc, char** argv) {
 ```
 
 &emsp;&emsp;编译上面示例的`main.cc`，直接启动编译后的可执行文件即可运行进程，按下`ctrl-c`后即可停止进程。
+
+
+### 创建模块
+
+&emsp;&emsp;在`AimRTCore`实例调用`Initialize`方法之后，通过`CreateModule`可以创建一个模块，并返回一个`CoreRef`句柄，开发者可以直接基于此句柄调用一些框架的方法，比如RPC或者Log等。但这些方法仍然需要满足在[模块接口](./cpp_module.md)文档中所定义的、只能在特定阶段执行等相关规定。在此方式下没有一个比较清晰的`Module`边界，一般仅用于快速做一些小工具。
+
+&emsp;&emsp;以下是一个简单的例子，开发者需要编写的`main.cc`文件如下：
+```cpp
+#include "core/aimrt_core.h"
+
+#include "aimrt_module_cpp_interface/core.h"
+#include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"
+
+#include "event.pb.h"
+
+// 主函数
+int32_t main(int32_t argc, char** argv) {
+  // 创建AimRTCore实例
+  AimRTCore core;
+
+  // 初始化框架，进入Initialize阶段，传入配置文件地址
+  AimRTCore::Options options;
+  options.cfg_file_path = "path/to/cfg/xxx_cfg.yaml";
+  core.Initialize(options);
+
+  // 创建模块
+  aimrt::CoreRef core_handle(core.GetModuleManager().CreateModule("HelloWorldModule"));
+
+  // 注册一个publisher
+  auto publisher = core_handle.GetChannelHandle().GetPublisher("test_topic");
+  aimrt::channel::RegisterPublishType<ExampleEventMsg>(publisher);
+
+  // 启动框架，进入Start阶段
+  auto fu = core.AsyncStart();
+
+  // 发布一个消息
+  ExampleEventMsg msg;
+  msg.set_msg("example msg");
+  aimrt::channel::Publish(publisher, msg);
+
+  // 等待一段时间
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+
+  // 停止框架
+  core.Shutdown();
+
+  // 等待框架停止运行
+  fu.wait();
+
+  return 0;
+}
+```
+
+&emsp;&emsp;编译上面示例的`main.cc`，直接启动编译后的可执行文件即可运行进程，该进程将在发布一个消息后，等待一段时间并退出。
 
 
 ## Pkg模式

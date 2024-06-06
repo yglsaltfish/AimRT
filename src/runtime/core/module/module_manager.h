@@ -61,15 +61,18 @@ class ModuleManager {
   void Start();
   void Shutdown();
 
-  void RegisterModule(const std::string& pkg, const aimrt_module_base_t* module);
+  void RegisterModule(std::string_view pkg, const aimrt_module_base_t* module);
   void RegisterModule(const aimrt_module_base_t* module) { RegisterModule("core", module); }
 
-  const aimrt_core_base_t* CreateModule(const std::string& pkg, aimrt_module_info_t module_info);
-  const aimrt_core_base_t* CreateModule(const std::string& pkg, const std::string& module_name) {
+  const aimrt_core_base_t* CreateModule(std::string_view pkg, aimrt_module_info_t module_info);
+  const aimrt_core_base_t* CreateModule(aimrt_module_info_t module_info) {
+    return CreateModule("core", module_info);
+  }
+  const aimrt_core_base_t* CreateModule(std::string_view pkg, std::string_view module_name) {
     return CreateModule(pkg, aimrt_module_info_t{.name = aimrt::util::ToAimRTStringView(module_name)});
   }
-  const aimrt_core_base_t* CreateModule(const std::string& module_name) {
-    return CreateModule("core", module_name);
+  const aimrt_core_base_t* CreateModule(std::string_view module_name) {
+    return CreateModule(aimrt_module_info_t{.name = aimrt::util::ToAimRTStringView(module_name)});
   }
 
   void RegisterCoreProxyConfigurator(CoreProxyConfigurator&& module_proxy_configurator);

@@ -2,11 +2,6 @@
 
 #include <future>
 
-#include "aimrt_module_cpp_interface/co/async_wrapper.h"
-#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
-#include "aimrt_module_cpp_interface/co/on.h"
-#include "aimrt_module_cpp_interface/co/start_detached.h"
-#include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "python_runtime/export_type_support.h"
 

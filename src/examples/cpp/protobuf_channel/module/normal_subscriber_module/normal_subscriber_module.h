@@ -1,6 +1,5 @@
 #pragma once
 
-#include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/module_base.h"
 
 #include "event.pb.h"
@@ -25,7 +24,7 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
  private:
   auto GetLogger() { return core_.GetLogger(); }
 
-  co::Task<void> EventHandle(const aimrt::protocols::example::ExampleEventMsg& data);
+  void EventHandle(const std::shared_ptr<const aimrt::protocols::example::ExampleEventMsg>& data);
 
  private:
   aimrt::CoreRef core_;
