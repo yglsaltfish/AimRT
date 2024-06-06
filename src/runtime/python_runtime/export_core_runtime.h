@@ -30,6 +30,11 @@ inline void PyCoreRegisterModule(
   core.GetModuleManager().RegisterModule("core-py", module->NativeHandle());
 }
 
+inline aimrt::CoreRef PyCoreCreateModule(
+    aimrt::runtime::core::AimRTCore& core, std::string_view module_name) {
+  return aimrt::CoreRef(core.GetModuleManager().CreateModule("core-py", module_name));
+}
+
 inline void ExportCore(pybind11::object m) {
   using namespace aimrt::runtime::core;
 
@@ -38,7 +43,8 @@ inline void ExportCore(pybind11::object m) {
       .def("Initialize", &AimRTCore::Initialize)
       .def("Start", &PyCoreStart)
       .def("Shutdown", &AimRTCore::Shutdown)
-      .def("RegisterModule", &PyCoreRegisterModule);
+      .def("RegisterModule", &PyCoreRegisterModule)
+      .def("CreateModule", &PyCoreCreateModule);
 }
 
 }  // namespace aimrt::runtime::python_runtime

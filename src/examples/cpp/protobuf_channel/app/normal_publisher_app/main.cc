@@ -1,8 +1,6 @@
 #include <csignal>
 #include <iostream>
 
-#include "gflags/gflags.h"
-
 #include "core/aimrt_core.h"
 
 #include "aimrt_module_cpp_interface/core.h"
@@ -10,13 +8,6 @@
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 
 #include "event.pb.h"
-
-DEFINE_string(cfg_file_path, "", "config file path");
-
-DEFINE_bool(dump_cfg_file, false, "dump config file");
-DEFINE_string(dump_cfg_file_path, "", "dump config file path");
-
-DEFINE_bool(register_signal, true, "register handle for sigint and sigterm");
 
 using namespace aimrt::runtime::core;
 
@@ -32,12 +23,8 @@ void SignalHandler(int sig) {
 };
 
 int32_t main(int32_t argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-
-  if (FLAGS_register_signal) {
-    signal(SIGINT, SignalHandler);
-    signal(SIGTERM, SignalHandler);
-  }
+  signal(SIGINT, SignalHandler);
+  signal(SIGTERM, SignalHandler);
 
   std::cout << "AimRT start." << std::endl;
 
@@ -47,23 +34,22 @@ int32_t main(int32_t argc, char** argv) {
 
     // Initialize
     AimRTCore::Options options;
-    options.cfg_file_path = FLAGS_cfg_file_path;
-    options.dump_cfg_file = FLAGS_dump_cfg_file;
-    options.dump_cfg_file_path = FLAGS_dump_cfg_file_path;
+    if (argc > 1) options.cfg_file_path = argv[1];
+
     core.Initialize(options);
 
     // Create Module
-    aimrt::CoreRef core_handle(
+    aimrt::CoreRef module_handle(
         core.GetModuleManager().CreateModule("NormalPublisherModule"));
 
     // Register publish type
     std::string topic_name = "test_topic";
-    auto publisher = core_handle.GetChannelHandle().GetPublisher(topic_name);
-    AIMRT_HL_CHECK_ERROR_THROW(core_handle.GetLogger(),
+    auto publisher = module_handle.GetChannelHandle().GetPublisher(topic_name);
+    AIMRT_HL_CHECK_ERROR_THROW(module_handle.GetLogger(),
                                publisher, "Get publisher for topic '{}' failed.", topic_name);
 
     bool ret = aimrt::channel::RegisterPublishType<aimrt::protocols::example::ExampleEventMsg>(publisher);
-    AIMRT_HL_CHECK_ERROR_THROW(core_handle.GetLogger(), ret, "Register publish type failed.");
+    AIMRT_HL_CHECK_ERROR_THROW(module_handle.GetLogger(), ret, "Register publish type failed.");
 
     // Start
     auto fu = core.AsyncStart();
@@ -73,7 +59,7 @@ int32_t main(int32_t argc, char** argv) {
     msg.set_msg("example msg");
     msg.set_num(123456);
 
-    AIMRT_HL_INFO(core_handle.GetLogger(), "Publish new pb event, data: {}", aimrt::Pb2CompactJson(msg));
+    AIMRT_HL_INFO(module_handle.GetLogger(), "Publish new pb event, data: {}", aimrt::Pb2CompactJson(msg));
     aimrt::channel::Publish(publisher, msg);
 
     // Wait
