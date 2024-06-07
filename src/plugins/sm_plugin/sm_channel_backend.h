@@ -54,8 +54,7 @@ class SmChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::string_view Name() const override { return "sm"; }
 
   void Initialize(YAML::Node options_node,
-                  const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
-                  runtime::core::channel::ContextManager* context_manager_ptr) override;
+                  const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override;
   void Start() override;
   void Shutdown() override;
 
@@ -76,8 +75,6 @@ class SmChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   Options options_;
   std::atomic<State> state_ = State::PreInit;
-
-  runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   executor::ExecutorRef sub_default_executor_ref_;                            // default executor
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;  // can get executor by name

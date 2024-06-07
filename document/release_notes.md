@@ -25,6 +25,8 @@
 ## v0.7.0 (开发中)
 
 - App模式下支持直接create模块；
+- 去除channel的context manager；
+
 
 
 

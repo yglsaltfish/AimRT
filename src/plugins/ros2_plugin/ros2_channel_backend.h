@@ -42,8 +42,7 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::string_view Name() const override { return "ros2"; }
 
   void Initialize(YAML::Node options_node,
-                  const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
-                  runtime::core::channel::ContextManager* context_manager_ptr) override;
+                  const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override;
   void Start() override;
   void Shutdown() override;
 
@@ -73,7 +72,6 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
-  runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<rclcpp::Node> ros2_node_ptr_;
 

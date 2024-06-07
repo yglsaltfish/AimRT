@@ -34,8 +34,7 @@ class LocalChannelBackend : public ChannelBackendBase {
   std::string_view Name() const override { return "local"; }
 
   void Initialize(YAML::Node options_node,
-                  const ChannelRegistry* channel_registry_ptr,
-                  ContextManager* context_manager_ptr) override;
+                  const ChannelRegistry* channel_registry_ptr) override;
   void Start() override;
   void Shutdown() override;
 
@@ -70,7 +69,6 @@ class LocalChannelBackend : public ChannelBackendBase {
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   const ChannelRegistry* channel_registry_ptr_ = nullptr;
-  ContextManager* context_manager_ptr_ = nullptr;
 
   // 订阅回调索引表: msg_type:topic:lib_path:module_name
   using SubscribeIndexMap = std::unordered_map<

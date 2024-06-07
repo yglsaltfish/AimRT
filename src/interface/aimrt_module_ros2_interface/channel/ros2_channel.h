@@ -22,28 +22,19 @@ inline bool RegisterPublishType(PublisherRef publisher) {
 
 template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
-inline void Publish(PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const MsgType& msg) {
+inline void Publish(PublisherRef publisher, aimrt::channel::Context& ctx, const MsgType& msg) {
   static const std::string msg_type_name =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
 
-  if (ctx_ref) {
-    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
-    publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
-    return;
-  }
-
-  auto ctx_ptr = publisher.GetContextManager().NewContextSharedPtr();
-  ctx_ref = aimrt::channel::ContextRef(ctx_ptr);
-  ctx_ref.SetSerializationType("ros2");
-  publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+  ctx.SetSerializationType("ros2");
+  publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
 }
 
 template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline void Publish(PublisherRef publisher, const MsgType& msg) {
-  static const std::string msg_type_name =
-      std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
-  Publish(publisher, aimrt::channel::ContextRef(), msg);
+  aimrt::channel::Context ctx;
+  Publish(publisher, ctx, msg);
 }
 
 template <class MsgType,

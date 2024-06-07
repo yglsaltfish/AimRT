@@ -12,7 +12,7 @@ extern "C" {
 /**
  * @brief Operate struct for rpc callback
  * @note
- * Signature form: void(*)(uint32_t status)
+ * Signature: void(*)(uint32_t status)
  * Input 1: RPC result status
  */
 typedef struct {
@@ -30,9 +30,9 @@ typedef aimrt_function_rpc_callback_ops_t aimrt_function_client_callback_ops_t;
 /**
  * @brief Operate struct for rpc service
  * @note
- * Signature form:
+ * Signature:
  * void (*)(
- *     const aimrt_rpc_context_base_t* ctx,
+ *     const aimrt_rpc_context_base_t* ctx_ptr,
  *     const void* req,
  *     void* rsp,
  *     aimrt_function_base_t* callback)
@@ -44,7 +44,7 @@ typedef aimrt_function_rpc_callback_ops_t aimrt_function_client_callback_ops_t;
 typedef struct {
   void (*invoker)(
       void* object,
-      const aimrt_rpc_context_base_t* ctx,
+      const aimrt_rpc_context_base_t* ctx_ptr,
       const void* req,
       void* rsp,
       aimrt_function_base_t* callback);
@@ -121,7 +121,7 @@ typedef struct {
    * @brief Function to delete context
    *
    */
-  void (*delete_context)(void* impl, const aimrt_rpc_context_base_t* ctx);
+  void (*delete_context)(void* impl, const aimrt_rpc_context_base_t* ctx_ptr);
 
   /// Implement pointer
   void* impl;

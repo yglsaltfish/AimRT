@@ -72,8 +72,7 @@ namespace aimrt::plugins::sm_plugin {
 
 void SmChannelBackend::Initialize(
     YAML::Node options_node,
-    const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
-    runtime::core::channel::ContextManager* context_manager_ptr) {
+    const runtime::core::channel::ChannelRegistry* channel_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "share memory channel backend can only be initialized once.");
@@ -97,8 +96,6 @@ void SmChannelBackend::Initialize(
       }
     }
   }
-
-  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;  // for dump options
 }
@@ -265,7 +262,7 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
 
   dispatcher_ptr->AddListener(
       dispatcher_attribute,
-      [subscriber_info, context_manager_ptr{context_manager_ptr_}](const void* data, size_t size, Context* context) {
+      [subscriber_info](const void* data, size_t size, Context* context) {
         for (auto module_info : subscriber_info->module_info_list) {
           const runtime::core::channel::SubscribeWrapper& wrapper = module_info->subscribe_wrapper;
 
@@ -295,9 +292,8 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
           std::shared_ptr<void> msg_ptr = type_support_ref.CreateSharedPtr();
 
           // context
-          auto ctx_ptr = context_manager_ptr->NewContextSharedPtr();
-          auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
-          ctx_ref.SetSerializationType(serialization_type);
+          auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
+          ctx_ptr->SetSerializationType(serialization_type);
 
           bool deserialize_ret = type_support_ref.Deserialize(
               serialization_type, buffer_array_view, msg_ptr.get());

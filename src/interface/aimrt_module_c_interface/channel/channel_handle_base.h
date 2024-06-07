@@ -10,30 +10,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Context_manager interface
- *
- */
-typedef struct {
-  /**
-   * @brief Function to new context
-   *
-   */
-  const aimrt_channel_context_base_t* (*new_context)(void* impl);
-
-  /**
-   * @brief Function to delete context
-   *
-   */
-  void (*delete_context)(void* impl, const aimrt_channel_context_base_t* ctx);
-
-  /// Implement pointer
-  void* impl;
-} aimrt_channel_context_manager_base_t;
-
-/**
  * @brief Operate struct for subscriber release callback
  * @note
- * Signature form: void(*)()
+ * Signature: void(*)()
  */
 typedef struct {
   void (*invoker)(void* object);
@@ -44,7 +23,7 @@ typedef struct {
 /**
  * @brief Operate struct for subscriber callback
  * @note
- * Signature form:
+ * Signature:
  * void (*)(
  *     const aimrt_channel_context_base_t* ctx_ptr,
  *     const void* msg,
@@ -90,13 +69,6 @@ typedef struct {
       aimrt_string_view_t msg_type,
       const aimrt_channel_context_base_t* ctx_ptr,
       const void* msg);
-
-  /**
-   * @brief Function to get context manager
-   * @note
-   * Input 1: Implement pointer to publisher handle
-   */
-  const aimrt_channel_context_manager_base_t* (*get_context_manager)(void* impl);
 
   /// Implement pointer
   void* impl;
@@ -145,13 +117,6 @@ typedef struct {
    */
   const aimrt_channel_subscriber_base_t* (*get_subscriber)(
       void* impl, aimrt_string_view_t topic);
-
-  /**
-   * @brief Function to get context manager
-   * @note
-   * Input 1: Implement pointer to publisher handle
-   */
-  const aimrt_channel_context_manager_base_t* (*get_context_manager)(void* impl);
 
   /// Implement pointer
   void* impl;

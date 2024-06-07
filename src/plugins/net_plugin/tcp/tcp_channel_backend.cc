@@ -46,8 +46,7 @@ namespace aimrt::plugins::net_plugin {
 
 void TcpChannelBackend::Initialize(
     YAML::Node options_node,
-    const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
-    runtime::core::channel::ContextManager* context_manager_ptr) {
+    const runtime::core::channel::ChannelRegistry* channel_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Tcp channel backend can only be initialized once.");
@@ -56,7 +55,6 @@ void TcpChannelBackend::Initialize(
     options_ = options_node.as<Options>();
 
   channel_registry_ptr_ = channel_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;
 }
@@ -130,10 +128,9 @@ bool TcpChannelBackend::Subscribe(
         std::string(static_cast<const char*>(buf_data) + 2 + uri_size, serialization_type_size);
 
     // context
-    auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
-    auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
+    auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
 
-    ctx_ref.SetSerializationType(serialization_type);
+    ctx_ptr->SetSerializationType(serialization_type);
 
     // 获取消息buf
     uint32_t offset = 2 + uri_size + serialization_type_size;

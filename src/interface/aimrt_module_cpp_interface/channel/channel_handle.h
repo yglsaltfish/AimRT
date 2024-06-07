@@ -10,46 +10,6 @@
 
 namespace aimrt::channel {
 
-class ContextManagerRef {
- public:
-  ContextManagerRef() = default;
-  explicit ContextManagerRef(const aimrt_channel_context_manager_base_t* base_ptr)
-      : base_ptr_(base_ptr) {}
-  ~ContextManagerRef() = default;
-
-  explicit operator bool() const { return (base_ptr_ != nullptr); }
-
-  const aimrt_channel_context_manager_base_t* NativeHandle() const {
-    return base_ptr_;
-  }
-
-  /**
-   * @brief Create context shared ptr
-   *
-   * @return ContextSharedPtr
-   */
-  ContextSharedPtr NewContextSharedPtr() const {
-    AIMRT_ASSERT(base_ptr_, "Reference is null.");
-    return std::shared_ptr<const aimrt_channel_context_base_t>(
-        base_ptr_->new_context(base_ptr_->impl),
-        [base_ptr_ = base_ptr_](const aimrt_channel_context_base_t* ptr) {
-          base_ptr_->delete_context(base_ptr_->impl, ptr);
-        });
-  }
-
-  /**
-   * @brief Create context reference with context shared ptr in it
-   *
-   * @return ContextRef
-   */
-  ContextRef NewContextRef() const {
-    return ContextRef(NewContextSharedPtr());
-  }
-
- private:
-  const aimrt_channel_context_manager_base_t* base_ptr_ = nullptr;
-};
-
 class PublisherRef {
  public:
   PublisherRef() = default;
@@ -81,15 +41,10 @@ class PublisherRef {
    * @param msg_ptr
    */
   void Publish(std::string_view msg_type,
-               aimrt::channel::ContextRef ctx_ref,
+               const Context& ctx,
                const void* msg_ptr) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
-    base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx_ref.NativeHandle(), msg_ptr);
-  }
-
-  ContextManagerRef GetContextManager() {
-    AIMRT_ASSERT(base_ptr_, "Reference is null.");
-    return ContextManagerRef(base_ptr_->get_context_manager(base_ptr_->impl));
+    base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx.NativeHandle(), msg_ptr);
   }
 
  private:
@@ -148,11 +103,6 @@ class ChannelHandleRef {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return SubscriberRef(
         base_ptr_->get_subscriber(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
-  }
-
-  ContextManagerRef GetContextManager() const {
-    AIMRT_ASSERT(base_ptr_, "Reference is null.");
-    return ContextManagerRef(base_ptr_->get_context_manager(base_ptr_->impl));
   }
 
  private:

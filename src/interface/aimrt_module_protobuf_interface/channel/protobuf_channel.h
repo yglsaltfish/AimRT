@@ -20,25 +20,16 @@ inline bool RegisterPublishType(PublisherRef publisher) {
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>
-inline void Publish(PublisherRef publisher, aimrt::channel::ContextRef ctx_ref, const MsgType& msg) {
+inline void Publish(PublisherRef publisher, aimrt::channel::Context& ctx, const MsgType& msg) {
   static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
-
-  if (ctx_ref) {
-    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
-    publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
-    return;
-  }
-
-  auto ctx_ptr = publisher.GetContextManager().NewContextSharedPtr();
-  ctx_ref = aimrt::channel::ContextRef(ctx_ptr);
-  ctx_ref.SetSerializationType("pb");
-  publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+  ctx.SetSerializationType("pb");
+  publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>
 inline void Publish(PublisherRef publisher, const MsgType& msg) {
-  static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
-  Publish(publisher, aimrt::channel::ContextRef(), msg);
+  aimrt::channel::Context ctx;
+  Publish(publisher, ctx, msg);
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>

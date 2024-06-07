@@ -38,8 +38,7 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::string_view Name() const override { return "tcp"; }
 
   void Initialize(YAML::Node options_node,
-                  const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
-                  runtime::core::channel::ContextManager* context_manager_ptr) override;
+                  const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override;
   void Start() override;
   void Shutdown() override;
 
@@ -60,7 +59,6 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
   std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
-  runtime::core::channel::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
   std::shared_ptr<runtime::common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;
