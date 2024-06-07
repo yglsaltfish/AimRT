@@ -12,20 +12,18 @@ namespace aimrt {
 class BufferArrayZeroCopyOutputStream
     : public ::google::protobuf::io::ZeroCopyOutputStream {
  public:
-  explicit BufferArrayZeroCopyOutputStream(
-      aimrt_buffer_array_t* buffer_array_ptr)
-      : buffer_array_ptr_(buffer_array_ptr) {
-    assert(buffer_array_ptr_ && buffer_array_ptr_->allocator);
-  }
+  BufferArrayZeroCopyOutputStream(
+      aimrt_buffer_array_t* buffer_array_ptr,
+      const aimrt_buffer_array_allocator_t* allocator_ptr)
+      : buffer_array_ptr_(buffer_array_ptr),
+        allocator_ptr_(allocator_ptr) {}
 
   virtual ~BufferArrayZeroCopyOutputStream() = default;
 
   bool Next(void** data, int* size) override {
-    const aimrt_buffer_array_allocator_t* allocator =
-        buffer_array_ptr_->allocator;
     if (cur_buf_used_size_ == cur_block_size) {
-      aimrt_buffer_t new_buffer = allocator->allocate(
-          allocator->impl, buffer_array_ptr_, cur_block_size <<= 1);
+      aimrt_buffer_t new_buffer = allocator_ptr_->allocate(
+          allocator_ptr_->impl, buffer_array_ptr_, cur_block_size <<= 1);
       assert(new_buffer.len == cur_block_size);
       *data = new_buffer.data;
       byte_count_ += (*size = cur_buf_used_size_ = cur_block_size);
@@ -56,6 +54,7 @@ class BufferArrayZeroCopyOutputStream
   static constexpr size_t kInitBlockSize = 1024;
 
   aimrt_buffer_array_t* buffer_array_ptr_;
+  const aimrt_buffer_array_allocator_t* allocator_ptr_;
   size_t cur_block_size = kInitBlockSize / 2;
   size_t cur_buf_used_size_ = kInitBlockSize / 2;
   int64_t byte_count_ = 0;

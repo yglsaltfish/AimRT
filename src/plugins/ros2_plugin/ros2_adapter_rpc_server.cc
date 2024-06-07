@@ -233,7 +233,7 @@ void Ros2AdapterWrapperServer::handle_request(
         // service rsp序列化
         auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper_.rsp_type_support);
         bool serialize_ret = service_rsp_type_support_ref.Serialize(
-            serialization_type, service_rsp_ptr.get(), buffer_array.NativeHandle());
+            serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
         // 序列化失败一般很少见，此处暂时不做处理
         assert(serialize_ret);

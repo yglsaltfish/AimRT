@@ -194,7 +194,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
             // service rsp序列化
             bool serialize_ret = service_rsp_type_support_ref.Serialize(
-                serialization_type, service_rsp_ptr.get(), buffer_array.NativeHandle());
+                serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
             // 序列化失败一般很少见，此处暂时不做处理
             assert(serialize_ret);
@@ -203,7 +203,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
             size_t rsp_size = buffer_array.BufferSize();
             auto rsp_beast_buf = rsp.body().prepare(rsp_size);
 
-            auto data = buffer_array.NativeHandle()->data;
+            auto data = buffer_array.BufferArrayNativeHandle()->data;
             auto buffer_array_pos = 0;
             size_t buffer_pos = 0;
 
@@ -390,7 +390,7 @@ bool HttpRpcBackend::TryInvoke(
 
           // client req序列化
           bool serialize_ret = client_req_type_support_ref.Serialize(
-              serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
+              serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
           // 序列化失败一般很少见，此处暂时不做处理
           assert(serialize_ret);
@@ -399,7 +399,7 @@ bool HttpRpcBackend::TryInvoke(
           size_t req_size = buffer_array.BufferSize();
           auto req_beast_buf = req.body().prepare(req_size);
 
-          auto data = buffer_array.NativeHandle()->data;
+          auto data = buffer_array.BufferArrayNativeHandle()->data;
           auto buffer_array_pos = 0;
           size_t buffer_pos = 0;
 

@@ -38,12 +38,12 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
       .move = [](void* impl, void* from, void* to) {
         *static_cast<MsgType*>(to) = std::move(*static_cast<MsgType*>(from));  //
       },
-      .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, aimrt_buffer_array_t* buffer_array) -> bool {
+      .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, const aimrt_buffer_array_allocator_t* allocator, aimrt_buffer_array_t* buffer_array) -> bool {
         try {
           const MsgType& msg_ref = *static_cast<const MsgType*>(msg);
 
           if (aimrt::util::ToStdStringView(serialization_type) == "pb") {
-            BufferArrayZeroCopyOutputStream os(buffer_array);
+            BufferArrayZeroCopyOutputStream os(buffer_array, allocator);
             if (!msg_ref.SerializeToZeroCopyStream(&os)) return false;
             os.CommitLastBuf();
             return true;
@@ -58,7 +58,6 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
             auto status = ::google::protobuf::util::MessageToJsonString(msg_ref, &str, op);
             if (!status.ok()) return false;
 
-            const aimrt_buffer_array_allocator_t* allocator = buffer_array->allocator;
             auto buffer = allocator->allocate(allocator->impl, buffer_array, str.size());
             if (buffer.data == nullptr || buffer.len < str.size()) return false;
             memcpy(buffer.data, str.c_str(), str.size());
