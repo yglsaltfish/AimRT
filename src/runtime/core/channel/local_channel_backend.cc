@@ -33,8 +33,7 @@ namespace aimrt::runtime::core::channel {
 
 void LocalChannelBackend::Initialize(
     YAML::Node options_node,
-    const ChannelRegistry* channel_registry_ptr,
-    ContextManager* context_manager_ptr) {
+    const ChannelRegistry* channel_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Local channel backend can only be initialized once.");
@@ -43,21 +42,17 @@ void LocalChannelBackend::Initialize(
     options_ = options_node.as<Options>();
 
   channel_registry_ptr_ = channel_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
-  if (options_.subscriber_use_inline_executor) {
-    AIMRT_TRACE("Local channel subscriber use inline executor");
-  } else {
+  if (!options_.subscriber_use_inline_executor) {
     AIMRT_CHECK_ERROR_THROW(
         get_executor_func_,
         "Get executor function is not set before initialize.");
 
     subscribe_executor_ref_ = get_executor_func_(options_.subscriber_executor);
-    AIMRT_CHECK_ERROR_THROW(subscribe_executor_ref_,
-                            "Invalid local subscriber executor '{}'.",
-                            options_.subscriber_executor);
-    AIMRT_TRACE("Local channel subscriber use executor '{}'",
-                options_.subscriber_executor);
+
+    AIMRT_CHECK_ERROR_THROW(
+        subscribe_executor_ref_,
+        "Invalid local subscriber executor '{}'.", options_.subscriber_executor);
   }
 
   options_node = options_;
@@ -136,14 +131,13 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
     std::shared_ptr<void> msg_ptr = tpl_subscribe_type_support_ref.CreateSharedPtr();
 
     // context
-    auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
-    auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
+    auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
 
     if (subscribe_pkg_path == pkg_path) {
       // 在同一个pkg中，直接复制
       tpl_subscribe_type_support_ref.Copy(publish_wrapper.msg_ptr, msg_ptr.get());
 
-      ctx_ref.SetSerializationType(publish_wrapper.ctx_ref.GetSerializationType());
+      ctx_ptr->SetSerializationType(publish_wrapper.ctx_ref.GetSerializationType());
     } else {
       // 在不同pkg中，需要进行序列化反序列化
       // 在同一个pkg中的不同模块中，对同一个类型结构可以复用，不管它是通过哪种序列化方法/反序列化方法从发布端原始结构转过来的
@@ -161,7 +155,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       // 本pkg中没有同一种序列化方法，应该不可能出现
       assert(subscribe_wrapper_ptr != nullptr && !serialization_type.empty());
 
-      ctx_ref.SetSerializationType(serialization_type);
+      ctx_ptr->SetSerializationType(serialization_type);
 
       // msg序列化
       std::shared_ptr<aimrt::util::BufferArray> buffer_array;

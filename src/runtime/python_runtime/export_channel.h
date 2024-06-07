@@ -21,10 +21,9 @@ inline void PyPublish(
     std::string_view msg_type,
     std::string_view serialization_type,
     const std::string& msg_buf) {
-  auto ctx_ptr = publisher_ref.GetContextManager().NewContextSharedPtr();
-  auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr);
-  ctx_ref.SetSerializationType(serialization_type);
-  publisher_ref.Publish(msg_type, ctx_ref, static_cast<const void*>(&msg_buf));
+  aimrt::channel::Context ctx;
+  ctx.SetSerializationType(serialization_type);
+  publisher_ref.Publish(msg_type, ctx, static_cast<const void*>(&msg_buf));
 }
 
 inline void ExportPublisherRef(pybind11::object m) {

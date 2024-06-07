@@ -12,7 +12,7 @@ extern "C" {
 /**
  * @brief Operate struct for executor task
  * @note
- * Signature form: void(*)()
+ * Signature: void(*)()
  */
 typedef struct {
   void (*invoker)(void* object);

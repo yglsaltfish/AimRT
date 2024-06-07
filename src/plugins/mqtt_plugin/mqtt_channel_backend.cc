@@ -77,8 +77,7 @@ namespace aimrt::plugins::mqtt_plugin {
 
 void MqttChannelBackend::Initialize(
     YAML::Node options_node,
-    const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
-    runtime::core::channel::ContextManager* context_manager_ptr) {
+    const runtime::core::channel::ChannelRegistry* channel_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Mqtt channel backend can only be initialized once.");
@@ -87,7 +86,6 @@ void MqttChannelBackend::Initialize(
     options_ = options_node.as<Options>();
 
   channel_registry_ptr_ = channel_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;
 }
@@ -174,13 +172,12 @@ bool MqttChannelBackend::Subscribe(
 
   auto handle = [this, subscribe_wrapper_vec_ptr](MQTTAsync_message* message) {
     try {
-      auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
-      auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
+      auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
 
       util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 
       std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
-      ctx_ref.SetSerializationType(serialization_type);
+      ctx_ptr->SetSerializationType(serialization_type);
 
       auto remaining_buf = buf_oper.GetRemainingBuffer();
       aimrt_buffer_view_t buffer_view{

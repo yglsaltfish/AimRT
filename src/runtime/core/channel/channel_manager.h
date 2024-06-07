@@ -8,7 +8,6 @@
 #include "aimrt_module_cpp_interface/executor/executor.h"
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_handle_proxy.h"
-#include "core/channel/context_manager.h"
 #include "core/util/module_detail_info.h"
 #include "util/log_util.h"
 
@@ -86,8 +85,6 @@ class ChannelManager {
 
   std::unique_ptr<ChannelRegistry> channel_registry_ptr_;
 
-  std::unique_ptr<ContextManager> context_manager_ptr_;
-
   std::vector<std::unique_ptr<ChannelBackendBase>> channel_backend_vec_;
 
   ChannelBackendManager channel_backend_manager_;
@@ -99,7 +96,6 @@ class ChannelManager {
         std::string_view input_module_name,
         aimrt::common::util::LoggerWrapper& logger,
         ChannelBackendManager& channel_backend_manager,
-        ContextManager& context_manager,
         std::atomic_bool& channel_handle_proxy_start_flag)
         : pkg_path(input_pkg_path),
           module_name(input_module_name),
@@ -108,7 +104,6 @@ class ChannelManager {
               module_name,
               logger,
               channel_backend_manager,
-              context_manager,
               channel_handle_proxy_start_flag,
               publisher_proxy_map,
               subscriber_proxy_map) {}

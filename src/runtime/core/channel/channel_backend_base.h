@@ -7,7 +7,6 @@
 #include "aimrt_module_cpp_interface/channel/channel_context.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "core/channel/channel_registry.h"
-#include "core/channel/context_manager.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -38,8 +37,7 @@ class ChannelBackendBase {
   virtual std::string_view Name() const = 0;
 
   virtual void Initialize(YAML::Node options_node,
-                          const ChannelRegistry* channel_registry_ptr,
-                          ContextManager* context_manager_ptr) = 0;
+                          const ChannelRegistry* channel_registry_ptr) = 0;
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
 

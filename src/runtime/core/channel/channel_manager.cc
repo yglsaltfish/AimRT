@@ -91,9 +91,6 @@ void ChannelManager::Initialize(YAML::Node options_node) {
   channel_registry_ptr_ = std::make_unique<ChannelRegistry>();
   channel_registry_ptr_->SetLogger(logger_ptr_);
 
-  context_manager_ptr_ = std::make_unique<ContextManager>();
-  context_manager_ptr_->SetLogger(logger_ptr_);
-
   channel_backend_manager_.SetLogger(logger_ptr_);
 
   // 根据配置初始化指定的backend
@@ -108,9 +105,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
                             "Invalid channel backend type '{}'",
                             backend_options.type);
 
-    (*finditr)->Initialize(backend_options.options,
-                           channel_registry_ptr_.get(),
-                           context_manager_ptr_.get());
+    (*finditr)->Initialize(backend_options.options, channel_registry_ptr_.get());
 
     channel_backend_manager_.RegisterChannelBackend(finditr->get());
 
@@ -175,8 +170,6 @@ void ChannelManager::Shutdown() {
 
   channel_backend_vec_.clear();
 
-  context_manager_ptr_.reset();
-
   channel_registry_ptr_.reset();
 
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
@@ -216,7 +209,6 @@ ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
           module_info.name,
           *logger_ptr_,
           channel_backend_manager_,
-          *context_manager_ptr_,
           channel_handle_proxy_start_flag_));
 
   return emplace_ret.first->second->channel_handle_proxy;

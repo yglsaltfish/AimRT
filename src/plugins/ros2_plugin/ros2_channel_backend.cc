@@ -62,8 +62,7 @@ namespace aimrt::plugins::ros2_plugin {
 
 void Ros2ChannelBackend::Initialize(
     YAML::Node options_node,
-    const runtime::core::channel::ChannelRegistry* channel_registry_ptr,
-    runtime::core::channel::ContextManager* context_manager_ptr) {
+    const runtime::core::channel::ChannelRegistry* channel_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Ros2 channel backend can only be initialized once.");
@@ -72,7 +71,6 @@ void Ros2ChannelBackend::Initialize(
     options_ = options_node.as<Options>();
 
   channel_registry_ptr_ = channel_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;
 }
@@ -294,11 +292,10 @@ bool Ros2ChannelBackend::Subscribe(
           real_ros2_topic_name,
           10,
           [this, subscribe_wrapper_vec_ptr](ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
-            auto ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
-            auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr->NativeHandle());
+            auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
 
             const std::string& serialization_type = wrapper_msg->serialization_type;
-            ctx_ref.SetSerializationType(serialization_type);
+            ctx_ptr->SetSerializationType(serialization_type);
 
             aimrt_buffer_view_t buffer_view{
                 .data = wrapper_msg->data.data(),

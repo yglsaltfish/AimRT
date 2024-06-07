@@ -10,9 +10,6 @@ extern "C" {
 
 /// Some frame fields. Users should not directly modify these fields
 
-/// eg: backend://uri_defined_by_backend
-#define AIMRT_CHANNEL_CONTEXT_KEY_FROM_ADDR "aimrt::from_addr"
-
 /// eg: json/pb
 #define AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE "aimrt::serialization_type"
 
@@ -46,6 +43,13 @@ typedef struct {
    *
    */
   void (*set_meta_val)(void* impl, aimrt_string_view_t key, aimrt_string_view_t val);
+
+  /**
+   * @brief Function to get all meta keys
+   *
+   */
+  aimrt_string_view_array_t (*get_meta_keys)(void* impl);
+
 } aimrt_channel_context_base_ops_t;
 
 /**

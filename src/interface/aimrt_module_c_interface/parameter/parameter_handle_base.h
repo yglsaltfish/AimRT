@@ -9,7 +9,7 @@ extern "C" {
 
 /**
  * @brief Operate struct for parameter value release callback
- * @note Signature form: void(*)()
+ * @note Signature: void(*)()
  *
  */
 typedef struct {
