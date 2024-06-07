@@ -6,6 +6,10 @@
 #include "util/string_util.h"
 #include "util/url_parser.h"
 
+#define TO_AIMRT_BUFFER_ARRAY_VIEW(__aimrt_buffer_array__) \
+  (static_cast<const aimrt_buffer_array_view_t*>(          \
+      static_cast<const void*>(__aimrt_buffer_array__)))
+
 namespace YAML {
 template <>
 struct convert<aimrt::runtime::core::rpc::LocalRpcBackend::Options> {
@@ -220,7 +224,7 @@ bool LocalRpcBackend::TryInvoke(
 
   // client req序列化
   bool serialize_ret = client_req_type_support_ref.Serialize(
-      serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
+      serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
   if (!serialize_ret) {
     // 序列化失败
@@ -240,7 +244,7 @@ bool LocalRpcBackend::TryInvoke(
   std::shared_ptr<void> service_req_ptr = service_req_type_support_ref.CreateSharedPtr();
 
   bool deserialize_ret = service_req_type_support_ref.Deserialize(
-      serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.NativeHandle()), service_req_ptr.get());
+      serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.BufferArrayNativeHandle()), service_req_ptr.get());
 
   if (!deserialize_ret) {
     // 反序列化失败
@@ -274,7 +278,7 @@ bool LocalRpcBackend::TryInvoke(
 
         // service rsp 序列化
         bool serialize_ret = service_rsp_type_support_ref.Serialize(
-            serialization_type, service_rsp_ptr.get(), buffer_array.NativeHandle());
+            serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
         if (!serialize_ret) {
           // 序列化失败
@@ -294,7 +298,7 @@ bool LocalRpcBackend::TryInvoke(
 
         // client rsp 反序列化
         bool deserialize_ret = client_rsp_type_support_ref.Deserialize(
-            serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.NativeHandle()), client_invoke_wrapper_ptr->rsp_ptr);
+            serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array.BufferArrayNativeHandle()), client_invoke_wrapper_ptr->rsp_ptr);
 
         if (!deserialize_ret) {
           // 反序列化失败

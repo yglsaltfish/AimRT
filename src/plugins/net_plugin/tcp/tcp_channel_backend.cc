@@ -231,7 +231,7 @@ void TcpChannelBackend::Publish(
     // 没有缓存，序列化一次后放入缓存中
     buffer_array = std::make_shared<aimrt::util::BufferArray>();
     bool serialize_ret = publish_type_support_ref.Serialize(
-        serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
+        serialization_type, publish_wrapper.msg_ptr, buffer_array->AllocatorNativeHandle(), buffer_array->BufferArrayNativeHandle());
 
     if (!serialize_ret) {
       AIMRT_ERROR(
@@ -261,8 +261,8 @@ void TcpChannelBackend::Publish(
   memcpy(msg_buf + 2 + pattern.size(),
          serialization_type.c_str(), serialization_type.size());
 
-  auto buffer_array_data = buffer_array->NativeHandle()->data;
-  const size_t buffer_array_len = buffer_array->NativeHandle()->len;
+  auto buffer_array_data = buffer_array->BufferArrayNativeHandle()->data;
+  const size_t buffer_array_len = buffer_array->BufferArrayNativeHandle()->len;
   size_t cur_pos = 0;
   for (size_t ii = 0; ii < buffer_array_len; ++ii) {
     memcpy(msg_buf + head_size + cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);

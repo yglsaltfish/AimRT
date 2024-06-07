@@ -2,6 +2,10 @@
 
 #include <memory>
 
+#define TO_AIMRT_BUFFER_ARRAY_VIEW(__aimrt_buffer_array__) \
+  (static_cast<const aimrt_buffer_array_view_t*>(          \
+      static_cast<const void*>(__aimrt_buffer_array__)))
+
 namespace YAML {
 template <>
 struct convert<aimrt::runtime::core::channel::LocalChannelBackend::Options> {
@@ -165,7 +169,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
         // 没有缓存，序列化一次后放入缓存中
         buffer_array = std::make_shared<aimrt::util::BufferArray>();
         bool serialize_ret = publish_type_support_ref.Serialize(
-            serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
+            serialization_type, publish_wrapper.msg_ptr, buffer_array->AllocatorNativeHandle(), buffer_array->BufferArrayNativeHandle());
 
         if (!serialize_ret) {
           AIMRT_ERROR(
@@ -183,7 +187,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       // subscribe反序列化
       auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
       bool deserialize_ret = subscribe_type_support_ref.Deserialize(
-          serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array->NativeHandle()), msg_ptr.get());
+          serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array->BufferArrayNativeHandle()), msg_ptr.get());
       if (!deserialize_ret) {
         // 反序列化失败
         AIMRT_FATAL(

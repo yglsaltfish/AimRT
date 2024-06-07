@@ -25,7 +25,7 @@ class SimpleBufferArrayAllocator {
     void* data = std::malloc(size);
 
     if (data == nullptr) [[unlikely]]
-      return aimrt_buffer_t{data, 0};
+      return aimrt_buffer_t{nullptr, 0};
 
     // 可以直接放在当前data中
     if (buffer_array->capacity > buffer_array->len) {
@@ -52,14 +52,14 @@ class SimpleBufferArrayAllocator {
 
   static const aimrt_buffer_array_allocator_t* NativeHandle() {
     static constexpr aimrt_buffer_array_allocator_t simple_buffer_array_allocator{
-        .reserve = [](void* impl, aimrt_buffer_array_t* buffer_array, size_t new_cap) {  //
-          Reserve(buffer_array, new_cap);
+        .reserve = [](void* impl, aimrt_buffer_array_t* buffer_array, size_t new_cap) {
+          Reserve(buffer_array, new_cap);  //
         },
         .allocate = [](void* impl, aimrt_buffer_array_t* buffer_array, size_t size) -> aimrt_buffer_t {
           return Allocate(buffer_array, size);
         },
-        .release = [](void* impl, aimrt_buffer_array_t* buffer_array) {  //
-          Release(buffer_array);
+        .release = [](void* impl, aimrt_buffer_array_t* buffer_array) {
+          Release(buffer_array);  //
         },
         .impl = nullptr};
 
