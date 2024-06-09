@@ -41,15 +41,9 @@ typedef struct {
    * Input 7: Log data
    * Input 8: Log data size
    */
-  void (*log)(
-      void* impl,
-      aimrt_log_level_t lvl,
-      uint32_t line,
-      uint32_t column,
-      const char* file_name,
-      const char* function_name,
-      const char* log_data,
-      size_t log_data_size);
+  void (*log)(void* impl, aimrt_log_level_t lvl, uint32_t line, uint32_t column,
+              const char* file_name, const char* function_name,
+              const char* log_data, size_t log_data_size);
 
   /// Implement pointer
   void* impl;

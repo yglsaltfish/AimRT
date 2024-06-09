@@ -9,7 +9,6 @@
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
-#include "core/rpc/context_manager.h"
 #include "core/rpc/rpc_backend_manager.h"
 #include "core/rpc/rpc_handle_proxy.h"
 #include "core/util/module_detail_info.h"
@@ -87,8 +86,6 @@ class RpcManager {
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 
   std::unique_ptr<RpcRegistry> rpc_registry_ptr_;
-
-  std::unique_ptr<ContextManager> context_manager_ptr_;
 
   std::vector<std::unique_ptr<RpcBackendBase>> rpc_backend_vec_;
 

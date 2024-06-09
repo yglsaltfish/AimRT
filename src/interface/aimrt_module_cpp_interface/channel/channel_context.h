@@ -114,6 +114,12 @@ class Context {
 class ContextRef {
  public:
   ContextRef() = default;
+  ContextRef(const Context& ctx)
+      : base_ptr_(ctx.NativeHandle()) {}
+  ContextRef(const Context* ctx_ptr)
+      : base_ptr_(ctx_ptr ? ctx_ptr->NativeHandle() : nullptr) {}
+  ContextRef(const std::shared_ptr<Context>& ctx_ptr)
+      : base_ptr_(ctx_ptr ? ctx_ptr->NativeHandle() : nullptr) {}
   explicit ContextRef(const aimrt_channel_context_base_t* base_ptr)
       : base_ptr_(base_ptr) {}
   ~ContextRef() = default;
@@ -127,13 +133,27 @@ class ContextRef {
   // Timestamp
   std::chrono::system_clock::time_point GetMsgTimestamp() const {
     AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
-    return aimrt::common::util::GetTimePointFromTimestampNs(base_ptr_->ops->get_msg_timestamp_ns(base_ptr_->impl));
+    return aimrt::common::util::GetTimePointFromTimestampNs(
+        base_ptr_->ops->get_msg_timestamp_ns(base_ptr_->impl));
+  }
+
+  void SetMsgTimestamp(std::chrono::system_clock::time_point deadline) {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+    base_ptr_->ops->set_msg_timestamp_ns(
+        base_ptr_->impl, aimrt::common::util::GetTimestampNs(deadline));
   }
 
   // Some frame fields
   std::string_view GetMetaValue(std::string_view key) const {
     AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
-    return aimrt::util::ToStdStringView(base_ptr_->ops->get_meta_val(base_ptr_->impl, aimrt::util::ToAimRTStringView(key)));
+    return aimrt::util::ToStdStringView(
+        base_ptr_->ops->get_meta_val(base_ptr_->impl, aimrt::util::ToAimRTStringView(key)));
+  }
+
+  void SetMetaValue(std::string_view key, std::string_view val) {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+    base_ptr_->ops->set_meta_val(
+        base_ptr_->impl, aimrt::util::ToAimRTStringView(key), aimrt::util::ToAimRTStringView(val));
   }
 
   std::set<std::string_view> GetMetaKeys() const {
@@ -150,6 +170,9 @@ class ContextRef {
 
   std::string_view GetSerializationType() const {
     return GetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE);
+  }
+  void SetSerializationType(std::string_view val) {
+    SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE, val);
   }
 
  private:

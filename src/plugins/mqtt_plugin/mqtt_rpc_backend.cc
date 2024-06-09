@@ -66,8 +66,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
 namespace aimrt::plugins::mqtt_plugin {
 
 void MqttRpcBackend::Initialize(YAML::Node options_node,
-                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
-                                runtime::core::rpc::ContextManager* context_manager_ptr) {
+                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Mqtt Rpc backend can only be initialized once.");
@@ -76,7 +75,6 @@ void MqttRpcBackend::Initialize(YAML::Node options_node,
     options_ = options_node.as<Options>();
 
   rpc_registry_ptr_ = rpc_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
   if (!options_.timeout_executor.empty()) {
     AIMRT_CHECK_ERROR_THROW(
@@ -137,7 +135,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
       mqtt_sub_topic,
       [this, &service_func_wrapper](MQTTAsync_message* message) {
         try {
-          std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
+          auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
 
           // 获取字段
           util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);

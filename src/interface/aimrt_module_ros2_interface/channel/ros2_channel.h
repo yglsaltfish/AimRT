@@ -22,12 +22,12 @@ inline bool RegisterPublishType(PublisherRef publisher) {
 
 template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
-inline void Publish(PublisherRef publisher, aimrt::channel::Context& ctx, const MsgType& msg) {
+inline void Publish(PublisherRef publisher, ContextRef ctx_ref, const MsgType& msg) {
   static const std::string msg_type_name =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
 
-  ctx.SetSerializationType("ros2");
-  publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
+  ctx_ref.SetSerializationType("ros2");
+  publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
 }
 
 template <class MsgType,

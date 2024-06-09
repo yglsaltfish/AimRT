@@ -30,8 +30,7 @@ struct convert<aimrt::runtime::core::rpc::LocalRpcBackend::Options> {
 namespace aimrt::runtime::core::rpc {
 
 void LocalRpcBackend::Initialize(YAML::Node options_node,
-                                 const RpcRegistry* rpc_registry_ptr,
-                                 ContextManager* context_manager_ptr) {
+                                 const RpcRegistry* rpc_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Local rpc backend can only be initialized once.");
@@ -40,7 +39,6 @@ void LocalRpcBackend::Initialize(YAML::Node options_node,
     options_ = options_node.as<Options>();
 
   rpc_registry_ptr_ = rpc_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;
 }

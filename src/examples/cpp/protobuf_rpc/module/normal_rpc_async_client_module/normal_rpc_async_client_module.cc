@@ -86,13 +86,12 @@ void NormalRpcAsyncClientModule::MainLoopFunc() {
     req_ptr->set_msg("hello world foo, count " + std::to_string(count_));
 
     auto ctx_ptr = proxy.NewContextSharedPtr();
-    aimrt::rpc::ContextRef ctx(ctx_ptr.get());
-    ctx.SetTimeout(std::chrono::seconds(3));
+    ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
     AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(*req_ptr));
 
     proxy.GetFooData(
-        ctx, *req_ptr, *rsp_ptr,
+        ctx_ptr, *req_ptr, *rsp_ptr,
         [this, ctx_ptr, req_ptr, rsp_ptr](aimrt::rpc::Status status) {
           if (status.OK()) {
             AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
@@ -110,13 +109,12 @@ void NormalRpcAsyncClientModule::MainLoopFunc() {
     req_ptr->set_msg("hello world bar, count " + std::to_string(count_));
 
     auto ctx_ptr = proxy.NewContextSharedPtr();
-    aimrt::rpc::ContextRef ctx(ctx_ptr.get());
-    ctx.SetTimeout(std::chrono::seconds(3));
+    ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
     AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(*req_ptr));
 
     proxy.GetBarData(
-        ctx, *req_ptr, *rsp_ptr,
+        ctx_ptr, *req_ptr, *rsp_ptr,
         [this, ctx_ptr, req_ptr, rsp_ptr](aimrt::rpc::Status status) {
           if (status.OK()) {
             AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),

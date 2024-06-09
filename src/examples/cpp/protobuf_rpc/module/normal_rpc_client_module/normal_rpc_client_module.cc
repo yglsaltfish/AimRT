@@ -128,10 +128,10 @@ co::Task<void> NormalRpcClientModule::MainLoop() {
         aimrt::protocols::example::GetFooDataRsp rsp;
         req.set_msg("hello world foo, count " + std::to_string(count));
 
-        auto ctx = proxy_->NewContextRef();
-        ctx.SetTimeout(std::chrono::seconds(3));
+        auto ctx_ptr = proxy_->NewContextSharedPtr();
+        ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
-        auto status = co_await proxy_->GetFooData(ctx, req, rsp);
+        auto status = co_await proxy_->GetFooData(ctx_ptr, req, rsp);
         co_await co::Schedule(work_thread_pool_scheduler);
 
         AIMRT_CHECK_WARN(status, "Call GetFooData failed, status: {}", status.ToString());
@@ -143,10 +143,10 @@ co::Task<void> NormalRpcClientModule::MainLoop() {
         aimrt::protocols::example::GetBarDataRsp rsp;
         req.set_msg("hello world bar, count " + std::to_string(count));
 
-        auto ctx = proxy_->NewContextRef();
-        ctx.SetTimeout(std::chrono::seconds(3));
+        auto ctx_ptr = proxy_->NewContextSharedPtr();
+        ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
-        auto status = co_await proxy_->GetBarData(ctx, req, rsp);
+        auto status = co_await proxy_->GetBarData(ctx_ptr, req, rsp);
 
         AIMRT_CHECK_WARN(status, "Call GetBarData failed, status: {}", status.ToString());
       }

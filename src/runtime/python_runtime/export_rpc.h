@@ -43,29 +43,30 @@ inline void ExportRpcStatus(pybind11::object m) {
       .def("ToString", &Status::ToString);
 }
 
-struct PyRpcContext {
-  aimrt::rpc::ContextSharedPtr ctx_ptr;
-};
-
 inline void ExportRpcContextRef(pybind11::object m) {
   using namespace aimrt::rpc;
 
-  pybind11::class_<PyRpcContext>(m, "RpcContext")
-      .def(pybind11::init<>());
+  pybind11::class_<Context>(m, "RpcContext")
+      .def(pybind11::init<>())
+      .def("Timeout", &Context::Timeout)
+      .def("SetTimeout", &Context::SetTimeout)
+      .def("GetMetaValue", &Context::GetMetaValue)
+      .def("SetMetaValue", &Context::SetMetaValue)
+      .def("GetToAddr", &Context::GetToAddr)
+      .def("SetToAddr", &Context::SetToAddr)
+      .def("GetSerializationType", &Context::GetSerializationType)
+      .def("SetSerializationType", &Context::SetSerializationType);
 
   pybind11::class_<ContextRef>(m, "RpcContextRef")
       .def(pybind11::init<>())
-      .def(pybind11::init([](PyRpcContext ctx) {
-        return new ContextRef(ctx.ctx_ptr);
-      }))
+      .def(pybind11::init<const Context&>())
+      .def(pybind11::init<Context*>())
+      .def(pybind11::init<const std::shared_ptr<Context>&>())
       .def("__bool__", &ContextRef::operator bool)
-      .def("Deadline", &ContextRef::Deadline)
-      .def("SetDeadline", &ContextRef::SetDeadline)
       .def("Timeout", &ContextRef::Timeout)
       .def("SetTimeout", &ContextRef::SetTimeout)
       .def("GetMetaValue", &ContextRef::GetMetaValue)
       .def("SetMetaValue", &ContextRef::SetMetaValue)
-      .def("GetFromAddr", &ContextRef::GetFromAddr)
       .def("GetToAddr", &ContextRef::GetToAddr)
       .def("SetToAddr", &ContextRef::SetToAddr)
       .def("GetSerializationType", &ContextRef::GetSerializationType)
@@ -186,10 +187,6 @@ inline std::tuple<aimrt::rpc::Status, pybind11::bytes> PyRpcHandleRefInvoke(
   return {aimrt::rpc::Status(fu.get()), pybind11::bytes(rsp_buf)};
 }
 
-inline PyRpcContext PyRpcHandleRefNewContextSharedPtr(aimrt::rpc::RpcHandleRef& rpc_handle_ref) {
-  return PyRpcContext{rpc_handle_ref.NewContextSharedPtr()};
-}
-
 inline void ExportRpcHandleRef(pybind11::object m) {
   using namespace aimrt::rpc;
 
@@ -198,7 +195,6 @@ inline void ExportRpcHandleRef(pybind11::object m) {
       .def("__bool__", &RpcHandleRef::operator bool)
       .def("RegisterService", &RpcHandleRef::RegisterService)
       .def("RegisterClientFunc", &PyRpcHandleRefRegisterClientFunc)
-      .def("Invoke", &PyRpcHandleRefInvoke)
-      .def("NewContextSharedPtr", &PyRpcHandleRefNewContextSharedPtr);
+      .def("Invoke", &PyRpcHandleRefInvoke);
 }
 }  // namespace aimrt::runtime::python_runtime

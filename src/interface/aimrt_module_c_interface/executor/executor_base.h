@@ -63,8 +63,7 @@ typedef struct {
    * Input 2: Timestamp, nanosecond since 1970-01-01 00:00:00 UTC
    * Input 2: Task, which ops type is 'aimrt_function_executor_task_ops_t'
    */
-  void (*execute_at_ns)(
-      void* impl, uint64_t tp, aimrt_function_base_t* task);
+  void (*execute_at_ns)(void* impl, uint64_t tp, aimrt_function_base_t* task);
 
   /// Implement pointer
   void* impl;

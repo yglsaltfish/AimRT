@@ -1,7 +1,6 @@
 #pragma once
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
-#include "core/rpc/context.h"
 #include "core/rpc/rpc_backend_manager.h"
 
 namespace aimrt::runtime::core::rpc {
@@ -11,12 +10,10 @@ class RpcHandleProxy {
   RpcHandleProxy(
       std::string_view pkg_path,
       std::string_view module_name,
-      RpcBackendManager& rpc_backend_manager,
-      ContextManager& context_manager)
+      RpcBackendManager& rpc_backend_manager)
       : pkg_path_(pkg_path),
         module_name_(module_name),
         rpc_backend_manager_(rpc_backend_manager),
-        context_manager_(context_manager),
         base_(GenBase(this)) {}
 
   ~RpcHandleProxy() = default;
@@ -76,14 +73,6 @@ class RpcHandleProxy {
             .callback = std::move(callback)});
   }
 
-  ContextImpl* NewContextBase() noexcept {
-    return context_manager_.NewContext();
-  }
-
-  void DeleteContextBase(ContextImpl* ctx_ptr) noexcept {
-    context_manager_.DeleteContext(ctx_ptr);
-  }
-
   static aimrt_rpc_handle_base_t GenBase(void* impl) {
     return aimrt_rpc_handle_base_t{
         .register_service_func = [](void* impl,
@@ -123,13 +112,6 @@ class RpcHandleProxy {
               rsp_ptr,
               aimrt::util::Function<aimrt_function_client_callback_ops_t>(callback));
         },
-        .new_context = [](void* impl) -> const aimrt_rpc_context_base_t* {
-          return static_cast<RpcHandleProxy*>(impl)->NewContextBase()->NativeHandle();
-        },
-        .delete_context = [](void* impl, const aimrt_rpc_context_base_t* ctx) {  //
-          static_cast<RpcHandleProxy*>(impl)->DeleteContextBase(
-              static_cast<ContextImpl*>(ctx->impl));
-        },
         .impl = impl};
   }
 
@@ -138,7 +120,6 @@ class RpcHandleProxy {
   const std::string module_name_;
 
   RpcBackendManager& rpc_backend_manager_;
-  ContextManager& context_manager_;
 
   aimrt_rpc_handle_base_t base_;
 };
