@@ -18,8 +18,7 @@ typedef struct {
    * Input 1: Implement pointer to executor manager handle
    * Input 2: Executor name
    */
-  const aimrt_executor_base_t* (*get_executor)(
-      void* impl, aimrt_string_view_t executor_name);
+  const aimrt_executor_base_t* (*get_executor)(void* impl, aimrt_string_view_t executor_name);
 
   /// Implement pointer
   void* impl;

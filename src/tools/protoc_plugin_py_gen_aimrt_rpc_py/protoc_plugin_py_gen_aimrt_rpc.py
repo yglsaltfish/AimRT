@@ -71,12 +71,11 @@ class {{service_name}}(aimrt_py.ServiceBase):
 
     t_pyfile_one_service_proxy_func: str = r"""
     def {{rpc_func_name}}(self, ctx_ref, req):
-        ctx = aimrt_py.RpcContext()
-
-        if(ctx_ref and ctx_ref.GetSerializationType() == ""):
-            ctx_ref.SetSerializationType("pb")
+        if(ctx_ref):
+            if(ctx_ref.GetSerializationType() == ""):
+                ctx_ref.SetSerializationType("pb")
         else:
-            ctx = self.rpc_handle_ref.NewContextSharedPtr()
+            ctx = aimrt_py.RpcContext()
             ctx_ref = aimrt_py.RpcContextRef(ctx)
             ctx_ref.SetSerializationType("pb")
 

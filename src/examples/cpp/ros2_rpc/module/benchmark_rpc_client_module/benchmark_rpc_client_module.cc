@@ -320,10 +320,10 @@ co::Task<void> BenchmarkRpcClientModule::BenchLoop(
     auto task_start_time = std::chrono::steady_clock::now();
 
     // call rpc
-    auto ctx = proxy_->NewContextRef();
-    ctx.SetTimeout(std::chrono::seconds(3));
+    auto ctx_ptr = proxy_->NewContextSharedPtr();
+    ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
-    auto status = co_await proxy_->RosTestRpc(ctx, req, rsp);
+    auto status = co_await proxy_->RosTestRpc(ctx_ptr, req, rsp);
     co_await co::Schedule(client_thread_pool_scheduler);
 
     auto task_end_time = std::chrono::steady_clock::now();
@@ -371,10 +371,10 @@ co::Task<void> BenchmarkRpcClientModule::FixedFreqLoop(
     auto task_start_time = std::chrono::steady_clock::now();
 
     // call rpc
-    auto ctx = proxy_->NewContextRef();
-    ctx.SetTimeout(std::chrono::seconds(3));
+    auto ctx_ptr = proxy_->NewContextSharedPtr();
+    ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
-    auto status = co_await proxy_->RosTestRpc(ctx, req, rsp);
+    auto status = co_await proxy_->RosTestRpc(ctx_ptr, req, rsp);
     co_await co::Schedule(client_thread_pool_scheduler);
 
     auto task_end_time = std::chrono::steady_clock::now();
@@ -417,10 +417,10 @@ co::Task<void> BenchmarkRpcClientModule::WaitForServiceServer() {
         std::chrono::milliseconds(1000));
 
     // call rpc
-    auto ctx = proxy_->NewContextRef();
-    ctx.SetTimeout(std::chrono::seconds(3));
+    auto ctx_ptr = proxy_->NewContextSharedPtr();
+    ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
-    auto status = co_await proxy_->RosTestRpc(ctx, req, rsp);
+    auto status = co_await proxy_->RosTestRpc(ctx_ptr, req, rsp);
 
     if (!status.OK()) {
       AIMRT_WARN("Server is not available!!!");

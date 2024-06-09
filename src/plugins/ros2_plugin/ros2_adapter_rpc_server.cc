@@ -11,12 +11,10 @@ namespace aimrt::plugins::ros2_plugin {
 Ros2AdapterServer::Ros2AdapterServer(
     const std::shared_ptr<rcl_node_t>& node_handle,
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper,
-    const std::string& real_ros2_func_name,
-    runtime::core::rpc::ContextManager* context_manager_ptr)
+    const std::string& real_ros2_func_name)
     : rclcpp::ServiceBase(node_handle),
       service_func_wrapper_(service_func_wrapper),
-      real_ros2_func_name_(real_ros2_func_name),
-      context_manager_ptr_(context_manager_ptr) {
+      real_ros2_func_name_(real_ros2_func_name) {
   // rcl does the static memory allocation here
   service_handle_ = std::shared_ptr<rcl_service_t>(
       new rcl_service_t,
@@ -81,7 +79,7 @@ void Ros2AdapterServer::handle_request(
               service_func_wrapper_.func_name, request_header->sequence_number);
 
   // ctx 创建
-  std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
+  auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
 
   // service rsp 创建
   std::shared_ptr<void> service_rsp_ptr = aimrt::util::TypeSupportRef(service_func_wrapper_.rsp_type_support).CreateSharedPtr();
@@ -107,12 +105,10 @@ void Ros2AdapterServer::handle_request(
 Ros2AdapterWrapperServer::Ros2AdapterWrapperServer(
     const std::shared_ptr<rcl_node_t>& node_handle,
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper,
-    const std::string& real_ros2_func_name,
-    runtime::core::rpc::ContextManager* context_manager_ptr)
+    const std::string& real_ros2_func_name)
     : rclcpp::ServiceBase(node_handle),
       service_func_wrapper_(service_func_wrapper),
-      real_ros2_func_name_(real_ros2_func_name),
-      context_manager_ptr_(context_manager_ptr) {
+      real_ros2_func_name_(real_ros2_func_name) {
   // rcl does the static memory allocation here
   service_handle_ = std::shared_ptr<rcl_service_t>(
       new rcl_service_t,
@@ -177,7 +173,7 @@ void Ros2AdapterWrapperServer::handle_request(
               service_func_wrapper_.func_name, request_header->sequence_number);
 
   // ctx 创建
-  std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
+  auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
 
   // service req 创建、序列化
   auto& wrapper_req = *(static_cast<ros2_plugin_proto::srv::RosRpcWrapper::Request*>(request.get()));

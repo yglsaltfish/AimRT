@@ -15,8 +15,7 @@ class SmRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::string_view Name() const override { return "sm"; }
 
-  void Initialize(YAML::Node options_node, const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
-                  runtime::core::rpc::ContextManager* context_manager_ptr) override;
+  void Initialize(YAML::Node options_node, const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override;
   void Start() override;
   void Shutdown() override;
 

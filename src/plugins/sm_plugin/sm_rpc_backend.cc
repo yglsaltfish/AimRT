@@ -21,8 +21,7 @@ struct convert<aimrt::plugins::sm_plugin::SmRpcBackend::Options> {
 namespace aimrt::plugins::sm_plugin {
 
 void SmRpcBackend::Initialize(YAML::Node options_node,
-                              const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
-                              runtime::core::rpc::ContextManager* context_manager_ptr) {
+                              const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) {
 }
 
 void SmRpcBackend::Start() {

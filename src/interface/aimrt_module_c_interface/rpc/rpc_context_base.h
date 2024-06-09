@@ -11,9 +11,6 @@ extern "C" {
 /// Some frame fields. Users should not directly modify these fields
 
 /// eg: backend://uri_defined_by_backend
-#define AIMRT_RPC_CONTEXT_KEY_FROM_ADDR "aimrt::from_addr"
-
-/// eg: backend://uri_defined_by_backend
 #define AIMRT_RPC_CONTEXT_KEY_TO_ADDR "aimrt::to_addr"
 
 /// eg: json/pb
@@ -25,18 +22,16 @@ extern "C" {
  */
 typedef struct {
   /**
-   * @brief Function to get the deadline timestamp(ns)
-   * @note Nanosecond since 1970-01-01 00:00:00 UTC
+   * @brief Function to get the timeout(ns)
    *
    */
-  uint64_t (*get_deadline_ns)(void* impl);
+  uint64_t (*get_timeout_ns)(void* impl);
 
   /**
-   * @brief Function to set the deadline timestamp(ns)
-   * @note Nanosecond since 1970-01-01 00:00:00 UTC
+   * @brief Function to set the timeout(ns)
    *
    */
-  void (*set_deadline_ns)(void* impl, uint64_t ddl);
+  void (*set_timeout_ns)(void* impl, uint64_t timeout);
 
   /**
    * @brief Function to get kv meta data
@@ -48,8 +43,14 @@ typedef struct {
    * @brief Function to set kv meta data
    *
    */
-  void (*set_meta_val)(
-      void* impl, aimrt_string_view_t key, aimrt_string_view_t val);
+  void (*set_meta_val)(void* impl, aimrt_string_view_t key, aimrt_string_view_t val);
+
+  /**
+   * @brief Function to get all meta keys
+   *
+   */
+  aimrt_string_view_array_t (*get_meta_keys)(void* impl);
+
 } aimrt_rpc_context_base_ops_t;
 
 /**

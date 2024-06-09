@@ -84,13 +84,12 @@ void NormalRpcAsyncClientModule::MainLoopFunc() {
   req_ptr->data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
   auto ctx_ptr = proxy.NewContextSharedPtr();
-  aimrt::rpc::ContextRef ctx(ctx_ptr.get());
-  ctx.SetTimeout(std::chrono::seconds(3));
+  ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
   AIMRT_INFO("start new rpc call. req:\n{}", example_ros2::srv::to_yaml(*req_ptr));
 
   proxy.RosTestRpc(
-      ctx, *req_ptr, *rsp_ptr,
+      ctx_ptr, *req_ptr, *rsp_ptr,
       [this, ctx_ptr, req_ptr, rsp_ptr](aimrt::rpc::Status status) {
         if (status.OK()) {
           AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),

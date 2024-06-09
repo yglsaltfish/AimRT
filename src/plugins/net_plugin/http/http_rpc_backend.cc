@@ -61,8 +61,7 @@ struct convert<aimrt::plugins::net_plugin::HttpRpcBackend::Options> {
 namespace aimrt::plugins::net_plugin {
 
 void HttpRpcBackend::Initialize(YAML::Node options_node,
-                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
-                                runtime::core::rpc::ContextManager* context_manager_ptr) {
+                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Http Rpc backend can only be initialized once.");
@@ -71,7 +70,6 @@ void HttpRpcBackend::Initialize(YAML::Node options_node,
     options_ = options_node.as<Options>();
 
   rpc_registry_ptr_ = rpc_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;
 }
@@ -107,7 +105,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
           std::chrono::nanoseconds timeout)
       -> asio::awaitable<runtime::common::net::AsioHttpServer::HttpHandleStatus> {
     // ctx 创建
-    std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
+    auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
 
     // 序列化类型
     std::string serialization_type;
@@ -135,10 +133,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
     }
 
     // 超时
-    ctx_ptr->SetDeadlineNs(static_cast<uint64_t>(
-        std::chrono::duration_cast<std::chrono::nanoseconds>(
-            (std::chrono::system_clock::now() + timeout).time_since_epoch())
-            .count()));
+    ctx_ptr->SetTimeout(timeout);
 
     // service req反序列化
     const auto& req_beast_buf = req.body().data();

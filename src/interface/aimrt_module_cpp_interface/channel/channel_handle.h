@@ -40,11 +40,9 @@ class PublisherRef {
    * @param msg_type
    * @param msg_ptr
    */
-  void Publish(std::string_view msg_type,
-               const Context& ctx,
-               const void* msg_ptr) {
+  void Publish(std::string_view msg_type, ContextRef ctx_ref, const void* msg_ptr) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
-    base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx.NativeHandle(), msg_ptr);
+    base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx_ref.NativeHandle(), msg_ptr);
   }
 
  private:
