@@ -15,7 +15,8 @@ class Ros2AdapterClient : public rclcpp::ClientBase {
       rclcpp::node_interfaces::NodeBaseInterface* node_base,
       rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
       const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper,
-      const std::string& real_ros2_func_name);
+      const std::string& real_ros2_func_name,
+      const rclcpp::QoS& qos);
   ~Ros2AdapterClient() override = default;
 
   std::shared_ptr<void> create_response() override;

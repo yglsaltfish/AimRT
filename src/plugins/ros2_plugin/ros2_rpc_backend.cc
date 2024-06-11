@@ -30,12 +30,45 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
     return node;
   }
 
+  static bool decodeQos(const Node& node, Options::QosOptions& qos) {
+    if (node) {
+      if (node["history"]) {
+        qos.history = node["history"].as<std::string>();
+      }
+      if (node["depth"]) {
+        qos.depth = node["depth"].as<int>();
+      }
+      if (node["reliability"]) {
+        qos.reliability = node["reliability"].as<std::string>();
+      }
+      if (node["durability"]) {
+        qos.durability = node["durability"].as<std::string>();
+      }
+      if (node["lifespan"]) {
+        qos.lifespan = node["lifespan"].as<int>();
+      }
+      if (node["deadline"]) {
+        qos.deadline = node["deadline"].as<int>();
+      }
+      if (node["liveliness"]) {
+        qos.liveliness = node["liveliness"].as<std::string>();
+      }
+      if (node["liveliness_lease_duration"]) {
+        qos.liveliness_lease_duration = node["liveliness_lease_duration"].as<int>();
+      }
+    }
+    return true;
+  }
+
   static bool decode(const Node& node, Options& rhs) {
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
       for (auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
             .func_name = client_options_node["func_name"].as<std::string>()};
 
+        if (client_options_node["qos"]) {
+          decodeQos(client_options_node["qos"], client_options.qos);
+        }
         rhs.clients_options.emplace_back(std::move(client_options));
       }
     }
@@ -44,6 +77,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
       for (auto& server_options_node : node["servers_options"]) {
         auto server_options = Options::ServerOptions{
             .func_name = server_options_node["func_name"].as<std::string>()};
+        if (server_options_node["qos"]) {
+          decodeQos(server_options_node["qos"], server_options.qos);
+        }
 
         rhs.servers_options.emplace_back(std::move(server_options));
       }
@@ -114,6 +150,54 @@ void Ros2RpcBackend::Shutdown() {
   ros2_node_ptr_.reset();
 }
 
+rclcpp::QoS Ros2RpcBackend::GetQos(const Options::QosOptions& qos_option) {
+  rclcpp::QoS qos(qos_option.depth);
+
+  if (qos_option.history == "keep_last") {
+    qos.keep_last(qos_option.depth);
+  } else if (qos_option.history == "keep_all") {
+    qos.history(rclcpp::HistoryPolicy::KeepAll);
+  } else {
+    qos.history(rclcpp::HistoryPolicy::SystemDefault);
+  }
+  if (qos_option.reliability == "reliable") {
+    qos.reliability(rclcpp::ReliabilityPolicy::Reliable);
+  } else if (qos_option.reliability == "best_effort") {
+    qos.reliability(rclcpp::ReliabilityPolicy::BestEffort);
+  } else {
+    qos.reliability(rclcpp::ReliabilityPolicy::SystemDefault);
+  }
+
+  if (qos_option.durability == "volatile") {
+    qos.durability(rclcpp::DurabilityPolicy::Volatile);
+  } else if (qos_option.durability == "transient_local") {
+    qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
+  } else {
+    qos.durability(rclcpp::DurabilityPolicy::SystemDefault);
+  }
+
+  if (qos_option.liveliness == "automatic") {
+    qos.liveliness(rclcpp::LivelinessPolicy::Automatic);
+  } else if (qos_option.liveliness == "manual_by_topic") {
+    qos.liveliness(rclcpp::LivelinessPolicy::ManualByTopic);
+  } else {
+    qos.liveliness(rclcpp::LivelinessPolicy::SystemDefault);
+  }
+
+  if (qos_option.deadline != -1) {
+    qos.deadline(rclcpp::Duration::from_nanoseconds(qos_option.deadline * 1000000));
+  }
+
+  if (qos_option.lifespan != -1) {
+    qos.lifespan(rclcpp::Duration::from_nanoseconds(qos_option.lifespan * 1000000));
+  }
+
+  if (qos_option.liveliness_lease_duration != -1) {
+    qos.liveliness_lease_duration(rclcpp::Duration::from_nanoseconds(qos_option.liveliness_lease_duration * 1000000));
+  }
+  return qos;
+}
+
 bool Ros2RpcBackend::RegisterServiceFunc(
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept {
   if (state_.load() != State::Init) {
@@ -136,11 +220,20 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 
     auto ros2_func_name = GetRealRosFuncName(service_func_wrapper.func_name);
 
+    // 读取配置中的QOS
+    rclcpp::QoS qos = rclcpp::ServicesQoS();
+    auto find_qos_option = std::find_if(options_.servers_options.begin(), options_.servers_options.end(), [&ros2_func_name](const Options::ServerOptions& service_option) {
+      return std::regex_match(ros2_func_name.begin(), ros2_func_name.end(), std::regex(service_option.func_name, std::regex::ECMAScript));
+    });
+    if (find_qos_option != options_.servers_options.end()) {
+      qos = GetQos(find_qos_option->qos);
+    }
     auto ros2_adapter_server_ptr = std::make_shared<Ros2AdapterServer>(
         ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
         service_func_wrapper,
         ros2_func_name,
-        context_manager_ptr_);
+        context_manager_ptr_,
+        qos);
     ros2_node_ptr_->get_node_services_interface()->add_service(
         std::dynamic_pointer_cast<rclcpp::ServiceBase>(ros2_adapter_server_ptr),
         nullptr);
@@ -207,11 +300,23 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
     auto ros2_func_name = GetRealRosFuncName(client_func_wrapper.func_name);
 
+    // 读取QOS的配置
+    rclcpp::QoS qos(rclcpp::KeepLast(100));
+    qos.reliable();                          // 可靠通信
+    qos.lifespan(std::chrono::seconds(30));  // 生命周期为 30 秒
+    auto find_qos_option = std::find_if(options_.clients_options.begin(), options_.clients_options.end(), [&ros2_func_name](const Options::ClientOptions& client_option) {
+      return std::regex_match(ros2_func_name.begin(), ros2_func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+    });
+    if (find_qos_option != options_.clients_options.end()) {
+      qos = GetQos(find_qos_option->qos);
+    }
+
     auto ros2_adapter_client_ptr = std::make_shared<Ros2AdapterClient>(
         ros2_node_ptr_->get_node_base_interface().get(),
         ros2_node_ptr_->get_node_graph_interface(),
         client_func_wrapper,
-        ros2_func_name);
+        ros2_func_name,
+        qos);
     ros2_node_ptr_->get_node_services_interface()->add_client(
         std::dynamic_pointer_cast<rclcpp::ClientBase>(ros2_adapter_client_ptr),
         nullptr);

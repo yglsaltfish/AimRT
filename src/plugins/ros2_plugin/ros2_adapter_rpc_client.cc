@@ -12,14 +12,11 @@ Ros2AdapterClient::Ros2AdapterClient(
     rclcpp::node_interfaces::NodeBaseInterface* node_base,
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
     const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper,
-    const std::string& real_ros2_func_name)
+    const std::string& real_ros2_func_name,
+    const rclcpp::QoS& qos)
     : rclcpp::ClientBase(node_base, node_graph),
       client_func_wrapper_(client_func_wrapper),
       real_ros2_func_name_(real_ros2_func_name) {
-  rclcpp::QoS qos(rclcpp::KeepLast(1000));
-  qos.reliable();                          // 可靠通信
-  qos.lifespan(std::chrono::seconds(30));  // 生命周期为 30 秒
-
   rcl_client_options_t client_options = rcl_client_get_default_options();
   client_options.qos = qos.get_rmw_qos_profile();
 
