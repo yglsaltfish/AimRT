@@ -20,17 +20,14 @@ class BufferArrayAllocatorRef {
   }
 
   void Reserve(aimrt_buffer_array_t* buffer_array, size_t new_cap) {
-    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->reserve(base_ptr_->impl, buffer_array, new_cap);
   }
 
   aimrt_buffer_t Allocate(aimrt_buffer_array_t* buffer_array, size_t size) {
-    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->allocate(base_ptr_->impl, buffer_array, size);
   }
 
   void Release(aimrt_buffer_array_t* buffer_array) {
-    AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->release(base_ptr_->impl, buffer_array);
   }
 
@@ -41,53 +38,49 @@ class BufferArrayAllocatorRef {
 class BufferArray {
  public:
   explicit BufferArray(
-      const aimrt_buffer_array_allocator_t* allocator = SimpleBufferArrayAllocator::NativeHandle()) {
-    base_ = aimrt_buffer_array_t{
-        .data = nullptr,
-        .len = 0,
-        .capacity = 0,
-        .allocator = allocator};
-  }
-  explicit BufferArray(BufferArrayAllocatorRef allocator) {
-    base_ = aimrt_buffer_array_t{
-        .data = nullptr,
-        .len = 0,
-        .capacity = 0,
-        .allocator = allocator.NativeHandle()};
-  }
+      const aimrt_buffer_array_allocator_t* allocator = SimpleBufferArrayAllocator::NativeHandle())
+      : buffer_array_(aimrt_buffer_array_t{.data = nullptr, .len = 0, .capacity = 0}),
+        allocator_ptr_(allocator) {}
 
-  ~BufferArray() { base_.allocator->release(base_.allocator->impl, &base_); }
+  explicit BufferArray(BufferArrayAllocatorRef allocator)
+      : buffer_array_(aimrt_buffer_array_t{.data = nullptr, .len = 0, .capacity = 0}),
+        allocator_ptr_(allocator.NativeHandle()) {}
+
+  ~BufferArray() { allocator_ptr_->release(allocator_ptr_->impl, &buffer_array_); }
 
   BufferArray(const BufferArray&) = delete;
   BufferArray& operator=(const BufferArray&) = delete;
 
-  const aimrt_buffer_array_t* NativeHandle() const { return &base_; }
-  aimrt_buffer_array_t* NativeHandle() { return &base_; }
+  const aimrt_buffer_array_t* BufferArrayNativeHandle() const { return &buffer_array_; }
+  aimrt_buffer_array_t* BufferArrayNativeHandle() { return &buffer_array_; }
 
-  size_t Size() const { return base_.len; }
+  const aimrt_buffer_array_allocator_t* AllocatorNativeHandle() const { return allocator_ptr_; }
 
-  size_t Capacity() const { return base_.capacity; }
+  size_t Size() const { return buffer_array_.len; }
 
-  aimrt_buffer_t* Data() const { return base_.data; }
+  size_t Capacity() const { return buffer_array_.capacity; }
+
+  aimrt_buffer_t* Data() const { return buffer_array_.data; }
 
   void Reserve(size_t new_cap) {
-    base_.allocator->reserve(base_.allocator->impl, &base_, new_cap);
+    allocator_ptr_->reserve(allocator_ptr_->impl, &buffer_array_, new_cap);
   }
 
   aimrt_buffer_t NewBuffer(size_t size) {
-    return base_.allocator->allocate(base_.allocator->impl, &base_, size);
+    return allocator_ptr_->allocate(allocator_ptr_->impl, &buffer_array_, size);
   }
 
   size_t BufferSize() const {
     size_t result = 0;
-    for (size_t ii = 0; ii < base_.len; ++ii) {
-      result += base_.data[ii].len;
+    for (size_t ii = 0; ii < buffer_array_.len; ++ii) {
+      result += buffer_array_.data[ii].len;
     }
     return result;
   }
 
  private:
-  aimrt_buffer_array_t base_;
+  aimrt_buffer_array_t buffer_array_;
+  const aimrt_buffer_array_allocator_t* allocator_ptr_;
 };
 
 }  // namespace aimrt::util

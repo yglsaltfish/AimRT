@@ -88,8 +88,7 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::string_view Name() const override { return "ros2"; }
 
-  void Initialize(YAML::Node options_node, const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
-                  runtime::core::rpc::ContextManager* context_manager_ptr) override;
+  void Initialize(YAML::Node options_node, const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override;
   void Start() override;
   void Shutdown() override;
 
@@ -129,7 +128,6 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::rpc::RpcRegistry* rpc_registry_ptr_ = nullptr;
-  runtime::core::rpc::ContextManager* context_manager_ptr_ = nullptr;
 
   std::shared_ptr<rclcpp::Node> ros2_node_ptr_;
 

@@ -20,10 +20,10 @@ inline bool RegisterPublishType(PublisherRef publisher) {
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>
-inline void Publish(PublisherRef publisher, aimrt::channel::Context& ctx, const MsgType& msg) {
+inline void Publish(PublisherRef publisher, ContextRef ctx_ref, const MsgType& msg) {
   static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
-  ctx.SetSerializationType("pb");
-  publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
+  ctx_ref.SetSerializationType("pb");
+  publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>

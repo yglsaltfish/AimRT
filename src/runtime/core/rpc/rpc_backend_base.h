@@ -6,7 +6,6 @@
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
 #include "aimrt_module_cpp_interface/util/function.h"
-#include "core/rpc/context_manager.h"
 #include "core/rpc/rpc_registry.h"
 
 #include "yaml-cpp/yaml.h"
@@ -34,8 +33,7 @@ class RpcBackendBase {
   virtual std::string_view Name() const = 0;
 
   virtual void Initialize(YAML::Node options_node,
-                          const RpcRegistry* rpc_registry_ptr,
-                          ContextManager* context_manager_ptr) = 0;
+                          const RpcRegistry* rpc_registry_ptr) = 0;
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
 

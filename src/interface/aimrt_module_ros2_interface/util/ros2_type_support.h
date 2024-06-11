@@ -39,20 +39,21 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
       .move = [](void* impl, void* from, void* to) {
         *static_cast<MsgType*>(to) = std::move(*static_cast<MsgType*>(from));  //
       },
-      .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, aimrt_buffer_array_t* buffer_array) -> bool {
+      .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, const aimrt_buffer_array_allocator_t* allocator, aimrt_buffer_array_t* buffer_array) -> bool {
         try {
           static const rosidl_message_type_support_t* ts_ptr =
               rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>();
 
           if (aimrt::util::ToStdStringView(serialization_type) == "ros2") {
-            Ros2RclSerializedMessageAdapter serialized_msg_adapter(buffer_array);
+            aimrt_buffer_array_with_allocator_t bawa{.buffer_array = buffer_array, .allocator = allocator};
+            Ros2RclSerializedMessageAdapter serialized_msg_adapter(&bawa);
             rcl_ret_t ret = rmw_serialize(msg, ts_ptr, serialized_msg_adapter.GetRclSerializedMessage());
             return (ret == RMW_RET_OK);
           } else if (aimrt::util::ToStdStringView(serialization_type) == "json") {
             std::string msg_data;
             bool ret = common::ros2_util::MessageToJson(msg, ts_ptr, msg_data);
             if (!ret) return false;
-            const aimrt_buffer_array_allocator_t* allocator = buffer_array->allocator;
+
             auto buffer = allocator->allocate(allocator->impl, buffer_array, msg_data.size());
             if (buffer.data == nullptr || buffer.len < msg_data.size()) return false;
             memcpy(buffer.data, msg_data.c_str(), msg_data.size());

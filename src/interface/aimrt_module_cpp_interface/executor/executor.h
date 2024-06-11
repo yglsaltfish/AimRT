@@ -57,9 +57,7 @@ class ExecutorRef {
 
   std::chrono::system_clock::time_point Now() const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
-    return std::chrono::system_clock::time_point(
-        std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
-            std::chrono::nanoseconds(base_ptr_->now(base_ptr_->impl))));
+    return common::util::GetTimePointFromTimestampNs(base_ptr_->now(base_ptr_->impl));
   }
 
   void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) const {
@@ -68,12 +66,7 @@ class ExecutorRef {
     AIMRT_ASSERT(SupportTimerSchedule(), "Current executor does not support timer scheduling.");
 
     base_ptr_->execute_at_ns(
-        base_ptr_->impl,
-        static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                tp.time_since_epoch())
-                .count()),
-        task.NativeHandle());
+        base_ptr_->impl, common::util::GetTimestampNs(tp), task.NativeHandle());
   }
 
   void ExecuteAfter(std::chrono::nanoseconds dt, Task&& task) const {

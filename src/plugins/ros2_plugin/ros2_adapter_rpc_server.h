@@ -11,7 +11,6 @@ class Ros2AdapterServer : public rclcpp::ServiceBase {
   Ros2AdapterServer(const std::shared_ptr<rcl_node_t>& node_handle,
                     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper,
                     const std::string& real_ros2_func_name,
-                    runtime::core::rpc::ContextManager* context_manager_ptr,
                     const rclcpp::QoS& qos);
   ~Ros2AdapterServer() override = default;
 
@@ -27,15 +26,13 @@ class Ros2AdapterServer : public rclcpp::ServiceBase {
   std::atomic_bool run_flag = false;
   const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper_;
   std::string real_ros2_func_name_;
-  runtime::core::rpc::ContextManager* context_manager_ptr_ = nullptr;
 };
 
 class Ros2AdapterWrapperServer : public rclcpp::ServiceBase {
  public:
   Ros2AdapterWrapperServer(const std::shared_ptr<rcl_node_t>& node_handle,
                            const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper,
-                           const std::string& real_ros2_func_name,
-                           runtime::core::rpc::ContextManager* context_manager_ptr);
+                           const std::string& real_ros2_func_name);
   ~Ros2AdapterWrapperServer() override = default;
 
   std::shared_ptr<void> create_request() override;
@@ -53,7 +50,6 @@ class Ros2AdapterWrapperServer : public rclcpp::ServiceBase {
   std::atomic_bool run_flag = false;
   const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper_;
   std::string real_ros2_func_name_;
-  runtime::core::rpc::ContextManager* context_manager_ptr_ = nullptr;
 };
 
 }  // namespace aimrt::plugins::ros2_plugin

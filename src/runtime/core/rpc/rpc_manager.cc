@@ -91,9 +91,6 @@ void RpcManager::Initialize(YAML::Node options_node) {
   rpc_registry_ptr_ = std::make_unique<RpcRegistry>();
   rpc_registry_ptr_->SetLogger(logger_ptr_);
 
-  context_manager_ptr_ = std::make_unique<ContextManager>();
-  context_manager_ptr_->SetLogger(logger_ptr_);
-
   rpc_backend_manager_.SetLogger(logger_ptr_);
 
   // 根据配置初始化指定的backend
@@ -109,8 +106,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
                             backend_options.type);
 
     (*finditr)->Initialize(backend_options.options,
-                           rpc_registry_ptr_.get(),
-                           context_manager_ptr_.get());
+                           rpc_registry_ptr_.get());
 
     rpc_backend_manager_.RegisterRpcBackend(finditr->get());
 
@@ -174,8 +170,6 @@ void RpcManager::Shutdown() {
 
   rpc_backend_vec_.clear();
 
-  context_manager_ptr_.reset();
-
   rpc_registry_ptr_.reset();
 
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
@@ -211,7 +205,7 @@ RpcHandleProxy& RpcManager::GetRpcHandleProxy(
   auto emplace_ret = rpc_handle_proxy_map_.emplace(
       module_info.name, std::make_unique<RpcHandleProxy>(
                             module_info.pkg_path, module_info.name,
-                            rpc_backend_manager_, *context_manager_ptr_));
+                            rpc_backend_manager_));
   return *(emplace_ret.first->second);
 }
 

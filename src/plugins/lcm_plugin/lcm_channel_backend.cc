@@ -477,7 +477,7 @@ void LcmChannelBackend::Publish(const runtime::core::channel::PublishWrapper& pu
     buffer_array = std::make_shared<aimrt::util::BufferArray>();
     auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
     bool serialize_ret = publish_type_support_ref.Serialize(
-        serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
+        serialization_type, publish_wrapper.msg_ptr, buffer_array->AllocatorNativeHandle(), buffer_array->BufferArrayNativeHandle());
 
     if (!serialize_ret) {
       AIMRT_ERROR("msg serialization failed in lcm channel,serialization_type {}", serialization_type);

@@ -31,8 +31,8 @@ typedef struct {
    *   void (*destroyer)(void* object);
    * } test_ops_t;
    *
-   * This is a simple example of an operate struct that represents a simple
-   * closure. It's invoke signature is <int(*)(int)>.
+   * This is a simple example of an operate struct that represents a simple closure.
+   * It's invoke signature is <int(*)(int)>.
    */
   const void* ops;
 } aimrt_function_base_t;

@@ -74,8 +74,6 @@ class {{srv_filename}}CoService : public aimrt::rpc::CoServiceBase {
   }
 };
 
-using {{srv_filename}}Service [[deprecated("Using {{srv_filename}}CoService.")]] = {{srv_filename}}CoService;
-
 bool Register{{srv_filename}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);
 
 class {{srv_filename}}SyncProxy : public aimrt::rpc::ProxyBase {
@@ -167,8 +165,6 @@ class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
     return {{srv_filename}}(aimrt::rpc::ContextRef(), req, rsp);
   }
 };
-
-using {{srv_filename}}Proxy [[deprecated("Using {{srv_filename}}CoProxy.")]] = {{srv_filename}}CoProxy;
 
 }  // namespace srv
 }  // namespace {{pkg_name}}
@@ -287,19 +283,29 @@ aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp) {
+  std::promise<aimrt::rpc::Status> result_promise;
+
   if (ctx_ref) {
-    if (ctx_ref.GetSerializationType().empty())
-      ctx_ref.SetSerializationType("ros2");
-  } else {
-    ctx_ref = rpc_handle_ref_.NewContextRef();
-    ctx_ref.SetSerializationType("ros2");
+    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
+
+    rpc_handle_ref_.Invoke(
+    "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+    ctx_ref,
+    &req,
+    &rsp,
+    [&result_promise](uint32_t code) {
+      result_promise.set_value(aimrt::rpc::Status(code));
+    });
+
+    return result_promise.get_future().get();
   }
 
-  std::promise<aimrt::rpc::Status> result_promise;
+  auto ctx_ptr = NewContextSharedPtr();
+  ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
       "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-      ctx_ref,
+      *ctx_ptr,
       &req,
       &rsp,
       [&result_promise](uint32_t code) {
@@ -329,13 +335,12 @@ void {{srv_filename}}AsyncProxy::{{srv_filename}}(
     return;
   }
 
-  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
-  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
-  ctx_ref.SetSerializationType("ros2");
+  auto ctx_ptr = NewContextSharedPtr();
+  ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
       "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-      ctx_ref,
+      *ctx_ptr,
       &req,
       &rsp,
       [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
@@ -365,13 +370,12 @@ std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
     return status_future;
   }
 
-  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
-  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
-  ctx_ref.SetSerializationType("ros2");
+  auto ctx_ptr = NewContextSharedPtr();
+  ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
       "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-      ctx_ref,
+      *ctx_ptr,
       &req,
       &rsp,
       [ctx_ptr, status_promise{std::move(status_promise)}](uint32_t code) mutable {
@@ -405,10 +409,9 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
     co_return co_await filter_mgr_.InvokeRpc(h, ctx_ref, static_cast<const void*>(&req), static_cast<void*>(&rsp));
   }
 
-  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
-  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr);
-  ctx_ref.SetSerializationType("ros2");
-  co_return co_await filter_mgr_.InvokeRpc(h, ctx_ref, static_cast<const void*>(&req), static_cast<void*>(&rsp));
+  auto ctx_ptr = NewContextSharedPtr();
+  ctx_ptr->SetSerializationType("pb");
+  co_return co_await filter_mgr_.InvokeRpc(h, *ctx_ptr, static_cast<const void*>(&req), static_cast<void*>(&rsp));
 }
 
 }  // namespace srv

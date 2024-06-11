@@ -93,8 +93,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
 namespace aimrt::plugins::ros2_plugin {
 
 void Ros2RpcBackend::Initialize(YAML::Node options_node,
-                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
-                                runtime::core::rpc::ContextManager* context_manager_ptr) {
+                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Ros2 Rpc backend can only be initialized once.");
@@ -103,7 +102,6 @@ void Ros2RpcBackend::Initialize(YAML::Node options_node,
     options_ = options_node.as<Options>();
 
   rpc_registry_ptr_ = rpc_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
   options_node = options_;
 }
@@ -232,7 +230,6 @@ bool Ros2RpcBackend::RegisterServiceFunc(
         ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
         service_func_wrapper,
         ros2_func_name,
-        context_manager_ptr_,
         qos);
     ros2_node_ptr_->get_node_services_interface()->add_service(
         std::dynamic_pointer_cast<rclcpp::ServiceBase>(ros2_adapter_server_ptr),
@@ -264,8 +261,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
   auto ros2_adapter_wrapper_server_ptr = std::make_shared<Ros2AdapterWrapperServer>(
       ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle(),
       service_func_wrapper,
-      ros2_func_name,
-      context_manager_ptr_);
+      ros2_func_name);
   ros2_node_ptr_->get_node_services_interface()->add_service(
       std::dynamic_pointer_cast<rclcpp::ServiceBase>(ros2_adapter_wrapper_server_ptr),
       nullptr);

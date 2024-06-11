@@ -57,9 +57,7 @@ class {{service_name}}CoService : public aimrt::rpc::CoServiceBase {
   {{service_name}}CoService();
   ~{{service_name}}CoService() override = default;
 {{hfile_service_func}}
-};
-
-using {{service_name}} [[deprecated("Using {{service_name}}CoService.")]] = {{service_name}}CoService;"""
+};"""
 
     t_hfile_one_service_register_client_func: str = r"""
 bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);"""
@@ -164,9 +162,7 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
     return Register{{service_name}}ClientFunc(rpc_handle_ref);
   }
 {{hfile_service_proxy_func}}
-};
-
-using {{service_name}}Proxy [[deprecated("Using {{service_name}}CoProxy.")]] = {{service_name}}CoProxy;"""
+};"""
 
     t_hfile: str = r"""/**
  * @file {{file_name}}.aimrt_rpc.pb.h
@@ -307,19 +303,29 @@ aimrt::rpc::Status {{service_name}}SyncProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
     {{rpc_rsp_name}}& rsp) {
+  std::promise<aimrt::rpc::Status> result_promise;
+
   if (ctx_ref) {
-    if (ctx_ref.GetSerializationType().empty())
-      ctx_ref.SetSerializationType("pb");
-  } else {
-    ctx_ref = rpc_handle_ref_.NewContextRef();
-    ctx_ref.SetSerializationType("pb");
+    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
+
+    rpc_handle_ref_.Invoke(
+        "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+        ctx_ref,
+        &req,
+        &rsp,
+        [&result_promise](uint32_t code) {
+          result_promise.set_value(aimrt::rpc::Status(code));
+        });
+
+    return result_promise.get_future().get();
   }
 
-  std::promise<aimrt::rpc::Status> result_promise;
+  auto ctx_ptr = NewContextSharedPtr();
+  ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
       "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-      ctx_ref,
+      *ctx_ptr,
       &req,
       &rsp,
       [&result_promise](uint32_t code) {
@@ -350,13 +356,12 @@ void {{service_name}}AsyncProxy::{{rpc_func_name}}(
     return;
   }
 
-  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
-  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
-  ctx_ref.SetSerializationType("pb");
+  auto ctx_ptr = NewContextSharedPtr();
+  ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
       "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-      ctx_ref,
+      *ctx_ptr,
       &req,
       &rsp,
       [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
@@ -387,13 +392,12 @@ std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
     return status_future;
   }
 
-  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
-  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
-  ctx_ref.SetSerializationType("pb");
+  auto ctx_ptr = NewContextSharedPtr();
+  ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
       "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-      ctx_ref,
+      *ctx_ptr,
       &req,
       &rsp,
       [ctx_ptr, status_promise{std::move(status_promise)}](uint32_t code) mutable {
@@ -428,10 +432,9 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     co_return co_await filter_mgr_.InvokeRpc(h, ctx_ref, static_cast<const void*>(&req), static_cast<void*>(&rsp));
   }
 
-  auto ctx_ptr = rpc_handle_ref_.NewContextSharedPtr();
-  ctx_ref = aimrt::rpc::ContextRef(ctx_ptr.get());
-  ctx_ref.SetSerializationType("pb");
-  co_return co_await filter_mgr_.InvokeRpc(h, ctx_ref, static_cast<const void*>(&req), static_cast<void*>(&rsp));
+  auto ctx_ptr = NewContextSharedPtr();
+  ctx_ptr->SetSerializationType("pb");
+  co_return co_await filter_mgr_.InvokeRpc(h, *ctx_ptr, static_cast<const void*>(&req), static_cast<void*>(&rsp));
 }"""
 
     t_ccfile_one_service_sync_proxy_class: str = r"""

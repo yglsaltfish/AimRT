@@ -50,8 +50,7 @@ inline LoggerRef GetSimpleLoggerRef() {
                 const char* file_name, const char* function_name,
                 const char* log_data, size_t log_data_size) {
         aimrt::common::util::SimpleLogger::Log(
-            static_cast<uint32_t>(lvl), line, column, file_name, function_name,
-            log_data, log_data_size);  //
+            static_cast<uint32_t>(lvl), line, column, file_name, function_name, log_data, log_data_size);  //
       }};
 
   return LoggerRef(&simple_logger);

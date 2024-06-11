@@ -56,10 +56,10 @@ class PyTypeSupport {
   bool Serialize(
       aimrt_string_view_t serialization_type,
       const void* msg,
+      const aimrt_buffer_array_allocator_t* allocator,
       aimrt_buffer_array_t* buffer_array) const {
     auto& msg_buf = *static_cast<const BufType*>(msg);
 
-    const aimrt_buffer_array_allocator_t* allocator = buffer_array->allocator;
     auto buffer = allocator->allocate(allocator->impl, buffer_array, msg_buf.size());
     if (buffer.data == nullptr || buffer.len < msg_buf.size()) return false;
     memcpy(buffer.data, msg_buf.data(), msg_buf.size());
@@ -107,8 +107,8 @@ class PyTypeSupport {
         .move = [](void* impl, void* from, void* to) {
           static_cast<PyTypeSupport*>(impl)->Move(from, to);  //
         },
-        .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, aimrt_buffer_array_t* buffer_array) -> bool {
-          return static_cast<PyTypeSupport*>(impl)->Serialize(serialization_type, msg, buffer_array);
+        .serialize = [](void* impl, aimrt_string_view_t serialization_type, const void* msg, const aimrt_buffer_array_allocator_t* allocator, aimrt_buffer_array_t* buffer_array) -> bool {
+          return static_cast<PyTypeSupport*>(impl)->Serialize(serialization_type, msg, allocator, buffer_array);
         },
         .deserialize = [](void* impl, aimrt_string_view_t serialization_type, aimrt_buffer_array_view_t buffer_array_view, void* msg) -> bool {
           return static_cast<PyTypeSupport*>(impl)->Deserialize(serialization_type, buffer_array_view, msg);

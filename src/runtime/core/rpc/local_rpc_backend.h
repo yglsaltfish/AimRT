@@ -27,8 +27,7 @@ class LocalRpcBackend : public RpcBackendBase {
   std::string_view Name() const override { return "local"; }
 
   void Initialize(YAML::Node options_node,
-                  const RpcRegistry* rpc_registry_ptr,
-                  ContextManager* context_manager_ptr) override;
+                  const RpcRegistry* rpc_registry_ptr) override;
   void Start() override;
   void Shutdown() override;
 
@@ -50,7 +49,6 @@ class LocalRpcBackend : public RpcBackendBase {
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   const RpcRegistry* rpc_registry_ptr_ = nullptr;
-  ContextManager* context_manager_ptr_ = nullptr;
 
   using ServiceFuncIndexMap =
       std::unordered_map<

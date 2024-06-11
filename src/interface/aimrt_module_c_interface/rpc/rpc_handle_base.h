@@ -111,18 +111,6 @@ typedef struct {
       void* rsp_ptr,
       aimrt_function_base_t* callback);
 
-  /**
-   * @brief Function to new context
-   *
-   */
-  const aimrt_rpc_context_base_t* (*new_context)(void* impl);
-
-  /**
-   * @brief Function to delete context
-   *
-   */
-  void (*delete_context)(void* impl, const aimrt_rpc_context_base_t* ctx_ptr);
-
   /// Implement pointer
   void* impl;
 } aimrt_rpc_handle_base_t;

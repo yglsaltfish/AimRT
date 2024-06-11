@@ -66,8 +66,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
 namespace aimrt::plugins::mqtt_plugin {
 
 void MqttRpcBackend::Initialize(YAML::Node options_node,
-                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr,
-                                runtime::core::rpc::ContextManager* context_manager_ptr) {
+                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Mqtt Rpc backend can only be initialized once.");
@@ -76,7 +75,6 @@ void MqttRpcBackend::Initialize(YAML::Node options_node,
     options_ = options_node.as<Options>();
 
   rpc_registry_ptr_ = rpc_registry_ptr;
-  context_manager_ptr_ = context_manager_ptr;
 
   if (!options_.timeout_executor.empty()) {
     AIMRT_CHECK_ERROR_THROW(
@@ -137,7 +135,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
       mqtt_sub_topic,
       [this, &service_func_wrapper](MQTTAsync_message* message) {
         try {
-          std::shared_ptr<runtime::core::rpc::ContextImpl> ctx_ptr = context_manager_ptr_->NewContextSharedPtr();
+          auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
 
           // 获取字段
           util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
@@ -204,7 +202,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
                 // service rsp序列化
                 auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
                 bool serialize_ret = service_rsp_type_support_ref.Serialize(
-                    serialization_type, service_rsp_ptr.get(), buffer_array.NativeHandle());
+                    serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
                 // 序列化失败一般很少见，此处暂时不做处理
                 assert(serialize_ret);
@@ -405,7 +403,7 @@ bool MqttRpcBackend::TryInvoke(
 
   // client req序列化
   bool serialize_ret = client_req_type_support_ref.Serialize(
-      serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.NativeHandle());
+      serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
   // 序列化失败一般很少见，此处暂时不做处理
   assert(serialize_ret);

@@ -11,8 +11,10 @@ extern "C" {
  */
 typedef struct {
   /**
-   * @brief Name of type
-   *
+   * @brief Get type name
+   * @note
+   * Input 1: Implement pointer
+   * Output: Type name
    */
   aimrt_string_view_t (*type_name)(void* impl);
 
@@ -56,13 +58,15 @@ typedef struct {
    * Input 1: Implement pointer
    * Input 2: Serialization type, eg: pb/json
    * Input 3: Pointer to the msg to be serialized
-   * Input 4: Pointer to the buffer array, with allocator
+   * Input 4: Pointer to allocator for buffer array
+   * Input 5: Pointer to the buffer array
    * Output: Serialization result
    */
   bool (*serialize)(
       void* impl,
       aimrt_string_view_t serialization_type,
       const void* msg,
+      const aimrt_buffer_array_allocator_t* allocator,
       aimrt_buffer_array_t* buffer_array);
 
   /**
@@ -82,20 +86,25 @@ typedef struct {
 
   /**
    * @brief Number of serialization types supported
-   *
+   * @note
+   * Input 1: Implement pointer
+   * Output: Number of serialization types supported
    */
   size_t (*serialization_types_supported_num)(void* impl);
 
   /**
    * @brief List of serialization types supported
    * @note
-   * The length of this array is defined by serialization_types_supported_num
+   * Input 1: Implement pointer
+   * Output: Name array. The length of this array is defined by serialization_types_supported_num
    */
   const aimrt_string_view_t* (*serialization_types_supported_list)(void* impl);
 
   /**
    * @brief For custom type support
-   *
+   * @note
+   * Input 1: Implement pointer
+   * Output: Custom type support
    */
   const void* (*custom_type_support_ptr)(void* impl);
 

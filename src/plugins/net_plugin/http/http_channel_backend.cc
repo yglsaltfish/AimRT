@@ -274,7 +274,7 @@ void HttpChannelBackend::Publish(
     // 没有缓存，序列化一次后放入缓存中
     buffer_array = std::make_shared<aimrt::util::BufferArray>();
     bool serialize_ret = publish_type_support_ref.Serialize(
-        serialization_type, publish_wrapper.msg_ptr, buffer_array->NativeHandle());
+        serialization_type, publish_wrapper.msg_ptr, buffer_array->AllocatorNativeHandle(), buffer_array->BufferArrayNativeHandle());
 
     if (!serialize_ret) {
       AIMRT_ERROR(
@@ -293,7 +293,7 @@ void HttpChannelBackend::Publish(
   size_t msg_size = buffer_array->BufferSize();
   auto req_beast_buf = req_ptr->body().prepare(msg_size);
 
-  auto data = buffer_array->NativeHandle()->data;
+  auto data = buffer_array->BufferArrayNativeHandle()->data;
   auto buffer_array_pos = 0;
   size_t buffer_pos = 0;
 

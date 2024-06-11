@@ -146,37 +146,42 @@ class RpcHandleRef {
         callback.NativeHandle());
   }
 
-  /**
-   * @brief Create context shared ptr
-   *
-   * @return ContextSharedPtr
-   */
-  ContextSharedPtr NewContextSharedPtr() {
-    AIMRT_ASSERT(base_ptr_, "Reference is null.");
-    return std::shared_ptr<const aimrt_rpc_context_base_t>(
-        base_ptr_->new_context(base_ptr_->impl),
-        [base_ptr_ = base_ptr_](const aimrt_rpc_context_base_t* ptr) {
-          base_ptr_->delete_context(base_ptr_->impl, ptr);
-        });
-  }
-
-  /**
-   * @brief Create context reference with context shared ptr in it
-   *
-   * @return ContextRef
-   */
-  ContextRef NewContextRef() {
-    return ContextRef(NewContextSharedPtr());
-  }
-
  private:
   const aimrt_rpc_handle_base_t* base_ptr_ = nullptr;
 };
 
-class CoProxyBase {
+class ProxyBase {
+ public:
+  explicit ProxyBase(RpcHandleRef rpc_handle_ref)
+      : rpc_handle_ref_(rpc_handle_ref) {}
+  virtual ~ProxyBase() = default;
+
+  ProxyBase(const ProxyBase&) = delete;
+  ProxyBase& operator=(const ProxyBase&) = delete;
+
+  std::shared_ptr<Context> NewContextSharedPtr() const {
+    return default_ctx_ptr_
+               ? std::make_shared<Context>(*default_ctx_ptr_)
+               : std::make_shared<Context>();
+  }
+
+  void SetDefaultContextSharedPtr(const std::shared_ptr<Context>& ctx_ptr) {
+    default_ctx_ptr_ = ctx_ptr;
+  }
+
+  std::shared_ptr<Context> GetDefaultContextSharedPtr() const {
+    return default_ctx_ptr_;
+  }
+
+ protected:
+  RpcHandleRef rpc_handle_ref_;
+  std::shared_ptr<Context> default_ctx_ptr_;
+};
+
+class CoProxyBase : public ProxyBase {
  public:
   explicit CoProxyBase(RpcHandleRef rpc_handle_ref)
-      : rpc_handle_ref_(rpc_handle_ref) {}
+      : ProxyBase(rpc_handle_ref) {}
   virtual ~CoProxyBase() = default;
 
   CoProxyBase(const CoProxyBase&) = delete;
@@ -190,38 +195,8 @@ class CoProxyBase {
 
   auto& GetFilterManager() { return filter_mgr_; }
 
-  ContextSharedPtr NewContextSharedPtr() {
-    return rpc_handle_ref_.NewContextSharedPtr();
-  }
-
-  ContextRef NewContextRef() {
-    return ContextRef(NewContextSharedPtr());
-  }
-
  protected:
-  RpcHandleRef rpc_handle_ref_;
   FilterManager filter_mgr_;
-};
-
-class ProxyBase {
- public:
-  explicit ProxyBase(RpcHandleRef rpc_handle_ref)
-      : rpc_handle_ref_(rpc_handle_ref) {}
-  virtual ~ProxyBase() = default;
-
-  ProxyBase(const ProxyBase&) = delete;
-  ProxyBase& operator=(const ProxyBase&) = delete;
-
-  ContextSharedPtr NewContextSharedPtr() {
-    return rpc_handle_ref_.NewContextSharedPtr();
-  }
-
-  ContextRef NewContextRef() {
-    return ContextRef(NewContextSharedPtr());
-  }
-
- protected:
-  RpcHandleRef rpc_handle_ref_;
 };
 
 template <class ProxyType>
