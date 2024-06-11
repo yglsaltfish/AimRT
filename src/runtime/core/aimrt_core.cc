@@ -198,7 +198,7 @@ void AimRTCore::EnterState(State state) {
 
 void AimRTCore::SetCoreLogger() {
   const auto* core_logger_ptr = logger_manager_.GetLoggerProxy("core").NativeHandle();
-  const auto* core_allocator_ptr = allocator_manager_.GetAllocatorProxy().NativeHandle();
+  const auto* core_allocator_ptr = allocator_manager_.GetAllocatorProxy("core").NativeHandle();
 
   logger_ptr_->get_log_level_func = [core_logger_ptr]() -> uint32_t {
     return core_logger_ptr->get_log_level(core_logger_ptr->impl);
@@ -269,44 +269,46 @@ void AimRTCore::DumpCfgFile() const {
 }
 
 std::string AimRTCore::GenInitializationReport() const {
-  std::vector<std::pair<std::string, std::string>> report;
+  std::list<std::pair<std::string, std::string>> report;
 
   auto configurator_manager_report = configurator_manager_.GenInitializationReport();
-  report.insert(report.end(), configurator_manager_report.begin(), configurator_manager_report.end());
+  report.splice(report.end(), configurator_manager_report);
 
   auto plugin_manager_report = plugin_manager_.GenInitializationReport();
-  report.insert(report.end(), plugin_manager_report.begin(), plugin_manager_report.end());
+  report.splice(report.end(), plugin_manager_report);
 
   auto main_thread_executor_report = main_thread_executor_.GenInitializationReport();
-  report.insert(report.end(), main_thread_executor_report.begin(), main_thread_executor_report.end());
+  report.splice(report.end(), main_thread_executor_report);
 
   auto allocator_manager_report = allocator_manager_.GenInitializationReport();
-  report.insert(report.end(), allocator_manager_report.begin(), allocator_manager_report.end());
+  report.splice(report.end(), allocator_manager_report);
 
   auto executor_manager_report = executor_manager_.GenInitializationReport();
-  report.insert(report.end(), executor_manager_report.begin(), executor_manager_report.end());
+  report.splice(report.end(), executor_manager_report);
 
   auto logger_manager_report = logger_manager_.GenInitializationReport();
-  report.insert(report.end(), logger_manager_report.begin(), logger_manager_report.end());
+  report.splice(report.end(), logger_manager_report);
 
   auto rpc_manager_report = rpc_manager_.GenInitializationReport();
-  report.insert(report.end(), rpc_manager_report.begin(), rpc_manager_report.end());
+  report.splice(report.end(), rpc_manager_report);
 
   auto channel_manager_report = channel_manager_.GenInitializationReport();
-  report.insert(report.end(), channel_manager_report.begin(), channel_manager_report.end());
+  report.splice(report.end(), channel_manager_report);
 
   auto parameter_manager_report = parameter_manager_.GenInitializationReport();
-  report.insert(report.end(), parameter_manager_report.begin(), parameter_manager_report.end());
+  report.splice(report.end(), parameter_manager_report);
 
   auto module_manager_report = module_manager_.GenInitializationReport();
-  report.insert(report.end(), module_manager_report.begin(), module_manager_report.end());
+  report.splice(report.end(), module_manager_report);
 
   std::stringstream result;
   result << "\n----------------------- AimRT Initialization Report Begin ----------------------\n\n";
 
-  for (size_t ii = 0; ii < report.size(); ++ii) {
-    result << "[" << ii + 1 << "]. " << report[ii].first << "\n"
-           << report[ii].second << "\n\n";
+  size_t count = 0;
+  for (auto& itr : report) {
+    ++count;
+    result << "[" << count << "]. " << itr.first << "\n"
+           << itr.second << "\n\n";
   }
 
   result << "\n----------------------- AimRT Initialization Report End ------------------------\n\n";

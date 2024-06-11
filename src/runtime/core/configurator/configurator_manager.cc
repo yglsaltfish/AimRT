@@ -163,8 +163,7 @@ YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
   return root_options_node_["aimrt"][key] = ori_root_options_node_["aimrt"][key];
 }
 
-std::vector<std::pair<std::string, std::string>>
-ConfiguratorManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> ConfiguratorManager::GenInitializationReport() const {
   return {{"AimRT Core Option", YAML::Dump((*root_options_node_ptr_)["aimrt"])}};
 }
 

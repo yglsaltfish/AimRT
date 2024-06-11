@@ -243,8 +243,7 @@ void ChannelManager::RegisterLocalChannelBackend() {
   RegisterChannelBackend(std::move(local_channel_backend_ptr));
 }
 
-std::vector<std::pair<std::string, std::string>>
-ChannelManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> ChannelManager::GenInitializationReport() const {
   std::vector<std::vector<std::string>> pub_topic_info_table =
       {{"topic", "msg type", "module", "backends"}};
 

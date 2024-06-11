@@ -147,8 +147,7 @@ void LoggerManager::RegisterLoggerBackendGenFunc(
   logger_backend_gen_func_map_.emplace(type, std::move(logger_backend_gen_func));
 }
 
-LoggerProxy& LoggerManager::GetLoggerProxy(
-    const util::ModuleDetailInfo& module_info) {
+const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init || state_.load() == State::Start,
       "Function can only be called when state is 'Init' or 'Start'.");
@@ -173,12 +172,12 @@ LoggerProxy& LoggerManager::GetLoggerProxy(
   return *(emplace_ret.first->second);
 }
 
-LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
+const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init || state_.load() == State::Start,
       "Function can only be called when state is 'Init' or 'Start'.");
 
-  // logger_name为空等效于aimrt节点
+  // logger_name为空等效于core节点
   const std::string& real_logger_name =
       (logger_name.empty()) ? "core" : std::string(logger_name);
 
@@ -209,8 +208,7 @@ void LoggerManager::RegisterRotateFileLoggerBackendGenFunc() {
   });
 }
 
-std::vector<std::pair<std::string, std::string>>
-LoggerManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> LoggerManager::GenInitializationReport() const {
   std::vector<std::string> logger_backend_type_vec;
   for (auto& logger_backend : logger_backend_vec_) {
     logger_backend_type_vec.emplace_back(logger_backend->Type());

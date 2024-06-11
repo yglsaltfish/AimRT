@@ -375,8 +375,7 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
   AIMRT_TRACE("Init module '{}' succeeded.", module_name);
 }
 
-std::vector<std::pair<std::string, std::string>>
-ModuleManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> ModuleManager::GenInitializationReport() const {
   std::vector<std::vector<std::string>> module_info_table =
       {{"name", "pkg", "version"}};
 

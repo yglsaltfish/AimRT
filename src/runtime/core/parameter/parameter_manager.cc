@@ -81,8 +81,7 @@ ParameterHandle* ParameterManager::GetParameterHandle(std::string_view module_na
   return nullptr;
 }
 
-std::vector<std::pair<std::string, std::string>>
-ParameterManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> ParameterManager::GenInitializationReport() const {
   return {};
 }
 

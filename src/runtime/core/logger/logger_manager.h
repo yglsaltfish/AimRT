@@ -57,12 +57,12 @@ class LoggerManager {
       std::string_view type,
       LoggerBackendGenFunc&& logger_backend_gen_func);
 
-  LoggerProxy& GetLoggerProxy(const util::ModuleDetailInfo& module_info);
-  LoggerProxy& GetLoggerProxy(std::string_view logger_name);
+  const LoggerProxy& GetLoggerProxy(const util::ModuleDetailInfo& module_info);
+  const LoggerProxy& GetLoggerProxy(std::string_view logger_name = "core");
 
   State GetState() const { return state_.load(); }
 
-  std::vector<std::pair<std::string, std::string>> GenInitializationReport() const;
+  std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }

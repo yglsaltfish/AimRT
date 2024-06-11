@@ -193,8 +193,7 @@ void RpcManager::RegisterGetExecutorFunc(
   get_executor_func_ = get_executor_func;
 }
 
-RpcHandleProxy& RpcManager::GetRpcHandleProxy(
-    const util::ModuleDetailInfo& module_info) {
+RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
@@ -235,8 +234,7 @@ void RpcManager::RegisterLocalRpcBackend() {
   RegisterRpcBackend(std::move(local_rpc_backend_ptr));
 }
 
-std::vector<std::pair<std::string, std::string>>
-RpcManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationReport() const {
   std::vector<std::vector<std::string>> client_info_table =
       {{"func", "module", "backends"}};
 
