@@ -21,6 +21,14 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     for (const auto& pub_topic_options : rhs.pub_topics_options) {
       Node pub_topic_options_node;
       pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
+      pub_topic_options_node["qos"]["history"] = pub_topic_options.qos.history;
+      pub_topic_options_node["qos"]["depth"] = pub_topic_options.qos.depth;
+      pub_topic_options_node["qos"]["reliability"] = pub_topic_options.qos.reliability;
+      pub_topic_options_node["qos"]["durability"] = pub_topic_options.qos.durability;
+      pub_topic_options_node["qos"]["lifespan"] = pub_topic_options.qos.lifespan;
+      pub_topic_options_node["qos"]["deadline"] = pub_topic_options.qos.deadline;
+      pub_topic_options_node["qos"]["liveliness"] = pub_topic_options.qos.liveliness;
+      pub_topic_options_node["qos"]["liveliness_lease_duration"] = pub_topic_options.qos.liveliness_lease_duration;
       node["pub_topics_options"].push_back(pub_topic_options_node);
     }
 
@@ -28,10 +36,48 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     for (const auto& sub_topic_options : rhs.sub_topics_options) {
       Node sub_topic_options_node;
       sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
+      sub_topic_options_node["qos"]["history"] = sub_topic_options.qos.history;
+      sub_topic_options_node["qos"]["depth"] = sub_topic_options.qos.depth;
+      sub_topic_options_node["qos"]["reliability"] = sub_topic_options.qos.reliability;
+      sub_topic_options_node["qos"]["durability"] = sub_topic_options.qos.durability;
+      sub_topic_options_node["qos"]["lifespan"] = sub_topic_options.qos.lifespan;
+      sub_topic_options_node["qos"]["deadline"] = sub_topic_options.qos.deadline;
+      sub_topic_options_node["qos"]["liveliness"] = sub_topic_options.qos.liveliness;
+      sub_topic_options_node["qos"]["liveliness_lease_duration"] = sub_topic_options.qos.liveliness_lease_duration;
       node["sub_topics_options"].push_back(sub_topic_options_node);
     }
 
     return node;
+  }
+
+  static bool decodeQos(const Node& node, Options::QosOptions& qos) {
+    if (node) {
+      if (node["history"]) {
+        qos.history = node["history"].as<std::string>();
+      }
+      if (node["depth"]) {
+        qos.depth = node["depth"].as<int>();
+      }
+      if (node["reliability"]) {
+        qos.reliability = node["reliability"].as<std::string>();
+      }
+      if (node["durability"]) {
+        qos.durability = node["durability"].as<std::string>();
+      }
+      if (node["lifespan"]) {
+        qos.lifespan = node["lifespan"].as<int>();
+      }
+      if (node["deadline"]) {
+        qos.deadline = node["deadline"].as<int>();
+      }
+      if (node["liveliness"]) {
+        qos.liveliness = node["liveliness"].as<std::string>();
+      }
+      if (node["liveliness_lease_duration"]) {
+        qos.liveliness_lease_duration = node["liveliness_lease_duration"].as<int>();
+      }
+    }
+    return true;
   }
 
   static bool decode(const Node& node, Options& rhs) {
@@ -39,7 +85,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
       for (auto& pub_topic_options_node : node["pub_topics_options"]) {
         auto pub_topic_options = Options::PubTopicOptions{
             .topic_name = pub_topic_options_node["topic_name"].as<std::string>()};
-
+        if (pub_topic_options_node["qos"]) {
+          decodeQos(pub_topic_options_node["qos"], pub_topic_options.qos);
+        }
         rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
       }
     }
@@ -48,7 +96,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
       for (auto& sub_topic_options_node : node["sub_topics_options"]) {
         auto sub_topic_options = Options::SubTopicOptions{
             .topic_name = sub_topic_options_node["topic_name"].as<std::string>()};
-
+        if (sub_topic_options_node["qos"]) {
+          decodeQos(sub_topic_options_node["qos"], sub_topic_options.qos);
+        }
         rhs.sub_topics_options.emplace_back(std::move(sub_topic_options));
       }
     }
@@ -145,7 +195,19 @@ bool Ros2ChannelBackend::RegisterPublishType(
 
     rcl_publisher_t& publisher = emplace_ret.first->second->publisher;
     rcl_publisher_options_t publisher_options = rcl_publisher_get_default_options();
-
+    // 读取配置中的QOS
+    auto find_qos_option = std::find_if(options_.pub_topics_options.begin(), options_.pub_topics_options.end(), [&ros2_topic_name](const Options::PubTopicOptions& pub_option) {
+      try {
+        return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(pub_option.topic_name, std::regex::ECMAScript));
+      } catch (const std::exception& e) {
+        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                   pub_option.topic_name, ros2_topic_name, e.what());
+        return false;
+      }
+    });
+    if (find_qos_option != options_.pub_topics_options.end()) {
+      publisher_options.qos = GetQos(find_qos_option->qos).get_rmw_qos_profile();
+    }
     rcl_ret_t ret = rcl_publisher_init(
         &publisher,
         ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle().get(),
@@ -203,6 +265,55 @@ bool Ros2ChannelBackend::RegisterPublishType(
   return true;
 }
 
+rclcpp::QoS Ros2ChannelBackend::GetQos(const Options::QosOptions& qos_option) {
+  rclcpp::QoS qos(qos_option.depth);
+
+  if (qos_option.history == "keep_last") {
+    qos.keep_last(qos_option.depth);
+  } else if (qos_option.history == "keep_all") {
+    qos.history(rclcpp::HistoryPolicy::KeepAll);
+  } else {
+    qos.history(rclcpp::HistoryPolicy::SystemDefault);
+  }
+
+  if (qos_option.reliability == "reliable") {
+    qos.reliability(rclcpp::ReliabilityPolicy::Reliable);
+  } else if (qos_option.reliability == "best_effort") {
+    qos.reliability(rclcpp::ReliabilityPolicy::BestEffort);
+  } else {
+    qos.reliability(rclcpp::ReliabilityPolicy::SystemDefault);
+  }
+
+  if (qos_option.durability == "volatile") {
+    qos.durability(rclcpp::DurabilityPolicy::Volatile);
+  } else if (qos_option.durability == "transient_local") {
+    qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
+  } else {
+    qos.durability(rclcpp::DurabilityPolicy::SystemDefault);
+  }
+
+  if (qos_option.liveliness == "automatic") {
+    qos.liveliness(rclcpp::LivelinessPolicy::Automatic);
+  } else if (qos_option.liveliness == "manual_by_topic") {
+    qos.liveliness(rclcpp::LivelinessPolicy::ManualByTopic);
+  } else {
+    qos.liveliness(rclcpp::LivelinessPolicy::SystemDefault);
+  }
+
+  if (qos_option.deadline != -1) {
+    qos.deadline(rclcpp::Duration::from_nanoseconds(qos_option.deadline * 1000000));
+  }
+
+  if (qos_option.lifespan != -1) {
+    qos.lifespan(rclcpp::Duration::from_nanoseconds(qos_option.lifespan * 1000000));
+  }
+
+  if (qos_option.liveliness_lease_duration != -1) {
+    qos.liveliness_lease_duration(rclcpp::Duration::from_nanoseconds(qos_option.liveliness_lease_duration * 1000000));
+  }
+  return qos;
+}
+
 bool Ros2ChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   if (state_.load() != State::Init) {
@@ -230,8 +341,20 @@ bool Ros2ChannelBackend::Subscribe(
     std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
         std::string(subscribe_wrapper.topic_name),
         ros2_node_ptr_->get_sub_namespace());
-    rclcpp::QoS qos(10);  // todo，配置化
-
+    rclcpp::QoS qos(10);
+    // 读取配置中的QOS
+    auto find_qos_option = std::find_if(options_.sub_topics_options.begin(), options_.sub_topics_options.end(), [&ros2_topic_name](const Options::SubTopicOptions& sub_option) {
+      try {
+        return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
+      } catch (const std::exception& e) {
+        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                   sub_option.topic_name, ros2_topic_name, e.what());
+        return false;
+      }
+    });
+    if (find_qos_option != options_.sub_topics_options.end()) {
+      qos = GetQos(find_qos_option->qos);
+    }
     auto node_topics_interface =
         rclcpp::node_interfaces::get_node_topics_interface(*ros2_node_ptr_);
 

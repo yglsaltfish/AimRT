@@ -10,7 +10,8 @@ class Ros2AdapterServer : public rclcpp::ServiceBase {
  public:
   Ros2AdapterServer(const std::shared_ptr<rcl_node_t>& node_handle,
                     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper,
-                    const std::string& real_ros2_func_name);
+                    const std::string& real_ros2_func_name,
+                    const rclcpp::QoS& qos);
   ~Ros2AdapterServer() override = default;
 
   std::shared_ptr<void> create_request() override;

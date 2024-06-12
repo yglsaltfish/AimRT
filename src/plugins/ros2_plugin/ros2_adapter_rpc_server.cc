@@ -11,7 +11,8 @@ namespace aimrt::plugins::ros2_plugin {
 Ros2AdapterServer::Ros2AdapterServer(
     const std::shared_ptr<rcl_node_t>& node_handle,
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper,
-    const std::string& real_ros2_func_name)
+    const std::string& real_ros2_func_name,
+    const rclcpp::QoS& qos)
     : rclcpp::ServiceBase(node_handle),
       service_func_wrapper_(service_func_wrapper),
       real_ros2_func_name_(real_ros2_func_name) {
@@ -31,7 +32,7 @@ Ros2AdapterServer::Ros2AdapterServer(
   *service_handle_.get() = rcl_get_zero_initialized_service();
 
   rcl_service_options_t service_options = rcl_service_get_default_options();
-  service_options.qos = rclcpp::ServicesQoS().get_rmw_qos_profile();
+  service_options.qos = qos.get_rmw_qos_profile();
   rcl_ret_t ret = rcl_service_init(
       service_handle_.get(),
       node_handle.get(),
