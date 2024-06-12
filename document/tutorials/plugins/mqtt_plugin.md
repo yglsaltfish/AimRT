@@ -67,14 +67,14 @@ aimrt:
           client_id: example_client # 【必选】本节点的mqtt client id
           max_pkg_size_k: 1024 # 【可选】最大包尺寸，单位：KB
   executor:
+    executors:
       - name: timeout_handle
         type: time_wheel
   rpc: # 【可选】RPC配置根节点
     backends: # 【可选】RPC后端列表
       - type: mqtt # 【必选】RPC后端类型
         options: # 【可选】RPC Client配置
-          clients_options: # 【可选】客户端发起RPC请求时的规则
-            - timeout_executor: timeout_handle # 【可选】Client端RPC超时情况下的执行器
+          timeout_executor: timeout_handle # 【可选】Client端RPC超时情况下的执行器
     clients_options: # 【可选】RPC Client配置
       - func_name: "(.*)" # 【必选】RPC Client名称，支持正则表达式
         enable_backends: [mqtt] # 【必选】RPC Client允许使用的RPC后端列表

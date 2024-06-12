@@ -37,7 +37,8 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::string_view Name() const override { return "mqtt"; }
 
-  void Initialize(YAML::Node options_node, const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override;
+  void Initialize(YAML::Node options_node,
+                  const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override;
   void Start() override;
   void Shutdown() override;
 
@@ -56,9 +57,7 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
  private:
   static std::string_view GetRealFuncName(std::string_view func_name) {
     if (func_name.substr(0, 5) == "ros2:") return func_name.substr(5);
-
     if (func_name.substr(0, 3) == "pb:") return func_name.substr(3);
-
     return func_name;
   }
 
@@ -90,6 +89,8 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   std::vector<std::string> sub_info_vec_;
 
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
+
+  std::atomic_uint32_t req_id_ = 0;
 
   struct MsgRecorder {
     const runtime::core::rpc::ClientFuncWrapper* client_func_wrapper_ptr;

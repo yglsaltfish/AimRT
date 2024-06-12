@@ -186,7 +186,7 @@ void Ros2AdapterWrapperClient::handle_response(
 
   if (!deserialize_ret) {
     // 调用回调
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILDE);
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED);
     return;
   }
 

@@ -4,13 +4,16 @@
 #include <unordered_set>
 
 #include "core/rpc/rpc_backend_base.h"
+#include "core/util/rpc_client_tool.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::rpc {
 
 class LocalRpcBackend : public RpcBackendBase {
  public:
-  struct Options {};
+  struct Options {
+    std::string timeout_executor;
+  };
 
   enum class State : uint32_t {
     PreInit,
@@ -38,6 +41,8 @@ class LocalRpcBackend : public RpcBackendBase {
   bool TryInvoke(
       const std::shared_ptr<ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
 
+  void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
+
   State GetState() const { return state_.load(); }
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
@@ -49,6 +54,14 @@ class LocalRpcBackend : public RpcBackendBase {
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   const RpcRegistry* rpc_registry_ptr_ = nullptr;
+
+  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
+
+  std::atomic_uint32_t req_id_ = 0;
+
+  aimrt::runtime::core::util::RpcClientTool<
+      std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>>
+      client_tool_;
 
   using ServiceFuncIndexMap =
       std::unordered_map<

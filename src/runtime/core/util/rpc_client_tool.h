@@ -30,8 +30,6 @@ class RpcClientTool {
     timeout_handle_ = timeout_handle;
   }
 
-  uint32_t GetNewReqID() { return req_id_++; }
-
   bool Record(uint32_t req_id, std::chrono::nanoseconds timeout, MsgRecorder&& msg_recorder) {
     bool ret = client_msg_recorder_map_.emplace(req_id, std::move(msg_recorder));
 
@@ -66,8 +64,6 @@ class RpcClientTool {
  private:
   aimrt::executor::ExecutorRef timeout_executor_;
   TimeoutHandle timeout_handle_;
-
-  std::atomic_uint32_t req_id_ = 0;
 
   using ClientMsgRecorderMap = tbb::concurrent_hash_map<uint32_t, MsgRecorder>;
   ClientMsgRecorderMap client_msg_recorder_map_;

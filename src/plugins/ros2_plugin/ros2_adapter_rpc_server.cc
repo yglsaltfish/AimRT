@@ -197,7 +197,7 @@ void Ros2AdapterWrapperServer::handle_request(
   if (!deserialize_ret) [[unlikely]] {
     AIMRT_ERROR("ROS2 wrapper req deserialize failed.");
 
-    ReturnRspWithStatusCode(request_header, AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILDE);
+    ReturnRspWithStatusCode(request_header, AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED);
 
     return;
   }

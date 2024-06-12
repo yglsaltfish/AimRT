@@ -756,17 +756,23 @@ aimrt:
 &emsp;&emsp;`local`类型的Rpc后端是AimRT官方提供的一种Rpc后端，用于请求同进程中的其他模块提供的RPC，它会自动判断Client端和Server端是否在同一个`Pkg`内，从而采用各种方式进行性能的优化。其所有的配置项如下：
 
 
-| 节点                            | 类型    | 是否可选| 默认值 | 作用 |
-| ----                            | ----    | ----  | ----  | ---- |
-| -  | -    | -  | -  | - |
+| 节点                          | 类型      | 是否可选| 默认值 | 作用 |
+| ----                          | ----      | ----  | ----  | ---- |
+| timeout_executor              | string    | 可选  | ""    | Client端RPC超时情况下的执行器 |
 
 
 &emsp;&emsp;以下是一个简单的示例：
 ```yaml
 aimrt:
+  executor:
+    executors:
+      - name: timeout_handle
+        type: time_wheel
   rpc: # 【可选】RPC配置根节点
     backends: # 【可选】RPC后端列表
       - type: local # 【必选】RPC后端类型
+        options: # 【可选】RPC Client配置
+          timeout_executor: timeout_handle # 【可选】Client端RPC超时情况下的执行器
     clients_options: # 【可选】RPC Client配置
       - func_name: "(.*)" # 【必选】RPC Client名称，支持正则表达式
         enable_backends: [local] # 【必选】RPC Client允许使用的RPC后端列表
@@ -777,6 +783,9 @@ aimrt:
 
 &emsp;&emsp;使用注意点如下：
 - Server的执行器将使用Client调用时的执行器。同样，Client调用结束后的执行器将使用Server返回时的执行器。
+- 如果client和server在一个Pkg中，那么Req、Rsp的传递将直接通过指针来进行；如果client和server在一个AimRT进程中，但在不同的Pkg里，那么Req、Rsp将会进行一次序列化/反序列化再进行传递。
+- timeout功能仅在client和server位于不同Pkg时生效。如果client和server在一个Pkg中，那么为了保证Client端Req、Rsp的生命周期能覆盖Server端Req、Rsp的生命周期，timeout功能将不会生效。
+
 
 
 ## `aimrt.parameter`：参数
