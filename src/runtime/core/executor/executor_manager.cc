@@ -133,7 +133,7 @@ void ExecutorManager::RegisterExecutorGenFunc(
   executor_gen_func_map_.emplace(type, std::move(executor_gen_func));
 }
 
-ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info) {
+const ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");

@@ -27,6 +27,10 @@ if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_PARAMETER_PLUGIN)
   add_subdirectory(plugins/parameter_plugin)
 endif()
 
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_LOG_CONTROL_PLUGIN)
+  add_subdirectory(plugins/log_control_plugin)
+endif()
+
 if(AIMRT_BUILD_WITH_ROS2 AND AIMRT_BUILD_ROS2_PLUGIN)
   add_subdirectory(plugins/ros2_plugin_proto)
 endif()

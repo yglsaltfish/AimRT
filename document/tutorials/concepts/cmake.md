@@ -47,6 +47,7 @@
 |  AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN   | BOOL  | OFF   | 是否编译录播插件  |
 |  AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN  | BOOL  | OFF   | 是否编译time manipulator插件  |
 |  AIMRT_BUILD_PARAMETER_PLUGIN         | BOOL  | OFF   | 是否编译parameter插件  |
+|  AIMRT_BUILD_LOG_CONTROL_PLUGIN       | BOOL  | OFF   | 是否编译日志控制插件  |
 |  AIMRT_EXECUTOR_USE_STDEXEC           | BOOL  | OFF   | 是否使用stdexec库（实验性）  |
 
 

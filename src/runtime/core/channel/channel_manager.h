@@ -60,7 +60,7 @@ class ChannelManager {
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
-  ChannelHandleProxy& GetChannelHandleProxy(const util::ModuleDetailInfo& module_info);
+  const ChannelHandleProxy& GetChannelHandleProxy(const util::ModuleDetailInfo& module_info);
   const ChannelHandleProxy& GetChannelHandleProxy(std::string_view module_name = "core") {
     return GetChannelHandleProxy(
         util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});

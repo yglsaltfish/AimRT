@@ -192,6 +192,24 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   return *(emplace_ret.first->second);
 }
 
+std::unordered_map<std::string, aimrt_log_level_t> LoggerManager::GetAllLoggerLevels() const {
+  std::unordered_map<std::string, aimrt_log_level_t> result;
+  for (auto& itr : logger_proxy_map_) {
+    result.emplace(itr.first, itr.second->LogLevel());
+  }
+  return result;
+}
+
+void LoggerManager::SetLoggerLevels(
+    const std::unordered_map<std::string, aimrt_log_level_t>& logger_lvls) {
+  for (auto& itr : logger_lvls) {
+    auto find_itr = logger_proxy_map_.find(itr.first);
+    if (find_itr == logger_proxy_map_.end()) continue;
+
+    find_itr->second->SetLogLevel(itr.second);
+  }
+}
+
 void LoggerManager::RegisterConsoleLoggerBackendGenFunc() {
   RegisterLoggerBackendGenFunc("console", [this]() -> std::unique_ptr<LoggerBackendBase> {
     auto ptr = std::make_unique<ConsoleLoggerBackend>();

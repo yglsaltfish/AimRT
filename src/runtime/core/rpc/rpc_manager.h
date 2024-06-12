@@ -62,7 +62,7 @@ class RpcManager {
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
-  RpcHandleProxy& GetRpcHandleProxy(const util::ModuleDetailInfo& module_info);
+  const RpcHandleProxy& GetRpcHandleProxy(const util::ModuleDetailInfo& module_info);
   const RpcHandleProxy& GetRpcHandleProxy(std::string_view module_name = "core") {
     return GetRpcHandleProxy(
         util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});

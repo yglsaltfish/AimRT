@@ -193,7 +193,7 @@ void RpcManager::RegisterGetExecutorFunc(
   get_executor_func_ = get_executor_func;
 }
 
-RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo& module_info) {
+const RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");

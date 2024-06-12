@@ -9,8 +9,6 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Set(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::parameter_plugin::SetParameterReq& req,
     ::aimrt::protocols::parameter_plugin::SetParameterRsp& rsp) {
-  assert(parameter_manager_ptr_);
-
   auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(req.module_name());
   if (parameter_handle_ptr == nullptr) {
     SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
@@ -26,8 +24,6 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Get(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::parameter_plugin::GetParameterReq& req,
     ::aimrt::protocols::parameter_plugin::GetParameterRsp& rsp) {
-  assert(parameter_manager_ptr_);
-
   auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(req.module_name());
   if (parameter_handle_ptr == nullptr) {
     SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
@@ -47,8 +43,6 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::List(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::parameter_plugin::ListParameterReq& req,
     ::aimrt::protocols::parameter_plugin::ListParameterRsp& rsp) {
-  assert(parameter_manager_ptr_);
-
   auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(req.module_name());
   if (parameter_handle_ptr == nullptr) {
     SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
@@ -65,8 +59,6 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Dump(
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::parameter_plugin::DumpParameterReq& req,
     ::aimrt::protocols::parameter_plugin::DumpParameterRsp& rsp) {
-  assert(parameter_manager_ptr_);
-
   for (auto itr = req.module_names().begin(); itr != req.module_names().end(); ++itr) {
     std::string_view module_name(*itr);
     auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(module_name);
