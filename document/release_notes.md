@@ -26,6 +26,9 @@
 
 - App模式下支持直接create模块；
 - 去除channel的context manager；
+- ros2_plugin：
+  - ros2 RPC / Channel现在支持配置QOS；
+  - 添加了相关示例；
 
 
 
