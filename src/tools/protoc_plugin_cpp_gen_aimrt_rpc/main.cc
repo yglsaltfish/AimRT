@@ -106,9 +106,7 @@ class {{service_name}}CoService : public aimrt::rpc::CoServiceBase {
   {{service_name}}CoService();
   ~{{service_name}}CoService() override = default;
 {{hfile_service_func}}
-};
-
-using {{service_name}} [[deprecated("Using {{service_name}}CoService.")]] = {{service_name}}CoService;)str";
+};)str";
 
   constexpr static std::string_view t_hfile_one_service_register_client_func = R"str(
 bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);)str";
@@ -213,9 +211,7 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
     return Register{{service_name}}ClientFunc(rpc_handle_ref);
   }
 {{hfile_service_proxy_func}}
-};
-
-using {{service_name}}Proxy [[deprecated("Using {{service_name}}CoProxy.")]] = {{service_name}}CoProxy;)str";
+};)str";
 
   constexpr static std::string_view t_hfile = R"str(/**
  * @file {{file_name}}.aimrt_rpc.pb.h

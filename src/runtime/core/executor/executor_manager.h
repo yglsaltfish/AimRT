@@ -52,7 +52,7 @@ class ExecutorManager {
   void RegisterExecutorGenFunc(std::string_view type,
                                ExecutorGenFunc&& executor_gen_func);
 
-  ExecutorManagerProxy& GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info);
+  const ExecutorManagerProxy& GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info);
   const ExecutorManagerProxy& GetExecutorManagerProxy(std::string_view module_name = "core") {
     return GetExecutorManagerProxy(
         util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});

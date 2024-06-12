@@ -60,6 +60,9 @@ class LoggerManager {
   const LoggerProxy& GetLoggerProxy(const util::ModuleDetailInfo& module_info);
   const LoggerProxy& GetLoggerProxy(std::string_view logger_name = "core");
 
+  std::unordered_map<std::string, aimrt_log_level_t> GetAllLoggerLevels() const;
+  void SetLoggerLevels(const std::unordered_map<std::string, aimrt_log_level_t>& logger_lvls);
+
   State GetState() const { return state_.load(); }
 
   std::list<std::pair<std::string, std::string>> GenInitializationReport() const;

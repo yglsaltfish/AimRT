@@ -193,7 +193,7 @@ void ChannelManager::RegisterGetExecutorFunc(
   get_executor_func_ = get_executor_func;
 }
 
-ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
+const ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
