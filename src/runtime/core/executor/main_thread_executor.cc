@@ -120,8 +120,7 @@ void MainThreadExecutor::Execute(Task&& task) {
   cond_.notify_one();
 }
 
-std::vector<std::pair<std::string, std::string>>
-MainThreadExecutor::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> MainThreadExecutor::GenInitializationReport() const {
   return {};
 }
 

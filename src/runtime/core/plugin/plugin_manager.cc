@@ -186,8 +186,7 @@ YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) con
   return YAML::Node();
 }
 
-std::vector<std::pair<std::string, std::string>>
-PluginManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> PluginManager::GenInitializationReport() const {
   std::vector<std::vector<std::string>> plugin_info_table =
       {{"name", "path"}};
 

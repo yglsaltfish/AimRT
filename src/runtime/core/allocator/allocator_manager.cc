@@ -49,8 +49,7 @@ void AllocatorManager::Shutdown() {
   AIMRT_INFO("Allocator manager shutdown.");
 }
 
-const AllocatorProxy& AllocatorManager::GetAllocatorProxy(
-    const util::ModuleDetailInfo& module_info) {
+const AllocatorProxy& AllocatorManager::GetAllocatorProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
@@ -58,8 +57,7 @@ const AllocatorProxy& AllocatorManager::GetAllocatorProxy(
   return allocator_proxy_;
 }
 
-std::vector<std::pair<std::string, std::string>>
-AllocatorManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> AllocatorManager::GenInitializationReport() const {
   return {};
 }
 

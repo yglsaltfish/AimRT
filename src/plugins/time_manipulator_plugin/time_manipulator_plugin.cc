@@ -84,8 +84,8 @@ void TimeManipulatorPlugin::Shutdown() noexcept {
 }
 
 void TimeManipulatorPlugin::SetPluginLogger() {
-  std::string log_module_name = "core/" + std::string(Name());
-  SetLogger(aimrt::logger::LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(log_module_name).NativeHandle()));
+  SetLogger(aimrt::logger::LoggerRef(
+      core_ptr_->GetLoggerManager().GetLoggerProxy().NativeHandle()));
 }
 
 void TimeManipulatorPlugin::RegisterTimeManipulatorExecutor() {
@@ -120,9 +120,7 @@ void TimeManipulatorPlugin::RegisterRpcService() {
   }
 
   auto rpc_handle_ref = aimrt::rpc::RpcHandleRef(
-      core_ptr_->GetRpcManager()
-          .GetRpcHandleProxy(aimrt::runtime::core::util::ModuleDetailInfo{})
-          .NativeHandle());
+      core_ptr_->GetRpcManager().GetRpcHandleProxy().NativeHandle());
 
   bool ret = rpc_handle_ref.RegisterService(service_ptr_.get());
   AIMRT_CHECK_ERROR(ret, "Register service failed.");

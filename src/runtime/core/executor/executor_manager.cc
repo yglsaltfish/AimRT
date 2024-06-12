@@ -133,8 +133,7 @@ void ExecutorManager::RegisterExecutorGenFunc(
   executor_gen_func_map_.emplace(type, std::move(executor_gen_func));
 }
 
-ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(
-    const util::ModuleDetailInfo& module_info) {
+ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
@@ -207,8 +206,7 @@ void ExecutorManager::RegisterTimwWheelExecutorGenFunc() {
   });
 }
 
-std::vector<std::pair<std::string, std::string>>
-ExecutorManager::GenInitializationReport() const {
+std::list<std::pair<std::string, std::string>> ExecutorManager::GenInitializationReport() const {
   std::vector<std::vector<std::string>> executor_info_table =
       {{"name", "type", "thread safe", "support time schedule"}};
 

@@ -119,8 +119,8 @@ void MqttPlugin::Shutdown() noexcept {
 }
 
 void MqttPlugin::SetPluginLogger() {
-  std::string log_module_name = "core/" + std::string(Name());
-  SetLogger(aimrt::logger::LoggerRef(core_ptr_->GetLoggerManager().GetLoggerProxy(log_module_name).NativeHandle()));
+  SetLogger(aimrt::logger::LoggerRef(
+      core_ptr_->GetLoggerManager().GetLoggerProxy().NativeHandle()));
 }
 
 void MqttPlugin::RegisterMqttChannelBackend() {

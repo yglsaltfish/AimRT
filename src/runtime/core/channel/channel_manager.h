@@ -61,6 +61,10 @@ class ChannelManager {
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
   ChannelHandleProxy& GetChannelHandleProxy(const util::ModuleDetailInfo& module_info);
+  const ChannelHandleProxy& GetChannelHandleProxy(std::string_view module_name = "core") {
+    return GetChannelHandleProxy(
+        util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});
+  }
 
   // 信息查询类接口
   const ChannelRegistry* GetChannelRegistry() const;
@@ -68,7 +72,7 @@ class ChannelManager {
 
   State GetState() const { return state_.load(); }
 
-  std::vector<std::pair<std::string, std::string>> GenInitializationReport() const;
+  std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }

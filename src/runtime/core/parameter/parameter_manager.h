@@ -36,12 +36,15 @@ class ParameterManager {
   void Start();
   void Shutdown();
 
-  const ParameterHandleProxy& GetParameterHandleProxy(
-      const util::ModuleDetailInfo& module_info);
+  const ParameterHandleProxy& GetParameterHandleProxy(const util::ModuleDetailInfo& module_info);
+  const ParameterHandleProxy& GetParameterHandleProxy(std::string_view module_name = "core") {
+    return GetParameterHandleProxy(
+        util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});
+  }
 
   State GetState() const { return state_.load(); }
 
-  std::vector<std::pair<std::string, std::string>> GenInitializationReport() const;
+  std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }

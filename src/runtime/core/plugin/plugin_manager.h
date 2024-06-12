@@ -51,7 +51,7 @@ class PluginManager {
 
   State GetState() const { return state_.load(); }
 
-  std::vector<std::pair<std::string, std::string>> GenInitializationReport() const;
+  std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
