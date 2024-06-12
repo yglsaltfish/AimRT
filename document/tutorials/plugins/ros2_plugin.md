@@ -45,9 +45,21 @@ aimrt:
 ## `ros2` RPC后端
 
 
-&emsp;&emsp;`ros2`类型的RPC后端是**ros2_plugin**中提供的一种RPC后端，用于通过ROS2 RPC的方式来调用和处理AimRT RPC请求。在当前版本，它不需要配置。
+&emsp;&emsp;`ros2`类型的RPC后端是**ros2_plugin**中提供的一种RPC后端，用于通过ROS2 RPC的方式来调用和处理AimRT RPC请求。其所有的配置项如下：
 
 
+| 节点                                                         | 类型      | 是否可选 | 默认值       | 作用                                                                                                                         |
+|------------------------------------------------------------|---------|------|-----------|----------------------------------------------------------------------------------------------------------------------------|
+| clients_options                                            | array   | 可选   | []        | 客户端发起RPC请求时的规则                                                                                                             |
+| clients_options[i].func_name                               | string  | 必选   | ""        | RPC Func名称，支持正则表达式                                                                                                         |
+| clients_options[i].qos.history                             | string  | 可选   | "default" | QOS的历史记录选项<br/>keep_last:保留最近的记录(缓存最多N条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认   |
+| clients_options[i].qos.depth                               | int | 可选   | 10        | QOS的队列深度选项(只能与Keep_last配合使用)                                                                                               |
+| clients_options[i].qos.reliability                         | string  | 可选   | "default" | QOS的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认 |
+| clients_options[i].qos.durability                          | string  | 可选   | "default" | QOS的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认               |
+| clients_options[i].qos.deadline                            | int     | 可选   | -1        | QOS的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填-1为不设置，按照系统默认                                                                     |
+| clients_options[i].qos.lifespan                            | int     | 可选   | -1        | QOS的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                      |
+| clients_options[i].qos.liveliness                          | string     | 可选   | "default"       | QOS的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                |
+| clients_options[i].qos.liveliness_lease_duration           | int     | 可选   | -1        | QOS的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                         |
 &emsp;&emsp;以下是一个简单的客户端的示例：
 ```yaml
 aimrt:
@@ -133,7 +145,20 @@ byte[]  data
 ## `ros2` Channel后端
 
 
-&emsp;&emsp;`ros2`类型的Channel后端是**ros2_plugin**中提供的一种Channel后端，用于通过ROS2 Topic的方式来发布和订阅AimRT Channel消息。在当前版本，它不需要配置。
+&emsp;&emsp;`ros2`类型的Channel后端是**ros2_plugin**中提供的一种Channel后端，用于通过ROS2 Topic的方式来发布和订阅AimRT Channel消息。其所有的配置如下:
+
+| 节点                                                  | 类型          | 是否可选| 默认值 | 作用 |
+|-----------------------------------------------------| ----          | ----  | ----  | ---- |
+| pub_topics_options                                  | array         | 可选  | []    | 发布Topic时的规则 |
+| pub_topics_options[i].topic_name                    | string        | 必选  | ""    | Topic名称，支持正则表达式 |
+| pub_topics_options[i].qos.history                   | string  | 可选   | "default" | QOS的历史记录选项<br/>keep_last:保留最近的记录(缓存最多N条记录，可通过队列长度选项来配置)<br/>keep_all:保留所有记录(缓存所有记录，但受限于底层中间件可配置的最大资源)<br/>default:使用系统默认   |
+| pub_topics_options[i].qos.depth                     | int | 可选   | 10        | QOS的队列深度选项(只能与Keep_last配合使用)                                                                                               |
+| pub_topics_options[i].qos.reliability               | string  | 可选   | "default" | QOS的可靠性选项<br/>reliable:可靠的(消息丢失时，会重新发送,反复重传以保证数据传输成功)<br/>best_effort:尽力而为的(尝试传输数据但不保证成功传输,当网络不稳定时可能丢失数据)<br/>default:系统默认 |
+| pub_topics_options[i].qos.durability                | string  | 可选   | "default" | QOS的持续性选项<br/>transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据)<br/>volatile:易变态(不保留任何数据)<br/>default:系统默认               |
+| pub_topics_options[i].qos.deadline                  | int     | 可选   | -1        | QOS的后续消息发布到主题之间的预期最大时间量选项<br/>需填毫秒级时间间隔，填-1为不设置，按照系统默认                                                                     |
+| pub_topics_options[i].qos.lifespan                  | int     | 可选   | -1        | QOS的消息发布和接收之间的最大时间量(单位毫秒)选项<br/>而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收<br/>填-1保持系统默认 不设置                                      |
+| pub_topics_options[i].qos.liveliness                | string     | 可选   | "default"       | QOS的如何确定发布者是否活跃选项<br/>automatic:自动(ROS2会根据消息发布和接收的时间间隔来判断)<br/>manual_by_topic:需要发布者定期声明<br/>default:保持系统默认                |
+| pub_topics_options[i].qos.liveliness_lease_duration | int     | 可选   | -1        | QOS的活跃性租期的时长(单位毫秒)选项，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的<br/>填-1保持系统默认 不设置                                                         |
 
 
 &emsp;&emsp;以下是一个简单的发布端的示例：
