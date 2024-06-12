@@ -2,6 +2,7 @@
 
 #include <cinttypes>
 #include <string>
+#include <unordered_map>
 
 #include "aimrt_module_c_interface/rpc/rpc_status_base.h"
 
@@ -24,7 +25,35 @@ class Status {
   uint32_t Code() const { return code_; }
 
   std::string ToString() const {
-    return std::string(OK() ? "suc" : "fail") + ", code " + std::to_string(code_);
+    return std::string(OK() ? "suc" : "fail") +
+           ", code " + std::to_string(code_) +
+           ", msg: " + std::string(GetCodeMsg(code_));
+  }
+
+  static std::string_view GetCodeMsg(uint32_t code) {
+    static const std::unordered_map<uint32_t, std::string_view> code_msg_map{
+        {AIMRT_RPC_STATUS_OK, "OK"},
+        {AIMRT_RPC_STATUS_UNKNOWN, "Unknown error"},
+        {AIMRT_RPC_STATUS_TIMEOUT, "Timeout"},
+        {AIMRT_RPC_STATUS_SVR_UNKNOWN, "Server side unknown error"},
+        {AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED, "Server not implemented"},
+        {AIMRT_RPC_STATUS_SVR_NOT_FOUND, "Server not found"},
+        {AIMRT_RPC_STATUS_SVR_INVALID_SERIALIZATION_TYPE, "Server side invalid serialization type"},
+        {AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED, "Server side serialization failed"},
+        {AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE, "Server side invalid deserialization type"},
+        {AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED, "Server side deserialization failed"},
+        {AIMRT_RPC_STATUS_SVR_HANDLE_FAILED, "Server handle failed"},
+        {AIMRT_RPC_STATUS_CLI_UNKNOWN, "Client side unknown error"},
+        {AIMRT_RPC_STATUS_CLI_INVALID_ADDR, "Client side invalid address"},
+        {AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE, "Client side invalid serialization type"},
+        {AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED, "Client side serialization failed"},
+        {AIMRT_RPC_STATUS_CLI_INVALID_DESERIALIZATION_TYPE, "Client side invalid deserialization type"},
+        {AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED, "Client side deserialization failed"},
+        {AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE, "Client side no backend to handle"},
+        {AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED, "Client side send req failed"}};
+
+    auto finditr = code_msg_map.find(code);
+    return (finditr != code_msg_map.end()) ? finditr->second : "Unknown code";
   }
 
  private:

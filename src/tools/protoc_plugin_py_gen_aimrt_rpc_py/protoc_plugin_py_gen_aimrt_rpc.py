@@ -37,12 +37,12 @@ class AimRTCodeGenerator(object):
                 else:
                     return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_INVALID_SERIALIZATION_TYPE), "")
             except Exception as e:
-                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_DESERIALIZATION_FAILDE), "")
+                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_DESERIALIZATION_FAILED), "")
 
             try:
                 st, rsp = self.{{rpc_func_name}}(ctx_ref, req)
             except Exception as e:
-                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_HANDLE_FAILDE), "")
+                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_HANDLE_FAILED), "")
 
             try:
                 rsp_str = ""
@@ -53,7 +53,7 @@ class AimRTCodeGenerator(object):
                 else:
                     return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_INVALID_SERIALIZATION_TYPE), "")
             except Exception as e:
-                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_SERIALIZATION_FAILDE), "")
+                return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.SVR_SERIALIZATION_FAILED), "")
 
             return (st, rsp_str)
 
@@ -92,7 +92,7 @@ class {{service_name}}(aimrt_py.ServiceBase):
             else:
                 return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_INVALID_SERIALIZATION_TYPE), rsp)
         except Exception as e:
-            return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_SERIALIZATION_FAILDE), rsp)
+            return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_SERIALIZATION_FAILED), rsp)
 
         status, rsp_str = self.rpc_handle_ref.Invoke("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
                                                      ctx_ref, req_str)
@@ -105,7 +105,7 @@ class {{service_name}}(aimrt_py.ServiceBase):
             else:
                 return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_INVALID_SERIALIZATION_TYPE), rsp)
         except Exception as e:
-            return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_DESERIALIZATION_FAILDE), rsp)
+            return (aimrt_py.RpcStatus(aimrt_py.RpcStatusRetCode.CLI_DESERIALIZATION_FAILED), rsp)
 
         return (status, rsp)
 """

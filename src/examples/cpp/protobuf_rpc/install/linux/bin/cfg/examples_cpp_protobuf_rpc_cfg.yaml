@@ -14,9 +14,15 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 4 # 线程数，不指定则默认单线程
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
   rpc: # rpc相关配置
     backends: # rpc后端配置
       - type: local # 本地rpc后端配置
+        options:
+          timeout_executor: timeout_handle
     clients_options:
       - func_name: "(.*)"
         enable_backends: [local]

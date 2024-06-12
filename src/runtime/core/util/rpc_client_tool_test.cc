@@ -6,14 +6,6 @@
 
 namespace aimrt::runtime::core::util {
 
-TEST(RpcClientToolTest, GetNewReqID) {
-  RpcClientTool<std::string> rpc_client_tool;
-
-  EXPECT_EQ(rpc_client_tool.GetNewReqID(), 0);
-  EXPECT_EQ(rpc_client_tool.GetNewReqID(), 1);
-  EXPECT_EQ(rpc_client_tool.GetNewReqID(), 2);
-}
-
 TEST(RpcClientToolTest, Timeout) {
   RpcClientTool<std::string> rpc_client_tool;
 

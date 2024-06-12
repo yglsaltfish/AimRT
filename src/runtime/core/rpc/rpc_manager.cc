@@ -231,6 +231,9 @@ void RpcManager::RegisterLocalRpcBackend() {
   static_cast<LocalRpcBackend*>(local_rpc_backend_ptr.get())
       ->SetLogger(logger_ptr_);
 
+  static_cast<LocalRpcBackend*>(local_rpc_backend_ptr.get())
+      ->RegisterGetExecutorFunc(get_executor_func_);
+
   RegisterRpcBackend(std::move(local_rpc_backend_ptr));
 }
 

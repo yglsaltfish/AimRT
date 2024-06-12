@@ -169,7 +169,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
             AIMRT_ERROR("Mqtt req deserialize failed.");
 
             ReturnRspWithStatusCode(
-                mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILDE);
+                mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED);
 
             return;
           }
@@ -326,7 +326,7 @@ bool MqttRpcBackend::RegisterClientFunc(
 
           if (!deserialize_ret) {
             // 调用回调
-            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILDE);
+            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED);
             return;
           }
 
@@ -361,10 +361,10 @@ bool MqttRpcBackend::TryInvoke(
   if (!to_addr.empty()) {
     auto pos = to_addr.find("://");
     if (pos == std::string_view::npos) return false;
-    if (to_addr.substr(0, pos) != "mqtt") return false;
+    if (to_addr.substr(0, pos) != Name()) return false;
   }
 
-  // 协议为mqtt，需要由mqtt后端处理。此行之后只能使用callback报错，不能返回false
+  // 需要由本后端处理。此行之后只能使用callback报错，不能返回false
   const auto& client_func_wrapper_map = rpc_registry_ptr_->GetClientFuncWrapperMap();
 
   // 找注册的client方法
@@ -382,7 +382,7 @@ bool MqttRpcBackend::TryInvoke(
   };
   const auto* client_func_wrapper_ptr = get_client_func_wrapper_ptr_func();
 
-  uint32_t cur_req_id = client_tool_.GetNewReqID();
+  uint32_t cur_req_id = req_id_++;
 
   auto serialization_type =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
