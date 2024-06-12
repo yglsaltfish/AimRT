@@ -221,7 +221,13 @@ bool Ros2RpcBackend::RegisterServiceFunc(
     // 读取配置中的QOS
     rclcpp::QoS qos = rclcpp::ServicesQoS();
     auto find_qos_option = std::find_if(options_.servers_options.begin(), options_.servers_options.end(), [&ros2_func_name](const Options::ServerOptions& service_option) {
-      return std::regex_match(ros2_func_name.begin(), ros2_func_name.end(), std::regex(service_option.func_name, std::regex::ECMAScript));
+      try {
+        return std::regex_match(ros2_func_name.begin(), ros2_func_name.end(), std::regex(service_option.func_name, std::regex::ECMAScript));
+      } catch (const std::exception& e) {
+        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                   service_option.func_name, ros2_func_name, e.what());
+        return false;
+      }
     });
     if (find_qos_option != options_.servers_options.end()) {
       qos = GetQos(find_qos_option->qos);
@@ -301,7 +307,13 @@ bool Ros2RpcBackend::RegisterClientFunc(
     qos.reliable();                          // 可靠通信
     qos.lifespan(std::chrono::seconds(30));  // 生命周期为 30 秒
     auto find_qos_option = std::find_if(options_.clients_options.begin(), options_.clients_options.end(), [&ros2_func_name](const Options::ClientOptions& client_option) {
-      return std::regex_match(ros2_func_name.begin(), ros2_func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+      try {
+        return std::regex_match(ros2_func_name.begin(), ros2_func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+      } catch (const std::exception& e) {
+        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                   client_option.func_name, ros2_func_name, e.what());
+        return false;
+      }
     });
     if (find_qos_option != options_.clients_options.end()) {
       qos = GetQos(find_qos_option->qos);

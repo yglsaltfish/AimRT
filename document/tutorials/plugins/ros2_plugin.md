@@ -62,15 +62,6 @@ aimrt:
   rpc: # 【可选】RPC配置根节点
     backends: # 【可选】RPC后端列表
       - type: ros2 # 【必选】RPC后端类型
-    clients_options: # 【可选】RPC Client配置
-      - func_name: "(.*)" # 【必选】RPC Client名称，支持正则表达式
-        enable_backends: [ros2] # 【必选】RPC Client允许使用的RPC后端列表
-```
-&emsp;&emsp;如果想要设置客户端的QOS,可以在rpc的ROS2 backends中进行设置：
-```yaml
-  rpc: # rpc相关配置
-    backends: # rpc后端配置
-      - type: ros2 # ros2 rpc后端
         options:
           clients_options:
             - func_name: "(.*)" # 【必选】此配置匹配的RPC Client名称，支持正则表达式
@@ -83,12 +74,10 @@ aimrt:
                 lifespan: -1 #消息发布和接收之间的最大时间量(单位毫秒)，而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收）  -1保持系统默认 不设置
                 liveliness: automatic #如何确定发布者是否活跃,automatic:自动(ROS2会根据消息发布和接收的时间间隔来判断) manual_by_topic:需要发布者定期声明,default:保持系统默认
                 liveliness_lease_duration: -1 #活跃性租期的时长(单位毫秒)，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的。 -1保持系统默认 不设置
-    clients_options: 
+    clients_options: # 【可选】RPC Client配置
       - func_name: "(.*)" # 【必选】RPC Client名称，支持正则表达式
-        enable_backends: [ros2]
+        enable_backends: [ros2] # 【必选】RPC Client允许使用的RPC后端列表
 ```
-
-
 
 &emsp;&emsp;以下则是一个简单的服务端的示例：
 ```yaml
@@ -104,15 +93,6 @@ aimrt:
   rpc: # 【可选】RPC配置根节点
     backends: # 【可选】RPC后端列表
       - type: ros2 # 【必选】RPC后端类型
-    servers_options: # 【可选】RPC Server配置
-      - func_name: "(.*)" # 【必选】RPC Server名称，支持正则表达式
-        enable_backends: [ros2] # 【必选】RPC Server允许使用的RPC后端列表
-```
-&emsp;&emsp;如果想要设置服务端的QOS,可以在rpc的ROS2 backends中进行设置：
-```yaml
-  rpc: # rpc相关配置
-    backends: # rpc后端配置
-      - type: ros2 # ros2 rpc后端
         options:
           servers_options:
             - func_name: "(.*)" # 【必选】此配置匹配的RPC Server名称，支持正则表达式
@@ -125,9 +105,9 @@ aimrt:
                 lifespan: -1 #消息发布和接收之间的最大时间量(单位毫秒)，而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收）  -1保持系统默认 不设置
                 liveliness: automatic #如何确定发布者是否活跃,automatic:自动(ROS2会根据消息发布和接收的时间间隔来判断) manual_by_topic:需要发布者定期声明,default:保持系统默认
                 liveliness_lease_duration: -1 #活跃性租期的时长(单位毫秒)，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的。 -1保持系统默认 不设置
-    servers_options:
+    servers_options: # 【可选】RPC Server配置
       - func_name: "(.*)" # 【必选】RPC Server名称，支持正则表达式
-        enable_backends: [ros2]
+        enable_backends: [ros2] # 【必选】RPC Server允许使用的RPC后端列表
 ```
 
 &emsp;&emsp;以上示例中，Server端启动了一个ROS2节点`example_ros2_server_node`，Client端则启动了一个ROS2节点`example_ros2_client_node`，Client端通过ROS2的后端发起RPC调用，Server端通过ROS2后端接收到RPC请求并进行处理。
@@ -170,15 +150,6 @@ aimrt:
   channel: # 【可选】Channel配置根节点
     backends: # 【可选】Channel后端列表
       - type: ros2 # 【必选】Channel后端类型
-    pub_topics_options: # 【可选】Channel Pub Topic配置
-      - topic_name: "(.*)" # 【必选】Channel Pub Topic名称，支持正则表达式
-        enable_backends: [ros2] # 【必选】Channel Pub Topic允许使用的Channel后端列表
-```
-&emsp;&emsp;如果想要设置发布者的QOS，可以通过以下示例在channel的ros2 backends进行设置：
-```yaml
-  channel: # 消息队列相关配置
-    backends: # 消息队列后端配置
-      - type: ros2 # ros2后端
         options:
           pub_topics_options:
             - topic_name: "(.*)" # 【必选】此配置匹配的topic名称，支持正则表达式
@@ -191,9 +162,9 @@ aimrt:
                 lifespan: -1 #消息发布和接收之间的最大时间量(单位毫秒)，而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收）  -1保持系统默认 不设置
                 liveliness: automatic #如何确定发布者是否活跃,automatic:自动(ROS2会根据消息发布和接收的时间间隔来判断) manual_by_topic:需要发布者定期声明,default:保持系统默认
                 liveliness_lease_duration: -1 #活跃性租期的时长(单位毫秒)，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的。 -1保持系统默认 不设置
-    pub_topics_options:
-      - topic_name: "(.*)"# 【必选】Channel Pub Topic名称，支持正则表达式
-        enable_backends: [ros2]
+    pub_topics_options: # 【可选】Channel Pub Topic配置
+      - topic_name: "(.*)" # 【必选】Channel Pub Topic名称，支持正则表达式
+        enable_backends: [ros2] # 【必选】Channel Pub Topic允许使用的Channel后端列表
 ```
 
 &emsp;&emsp;以下则是一个简单的订阅端的示例：
@@ -210,15 +181,6 @@ aimrt:
   channel: # 【可选】Channel配置根节点
     backends: # 【可选】Channel后端列表
       - type: ros2 # 【必选】Channel后端类型
-    sub_topics_options: # 【可选】Channel Sub Topic配置
-      - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
-        enable_backends: [ros2] # 【必选】Channel Sub Topic允许使用的Channel后端列表
-```
-&emsp;&emsp;如果想要设置订阅者的QOS，可以通过以下示例在channel的ros2 backends进行设置：
-```yaml
-  channel: # 消息队列相关配置
-    backends: # 消息队列后端配置
-      - type: ros2 # ros2后端
         options:
           sub_topics_options:
             - topic_name: "(.*)" # 【必选】此配置匹配的topic名称，支持正则表达式
@@ -231,9 +193,9 @@ aimrt:
                 lifespan: -1 #消息发布和接收之间的最大时间量(单位毫秒)，而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收）  -1保持系统默认 不设置
                 liveliness: automatic #如何确定发布者是否活跃,automatic:自动(ROS2会根据消息发布和接收的时间间隔来判断) manual_by_topic:需要发布者定期声明,default:保持系统默认
                 liveliness_lease_duration: -1 #活跃性租期的时长(单位毫秒)，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的。 -1保持系统默认 不设置
-    sub_topics_options:
+    sub_topics_options: # 【可选】Channel Sub Topic配置
       - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
-        enable_backends: [ros2]
+        enable_backends: [ros2] # 【必选】Channel Sub Topic允许使用的Channel后端列表
 ```
 
 &emsp;&emsp;以上示例中，发布端启动了一个ROS2节点`example_ros2_pub_node`，订阅端则启动了一个ROS2节点`example_ros2_sub_node`，发布端通过ROS2的后端发布消息，订阅端通过ROS2后端接收到消息并进行处理。

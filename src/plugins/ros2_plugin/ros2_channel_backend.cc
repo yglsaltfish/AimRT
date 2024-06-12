@@ -197,7 +197,13 @@ bool Ros2ChannelBackend::RegisterPublishType(
     rcl_publisher_options_t publisher_options = rcl_publisher_get_default_options();
     // 读取配置中的QOS
     auto find_qos_option = std::find_if(options_.pub_topics_options.begin(), options_.pub_topics_options.end(), [&ros2_topic_name](const Options::PubTopicOptions& pub_option) {
-      return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(pub_option.topic_name, std::regex::ECMAScript));
+      try {
+        return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(pub_option.topic_name, std::regex::ECMAScript));
+      } catch (const std::exception& e) {
+        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                   pub_option.topic_name, ros2_topic_name, e.what());
+        return false;
+      }
     });
     if (find_qos_option != options_.pub_topics_options.end()) {
       publisher_options.qos = GetQos(find_qos_option->qos).get_rmw_qos_profile();
@@ -338,7 +344,13 @@ bool Ros2ChannelBackend::Subscribe(
     rclcpp::QoS qos(10);
     // 读取配置中的QOS
     auto find_qos_option = std::find_if(options_.sub_topics_options.begin(), options_.sub_topics_options.end(), [&ros2_topic_name](const Options::SubTopicOptions& sub_option) {
-      return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
+      try {
+        return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
+      } catch (const std::exception& e) {
+        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                   sub_option.topic_name, ros2_topic_name, e.what());
+        return false;
+      }
     });
     if (find_qos_option != options_.sub_topics_options.end()) {
       qos = GetQos(find_qos_option->qos);

@@ -50,7 +50,7 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
 
       /**
        * @brief 消息发布和接收之间的最大时间量，而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收）。
-       *  @param ms级时间戳 -1为不设置
+       * @param ms级时间戳 -1为不设置
        */
       int64_t lifespan = -1;
 
