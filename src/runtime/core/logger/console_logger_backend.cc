@@ -194,11 +194,7 @@ void ConsoleLoggerBackend::Log(
     std::cout << std::endl;
   };
 
-  if (!log_executor_ || log_executor_.IsInCurrentExecutor()) [[unlikely]] {
-    log_work();
-  } else {
-    log_executor_.Execute(std::move(log_work));
-  }
+  log_executor_.Execute(std::move(log_work));
 }
 
 bool ConsoleLoggerBackend::CheckLog(const LogDataWrapper& log_data_wrapper) {

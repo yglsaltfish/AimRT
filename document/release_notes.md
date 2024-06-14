@@ -33,7 +33,9 @@
 - 新增 log_control_plugin：
   - 提供了运行时查看、修改日志等级的接口；
   - 添加了相关示例；
+  - 添加了相关文档；
 - ros2_plugin：
   - ros2 RPC / Channel现在支持配置QOS；
   - 添加了相关示例；
+  - 完善了相关文档；
 
