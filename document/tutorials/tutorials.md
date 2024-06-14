@@ -35,6 +35,7 @@
   - [lcm_plugin](plugins/lcm_plugin.md)
   - [parameter_plugin](plugins/parameter_plugin.md)
   - [time_manipulator_plugin](plugins/time_manipulator_plugin.md)
+  - [log_control_plugin](plugins/log_control_plugin.md)
 - [插件开发方式](plugins/how_to_dev_plugin.md)
 
 ## 示例
@@ -65,3 +66,4 @@
   - [ros2_plugin](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/plugins/ros2_plugin)
   - [sm_plugin](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/plugins/sm_plugin)
   - [time_manipulator_plugin](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/plugins/time_manipulator_plugin)
+  - [log_control_plugin](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/plugins/log_control_plugin)
