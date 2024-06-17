@@ -48,6 +48,8 @@ class MqttPlugin : public AimRTCorePluginBase {
 
   MQTTAsync client_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
+
+  std::vector<std::function<void()>> reconnect_hook_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

@@ -38,4 +38,6 @@
   - ros2 RPC / Channel现在支持配置QOS；
   - 添加了相关示例；
   - 完善了相关文档；
+- mqtt_plugin:
+  - 修复了mqtt插件短线重连时的一些问题；
 
