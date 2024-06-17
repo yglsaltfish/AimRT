@@ -149,9 +149,7 @@ bool SmChannelBackend::RegisterPublishType(const runtime::core::channel::Publish
       std::string(publish_type_wrapper.topic_name) + std::string(publish_type_wrapper.msg_type));
 
   if (publisher_map_.count(msg_hash) > 0) {
-    AIMRT_ERROR("Publish topic '{}' type '{}' has been registered.",
-                publish_type_wrapper.topic_name, publish_type_wrapper.msg_type);
-    return false;
+    return true;
   }
 
   TransmitterAttribute transmitter_attribute;
