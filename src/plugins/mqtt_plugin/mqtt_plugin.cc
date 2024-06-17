@@ -130,6 +130,11 @@ void MqttPlugin::RegisterMqttChannelBackend() {
           options_.max_pkg_size_k * 1024,
           msg_handle_registry_ptr_);
 
+  reconnect_hook_.emplace_back(
+      [ptr = static_cast<MqttChannelBackend *>(mqtt_channel_backend_ptr.get())]() {
+        ptr->SubscribeMqttTopic();
+      });
+
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(mqtt_channel_backend_ptr));
 }
 
@@ -146,6 +151,11 @@ void MqttPlugin::RegisterMqttRpcBackend() {
             return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
           });
 
+  reconnect_hook_.emplace_back(
+      [ptr = static_cast<MqttRpcBackend *>(mqtt_rpc_backend_ptr.get())]() {
+        ptr->SubscribeMqttTopic();
+      });
+
   core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(mqtt_rpc_backend_ptr));
 }
 
@@ -159,6 +169,11 @@ void MqttPlugin::OnConnectLost(const char *cause) {
   conn_opts.cleansession = 1;
   conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
     AIMRT_INFO("Reconnect to mqtt broker success.");
+
+    auto *mqtt_plugin_ptr = static_cast<MqttPlugin *>(context);
+
+    for (const auto &f : mqtt_plugin_ptr->reconnect_hook_)
+      f();
   };
   conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
     static_cast<MqttPlugin *>(context)->OnConnectLost("Reconnect failed");
