@@ -194,7 +194,7 @@ inline void LogImpl(const Logger& logger,
     auto [buf, buf_size] = logger.GetLogBuf();
     if (buf != nullptr) {
       auto format_ret = ::aimrt_fmt::format_to_n(buf, buf_size, fmt, (Args &&) args...);
-      logger.Log(lvl, line, column, file_name, function_name, buf, format_ret.out - buf);
+      logger.Log(lvl, line, column, file_name, function_name, buf, format_ret.size);
       return;
     }
   }
