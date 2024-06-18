@@ -310,7 +310,7 @@ bool HttpRpcBackend::TryInvoke(
 
   auto pos = to_addr.find("://");
   if (pos == std::string_view::npos) return false;
-  if (to_addr.substr(0, pos) != "http") return false;
+  if (to_addr.substr(0, pos) != Name()) return false;
 
   // 协议为http，需要由http后端处理。之后只能使用callback报错，不能返回false
   auto url_op = aimrt::common::util::ParseUrl(to_addr);
