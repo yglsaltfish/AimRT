@@ -101,16 +101,28 @@ aimrt:
 
 &emsp;&emsp;以上示例中，Client端和Server端都连上了`tcp://127.0.0.1:1883`这个地址的一个Mqtt broker，Client端也配置了所有的RPC请求都通过mqtt后端进行处理，从而完成RPC的调用闭环。
 
+&emsp;&emsp;如果有多个server端同时注册了某个RPC服务，那么client端会随机的挑选一个server端发送请求。如果想指定某个server端处理，可以在client端的ctx中按照如下方法设置ToAddr：
+```cpp
+auto ctx_ptr = proxy_->NewContextSharedPtr();
+// mqtt://{{目标server端的mqtt id}}
+ctx_ptr->SetToAddr("mqtt://target_server_mqtt_id");
+
+auto status = co_await proxy_->Foo(ctx_ptr, req, rsp);
+```
 
 &emsp;&emsp;在这个过程中，底层使用的Mqtt Topic名称格式如下：
 - Server端
-  - 订阅Req使用的topic：`$share/aimrt/aimrt_rpc_req/${func_name}`
+  - 订阅Req使用的topic（两个都会订阅）：
+    - `$share/aimrt/aimrt_rpc_req/${func_name}`
+    - `aimrt_rpc_req/${server_id}/${func_name}`
   - 发布Rsp使用的topic：`aimrt_rpc_rsp/${client_id}/${func_name}`
 - Client端
-  - 发布Req使用的topic：`aimrt_rpc_req/${func_name}`
+  - 发布Req使用的topic（二选一）：
+    - `aimrt_rpc_req/${func_name}`
+    - `aimrt_rpc_req/${server_id}/${func_name}`
   - 订阅Rsp使用的topic：`aimrt_rpc_rsp/${client_id}/${func_name}`
 
-&emsp;&emsp;其中`${client_id}`是Client端需要保证在同一个Mqtt broker环境下全局唯一的一个值，一般使用在Mqtt broker处注册的client_id。`${func_name}`是url编码后的AimRT RPC方法名称。Server端订阅使用共享订阅，保证只有一个服务端处理请求。此项特性需要支持Mqtt5.0协议的Broker。
+&emsp;&emsp;其中`${client_id}`、`${server_id}`是Client端和Server端需要保证在同一个Mqtt broker环境下全局唯一的一个值，一般使用在Mqtt broker处注册的id。`${func_name}`是url编码后的AimRT RPC方法名称。Server端订阅使用共享订阅，保证只有一个服务端处理请求。此项特性需要支持Mqtt5.0协议的Broker。
 
 
 &emsp;&emsp;例如，client端向Mqtt broker注册的id为`example_client`，func名称为`/aimrt.protocols.example.ExampleService/GetBarData`，则`${client_id}`值为`example_client`，`${func_name}`值为`%2Faimrt.protocols.example.ExampleService%2FGetBarData`。

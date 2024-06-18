@@ -40,5 +40,6 @@
   - 完善了相关文档；
 - mqtt_plugin:
   - 修复了mqtt插件短线重连时的一些问题；
+  - mqtt rpc backend 添加指定mqtt_client_id的功能；
 - 修复了RPC Server Handle生命周期的Bug；
 - 修复了使用std::format作为日志format方法时的乱码问题；

@@ -8,6 +8,7 @@
 #include "mqtt_plugin/global.h"
 #include "util/buffer_util.h"
 #include "util/url_encode.h"
+#include "util/url_parser.h"
 
 namespace YAML {
 template <>
@@ -125,138 +126,148 @@ bool MqttRpcBackend::RegisterServiceFunc(
 
   namespace util = aimrt::common::util;
 
+  auto handle = [this, &service_func_wrapper](MQTTAsync_message* message) {
+    try {
+      auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
+
+      // 获取字段
+      util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
+
+      std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+      ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
+
+      std::string mqtt_pub_topic(buf_oper.GetString(util::BufferLenType::UINT8));
+
+      char req_id_buf[4];
+      buf_oper.GetBuffer(req_id_buf, 4);
+
+      // service req反序列化
+      auto remaining_buf = buf_oper.GetRemainingBuffer();
+      aimrt_buffer_view_t buffer_view{
+          .data = remaining_buf.data(),
+          .len = remaining_buf.size()};
+
+      aimrt_buffer_array_view_t buffer_array_view{
+          .data = &buffer_view,
+          .len = 1};
+
+      auto service_req_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.req_type_support);
+
+      std::shared_ptr<void> service_req_ptr = service_req_type_support_ref.CreateSharedPtr();
+
+      bool deserialize_ret = service_req_type_support_ref.Deserialize(
+          serialization_type, buffer_array_view, service_req_ptr.get());
+
+      if (!deserialize_ret) [[unlikely]] {
+        AIMRT_ERROR("Mqtt req deserialize failed.");
+
+        ReturnRspWithStatusCode(
+            mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED);
+
+        return;
+      }
+
+      // service rsp创建
+      auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
+
+      std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
+
+      // service rpc调用
+      aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
+          [this,
+           &service_func_wrapper,
+           ctx_ptr,
+           service_req_ptr,
+           service_rsp_ptr,
+           serialization_type{std::move(serialization_type)},
+           mqtt_pub_topic{std::move(mqtt_pub_topic)},
+           req_id_buf](uint32_t code) {
+            if (code) [[unlikely]] {
+              // 如果code不为suc，则没必要反序列化
+              ReturnRspWithStatusCode(
+                  mqtt_pub_topic, serialization_type, req_id_buf, code);
+
+              return;
+            }
+
+            aimrt::util::BufferArray buffer_array;
+
+            // service rsp序列化
+            auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
+            bool serialize_ret = service_rsp_type_support_ref.Serialize(
+                serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
+
+            // 序列化失败一般很少见，此处暂时不做处理
+            assert(serialize_ret);
+
+            auto buffer_array_data = buffer_array.Data();
+            const size_t buffer_array_len = buffer_array.Size();
+            size_t rsp_size = buffer_array.BufferSize();
+
+            size_t mqtt_pkg_size = 1 + serialization_type.size() + 4 + 4 + rsp_size;
+
+            if (mqtt_pkg_size > max_pkg_size_) [[unlikely]] {
+              AIMRT_WARN("Mqtt publish failed, pkg is too large, limit {}k, actual {}k",
+                         max_pkg_size_ / 1024, mqtt_pkg_size / 1024);
+
+              ReturnRspWithStatusCode(
+                  mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_UNKNOWN);
+              return;
+            }
+
+            std::vector<char> msg_buf_vec(mqtt_pkg_size);
+            util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
+
+            buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+            buf_oper.SetBuffer(req_id_buf, sizeof(req_id_buf));
+            buf_oper.SetUint32(0);
+
+            for (size_t ii = 0; ii < buffer_array_len; ++ii) {
+              buf_oper.SetBuffer(
+                  static_cast<const char*>(buffer_array_data[ii].data),
+                  buffer_array_data[ii].len);
+            }
+
+            MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
+            pubmsg.payload = msg_buf_vec.data();
+            pubmsg.payloadlen = msg_buf_vec.size();
+            pubmsg.qos = 2;
+            pubmsg.retained = 0;
+
+            AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
+            int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
+            AIMRT_CHECK_WARN(rc == MQTTASYNC_SUCCESS,
+                             "publish mqtt msg failed, topic: {}, code: {}",
+                             mqtt_pub_topic, rc);
+          });
+
+      service_func_wrapper.service_func(
+          ctx_ptr->NativeHandle(),
+          service_req_ptr.get(),
+          service_rsp_ptr.get(),
+          service_callback.NativeHandle());
+    } catch (const std::exception& e) {
+      AIMRT_WARN("Handle mqtt rpc msg failed, exception info: {}", e.what());
+    }
+  };
+
   std::string mqtt_sub_topic = "aimrt_rpc_req/" + util::UrlEncode(GetRealFuncName(service_func_wrapper.func_name));
-
   std::string share_mqtt_sub_topic = "$share/aimrt/" + mqtt_sub_topic;
-
   sub_info_vec_.emplace_back(share_mqtt_sub_topic);
 
   msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic,
-      [this, &service_func_wrapper](MQTTAsync_message* message) {
-        try {
-          auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
+      handle);
 
-          // 获取字段
-          util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
+  std::string mqtt_sub_topic_2 =
+      "aimrt_rpc_req/" +
+      util::UrlEncode(client_id_) + "/" +
+      util::UrlEncode(GetRealFuncName(service_func_wrapper.func_name));
+  sub_info_vec_.emplace_back(mqtt_sub_topic_2);
 
-          std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
-          ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
-
-          std::string mqtt_pub_topic(buf_oper.GetString(util::BufferLenType::UINT8));
-
-          char req_id_buf[4];
-          buf_oper.GetBuffer(req_id_buf, 4);
-
-          // service req反序列化
-          auto remaining_buf = buf_oper.GetRemainingBuffer();
-          aimrt_buffer_view_t buffer_view{
-              .data = remaining_buf.data(),
-              .len = remaining_buf.size()};
-
-          aimrt_buffer_array_view_t buffer_array_view{
-              .data = &buffer_view,
-              .len = 1};
-
-          auto service_req_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.req_type_support);
-
-          std::shared_ptr<void> service_req_ptr = service_req_type_support_ref.CreateSharedPtr();
-
-          bool deserialize_ret = service_req_type_support_ref.Deserialize(
-              serialization_type, buffer_array_view, service_req_ptr.get());
-
-          if (!deserialize_ret) [[unlikely]] {
-            AIMRT_ERROR("Mqtt req deserialize failed.");
-
-            ReturnRspWithStatusCode(
-                mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED);
-
-            return;
-          }
-
-          // service rsp创建
-          auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
-
-          std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
-
-          // service rpc调用
-          aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
-              [this,
-               &service_func_wrapper,
-               ctx_ptr,
-               service_req_ptr,
-               service_rsp_ptr,
-               serialization_type{std::move(serialization_type)},
-               mqtt_pub_topic{std::move(mqtt_pub_topic)},
-               req_id_buf](uint32_t code) {
-                if (code) [[unlikely]] {
-                  // 如果code不为suc，则没必要反序列化
-                  ReturnRspWithStatusCode(
-                      mqtt_pub_topic, serialization_type, req_id_buf, code);
-
-                  return;
-                }
-
-                aimrt::util::BufferArray buffer_array;
-
-                // service rsp序列化
-                auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
-                bool serialize_ret = service_rsp_type_support_ref.Serialize(
-                    serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
-
-                // 序列化失败一般很少见，此处暂时不做处理
-                assert(serialize_ret);
-
-                auto buffer_array_data = buffer_array.Data();
-                const size_t buffer_array_len = buffer_array.Size();
-                size_t rsp_size = buffer_array.BufferSize();
-
-                size_t mqtt_pkg_size = 1 + serialization_type.size() + 4 + 4 + rsp_size;
-
-                if (mqtt_pkg_size > max_pkg_size_) [[unlikely]] {
-                  AIMRT_WARN("Mqtt publish failed, pkg is too large, limit {}k, actual {}k",
-                             max_pkg_size_ / 1024, mqtt_pkg_size / 1024);
-
-                  ReturnRspWithStatusCode(
-                      mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_UNKNOWN);
-                  return;
-                }
-
-                std::vector<char> msg_buf_vec(mqtt_pkg_size);
-                util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
-
-                buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
-                buf_oper.SetBuffer(req_id_buf, sizeof(req_id_buf));
-                buf_oper.SetUint32(0);
-
-                for (size_t ii = 0; ii < buffer_array_len; ++ii) {
-                  buf_oper.SetBuffer(
-                      static_cast<const char*>(buffer_array_data[ii].data),
-                      buffer_array_data[ii].len);
-                }
-
-                MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
-                pubmsg.payload = msg_buf_vec.data();
-                pubmsg.payloadlen = msg_buf_vec.size();
-                pubmsg.qos = 2;
-                pubmsg.retained = 0;
-
-                AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
-                int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
-                AIMRT_CHECK_WARN(rc == MQTTASYNC_SUCCESS,
-                                 "publish mqtt msg failed, topic: {}, code: {}",
-                                 mqtt_pub_topic, rc);
-              });
-
-          service_func_wrapper.service_func(
-              ctx_ptr->NativeHandle(),
-              service_req_ptr.get(),
-              service_rsp_ptr.get(),
-              service_callback.NativeHandle());
-        } catch (const std::exception& e) {
-          AIMRT_WARN("Handle mqtt rpc msg failed, exception info: {}", e.what());
-        }
-      });
+  msg_handle_registry_ptr_->RegisterMsgHandle(
+      mqtt_sub_topic_2,
+      handle);
 
   return true;
 }
@@ -358,10 +369,19 @@ bool MqttRpcBackend::TryInvoke(
   std::string_view to_addr =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
 
+  std::string server_mqtt_id;
   if (!to_addr.empty()) {
     auto pos = to_addr.find("://");
     if (pos == std::string_view::npos) return false;
     if (to_addr.substr(0, pos) != Name()) return false;
+
+    auto url_op = aimrt::common::util::ParseUrl(to_addr);
+    if (!url_op) {
+      client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
+      return true;
+    }
+
+    server_mqtt_id = url_op->host;
   }
 
   // 需要由本后端处理。此行之后只能使用callback报错，不能返回false
@@ -465,7 +485,15 @@ bool MqttRpcBackend::TryInvoke(
   pubmsg.retained = 0;
 
   // topic: aimrt_rpc_req/uri
-  std::string mqtt_pub_topic = "aimrt_rpc_req/" + util::UrlEncode(GetRealFuncName(func_name));
+  std::string mqtt_pub_topic;
+  if (server_mqtt_id.empty()) {
+    mqtt_pub_topic = "aimrt_rpc_req/" + util::UrlEncode(GetRealFuncName(func_name));
+  } else {
+    mqtt_pub_topic =
+        "aimrt_rpc_req/" +
+        util::UrlEncode(server_mqtt_id) + "/" +
+        util::UrlEncode(GetRealFuncName(func_name));
+  }
 
   AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
   int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);
