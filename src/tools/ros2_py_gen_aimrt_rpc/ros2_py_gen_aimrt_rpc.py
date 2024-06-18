@@ -243,23 +243,24 @@ namespace srv {
 {{srv_filename}}CoService::{{srv_filename}}CoService() {
   aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
-        const aimrt::rpc::RpcHandle h =
+        auto handle_ptr = std::make_unique<const aimrt::rpc::RpcHandle>(
             [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
-            -> aimrt::co::Task<aimrt::rpc::Status> {
-          return {{srv_filename}}(
-              ctx_ref,
-              *static_cast<const {{srv_filename}}_Request*>(req_ptr),
-              *static_cast<{{srv_filename}}_Response*>(rsp_ptr));
-        };
+                -> aimrt::co::Task<aimrt::rpc::Status> {
+              return {{srv_filename}}(
+                  ctx_ref,
+                  *static_cast<const {{srv_filename}}_Request*>(req_ptr),
+                  *static_cast<{{srv_filename}}_Response*>(rsp_ptr));
+            });
 
         aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
 
+        auto* ptr = handle_ptr.get();
         aimrt::co::StartDetached(
             aimrt::co::On(
                 aimrt::co::InlineScheduler(),
-                filter_mgr_.InvokeRpc(h, aimrt::rpc::ContextRef(ctx), req, rsp)) |
+                filter_mgr_.InvokeRpc(*ptr, aimrt::rpc::ContextRef(ctx), req, rsp)) |
             aimrt::co::Then(
-                [result_callback{std::move(result_callback)}](aimrt::rpc::Status status) {
+                [handle_ptr{std::move(handle_ptr)}, result_callback{std::move(result_callback)}](aimrt::rpc::Status status) {
                   result_callback(status.Code());
                 }));
       });
@@ -289,13 +290,13 @@ aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
 
     rpc_handle_ref_.Invoke(
-    "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-    ctx_ref,
-    &req,
-    &rsp,
-    [&result_promise](uint32_t code) {
-      result_promise.set_value(aimrt::rpc::Status(code));
-    });
+        "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+        ctx_ref,
+        &req,
+        &rsp,
+        [&result_promise](uint32_t code) {
+          result_promise.set_value(aimrt::rpc::Status(code));
+        });
 
     return result_promise.get_future().get();
   }
