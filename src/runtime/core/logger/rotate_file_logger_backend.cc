@@ -108,8 +108,7 @@ void RotateFileLoggerBackend::Log(
         log_data_wrapper.thread_id, log_data_wrapper.module_name,
         log_data_wrapper.file_name, log_data_wrapper.line,
         log_data_wrapper.column, log_data_wrapper.function_name,
-        std::string_view(log_data_wrapper.log_data,
-                         log_data_wrapper.log_data_size));
+        std::string_view(log_data_wrapper.log_data, log_data_wrapper.log_data_size));
   }
 
   auto log_work = [this, format_log_str_ptr]() {
