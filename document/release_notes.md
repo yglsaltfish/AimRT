@@ -30,6 +30,7 @@
 - 【非兼容性修改】原来的协程RPC Proxy/Service接口重命名为CoProxy/CoService，不在支持老命名方式；
 - 优化了rpc status Tostring方法的输出；
 - local rpc backend 支持timeout功能；
+- 修复了RPC Server Handle生命周期的Bug；
 - 新增 log_control_plugin：
   - 提供了运行时查看、修改日志等级的接口；
   - 添加了相关示例；
