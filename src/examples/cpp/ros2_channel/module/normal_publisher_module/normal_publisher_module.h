@@ -1,9 +1,8 @@
 #pragma once
 
 #include <atomic>
+#include <future>
 
-#include "aimrt_module_cpp_interface/co/async_scope.h"
-#include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/module_base.h"
 
 namespace aimrt::examples::cpp::ros2_channel::normal_publisher_module {
@@ -26,14 +25,14 @@ class NormalPublisherModule : public aimrt::ModuleBase {
  private:
   auto GetLogger() { return core_.GetLogger(); }
 
-  co::Task<void> MainLoop();
+  void MainLoop();
 
  private:
   aimrt::CoreRef core_;
   aimrt::executor::ExecutorRef executor_;
 
-  co::AsyncScope scope_;
   std::atomic_bool run_flag_ = true;
+  std::promise<void> stop_sig_;
 
   std::string topic_name_;
   double channel_frq_;

@@ -2,7 +2,7 @@
 
 #include "rpc.aimrt_rpc.pb.h"
 
-namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_server_module {
+namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_server_module {
 
 class ExampleServiceImpl : public aimrt::protocols::example::ExampleServiceCoService {
  public:
@@ -20,4 +20,4 @@ class ExampleServiceImpl : public aimrt::protocols::example::ExampleServiceCoSer
       ::aimrt::protocols::example::GetBarDataRsp& rsp) override;
 };
 
-}  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_server_module
+}  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_server_module

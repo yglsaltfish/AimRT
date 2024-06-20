@@ -31,8 +31,8 @@ aimrt:
             BenchmarkRpcClientModule,
             NormalRpcAsyncClientModule,
             NormalRpcAsyncServerModule,
-            NormalRpcClientModule,
-            NormalRpcServerModule,
+            NormalRpcCoClientModule,
+            NormalRpcCoServerModule,
             NormalRpcFutureClientModule,
           ]
     modules: # 模块

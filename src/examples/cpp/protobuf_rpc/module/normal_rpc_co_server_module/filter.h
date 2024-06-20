@@ -2,9 +2,9 @@
 
 #include "aimrt_module_cpp_interface/rpc/rpc_filter.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
-#include "normal_rpc_server_module/global.h"
+#include "normal_rpc_co_server_module/global.h"
 
-namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_server_module {
+namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_server_module {
 
 inline co::Task<aimrt::rpc::Status> DebugLogServerFilter(
     aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
@@ -31,4 +31,4 @@ inline co::Task<aimrt::rpc::Status> TimeCostLogServerFilter(
   co_return status;
 }
 
-}  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_server_module
+}  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_server_module

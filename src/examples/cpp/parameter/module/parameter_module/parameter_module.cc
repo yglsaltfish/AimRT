@@ -1,9 +1,4 @@
 #include "parameter_module/parameter_module.h"
-#include "aimrt_module_cpp_interface/co/aimrt_context.h"
-#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
-#include "aimrt_module_cpp_interface/co/on.h"
-#include "aimrt_module_cpp_interface/co/schedule.h"
-#include "aimrt_module_cpp_interface/co/sync_wait.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -35,8 +30,8 @@ bool ParameterModule::Initialize(aimrt::CoreRef core) {
 
 bool ParameterModule::Start() {
   try {
-    scope_.spawn(co::On(co::AimRTScheduler(work_executor_), SetParameterLoop()));
-    scope_.spawn(co::On(co::AimRTScheduler(work_executor_), GetParameterLoop()));
+    work_executor_.Execute(std::bind(&ParameterModule::SetParameterLoop, this));
+    work_executor_.Execute(std::bind(&ParameterModule::GetParameterLoop, this));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
     return false;
@@ -48,9 +43,9 @@ bool ParameterModule::Start() {
 
 void ParameterModule::Shutdown() {
   try {
-    // Wait all coroutine complete
     run_flag_ = false;
-    co::SyncWait(scope_.complete());
+    set_loop_stop_sig_.get_future().wait();
+    get_loop_stop_sig_.get_future().wait();
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -59,11 +54,9 @@ void ParameterModule::Shutdown() {
   AIMRT_INFO("Shutdown succeeded.");
 }
 
-co::Task<void> ParameterModule::SetParameterLoop() {
+void ParameterModule::SetParameterLoop() {
   try {
     AIMRT_INFO("Start SetParameterLoop.");
-
-    co::AimRTScheduler work_scheduler(work_executor_);
 
     uint32_t count = 0;
     while (run_flag_) {
@@ -75,8 +68,7 @@ co::Task<void> ParameterModule::SetParameterLoop() {
       parameter_handle_.SetParameter(key, val);
       AIMRT_INFO("Set parameter, key: '{}', val: '{}'", key, val);
 
-      co_await co::ScheduleAfter(
-          work_scheduler, std::chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
     AIMRT_INFO("Exit SetParameterLoop.");
@@ -84,14 +76,12 @@ co::Task<void> ParameterModule::SetParameterLoop() {
     AIMRT_ERROR("Exit SetParameterLoop with exception, {}", e.what());
   }
 
-  co_return;
+  set_loop_stop_sig_.set_value();
 }
 
-co::Task<void> ParameterModule::GetParameterLoop() {
+void ParameterModule::GetParameterLoop() {
   try {
     AIMRT_INFO("Start GetParameterLoop.");
-
-    co::AimRTScheduler work_scheduler(work_executor_);
 
     uint32_t count = 0;
     while (run_flag_) {
@@ -102,9 +92,7 @@ co::Task<void> ParameterModule::GetParameterLoop() {
       auto val = parameter_handle_.GetParameter(key);
       AIMRT_INFO("Get parameter, key: '{}', val: '{}'", key, val);
 
-      co_await co::ScheduleAfter(
-          work_scheduler,
-          std::chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
     AIMRT_INFO("Exit GetParameterLoop.");
@@ -112,7 +100,7 @@ co::Task<void> ParameterModule::GetParameterLoop() {
     AIMRT_ERROR("Exit GetParameterLoop with exception, {}", e.what());
   }
 
-  co_return;
+  get_loop_stop_sig_.set_value();
 }
 
 }  // namespace aimrt::examples::cpp::parameter::parameter_module

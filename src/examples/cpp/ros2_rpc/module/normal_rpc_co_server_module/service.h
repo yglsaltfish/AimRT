@@ -2,7 +2,7 @@
 
 #include "RosTestRpc.aimrt_rpc.srv.h"
 
-namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_server_module {
+namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_co_server_module {
 
 class RosTestRpcServiceImpl : public example_ros2::srv::RosTestRpcCoService {
  public:
@@ -15,4 +15,4 @@ class RosTestRpcServiceImpl : public example_ros2::srv::RosTestRpcCoService {
       example_ros2::srv::RosTestRpc_Response& rsp) override;
 };
 
-}  // namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_server_module
+}  // namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_co_server_module

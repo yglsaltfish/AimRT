@@ -23,7 +23,7 @@ target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_pkg_c_interface
-          ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_client_module
+          ${CUR_SUPERIOR_NAMESPACE}::normal_rpc_co_client_module
           ${CUR_SUPERIOR_NAMESPACE}::benchmark_rpc_client_module)
 
 # Set installation of target

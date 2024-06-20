@@ -29,7 +29,7 @@ aimrt:
       - path: ./libprotobuf_rpc_server_pkg.so # so/dll地址
         disable_module: [] # 此动态库中要屏蔽的模块名称。默认全部加载
     modules: # 模块
-      - name: NormalRpcServerModule # 模块Name接口返回的名称
+      - name: NormalRpcCoServerModule # 模块Name接口返回的名称
         log_lvl: INFO # 模块日志级别
 
-NormalRpcServerModule:
+NormalRpcCoServerModule:

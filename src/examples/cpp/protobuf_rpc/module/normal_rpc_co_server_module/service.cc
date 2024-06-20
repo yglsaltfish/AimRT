@@ -1,8 +1,8 @@
-#include "normal_rpc_server_module/service.h"
+#include "normal_rpc_co_server_module/service.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
-#include "normal_rpc_server_module/global.h"
+#include "normal_rpc_co_server_module/global.h"
 
-namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_server_module {
+namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_server_module {
 
 co::Task<aimrt::rpc::Status> ExampleServiceImpl::GetFooData(
     aimrt::rpc::ContextRef ctx,
@@ -28,4 +28,4 @@ co::Task<aimrt::rpc::Status> ExampleServiceImpl::GetBarData(
   co_return aimrt::rpc::Status();
 }
 
-}  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_server_module
+}  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_server_module

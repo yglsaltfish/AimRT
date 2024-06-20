@@ -28,8 +28,8 @@ aimrt:
       - path: ./libros2_rpc_server_pkg.so # so/dll地址
         disable_module: [] # 此动态库中要屏蔽的模块名称。默认全部加载
     modules: # 模块
-      - name: NormalRpcServerModule # 模块Name接口返回的名称
+      - name: NormalRpcCoServerModule # 模块Name接口返回的名称
         log_lvl: INFO # 模块日志级别
 
 # 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
-NormalRpcServerModule:
+NormalRpcCoServerModule:
