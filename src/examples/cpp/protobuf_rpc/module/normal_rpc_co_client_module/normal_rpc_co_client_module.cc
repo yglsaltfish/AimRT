@@ -1,4 +1,4 @@
-#include "normal_rpc_client_module/normal_rpc_client_module.h"
+#include "normal_rpc_co_client_module/normal_rpc_co_client_module.h"
 #include "aimrt_module_cpp_interface/co/aimrt_context.h"
 #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
 #include "aimrt_module_cpp_interface/co/on.h"
@@ -8,9 +8,9 @@
 
 #include "yaml-cpp/yaml.h"
 
-namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_client_module {
+namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_client_module {
 
-bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) {
+bool NormalRpcCoClientModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   try {
@@ -81,7 +81,7 @@ bool NormalRpcClientModule::Initialize(aimrt::CoreRef core) {
   return true;
 }
 
-bool NormalRpcClientModule::Start() {
+bool NormalRpcCoClientModule::Start() {
   try {
     scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
   } catch (const std::exception& e) {
@@ -93,7 +93,7 @@ bool NormalRpcClientModule::Start() {
   return true;
 }
 
-void NormalRpcClientModule::Shutdown() {
+void NormalRpcCoClientModule::Shutdown() {
   try {
     run_flag_ = false;
     co::SyncWait(scope_.complete());
@@ -106,7 +106,7 @@ void NormalRpcClientModule::Shutdown() {
 }
 
 // Main loop
-co::Task<void> NormalRpcClientModule::MainLoop() {
+co::Task<void> NormalRpcCoClientModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 
@@ -160,4 +160,4 @@ co::Task<void> NormalRpcClientModule::MainLoop() {
   co_return;
 }
 
-}  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_client_module
+}  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_client_module

@@ -29,8 +29,8 @@ aimrt:
         disable_module: # 此动态库中要屏蔽的模块名称。默认全部加载
           [
             BenchmarkRpcClientModule,
-            NormalRpcClientModule,
-            NormalRpcServerModule,
+            NormalRpcCoClientModule,
+            NormalRpcCoServerModule,
             NormalRpcSyncClientModule,
             NormalRpcSyncServerModule,
             NormalRpcFutureClientModule,

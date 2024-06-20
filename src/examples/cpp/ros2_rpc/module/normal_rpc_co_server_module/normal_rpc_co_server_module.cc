@@ -1,10 +1,10 @@
-#include "normal_rpc_server_module/normal_rpc_server_module.h"
-#include "normal_rpc_server_module/filter.h"
-#include "normal_rpc_server_module/global.h"
+#include "normal_rpc_co_server_module/normal_rpc_co_server_module.h"
+#include "normal_rpc_co_server_module/filter.h"
+#include "normal_rpc_co_server_module/global.h"
 
-namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_server_module {
+namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_co_server_module {
 
-bool NormalRpcServerModule::Initialize(aimrt::CoreRef core) {
+bool NormalRpcCoServerModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
   SetLogger(core_.GetLogger());
@@ -31,8 +31,8 @@ bool NormalRpcServerModule::Initialize(aimrt::CoreRef core) {
   return true;
 }
 
-bool NormalRpcServerModule::Start() { return true; }
+bool NormalRpcCoServerModule::Start() { return true; }
 
-void NormalRpcServerModule::Shutdown() {}
+void NormalRpcCoServerModule::Shutdown() {}
 
-}  // namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_server_module
+}  // namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_co_server_module

@@ -36,8 +36,8 @@ aimrt:
           [
             NormalRpcAsyncClientModule,
             NormalRpcAsyncServerModule,
-            NormalRpcClientModule,
-            NormalRpcServerModule,
+            NormalRpcCoClientModule,
+            NormalRpcCoServerModule,
             NormalRpcSyncClientModule,
           ]
     modules: # 模块

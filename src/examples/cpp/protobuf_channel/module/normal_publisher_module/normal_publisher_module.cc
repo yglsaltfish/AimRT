@@ -1,9 +1,4 @@
 #include "normal_publisher_module/normal_publisher_module.h"
-#include "aimrt_module_cpp_interface/co/aimrt_context.h"
-#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
-#include "aimrt_module_cpp_interface/co/on.h"
-#include "aimrt_module_cpp_interface/co/schedule.h"
-#include "aimrt_module_cpp_interface/co/sync_wait.h"
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 
@@ -49,7 +44,7 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) {
 
 bool NormalPublisherModule::Start() {
   try {
-    scope_.spawn(co::On(co::InlineScheduler(), MainLoop()));
+    executor_.Execute(std::bind(&NormalPublisherModule::MainLoop, this));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
     return false;
@@ -61,8 +56,9 @@ bool NormalPublisherModule::Start() {
 
 void NormalPublisherModule::Shutdown() {
   try {
+    auto stop_future = stop_sig_.get_future();
     run_flag_ = false;
-    co::SyncWait(scope_.complete());
+    stop_future.wait();
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;
@@ -72,19 +68,14 @@ void NormalPublisherModule::Shutdown() {
 }
 
 // Main loop
-co::Task<void> NormalPublisherModule::MainLoop() {
+void NormalPublisherModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 
-    co::AimRTScheduler work_thread_pool_scheduler(executor_);
-
-    co_await co::Schedule(work_thread_pool_scheduler);
-
     uint32_t count = 0;
     while (run_flag_) {
-      co_await co::ScheduleAfter(
-          work_thread_pool_scheduler,
-          std::chrono::microseconds(static_cast<uint32_t>(1000000 / channel_frq_)));
+      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<uint32_t>(1000 / channel_frq_)));
+
       count++;
       AIMRT_INFO("Loop count : {} -------------------------", count);
 
@@ -102,7 +93,7 @@ co::Task<void> NormalPublisherModule::MainLoop() {
     AIMRT_ERROR("Exit MainLoop with exception, {}", e.what());
   }
 
-  co_return;
+  stop_sig_.set_value();
 }
 
 }  // namespace aimrt::examples::cpp::protobuf_channel::normal_publisher_module

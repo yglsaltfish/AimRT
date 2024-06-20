@@ -44,13 +44,13 @@ aimrt:
   module: # 模块配置
     pkgs: # 要加载的动态库配置
       - path: ./libros2_rpc_client_pkg.so # so/dll地址
-        disable_module: [NormalRpcClientModule] # 此动态库中要屏蔽的模块名称。默认全部加载
+        disable_module: [NormalRpcCoClientModule] # 此动态库中要屏蔽的模块名称。默认全部加载
       - path: ./libros2_rpc_server_pkg.so # so/dll地址
         disable_module: [] # 此动态库中要屏蔽的模块名称。默认全部加载
     modules: # 模块
       - name: BenchmarkRpcClientModule # 模块Name接口返回的名称
         log_lvl: INFO # 模块日志级别
-      - name: NormalRpcServerModule # 模块Name接口返回的名称
+      - name: NormalRpcCoServerModule # 模块Name接口返回的名称
         log_lvl: WARN # 模块日志级别
 
 # 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径

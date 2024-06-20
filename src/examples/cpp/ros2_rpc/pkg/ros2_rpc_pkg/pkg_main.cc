@@ -4,23 +4,23 @@
 #include "benchmark_rpc_client_module/benchmark_rpc_client_module.h"
 #include "normal_rpc_async_client_module/normal_rpc_async_client_module.h"
 #include "normal_rpc_async_server_module/normal_rpc_async_server_module.h"
-#include "normal_rpc_client_module/normal_rpc_client_module.h"
+#include "normal_rpc_co_client_module/normal_rpc_co_client_module.h"
+#include "normal_rpc_co_server_module/normal_rpc_co_server_module.h"
 #include "normal_rpc_future_client_module/normal_rpc_future_client_module.h"
-#include "normal_rpc_server_module/normal_rpc_server_module.h"
 #include "normal_rpc_sync_client_module/normal_rpc_sync_client_module.h"
 #include "normal_rpc_sync_server_module/normal_rpc_sync_server_module.h"
 
 using namespace aimrt::examples::cpp::ros2_rpc;
 
 static std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>> aimrt_module_register_array[]{
-    {"NormalRpcClientModule", []() -> aimrt::ModuleBase* {
-       return new normal_rpc_client_module::NormalRpcClientModule();
+    {"NormalRpcCoClientModule", []() -> aimrt::ModuleBase* {
+       return new normal_rpc_co_client_module::NormalRpcCoClientModule();
      }},
     {"BenchmarkRpcClientModule", []() -> aimrt::ModuleBase* {
        return new benchmark_rpc_client_module::BenchmarkRpcClientModule();
      }},
-    {"NormalRpcServerModule", []() -> aimrt::ModuleBase* {
-       return new normal_rpc_server_module::NormalRpcServerModule();
+    {"NormalRpcCoServerModule", []() -> aimrt::ModuleBase* {
+       return new normal_rpc_co_server_module::NormalRpcCoServerModule();
      }},
     {"NormalRpcAsyncClientModule", []() -> aimrt::ModuleBase* {
        return new normal_rpc_async_client_module::NormalRpcAsyncClientModule();
