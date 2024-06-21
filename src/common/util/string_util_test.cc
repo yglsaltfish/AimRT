@@ -600,7 +600,7 @@ TEST(STRING_UTIL_TEST, GetMapKeys_test) {
   for (size_t ii = 0; ii < test_cases.size(); ++ii) {
     TestCase& cur_test_case = test_cases[ii];
     auto ret = GetMapKeys(cur_test_case.m);
-    EXPECT_TRUE(CheckSetEqual(ret, cur_test_case.want_result))
+    EXPECT_TRUE(CheckContainerEqual(ret, cur_test_case.want_result))
         << "Test " << cur_test_case.name << " failed, index " << ii;
   }
 }
@@ -782,7 +782,7 @@ void TestSplitToVec() {
     TestCase& cur_test_case = test_cases[ii];
     auto ret = SplitToVec<StringType>(cur_test_case.source, cur_test_case.sep,
                                       cur_test_case.trim, cur_test_case.clear);
-    EXPECT_TRUE(CheckVectorEqual(ret, cur_test_case.want_result))
+    EXPECT_TRUE(CheckContainerEqual(ret, cur_test_case.want_result))
         << "Test " << cur_test_case.name << " failed, index " << ii;
   }
 }
@@ -1106,7 +1106,7 @@ void TestSplitToSet() {
     TestCase& cur_test_case = test_cases[ii];
     auto ret = SplitToSet<StringType>(cur_test_case.source, cur_test_case.sep,
                                       cur_test_case.trim, cur_test_case.clear);
-    EXPECT_TRUE(CheckSetEqual(ret, cur_test_case.want_result))
+    EXPECT_TRUE(CheckContainerEqual(ret, cur_test_case.want_result))
         << "Test " << cur_test_case.name << " failed, index " << ii;
   }
 }

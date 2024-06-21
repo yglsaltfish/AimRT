@@ -1,18 +1,16 @@
 #pragma once
 
-#include <concepts>
-#include <list>
+#include <functional>
 #include <memory>
 
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "aimrt_module_cpp_interface/util/function.h"
 
 namespace aimrt::rpc {
 
-using RpcHandle = aimrt::util::Function<co::Task<Status>(ContextRef, const void*, void*)>;
-using RpcFilter = aimrt::util::Function<co::Task<Status>(ContextRef, const void*, void*, const RpcHandle&)>;
+using RpcHandle = std::function<co::Task<Status>(ContextRef, const void*, void*)>;
+using RpcFilter = std::function<co::Task<Status>(ContextRef, const void*, void*, const RpcHandle&)>;
 
 class FilterManager {
  public:

@@ -38,7 +38,7 @@ v2
 )str"});
 
   for (size_t ii = 0; ii < test_cases.size(); ++ii) {
-    auto ret = Vec2Str(test_cases[ii].v);
+    auto ret = Container2Str(test_cases[ii].v);
     EXPECT_STREQ(ret.c_str(), test_cases[ii].want_result.c_str())
         << "Test " << test_cases[ii].name << " failed, index " << ii;
   }
@@ -74,7 +74,7 @@ TEST(STL_TOOL_TEST, Vec2Str_bool_test) {
 )str"});
 
   for (size_t ii = 0; ii < test_cases.size(); ++ii) {
-    auto ret = Vec2Str(test_cases[ii].v);
+    auto ret = Container2Str(test_cases[ii].v);
     EXPECT_STREQ(ret.c_str(), test_cases[ii].want_result.c_str())
         << "Test " << test_cases[ii].name << " failed, index " << ii;
   }
@@ -114,7 +114,7 @@ v2
 )str"});
 
   for (size_t ii = 0; ii < test_cases.size(); ++ii) {
-    auto ret = Set2Str(test_cases[ii].s);
+    auto ret = Container2Str(test_cases[ii].s);
     EXPECT_STREQ(ret.c_str(), test_cases[ii].want_result.c_str())
         << "Test " << test_cases[ii].name << " failed, index " << ii;
   }
@@ -224,7 +224,7 @@ TEST(STL_TOOL_TEST, CheckVectorEqual_test) {
           .want_result = true});
 
   for (size_t ii = 0; ii < test_cases.size(); ++ii) {
-    auto ret = CheckVectorEqual(test_cases[ii].vec1, test_cases[ii].vec2);
+    auto ret = CheckContainerEqual(test_cases[ii].vec1, test_cases[ii].vec2);
     EXPECT_EQ(ret, test_cases[ii].want_result)
         << "Test " << test_cases[ii].name << " failed, index " << ii;
   }
@@ -267,7 +267,7 @@ TEST(STL_TOOL_TEST, CheckVectorEqual_bool_test) {
           .want_result = true});
 
   for (size_t ii = 0; ii < test_cases.size(); ++ii) {
-    auto ret = CheckVectorEqual(test_cases[ii].vec1, test_cases[ii].vec2);
+    auto ret = CheckContainerEqual(test_cases[ii].vec1, test_cases[ii].vec2);
     EXPECT_EQ(ret, test_cases[ii].want_result)
         << "Test " << test_cases[ii].name << " failed, index " << ii;
   }
@@ -310,7 +310,7 @@ TEST(STL_TOOL_TEST, CheckSetEqual_test) {
           .want_result = true});
 
   for (size_t ii = 0; ii < test_cases.size(); ++ii) {
-    auto ret = CheckSetEqual(test_cases[ii].set1, test_cases[ii].set2);
+    auto ret = CheckContainerEqual(test_cases[ii].set1, test_cases[ii].set2);
     EXPECT_EQ(ret, test_cases[ii].want_result)
         << "Test " << test_cases[ii].name << " failed, index " << ii;
   }
