@@ -29,6 +29,7 @@
 - 【非兼容性修改】去除rpc的context manager，现在可以直接new一个context；
 - 【非兼容性修改】原来的协程RPC Proxy/Service接口重命名为CoProxy/CoService，不在支持老命名方式；
 - 优化了rpc status Tostring方法的输出；
+- 为rpc context、channel context添加了Tostring方法；
 - local rpc backend 支持timeout功能；
 - 新增 log_control_plugin：
   - 提供了运行时查看、修改日志等级的接口；
@@ -44,4 +45,4 @@
 - 修复了RPC Server Handle生命周期的Bug；
 - 修复了使用std::format作为日志format方法时的乱码问题；
 - 优化了example体系；
-
+- 添加了一些单元测试；

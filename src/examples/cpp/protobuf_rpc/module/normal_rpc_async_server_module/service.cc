@@ -11,8 +11,8 @@ void ExampleServiceAsyncServiceImpl::GetFooData(
     aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
   rsp.set_msg("echo " + req.msg());
 
-  AIMRT_INFO("Server handle new rpc call. req: {}, return rsp: {}",
-             aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
+  AIMRT_INFO("Server handle new rpc call. context:{}, req: {}, return rsp: {}",
+             ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
 
   callback(aimrt::rpc::Status());
 }
@@ -24,8 +24,8 @@ void ExampleServiceAsyncServiceImpl::GetBarData(
     aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
   rsp.set_msg("echo " + req.msg());
 
-  AIMRT_INFO("Server handle new rpc call. req: {}, return rsp: {}",
-             aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
+  AIMRT_INFO("Server handle new rpc call. context:{}, req: {}, return rsp: {}",
+             ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
 
   callback(aimrt::rpc::Status());
 }

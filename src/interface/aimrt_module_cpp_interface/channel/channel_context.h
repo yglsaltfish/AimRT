@@ -60,6 +60,24 @@ class Context {
     SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE, val);
   }
 
+  std::string ToString() const {
+    std::stringstream ss;
+    ss << "timestamp: " << t_ << ", meta: {";
+    bool flag = true;
+    for (const auto& itr : meta_data_map_) {
+      if (flag)
+        flag = false;
+      else
+        ss << ",";
+
+      ss << "{" << itr.first << "," << itr.second << "}";
+    }
+
+    ss << "}";
+
+    return ss.str();
+  }
+
  private:
   static const aimrt_channel_context_base_ops_t* GenOpsBase() {
     static constexpr aimrt_channel_context_base_ops_t ops{
@@ -173,6 +191,27 @@ class ContextRef {
   }
   void SetSerializationType(std::string_view val) {
     SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE, val);
+  }
+
+  std::string ToString() const {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+
+    std::stringstream ss;
+
+    auto timestamp = base_ptr_->ops->get_msg_timestamp_ns(base_ptr_->impl);
+    ss << "timestamp: " << timestamp << ", meta: {";
+
+    aimrt_string_view_array_t keys = base_ptr_->ops->get_meta_keys(base_ptr_->impl);
+    for (size_t ii = 0; ii < keys.len; ++ii) {
+      if (ii != 0) ss << ",";
+      auto val = base_ptr_->ops->get_meta_val(base_ptr_->impl, keys.str_array[ii]);
+      ss << "{" << aimrt::util::ToStdStringView(keys.str_array[ii])
+         << "," << aimrt::util::ToStdStringView(val) << "}";
+    }
+
+    ss << "}";
+
+    return ss.str();
   }
 
  private:
