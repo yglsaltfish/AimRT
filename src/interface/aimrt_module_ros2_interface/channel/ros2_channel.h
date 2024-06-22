@@ -26,23 +26,28 @@ inline void Publish(PublisherRef publisher, ContextRef ctx_ref, const MsgType& m
   static const std::string msg_type_name =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
 
-  ctx_ref.SetSerializationType("ros2");
-  publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+  if (ctx_ref) {
+    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
+    publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+    return;
+  }
+
+  Context ctx;
+  ctx.SetSerializationType("ros2");
+  publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
 }
 
 template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline void Publish(PublisherRef publisher, const MsgType& msg) {
-  aimrt::channel::Context ctx;
-  Publish(publisher, ctx, msg);
+  Publish(publisher, ContextRef(), msg);
 }
 
 template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline bool Subscribe(
     SubscriberRef subscriber,
-    aimrt::util::Function<void(aimrt::channel::ContextRef ctx_ref,
-                               const std::shared_ptr<const MsgType>&)>&& callback) {
+    std::function<void(ContextRef ctx_ref, const std::shared_ptr<const MsgType>&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -54,7 +59,7 @@ inline bool Subscribe(
             std::shared_ptr<const MsgType>(
                 static_cast<const MsgType*>(msg_ptr),
                 [release_callback{std::move(release_callback)}](const MsgType*) { release_callback(); });
-        callback(aimrt::channel::ContextRef(ctx_ptr), msg_shared_ptr);
+        callback(ContextRef(ctx_ptr), msg_shared_ptr);
       });
 }
 
@@ -62,7 +67,7 @@ template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline bool Subscribe(
     SubscriberRef subscriber,
-    aimrt::util::Function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
+    std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -82,7 +87,7 @@ template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
 inline bool SubscribeCo(
     SubscriberRef subscriber,
-    aimrt::util::Function<co::Task<void>(aimrt::channel::ContextRef ctx_ref, const MsgType&)>&& callback) {
+    std::function<co::Task<void>(ContextRef ctx_ref, const MsgType&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -92,7 +97,7 @@ inline bool SubscribeCo(
         aimrt::co::StartDetached(
             aimrt::co::On(
                 aimrt::co::InlineScheduler(),
-                callback(aimrt::channel::ContextRef(ctx_ptr), *(static_cast<const MsgType*>(msg_ptr)))) |
+                callback(ContextRef(ctx_ptr), *(static_cast<const MsgType*>(msg_ptr)))) |
             aimrt::co::Then(
                 aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base)));
       });
@@ -100,8 +105,9 @@ inline bool SubscribeCo(
 
 template <class MsgType,
           typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
-inline bool SubscribeCo(SubscriberRef subscriber,
-                        aimrt::util::Function<co::Task<void>(const MsgType&)>&& callback) {
+inline bool SubscribeCo(
+    SubscriberRef subscriber,
+    std::function<co::Task<void>(const MsgType&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -116,5 +122,65 @@ inline bool SubscribeCo(SubscriberRef subscriber,
                 aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base)));
       });
 }
+
+template <class MsgType,
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+class PublisherProxy final : public PublisherProxyBase {
+ public:
+  explicit PublisherProxy(PublisherRef publisher)
+      : PublisherProxyBase(publisher) {}
+  ~PublisherProxy() = default;
+
+  bool RegisterPublishType() const {
+    return publisher_.RegisterPublishType(GetRos2MessageTypeSupport<MsgType>());
+  }
+
+  void Publish(ContextRef ctx_ref, const MsgType& msg) const {
+    static const std::string msg_type_name =
+        std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
+
+    if (ctx_ref) {
+      if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
+      PublisherProxyBase::Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+      return;
+    }
+
+    auto ctx_ptr = NewContextSharedPtr();
+    ctx_ptr->SetSerializationType("pb");
+    PublisherProxyBase::Publish(msg_type_name, ctx_ptr, static_cast<const void*>(&msg));
+  }
+
+  void Publish(const MsgType& msg) const {
+    Publish(ContextRef(), msg);
+  }
+};
+
+template <class MsgType,
+          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+class SubscriberProxy final : public SubscriberProxyBase {
+ public:
+  explicit SubscriberProxy(SubscriberRef subscriber)
+      : SubscriberProxyBase(subscriber) {}
+  ~SubscriberProxy() = default;
+
+  bool Subscribe(
+      std::function<void(ContextRef ctx_ref, const std::shared_ptr<const MsgType>&)>&& callback) const {
+    return Subscribe(subscriber_, std::move(callback));
+  }
+
+  bool Subscribe(
+      std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) const {
+    return Subscribe(subscriber_, std::move(callback));
+  }
+
+  bool SubscribeCo(
+      std::function<co::Task<void>(ContextRef ctx_ref, const MsgType&)>&& callback) const {
+    return SubscribeCo(subscriber_, std::move(callback));
+  }
+
+  bool SubscribeCo(std::function<co::Task<void>(const MsgType&)>&& callback) const {
+    return SubscribeCo(subscriber_, std::move(callback));
+  }
+};
 
 }  // namespace aimrt::channel

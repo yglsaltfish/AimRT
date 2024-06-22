@@ -28,7 +28,8 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) {
     publisher_ = core_.GetChannelHandle().GetPublisher(topic_name_);
     AIMRT_CHECK_ERROR_THROW(publisher_, "Get publisher for topic '{}' failed.", topic_name_);
 
-    bool ret = aimrt::channel::RegisterPublishType<example_ros2::msg::RosTestMsg>(publisher_);
+    aimrt::channel::PublisherProxy<example_ros2::msg::RosTestMsg> publisher_proxy(publisher_);
+    bool ret = publisher_proxy.RegisterPublishType();
     AIMRT_CHECK_ERROR_THROW(ret, "Register publishType failed.");
 
   } catch (const std::exception& e) {
@@ -71,6 +72,8 @@ void NormalPublisherModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 
+    aimrt::channel::PublisherProxy<example_ros2::msg::RosTestMsg> publisher_proxy(publisher_);
+
     uint32_t count = 0;
     while (run_flag_) {
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<uint32_t>(1000 / channel_frq_)));
@@ -84,7 +87,7 @@ void NormalPublisherModule::MainLoop() {
       msg.num = count + 1000;
 
       AIMRT_INFO("Publish new ros event, data:\n{}", example_ros2::msg::to_yaml(msg));
-      aimrt::channel::Publish(publisher_, msg);
+      publisher_proxy.Publish(msg);
     }
 
     AIMRT_INFO("Exit MainLoop.");

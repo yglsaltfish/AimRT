@@ -29,7 +29,8 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) {
     publisher_ = core_.GetChannelHandle().GetPublisher(topic_name_);
     AIMRT_CHECK_ERROR_THROW(publisher_, "Get publisher for topic '{}' failed.", topic_name_);
 
-    bool ret = aimrt::channel::RegisterPublishType<aimrt::protocols::example::ExampleEventMsg>(publisher_);
+    aimrt::channel::PublisherProxy<aimrt::protocols::example::ExampleEventMsg> publisher_proxy(publisher_);
+    bool ret = publisher_proxy.RegisterPublishType();
     AIMRT_CHECK_ERROR_THROW(ret, "Register publish type failed.");
 
   } catch (const std::exception& e) {
@@ -72,6 +73,8 @@ void NormalPublisherModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 
+    aimrt::channel::PublisherProxy<aimrt::protocols::example::ExampleEventMsg> publisher_proxy(publisher_);
+
     uint32_t count = 0;
     while (run_flag_) {
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<uint32_t>(1000 / channel_frq_)));
@@ -85,7 +88,7 @@ void NormalPublisherModule::MainLoop() {
       msg.set_num(count);
 
       AIMRT_INFO("Publish new pb event, data: {}", aimrt::Pb2CompactJson(msg));
-      aimrt::channel::Publish(publisher_, msg);
+      publisher_proxy.Publish(msg);
     }
 
     AIMRT_INFO("Exit MainLoop.");
