@@ -22,21 +22,27 @@ inline bool RegisterPublishType(PublisherRef publisher) {
 template <std::derived_from<google::protobuf::Message> MsgType>
 inline void Publish(PublisherRef publisher, ContextRef ctx_ref, const MsgType& msg) {
   static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
-  ctx_ref.SetSerializationType("pb");
-  publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+
+  if (ctx_ref) {
+    if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
+    publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+    return;
+  }
+
+  Context ctx;
+  ctx.SetSerializationType("pb");
+  publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>
 inline void Publish(PublisherRef publisher, const MsgType& msg) {
-  aimrt::channel::Context ctx;
-  Publish(publisher, ctx, msg);
+  Publish(publisher, ContextRef(), msg);
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>
 inline bool Subscribe(
     SubscriberRef subscriber,
-    aimrt::util::Function<void(aimrt::channel::ContextRef ctx_ref,
-                               const std::shared_ptr<const MsgType>&)>&& callback) {
+    std::function<void(ContextRef ctx_ref, const std::shared_ptr<const MsgType>&)>&& callback) {
   return subscriber.Subscribe(
       GetProtobufMessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -48,14 +54,14 @@ inline bool Subscribe(
             std::shared_ptr<const MsgType>(
                 static_cast<const MsgType*>(msg_ptr),
                 [release_callback{std::move(release_callback)}](const MsgType*) { release_callback(); });
-        callback(aimrt::channel::ContextRef(ctx_ptr), msg_shared_ptr);
+        callback(ContextRef(ctx_ptr), msg_shared_ptr);
       });
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>
 inline bool Subscribe(
     SubscriberRef subscriber,
-    aimrt::util::Function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
+    std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
   return subscriber.Subscribe(
       GetProtobufMessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -74,7 +80,7 @@ inline bool Subscribe(
 template <std::derived_from<google::protobuf::Message> MsgType>
 inline bool SubscribeCo(
     SubscriberRef subscriber,
-    aimrt::util::Function<co::Task<void>(aimrt::channel::ContextRef ctx_ref, const MsgType&)>&& callback) {
+    std::function<co::Task<void>(ContextRef ctx_ref, const MsgType&)>&& callback) {
   return subscriber.Subscribe(
       GetProtobufMessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -84,15 +90,16 @@ inline bool SubscribeCo(
         aimrt::co::StartDetached(
             aimrt::co::On(
                 aimrt::co::InlineScheduler(),
-                callback(aimrt::channel::ContextRef(ctx_ptr), *(static_cast<const MsgType*>(msg_ptr)))) |
+                callback(ContextRef(ctx_ptr), *(static_cast<const MsgType*>(msg_ptr)))) |
             aimrt::co::Then(
                 aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base)));
       });
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>
-inline bool SubscribeCo(SubscriberRef subscriber,
-                        aimrt::util::Function<co::Task<void>(const MsgType&)>&& callback) {
+inline bool SubscribeCo(
+    SubscriberRef subscriber,
+    std::function<co::Task<void>(const MsgType&)>&& callback) {
   return subscriber.Subscribe(
       GetProtobufMessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -107,5 +114,62 @@ inline bool SubscribeCo(SubscriberRef subscriber,
                 aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base)));
       });
 }
+
+template <std::derived_from<google::protobuf::Message> MsgType>
+class PublisherProxy final : public PublisherProxyBase {
+ public:
+  explicit PublisherProxy(PublisherRef publisher)
+      : PublisherProxyBase(publisher) {}
+  ~PublisherProxy() = default;
+
+  bool RegisterPublishType() const {
+    return publisher_.RegisterPublishType(GetProtobufMessageTypeSupport<MsgType>());
+  }
+
+  void Publish(ContextRef ctx_ref, const MsgType& msg) const {
+    static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
+
+    if (ctx_ref) {
+      if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
+      PublisherProxyBase::Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+      return;
+    }
+
+    auto ctx_ptr = NewContextSharedPtr();
+    ctx_ptr->SetSerializationType("pb");
+    PublisherProxyBase::Publish(msg_type_name, ctx_ptr, static_cast<const void*>(&msg));
+  }
+
+  void Publish(const MsgType& msg) const {
+    Publish(ContextRef(), msg);
+  }
+};
+
+template <std::derived_from<google::protobuf::Message> MsgType>
+class SubscriberProxy final : public SubscriberProxyBase {
+ public:
+  explicit SubscriberProxy(SubscriberRef subscriber)
+      : SubscriberProxyBase(subscriber) {}
+  ~SubscriberProxy() = default;
+
+  bool Subscribe(
+      std::function<void(ContextRef ctx_ref, const std::shared_ptr<const MsgType>&)>&& callback) const {
+    return Subscribe(subscriber_, std::move(callback));
+  }
+
+  bool Subscribe(
+      std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) const {
+    return Subscribe(subscriber_, std::move(callback));
+  }
+
+  bool SubscribeCo(
+      std::function<co::Task<void>(ContextRef ctx_ref, const MsgType&)>&& callback) const {
+    return SubscribeCo(subscriber_, std::move(callback));
+  }
+
+  bool SubscribeCo(std::function<co::Task<void>(const MsgType&)>&& callback) const {
+    return SubscribeCo(subscriber_, std::move(callback));
+  }
+};
 
 }  // namespace aimrt::channel

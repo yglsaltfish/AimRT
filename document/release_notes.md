@@ -24,17 +24,22 @@
 
 ## v0.7.0 (开发中)
 
+### 重要修改
 - App模式下支持直接create模块；
 - 【非兼容性修改】去除channel的context manager，现在可以直接new一个context；
 - 【非兼容性修改】去除rpc的context manager，现在可以直接new一个context；
-- 【非兼容性修改】原来的协程RPC Proxy/Service接口重命名为CoProxy/CoService，不在支持老命名方式；
-- 优化了rpc status Tostring方法的输出；
-- 为rpc context、channel context添加了Tostring方法；
+- 【非兼容性修改】原来的协程RPC Proxy/Service接口重命名为CoProxy/CoService，不再支持老命名方式；
 - local rpc backend 支持timeout功能；
 - 新增 log_control_plugin：
   - 提供了运行时查看、修改日志等级的接口；
   - 添加了相关示例；
   - 添加了相关文档；
+- 添加了channel publisher proxy和subscriber proxy，现在可以使用带类型的proxy发布订阅topic；
+
+
+### 次要修改
+- 优化了rpc status Tostring方法的输出；
+- 为rpc context、channel context添加了Tostring方法；
 - ros2_plugin：
   - ros2 RPC / Channel现在支持配置QOS；
   - 添加了相关示例；

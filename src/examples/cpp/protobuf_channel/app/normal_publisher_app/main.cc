@@ -48,7 +48,8 @@ int32_t main(int32_t argc, char** argv) {
     AIMRT_HL_CHECK_ERROR_THROW(module_handle.GetLogger(),
                                publisher, "Get publisher for topic '{}' failed.", topic_name);
 
-    bool ret = aimrt::channel::RegisterPublishType<aimrt::protocols::example::ExampleEventMsg>(publisher);
+    aimrt::channel::PublisherProxy<aimrt::protocols::example::ExampleEventMsg> publisher_proxy(publisher);
+    bool ret = publisher_proxy.RegisterPublishType();
     AIMRT_HL_CHECK_ERROR_THROW(module_handle.GetLogger(), ret, "Register publish type failed.");
 
     // Start
@@ -60,7 +61,7 @@ int32_t main(int32_t argc, char** argv) {
     msg.set_num(123456);
 
     AIMRT_HL_INFO(module_handle.GetLogger(), "Publish new pb event, data: {}", aimrt::Pb2CompactJson(msg));
-    aimrt::channel::Publish(publisher, msg);
+    publisher_proxy.Publish(msg);
 
     // Wait
     fu.wait();

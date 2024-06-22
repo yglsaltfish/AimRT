@@ -29,7 +29,7 @@ class PublisherRef {
    * @param msg_type_support
    * @return Register result
    */
-  bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) {
+  bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->register_publish_type(base_ptr_->impl, msg_type_support);
   }
@@ -40,7 +40,7 @@ class PublisherRef {
    * @param msg_type
    * @param msg_ptr
    */
-  void Publish(std::string_view msg_type, ContextRef ctx_ref, const void* msg_ptr) {
+  void Publish(std::string_view msg_type, ContextRef ctx_ref, const void* msg_ptr) const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx_ref.NativeHandle(), msg_ptr);
   }
@@ -71,7 +71,7 @@ class SubscriberRef {
    */
   bool Subscribe(
       const aimrt_type_support_base_t* msg_type_support,
-      aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
+      aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->subscribe(base_ptr_->impl, msg_type_support, callback.NativeHandle());
   }
@@ -105,6 +105,58 @@ class ChannelHandleRef {
 
  private:
   const aimrt_channel_handle_base_t* base_ptr_ = nullptr;
+};
+
+class PublisherProxyBase {
+ public:
+  explicit PublisherProxyBase(PublisherRef publisher)
+      : publisher_(publisher) {}
+  virtual ~PublisherProxyBase() = default;
+
+  PublisherProxyBase(const PublisherProxyBase&) = delete;
+  PublisherProxyBase& operator=(const PublisherProxyBase&) = delete;
+
+  std::shared_ptr<Context> NewContextSharedPtr() const {
+    return default_ctx_ptr_
+               ? std::make_shared<Context>(*default_ctx_ptr_)
+               : std::make_shared<Context>();
+  }
+
+  void SetDefaultContextSharedPtr(const std::shared_ptr<Context>& ctx_ptr) {
+    default_ctx_ptr_ = ctx_ptr;
+  }
+
+  std::shared_ptr<Context> GetDefaultContextSharedPtr() const {
+    return default_ctx_ptr_;
+  }
+
+ protected:
+  void Publish(std::string_view msg_type, ContextRef ctx_ref, const void* msg_ptr) const {
+    for (const auto& item : publish_hook_vec) {
+      item(msg_type, ctx_ref, msg_ptr);
+    }
+
+    publisher_.Publish(msg_type, ctx_ref, msg_ptr);
+  }
+
+ protected:
+  PublisherRef publisher_;
+  std::shared_ptr<Context> default_ctx_ptr_;
+  std::vector<std::function<void(std::string_view, ContextRef, const void*)>> publish_hook_vec;
+};
+
+class SubscriberProxyBase {
+ public:
+  explicit SubscriberProxyBase(SubscriberRef subscriber)
+      : subscriber_(subscriber) {}
+  virtual ~SubscriberProxyBase() = default;
+
+  SubscriberProxyBase(const SubscriberProxyBase&) = delete;
+  SubscriberProxyBase& operator=(const SubscriberProxyBase&) = delete;
+
+ protected:
+  SubscriberRef subscriber_;
+  std::vector<std::function<void(std::string_view, ContextRef, const void*)>> subscribe_hook_vec;  // todo
 };
 
 }  // namespace aimrt::channel
