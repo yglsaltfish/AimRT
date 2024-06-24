@@ -5,7 +5,7 @@
 
 ## 简介
 
-&emsp;&emsp;AimRT为逻辑实现阶段的`Module`开发提供了一套CPP接口层，CMake Target名称为 **aimrt::interface::aimrt_module_cpp_interface**，代码见[aimrt_module_cpp_interface](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/interface/aimrt_module_cpp_interface)，使用者在开发`Module`时只需要链接这个接口层库即可，可以与AimRT的实现细节相隔离。此接口层库的依赖只有两个：
+&emsp;&emsp;AimRT为逻辑实现阶段的`Module`开发提供了一套CPP接口层，CMake Target名称为 **aimrt::interface::aimrt_module_cpp_interface**，代码见[aimrt_module_cpp_interface](../../../src/interface/aimrt_module_cpp_interface)，使用者在开发`Module`时只需要链接这个接口层库即可，可以与AimRT的实现细节相隔离。此接口层库的依赖只有两个：
 - [fmt](https://github.com/fmtlib/fmt)：用于日志。如果使用C++20的format，则可以去掉这个依赖。
 - [libunifex](https://github.com/facebookexperimental/libunifex)：用于将异步逻辑封装为协程。可以选用。
 
@@ -34,14 +34,14 @@
 
 &emsp;&emsp;AimRT中为执行器、RPC等功能提供了原生的异步回调形式的接口，同时也基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)，为使用者提供了一套协程形式的接口。C++ executors提案预计将于C++26时被加入C++标准中，届时可能会提供选项将libunifex更换为标准库的实现。
 
-&emsp;&emsp;AimRT中协程接口的代码位置：[aimrt_module_cpp_interface/co](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co)。关于协程接口的基本用法，将在执行器、RPC等功能具体章节进行简单介绍。关于C++20协程以及libunifex库的进阶用法，请参考[C++20协程的官方文档页面](https://en.cppreference.com/w/cpp/language/coroutines)和[libunifex的官方github页面](https://github.com/facebookexperimental/libunifex)。
+&emsp;&emsp;AimRT中协程接口的代码位置：[aimrt_module_cpp_interface/co](../../../src/interface/aimrt_module_cpp_interface/co)。关于协程接口的基本用法，将在执行器、RPC等功能具体章节进行简单介绍。关于C++20协程以及libunifex库的进阶用法，请参考[C++20协程的官方文档页面](https://en.cppreference.com/w/cpp/language/coroutines)和[libunifex的官方github页面](https://github.com/facebookexperimental/libunifex)。
 
 &emsp;&emsp;请注意，协程功能是一个AimRT框架中的一个可选项，如果使用者不想使用协程的方式，也仍然能够通过异步回调类型的接口使用AimRT框架的所有基础能力。
 
 
 ### 接口层中的协议
 
-&emsp;&emsp;最纯粹的AimRT-CPP-Module接口，也就是**aimrt::interface::aimrt_module_cpp_interface**这个CMake Target，是不包含任何特定的协议类型的。在AimRT中，通过[aimrt_module_c_interface/util/type_support_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_c_interface/util/type_support_base.h)文件中的`aimrt_type_support_base_t`类来定义一种数据类型，其中定义了一个数据类型的应该实现的基本接口，包括名称、创建/销毁、序列化/反序列化等。使用者可以通过实现这些接口来自定义一种数据类型，也可以直接使用AimRT官方支持的两种数据类型：**Protobuf**和**ROS2 Message**。如果要使用它们，需要分别引用对应的CMake Target：
+&emsp;&emsp;最纯粹的AimRT-CPP-Module接口，也就是**aimrt::interface::aimrt_module_cpp_interface**这个CMake Target，是不包含任何特定的协议类型的。在AimRT中，通过[aimrt_module_c_interface/util/type_support_base.h](../../../src/interface/aimrt_module_c_interface/util/type_support_base.h)文件中的`aimrt_type_support_base_t`类来定义一种数据类型，其中定义了一个数据类型的应该实现的基本接口，包括名称、创建/销毁、序列化/反序列化等。使用者可以通过实现这些接口来自定义一种数据类型，也可以直接使用AimRT官方支持的两种数据类型：**Protobuf**和**ROS2 Message**。如果要使用它们，需要分别引用对应的CMake Target：
 - 使用**Protobuf**类型需要引用的CMake Target：**aimrt::interface::aimrt_module_protobuf_interface**
 - 使用**ROS2 Message**类型需要引用的CMake Target：**aimrt::interface::aimrt_module_ros2_interface**
 
@@ -50,9 +50,9 @@
 
 ## ModuleBase：模块基类
 
-&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/module_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/module_base.h)
+&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/module_base.h](../../../src/interface/aimrt_module_cpp_interface/module_base.h)
 
-&emsp;&emsp;参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+&emsp;&emsp;参考示例：[helloworld_module.cc](../../../src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
 
 &emsp;&emsp;所有的业务模块，都需要继承`aimrt::ModuleBase`基类，它定义了业务模块所需要实现的几个接口，具体接口如下：
 
@@ -145,9 +145,9 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 ## CoreRef：框架句柄
 
-&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/core.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/core.h)
+&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/core.h](../../../src/interface/aimrt_module_cpp_interface/core.h)
 
-&emsp;&emsp;参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+&emsp;&emsp;参考示例：[helloworld_module.cc](../../../src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
 
 &emsp;&emsp;在模块的`Initialize`方法中，AimRT框架会传入一个`aimrt::CoreRef`句柄，模块通过该句柄的一些接口调用框架的功能。`aimrt::CoreRef`中提供的核心接口如下：
 
@@ -204,9 +204,9 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
 ## configurator::ConfiguratorRef：配置句柄
 
-&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/configurator/configurator.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)
+&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/configurator/configurator.h](../../../src/interface/aimrt_module_cpp_interface/configurator/configurator.h)
 
-&emsp;&emsp;参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+&emsp;&emsp;参考示例：[helloworld_module.cc](../../../src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
 
 &emsp;&emsp;模块可以通过调用`CoreRef`句柄的`GetConfigurator()`接口，获取`aimrt::configurator::ConfiguratorRef`句柄，通过其使用一些配置相关的功能。其提供的核心接口如下：
 
@@ -253,10 +253,10 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 ### AimRT CPP接口层中的执行器句柄
 
 &emsp;&emsp;相关文件链接：
-- [aimrt_module_cpp_interface/executor/executor_manager.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/executor/executor_manager.h)
-- [aimrt_module_cpp_interface/executor/executor.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/executor/executor.h)
+- [aimrt_module_cpp_interface/executor/executor_manager.h](../../../src/interface/aimrt_module_cpp_interface/executor/executor_manager.h)
+- [aimrt_module_cpp_interface/executor/executor.h](../../../src/interface/aimrt_module_cpp_interface/executor/executor.h)
 
-&emsp;&emsp;参考示例：[executor_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/executor/module/executor_module/executor_module.cc)
+&emsp;&emsp;参考示例：[executor_module.cc](../../../src/examples/cpp/executor/module/executor_module/executor_module.cc)
 
 &emsp;&emsp;执行器`Executor`是一个很早就有的概念，它表示一个可以执行逻辑代码的抽象概念，一个执行器可以是一个线程池、可以是一个协程/纤程，可以是CPU、GPU、甚至是远端的一个服务器。我们平常写的最简单的代码也有一个默认的执行器：主线程。一般来说，执行器都会有类似这样的一个接口：
 ```cpp
@@ -490,17 +490,17 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 
 &emsp;&emsp;相关文件链接：
-- [aimrt_module_cpp_interface/co/aimrt_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)
-- [aimrt_module_cpp_interface/co/async_scope.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/async_scope.h)
-- [aimrt_module_cpp_interface/co/inline_scheduler.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/inline_scheduler.h)
-- [aimrt_module_cpp_interface/co/on.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/on.h)
-- [aimrt_module_cpp_interface/co/schedule.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/schedule.h)
-- [aimrt_module_cpp_interface/co/sync_wait.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/sync_wait.h)
-- [aimrt_module_cpp_interface/co/task.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/task.h)
+- [aimrt_module_cpp_interface/co/aimrt_context.h](../../../src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)
+- [aimrt_module_cpp_interface/co/async_scope.h](../../../src/interface/aimrt_module_cpp_interface/co/async_scope.h)
+- [aimrt_module_cpp_interface/co/inline_scheduler.h](../../../src/interface/aimrt_module_cpp_interface/co/inline_scheduler.h)
+- [aimrt_module_cpp_interface/co/on.h](../../../src/interface/aimrt_module_cpp_interface/co/on.h)
+- [aimrt_module_cpp_interface/co/schedule.h](../../../src/interface/aimrt_module_cpp_interface/co/schedule.h)
+- [aimrt_module_cpp_interface/co/sync_wait.h](../../../src/interface/aimrt_module_cpp_interface/co/sync_wait.h)
+- [aimrt_module_cpp_interface/co/task.h](../../../src/interface/aimrt_module_cpp_interface/co/task.h)
 
-&emsp;&emsp;参考示例：[executor_co_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/executor/module/executor_co_module/executor_co_module.cc)
+&emsp;&emsp;参考示例：[executor_co_module.cc](../../../src/examples/cpp/executor/module/executor_co_module/executor_co_module.cc)
 
-&emsp;&emsp;AimRT框架中，为执行器封装了基于C++20协程和`libunifex`库的一个协程形式接口。关于协程和`libunifex`库的详细使用方式，请参考[libunifex官方文档](https://github.com/facebookexperimental/libunifex)。在AimRT框架中的[aimrt_module_cpp_interface/co/aimrt_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)文件中，提供了一个比较重要的类：`aimrt::co::AimRTScheduler`，可以由`aimrt::executor::ExecutorRef`句柄构造。这个类将原生的AimRT执行器句柄封装成协程形式的接口句柄，其中的核心接口如下：
+&emsp;&emsp;AimRT框架中，为执行器封装了基于C++20协程和`libunifex`库的一个协程形式接口。关于协程和`libunifex`库的详细使用方式，请参考[libunifex官方文档](https://github.com/facebookexperimental/libunifex)。在AimRT框架中的[aimrt_module_cpp_interface/co/aimrt_context.h](../../../src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)文件中，提供了一个比较重要的类：`aimrt::co::AimRTScheduler`，可以由`aimrt::executor::ExecutorRef`句柄构造。这个类将原生的AimRT执行器句柄封装成协程形式的接口句柄，其中的核心接口如下：
 
 ```cpp
 namespace aimrt::co {
@@ -675,7 +675,7 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 ### 独立的日志组件
 
-&emsp;&emsp;相关文件链接：[util/log_util.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/common/util/log_util.h)
+&emsp;&emsp;相关文件链接：[util/log_util.h](../../../src/common/util/log_util.h)
 
 
 &emsp;&emsp;在AimRT框架中，有一个独立的通用日志组件，属于**aimrt::common::util**这个CMake Target，只需要`#include "util/log_util.h"`即可独立于接口层使用。其中提供了一些基础的日志宏，这些日志宏需要在调用时传入一个日志句柄，来定义日志打印行为的具体表现。日志句柄以模板concept的形式定义，只要是类似于以下这个示例、包含`GetLogLevel`和`Log`两个接口的C++类的实例都可以作为日志句柄：
@@ -767,7 +767,7 @@ int Main() {
 
 ### AimRT CPP接口层中的日志句柄
 
-&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/logger/logger.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/logger/logger.h)
+&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/logger/logger.h](../../../src/interface/aimrt_module_cpp_interface/logger/logger.h)
 
 
 &emsp;&emsp;在AimRT中，模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`aimrt::logger::LoggerRef`句柄，这是一个包含`GetLogLevel`和`Log`接口的类，满足上一节中对日志句柄的要求，可以直接作为日志宏的参数。其核心接口如下：
@@ -822,9 +822,9 @@ class HelloWorldModule : public aimrt::ModuleBase {
 ## parameter::ParameterHandleRef：参数句柄
 
 
-&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/parameter/parameter_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/parameter/parameter_handle.h)
+&emsp;&emsp;相关文件链接：[aimrt_module_cpp_interface/parameter/parameter_handle.h](../../../src/interface/aimrt_module_cpp_interface/parameter/parameter_handle.h)
 
-&emsp;&emsp;参考示例：[parameter_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/parameter/module/parameter_module/parameter_module.cc)
+&emsp;&emsp;参考示例：[parameter_module.cc](../../../src/examples/cpp/parameter/module/parameter_module/parameter_module.cc)
 
 &emsp;&emsp;AimRT中提供了一个简单的模块级kv参数功能，模块可以通过调用`CoreRef`句柄的`GetParameterHandle()`接口，获取`aimrt::parameter::ParameterHandleRef`句柄，来使用此功能。该句柄提供的核心接口如下：
 
@@ -888,21 +888,21 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 ### Channel句柄概述
 
 &emsp;&emsp;相关文件链接：
-- [aimrt_module_cpp_interface/channel/channel_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/channel/channel_context.h)
-- [aimrt_module_cpp_interface/channel/channel_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/channel/channel_handle.h)
+- [aimrt_module_cpp_interface/channel/channel_context.h](../../../src/interface/aimrt_module_cpp_interface/channel/channel_context.h)
+- [aimrt_module_cpp_interface/channel/channel_handle.h](../../../src/interface/aimrt_module_cpp_interface/channel/channel_handle.h)
 
 
 &emsp;&emsp;Protobuf Channel接口文件（CMake需引用**aimrt::interface::aimrt_module_protobuf_interface**）：
-- [aimrt_module_protobuf_interface/channel/protobuf_channel.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_protobuf_interface/channel/protobuf_channel.h)
+- [aimrt_module_protobuf_interface/channel/protobuf_channel.h](../../../src/interface/aimrt_module_protobuf_interface/channel/protobuf_channel.h)
 
 
 &emsp;&emsp;Ros2 Channel接口文件（CMake需引用**aimrt::interface::aimrt_module_ros2_interface**）：
-- [aimrt_module_ros2_interface/channel/ros2_channel.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_ros2_interface/channel/ros2_channel.h)
+- [aimrt_module_ros2_interface/channel/ros2_channel.h](../../../src/interface/aimrt_module_ros2_interface/channel/ros2_channel.h)
 
 
 &emsp;&emsp;参考示例：
-- [protobuf_channel](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/protobuf_channel)
-- [ros2_channel](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/ros2_channel)
+- [protobuf_channel](../../../src/examples/cpp/protobuf_channel)
+- [ros2_channel](../../../src/examples/cpp/ros2_channel)
 
 &emsp;&emsp;AimRT中，模块可以通过调用`CoreRef`句柄的`GetChannelHandle()`接口，获取`aimrt::channel::ChannelHandleRef`句柄，来使用Channel功能。其提供的核心接口如下：
 ```cpp
@@ -991,7 +991,7 @@ protoc --cpp_out=. example.proto
 
 &emsp;&emsp;这将生成`example.pb.h`和`example.pb.cc`文件，包含了根据定义的消息类型生成的C++类和方法。
 
-&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/cmake/ProtobufGenCode.cmake)文件中提供的两个CMake方法：
+&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufGenCode.cmake](../../../cmake/ProtobufGenCode.cmake)文件中提供的两个CMake方法：
 - `add_protobuf_gencode_target_for_proto_path`：为某个路径下的协议文件生成C++代码，参数如下：
   - **TARGET_NAME**：生成的CMake Target名称；
   - **PROTO_PATH**：协议存放目录；
@@ -1044,8 +1044,8 @@ rosidl_generate_interfaces(example_msg_gencode
 ### Pub接口
 
 &emsp;&emsp;参考示例：
-- protobuf_channel:[normal_publisher_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)
-- ros2_channel:[normal_publisher_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_channel/module/normal_publisher_module/normal_publisher_module.cc)
+- protobuf_channel:[normal_publisher_module.cc](../../../src/examples/cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)
+- ros2_channel:[normal_publisher_module.cc](../../../src/examples/cpp/ros2_channel/module/normal_publisher_module/normal_publisher_module.cc)
 
 
 &emsp;&emsp;用户如果需要发布一个Msg，牵涉的接口主要有以下几个：
@@ -1084,8 +1084,8 @@ void Publish(PublisherRef publisher, const MsgType& msg);
 ### Sub接口
 
 &emsp;&emsp;参考示例：
-- protobuf_channel:[normal_subscriber_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
-- ros2_channel:[normal_subscriber_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+- protobuf_channel:[normal_subscriber_module.cc](../../../src/examples/cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+- ros2_channel:[normal_subscriber_module.cc](../../../src/examples/cpp/ros2_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
 
 
 &emsp;&emsp;AimRT提供了两种订阅接口来订阅处理一种消息，一种是智能指针形式，另一种是协程形式，两者在逻辑上是等价的。另外在订阅时可以接收一个CTX作为参数，CTX内容也和具体的Channel后端相关：
@@ -1132,15 +1132,15 @@ bool SubscribeCo(
 ### RPC句柄概述
 
 &emsp;&emsp;相关文件链接：
-- [aimrt_module_cpp_interface/rpc/rpc_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_handle.h)
-- [aimrt_module_cpp_interface/rpc/rpc_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_context.h)
-- [aimrt_module_cpp_interface/rpc/rpc_status.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_status.h)
-- [aimrt_module_cpp_interface/rpc/rpc_filter.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_filter.h)
+- [aimrt_module_cpp_interface/rpc/rpc_handle.h](../../../src/interface/aimrt_module_cpp_interface/rpc/rpc_handle.h)
+- [aimrt_module_cpp_interface/rpc/rpc_context.h](../../../src/interface/aimrt_module_cpp_interface/rpc/rpc_context.h)
+- [aimrt_module_cpp_interface/rpc/rpc_status.h](../../../src/interface/aimrt_module_cpp_interface/rpc/rpc_status.h)
+- [aimrt_module_cpp_interface/rpc/rpc_filter.h](../../../src/interface/aimrt_module_cpp_interface/rpc/rpc_filter.h)
 
 
 &emsp;&emsp;参考示例：
-- [protobuf_rpc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/protobuf_rpc)
-- [ros2_rpc](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src/examples/cpp/ros2_rpc)
+- [protobuf_rpc](../../../src/examples/cpp/protobuf_rpc)
+- [ros2_rpc](../../../src/examples/cpp/ros2_rpc)
 
 &emsp;&emsp;AimRT中，模块可以通过调用`CoreRef`句柄的`GetRpcHandle()`接口，获取`aimrt::rpc::RpcHandleRef`句柄。开发者在使用RPC功能时必须要按照一定的步骤，调用`aimrt::rpc::RpcHandleRef`中的几个核心接口：
 - Client端：
@@ -1158,7 +1158,7 @@ bool SubscribeCo(
 &emsp;&emsp;使用者还可以调用`RpcHandleRef`中的`NewContextSharedPtr`方法和`NewContextRef`，创建一个RPC CTX，用于在调用、处理RPC请求时传递一些额外的信息。
 
 
-&emsp;&emsp;此外，在RPC调用或者RPC处理时，使用者还可以通过一个`status`变量获取RPC请求时框架的错误情况，其中最主要的是一个错误码字段，其枚举值可以参考[rpc_status_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)文件中的定义。
+&emsp;&emsp;此外，在RPC调用或者RPC处理时，使用者还可以通过一个`status`变量获取RPC请求时框架的错误情况，其中最主要的是一个错误码字段，其枚举值可以参考[rpc_status_base.h](../../../src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)文件中的定义。
 
 ### 协议类型
 
@@ -1205,7 +1205,7 @@ protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_ai
 
 &emsp;&emsp;这将生成`rpc.aimrt_rpc.pb.h`和`rpc.aimrt_rpc.pb.cc`文件，包含了根据定义的服务生成的C++类和方法。
 
-&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufAimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/protoc_plugin_cpp_gen_aimrt_rpc/ProtobufAimRTRpcGenCode.cmake)文件中提供的CMake方法：`add_protobuf_aimrt_rpc_gencode_target_for_proto_files`，该方法可以直接为某些proto文件生成C++代码，其参数如下：
+&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufAimRTRpcGenCode.cmake](../../../src/tools/protoc_plugin_cpp_gen_aimrt_rpc/ProtobufAimRTRpcGenCode.cmake)文件中提供的CMake方法：`add_protobuf_aimrt_rpc_gencode_target_for_proto_files`，该方法可以直接为某些proto文件生成C++代码，其参数如下：
 - **TARGET_NAME**：生成的CMake Target名称；
 - **PROTO_FILES**：协议文件的路径；
 - **GENCODE_PATH**：生成的桩代码存放路径；
@@ -1265,7 +1265,7 @@ python3 ARGS ./ros2_py_gen_aimrt_rpc.py --pkg_name=example_pkg --srv_file=./exam
 &emsp;&emsp;这将生成`example.aimrt_rpc.srv.h`和`example.aimrt_rpc.srv.cc`文件，包含了根据定义的服务生成的C++类和方法。
 
 
-&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[Ros2AimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/ros2_py_gen_aimrt_rpc/Ros2AimRTRpcGenCode.cmake)文件中提供的CMake方法：`add_ros2_aimrt_rpc_gencode_target_for_one_file`，该方法可以为单个srv文件生成RPC服务C++代码，其参数如下：
+&emsp;&emsp;请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[Ros2AimRTRpcGenCode.cmake](../../../src/tools/ros2_py_gen_aimrt_rpc/Ros2AimRTRpcGenCode.cmake)文件中提供的CMake方法：`add_ros2_aimrt_rpc_gencode_target_for_one_file`，该方法可以为单个srv文件生成RPC服务C++代码，其参数如下：
 - **TARGET_NAME**：生成的CMake Target名称；
 - **PACKAGE_NAME**：ROS2协议PKG的名称；
 - **PROTO_FILE**：协议文件的路径；
@@ -1308,8 +1308,8 @@ target_link_libraries(my_lib PUBLIC my_namespace::example_ros2_rpc_aimrt_rpc_gen
 #### 同步型接口
 
 &emsp;&emsp;参考示例：
-- protobuf_rpc:[normal_rpc_sync_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
-- ros2_rpc:[normal_rpc_sync_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
+- protobuf_rpc:[normal_rpc_sync_client_module.cc](../../../src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
+- ros2_rpc:[normal_rpc_sync_client_module.cc](../../../src/examples/cpp/ros2_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
 
 
 &emsp;&emsp;同步型接口在使用上最简单，但在运行效率上是最低的。它通过阻塞当前线程，等待RPC接口返回。一般可以在一些不要求性能的场合为了提高开发效率而使用这种方式，但不推荐在高性能要求的场景使用。
@@ -1369,8 +1369,8 @@ void HelloWorldModule::Foo() {
 #### 异步回调型接口
 
 &emsp;&emsp;参考示例：
-- protobuf_rpc:[normal_rpc_async_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
-- ros2_rpc:[normal_rpc_async_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
+- protobuf_rpc:[normal_rpc_async_client_module.cc](../../../src/examples/cpp/protobuf_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
+- ros2_rpc:[normal_rpc_async_client_module.cc](../../../src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
 
 
 &emsp;&emsp;异步回调型接口使用回调来返回异步结果，在性能上表现最好，但开发友好度是最低的，很容易陷入回调地狱。
@@ -1432,8 +1432,8 @@ void HelloWorldModule::Foo() {
 #### 异步Future型接口
 
 &emsp;&emsp;参考示例：
-- protobuf_rpc:[normal_rpc_future_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)
-- ros2_rpc:[normal_rpc_future_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)
+- protobuf_rpc:[normal_rpc_future_client_module.cc](../../../src/examples/cpp/protobuf_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)
+- ros2_rpc:[normal_rpc_future_client_module.cc](../../../src/examples/cpp/ros2_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)
 
 
 &emsp;&emsp;异步Future型接口基于`std::future`来返回异步结果，开发者可以在发起RPC调用后先去做其他事情，等需要RPC结果时在调用`std::future::get`方法来阻塞的获取结果。它在一定程度上兼顾了性能和开发友好度，属于同步型和异步回调型中间的一个选择。
@@ -1497,8 +1497,8 @@ void HelloWorldModule::Foo() {
 #### 无栈协程型接口
 
 &emsp;&emsp;参考示例：
-- protobuf_rpc:[normal_rpc_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_client_module/normal_rpc_client_module.cc)
-- ros2_rpc:[normal_rpc_client_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_client_module/normal_rpc_client_module.cc)
+- protobuf_rpc:[normal_rpc_client_module.cc](../../../src/examples/cpp/protobuf_rpc/module/normal_rpc_client_module/normal_rpc_client_module.cc)
+- ros2_rpc:[normal_rpc_client_module.cc](../../../src/examples/cpp/ros2_rpc/module/normal_rpc_client_module/normal_rpc_client_module.cc)
 
 
 &emsp;&emsp;AimRT为RPC Client端提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步回调型接口的封装，在性能上基本与异步回调型接口一致，但大大提升了开发友好度。
@@ -1566,8 +1566,8 @@ co::Task<void> HelloWorldModule::Foo() {
 #### 同步型接口
 
 &emsp;&emsp;参考示例：
-- protobuf_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_server_module/service.cc)
-- ros2_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_server_module/service.cc)
+- protobuf_rpc:[service.cc](../../../src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_server_module/service.cc)
+- ros2_rpc:[service.cc](../../../src/examples/cpp/ros2_rpc/module/normal_rpc_sync_server_module/service.cc)
 
 &emsp;&emsp;同步型接口在使用上最简单，但很多时候实现的service中需要请求下游，会有一些异步调用，这种情况下只能阻塞的等待下游调用完成，可能会造成运行效率上的降低。一般可以在处理一些简单的请求、不需要发起其他异步调用的场景下使用同步型接口。
 
@@ -1614,8 +1614,8 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 #### 异步回调型接口
 
 &emsp;&emsp;参考示例：
-- protobuf_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_server_module/service.cc)
-- ros2_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)
+- protobuf_rpc:[service.cc](../../../src/examples/cpp/protobuf_rpc/module/normal_rpc_async_server_module/service.cc)
+- ros2_rpc:[service.cc](../../../src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)
 
 &emsp;&emsp;异步回调型接口会传递一个回调给开发者，开发者在RPC处理完成后调用这个回调来传递最终处理结果。这种方式可以在RPC中发起其他异步调用，由于不会阻塞，因此性能表现通常最好，但通常会导致开发出的代码难以阅读和维护。
 
@@ -1663,8 +1663,8 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 #### 无栈协程型接口
 
 &emsp;&emsp;参考示例：
-- protobuf_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_server_module/service.cc)
-- ros2_rpc:[service.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_server_module/service.cc)
+- protobuf_rpc:[service.cc](../../../src/examples/cpp/protobuf_rpc/module/normal_rpc_server_module/service.cc)
+- ros2_rpc:[service.cc](../../../src/examples/cpp/ros2_rpc/module/normal_rpc_server_module/service.cc)
 
 &emsp;&emsp;与RPC Client端一样，在RPC Service端，AimRT也提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步回调型接口的封装，在性能上基本与异步回调型接口一致，但大大提升了开发友好度。
 

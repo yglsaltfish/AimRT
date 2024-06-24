@@ -49,5 +49,5 @@
   - mqtt rpc backend 添加指定mqtt_client_id的功能；
 - 修复了RPC Server Handle生命周期的Bug；
 - 修复了使用std::format作为日志format方法时的乱码问题；
-- 优化了example体系；
+- 优化了example体系，简化了example配置；
 - 添加了一些单元测试；
