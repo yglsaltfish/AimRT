@@ -21,7 +21,8 @@ struct convert<aimrt::runtime::core::configurator::ConfiguratorManager::Options>
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
 
-    rhs.temp_cfg_path = node["temp_cfg_path"].as<std::string>();
+    if (node["temp_cfg_path"])
+      rhs.temp_cfg_path = node["temp_cfg_path"].as<std::string>();
 
     return true;
   }
@@ -60,7 +61,8 @@ void ConfiguratorManager::Initialize(
   root_options_node_["aimrt"] = YAML::Node();
 
   YAML::Node configurator_options_node = GetAimRTOptionsNode("configurator");
-  options_ = configurator_options_node.as<Options>();
+  if (configurator_options_node && !configurator_options_node.IsNull())
+    options_ = configurator_options_node.as<Options>();
 
   if (!(std::filesystem::exists(options_.temp_cfg_path) &&
         std::filesystem::is_directory(options_.temp_cfg_path))) {
