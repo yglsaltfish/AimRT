@@ -5,7 +5,7 @@
 
 ## `AimRT`框架包含的内容
 
-&emsp;&emsp;参考[src](https://code.agibot.com/agibot_aima/aimrt/-/tree/main/src)下的目录，`AimRT`框架中包含的内容如下：
+&emsp;&emsp;参考[src](../../../src)下的目录，`AimRT`框架中包含的内容如下：
 - **common**: 一些基础的、可以直接使用的通用组件，例如string、log接口、buffer等；
 - **interface**: `AimRT`接口层；
   - **aimrt_module_c_interface**： `Module`开发接口，C版本；
