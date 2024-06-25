@@ -49,5 +49,6 @@
   - mqtt rpc backend 添加指定mqtt_client_id的功能；
 - 修复了RPC Server Handle生命周期的Bug；
 - 修复了使用std::format作为日志format方法时的乱码问题；
+- 升级fmt库，v9.1.0 -> v10.2.1，并将引用方式改为header-only；
 - 优化了example体系，简化了example配置；
 - 添加了一些单元测试；

@@ -3,7 +3,7 @@ include(FetchContent)
 message(STATUS "get fmt ...")
 
 set(fmt_DOWNLOAD_URL
-    "https://github.com/fmtlib/fmt/archive/9.1.0.tar.gz"
+    "https://github.com/fmtlib/fmt/archive/10.2.1.tar.gz"
     CACHE STRING "")
 
 if(${fmt_LOCAL_SOURCE})
