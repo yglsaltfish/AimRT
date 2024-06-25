@@ -121,6 +121,10 @@ void MainThreadExecutor::Execute(Task&& task) {
 }
 
 std::list<std::pair<std::string, std::string>> MainThreadExecutor::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   return {};
 }
 

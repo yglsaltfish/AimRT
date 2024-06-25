@@ -44,6 +44,7 @@ target_link_libraries(
 # Set compile definitions of target
 target_compile_definitions(${CUR_TARGET_NAME} PUBLIC BOOST_ASIO_NO_DEPRECATED)
 
+# Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 

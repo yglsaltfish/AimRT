@@ -42,6 +42,7 @@ if(WIN32)
   target_compile_options(${CUR_TARGET_NAME} INTERFACE /bigobj)
 endif()
 
+# Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 

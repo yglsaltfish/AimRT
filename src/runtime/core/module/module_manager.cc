@@ -376,6 +376,10 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
 }
 
 std::list<std::pair<std::string, std::string>> ModuleManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   std::vector<std::vector<std::string>> module_info_table =
       {{"name", "pkg", "version"}};
 

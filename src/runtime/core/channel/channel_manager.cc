@@ -244,6 +244,10 @@ void ChannelManager::RegisterLocalChannelBackend() {
 }
 
 std::list<std::pair<std::string, std::string>> ChannelManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   std::vector<std::vector<std::string>> pub_topic_info_table =
       {{"topic", "msg type", "module", "backends"}};
 

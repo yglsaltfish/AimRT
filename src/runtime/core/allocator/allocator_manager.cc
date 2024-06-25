@@ -58,6 +58,10 @@ const AllocatorProxy& AllocatorManager::GetAllocatorProxy(const util::ModuleDeta
 }
 
 std::list<std::pair<std::string, std::string>> AllocatorManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   return {};
 }
 
