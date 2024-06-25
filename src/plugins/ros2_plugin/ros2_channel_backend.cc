@@ -222,27 +222,6 @@ bool Ros2ChannelBackend::RegisterPublishType(
       return false;
     }
 
-    rmw_publisher_t* rmw_handle_ptr = rcl_publisher_get_rmw_handle(&publisher);
-    if (rmw_handle_ptr == nullptr) {
-      AIMRT_WARN(
-          "Ros2 publisher get rmw handle failed, type '{}', error info: {}",
-          publish_type_wrapper.msg_type, rcl_get_error_string().str);
-      rcl_reset_error();
-      return false;
-    }
-
-    rmw_gid_t rmw_gid;
-    ret = rmw_get_gid_for_publisher(rmw_handle_ptr, &rmw_gid);
-    if (ret != RMW_RET_OK) {
-      AIMRT_WARN("Ros2 publisher get rmw gid failed, type '{}', error info: {}",
-                 publish_type_wrapper.msg_type, rcl_get_error_string().str);
-      rcl_reset_error();
-      return false;
-    }
-
-    const auto& publisher_gid_ref = *(publisher_gid_vec_.emplace_back(std::make_unique<rmw_gid_t>(std::move(rmw_gid))));
-    publisher_gid_view_set_.emplace(PublisherGidView{publisher_gid_ref});
-
     AIMRT_INFO("ros backend register publish type for topic '{}' success.", publish_type_wrapper.topic_name);
 
     return true;
@@ -359,8 +338,7 @@ bool Ros2ChannelBackend::Subscribe(
         rclcpp::node_interfaces::get_node_topics_interface(*ros2_node_ptr_);
 
     rclcpp::SubscriptionFactory factory{
-        [&subscribe_wrapper,
-         publisher_gid_view_set_ptr{&publisher_gid_view_set_}](
+        [&subscribe_wrapper](
             rclcpp::node_interfaces::NodeBaseInterface* node_base,
             const std::string& topic_name,
             const rclcpp::QoS& qos) -> rclcpp::SubscriptionBase::SharedPtr {
@@ -375,10 +353,7 @@ bool Ros2ChannelBackend::Subscribe(
                   topic_name,
                   // todo: ros2的bug，新版本修复后去掉模板参数
                   options.to_rcl_subscription_options<void>(qos),
-                  subscribe_wrapper,
-                  [publisher_gid_view_set_ptr](const rmw_gid_t& gid) -> bool {
-                    return (publisher_gid_view_set_ptr->find(PublisherGidView{gid}) != publisher_gid_view_set_ptr->end());
-                  });
+                  subscribe_wrapper);
           return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
         }};
 
