@@ -191,42 +191,43 @@ bool HttpRpcBackend::RegisterServiceFunc(
             bool serialize_ret = service_rsp_type_support_ref.Serialize(
                 serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
-            // 序列化失败一般很少见，此处暂时不做处理
-            assert(serialize_ret);
+            if (!serialize_ret) [[unlikely]] {
+              ret_code = AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED;
+            } else {
+              // 填http rsp包，直接复制过去
+              size_t rsp_size = buffer_array.BufferSize();
+              auto rsp_beast_buf = rsp.body().prepare(rsp_size);
 
-            // 填http rsp包，直接复制过去
-            size_t rsp_size = buffer_array.BufferSize();
-            auto rsp_beast_buf = rsp.body().prepare(rsp_size);
+              auto data = buffer_array.BufferArrayNativeHandle()->data;
+              auto buffer_array_pos = 0;
+              size_t buffer_pos = 0;
 
-            auto data = buffer_array.BufferArrayNativeHandle()->data;
-            auto buffer_array_pos = 0;
-            size_t buffer_pos = 0;
+              for (auto buf : boost::beast::buffers_range_ref(rsp_beast_buf)) {
+                size_t cur_beast_buf_pos = 0;
+                while (cur_beast_buf_pos < buf.size()) {
+                  size_t cur_beast_buffer_size = buf.size() - cur_beast_buf_pos;
+                  size_t cur_buffer_size = data[buffer_array_pos].len - buffer_pos;
 
-            for (auto buf : boost::beast::buffers_range_ref(rsp_beast_buf)) {
-              size_t cur_beast_buf_pos = 0;
-              while (cur_beast_buf_pos < buf.size()) {
-                size_t cur_beast_buffer_size = buf.size() - cur_beast_buf_pos;
-                size_t cur_buffer_size = data[buffer_array_pos].len - buffer_pos;
+                  size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
 
-                size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
+                  memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
+                         static_cast<char*>(data[buffer_array_pos].data) + buffer_pos,
+                         cur_copy_size);
 
-                memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
-                       static_cast<char*>(data[buffer_array_pos].data) + buffer_pos,
-                       cur_copy_size);
+                  buffer_pos += cur_copy_size;
+                  if (buffer_pos == data[buffer_array_pos].len) {
+                    ++buffer_array_pos;
+                    buffer_pos = 0;
+                  }
 
-                buffer_pos += cur_copy_size;
-                if (buffer_pos == data[buffer_array_pos].len) {
-                  ++buffer_array_pos;
-                  buffer_pos = 0;
+                  cur_beast_buf_pos += cur_copy_size;
                 }
-
-                cur_beast_buf_pos += cur_copy_size;
               }
-            }
-            rsp.body().commit(rsp_size);
+              rsp.body().commit(rsp_size);
 
-            rsp.keep_alive(req.keep_alive());
-            rsp.prepare_payload();
+              rsp.keep_alive(req.keep_alive());
+              rsp.prepare_payload();
+            }
           }
 
           handle_flag.store(true);
@@ -387,8 +388,10 @@ bool HttpRpcBackend::TryInvoke(
           bool serialize_ret = client_req_type_support_ref.Serialize(
               serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
-          // 序列化失败一般很少见，此处暂时不做处理
-          assert(serialize_ret);
+          if (!serialize_ret) [[unlikely]] {
+            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED);
+            co_return;
+          }
 
           // 填http req包，直接复制过去
           size_t req_size = buffer_array.BufferSize();

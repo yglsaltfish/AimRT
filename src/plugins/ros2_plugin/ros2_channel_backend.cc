@@ -385,7 +385,7 @@ bool Ros2ChannelBackend::Subscribe(
     auto subscriber = node_topics_interface->create_subscription(ros2_topic_name, factory, qos);
     node_topics_interface->add_subscription(subscriber, nullptr);
 
-    auto emplace_ret = ros2_subscribe_wrapper_map_.emplace(type_key, subscriber);
+    ros2_subscribe_wrapper_map_.emplace(type_key, subscriber);
 
     AIMRT_INFO("subscribe topic '{}' success.", subscribe_wrapper.topic_name);
 
@@ -414,7 +414,7 @@ bool Ros2ChannelBackend::Subscribe(
       ros2_node_ptr_->create_subscription<ros2_plugin_proto::msg::RosMsgWrapper>(
           real_ros2_topic_name,
           10,
-          [this, subscribe_wrapper_vec_ptr](ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
+          [subscribe_wrapper_vec_ptr](ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
             auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
 
             const std::string& serialization_type = wrapper_msg->serialization_type;

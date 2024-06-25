@@ -232,8 +232,11 @@ void Ros2AdapterWrapperServer::handle_request(
         bool serialize_ret = service_rsp_type_support_ref.Serialize(
             serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
-        // 序列化失败一般很少见，此处暂时不做处理
-        assert(serialize_ret);
+        if (!serialize_ret) [[unlikely]] {
+          ReturnRspWithStatusCode(request_header, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
+
+          return;
+        }
 
         auto buffer_array_data = buffer_array.Data();
         const size_t buffer_array_len = buffer_array.Size();

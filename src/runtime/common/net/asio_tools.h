@@ -160,9 +160,9 @@ class AsioExecutor {
 
   /**
    * @brief 获取线程数
-   * @return const uint32_t
+   * @return uint32_t
    */
-  const uint32_t ThreadsNum() const { return threads_num_; }
+  uint32_t ThreadsNum() const { return threads_num_; }
 
  private:
   enum class State : uint32_t {

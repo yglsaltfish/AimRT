@@ -113,7 +113,7 @@ bool TcpChannelBackend::Subscribe(
 
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
-  auto handle = [this, subscribe_wrapper_vec_ptr](
+  auto handle = [subscribe_wrapper_vec_ptr](
                     const std::shared_ptr<boost::asio::streambuf>& msg_buf_ptr) {
     // 1 byte uri len : n byte uri : 1 byte serialization type len : m byte
     // serialization type : buf.len-2-n-m byte data

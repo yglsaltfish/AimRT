@@ -197,8 +197,11 @@ bool MqttRpcBackend::RegisterServiceFunc(
             bool serialize_ret = service_rsp_type_support_ref.Serialize(
                 serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
-            // 序列化失败一般很少见，此处暂时不做处理
-            assert(serialize_ret);
+            if (!serialize_ret) [[unlikely]] {
+              ReturnRspWithStatusCode(mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
+
+              return;
+            }
 
             auto buffer_array_data = buffer_array.Data();
             const size_t buffer_array_len = buffer_array.Size();
@@ -407,7 +410,10 @@ bool MqttRpcBackend::TryInvoke(
   auto serialization_type =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
 
-  assert(serialization_type.size() <= 255);
+  if (serialization_type.size() > 255) [[unlikely]] {
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
+    return true;
+  }
 
   // aimrt_rpc_rsp/client_id/uri
   std::string mqtt_sub_topic =
@@ -415,7 +421,10 @@ bool MqttRpcBackend::TryInvoke(
       util::UrlEncode(client_id_) + "/" +
       util::UrlEncode(GetRealFuncName(func_name));
 
-  assert(mqtt_sub_topic.size() <= 255);
+  if (mqtt_sub_topic.size() > 255) [[unlikely]] {
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
+    return true;
+  }
 
   // msg buf
   aimrt::util::BufferArray buffer_array;
@@ -425,8 +434,10 @@ bool MqttRpcBackend::TryInvoke(
   bool serialize_ret = client_req_type_support_ref.Serialize(
       serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
-  // 序列化失败一般很少见，此处暂时不做处理
-  assert(serialize_ret);
+  if (!serialize_ret) [[unlikely]] {
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED);
+    return true;
+  }
 
   // 填mqtt包
   auto buffer_array_data = buffer_array.Data();
