@@ -177,34 +177,6 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
       std::equal_to<>>
       ros2_subscribe_wrapper_map_;
 
-  struct PublisherGidView {
-    const rmw_gid_t& git;
-
-    bool operator==(const PublisherGidView& val) const {
-      int identifier_ret = strcmp(git.implementation_identifier,
-                                  val.git.implementation_identifier);
-      if (identifier_ret != 0) return false;
-
-      for (size_t ii = 0; ii < RMW_GID_STORAGE_SIZE; ++ii) {
-        if (git.data[ii] != val.git.data[ii]) return false;
-      }
-      return true;
-    }
-  };
-
-  struct PublisherGidViewHash {
-    std::size_t operator()(const PublisherGidView& key) const {
-      return std::accumulate(
-          std::begin(key.git.data),
-          std::end(key.git.data),
-          std::hash<std::string_view>{}(key.git.implementation_identifier));
-    }
-  };
-
-  std::vector<std::unique_ptr<rmw_gid_t>> publisher_gid_vec_;
-  std::unordered_set<PublisherGidView, PublisherGidViewHash, std::equal_to<>>
-      publisher_gid_view_set_;
-
   std::unordered_map<
       std::string,
       rclcpp::Publisher<ros2_plugin_proto::msg::RosMsgWrapper>::SharedPtr>
