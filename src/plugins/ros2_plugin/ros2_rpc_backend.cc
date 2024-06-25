@@ -5,6 +5,8 @@
 #include "ros2_plugin/global.h"
 #include "ros2_plugin/ros2_name_encode.h"
 
+#include "aimrt_module_cpp_interface/rpc/rpc_status.h"
+
 namespace YAML {
 template <>
 struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
@@ -383,6 +385,8 @@ bool Ros2RpcBackend::TryInvoke(
     if (to_addr.substr(0, pos) != "ros2") return false;
   }
 
+  // 需要由本后端处理。此行之后只能使用callback报错，不能返回false
+
   // 前缀是ros2类型的消息
   if (CheckRosFunc(client_invoke_wrapper_ptr->func_name)) {
     auto finditr = ros2_adapter_client_map_.find(client_invoke_wrapper_ptr->func_name);
@@ -393,7 +397,8 @@ bool Ros2RpcBackend::TryInvoke(
           client_invoke_wrapper_ptr->module_name,
           client_invoke_wrapper_ptr->pkg_path);
 
-      return false;
+      client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR);
+      return true;
     }
 
     if (!(finditr->second->service_is_ready())) {
@@ -402,7 +407,8 @@ bool Ros2RpcBackend::TryInvoke(
                   client_invoke_wrapper_ptr->module_name,
                   client_invoke_wrapper_ptr->pkg_path);
 
-      return false;
+      client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR);
+      return true;
     }
 
     finditr->second->Invoke(client_invoke_wrapper_ptr);
@@ -420,7 +426,8 @@ bool Ros2RpcBackend::TryInvoke(
         client_invoke_wrapper_ptr->module_name,
         client_invoke_wrapper_ptr->pkg_path);
 
-    return false;
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR);
+    return true;
   }
 
   if (!(finditr->second->service_is_ready())) {
@@ -429,7 +436,8 @@ bool Ros2RpcBackend::TryInvoke(
                 client_invoke_wrapper_ptr->module_name,
                 client_invoke_wrapper_ptr->pkg_path);
 
-    return false;
+    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR);
+    return true;
   }
 
   finditr->second->Invoke(client_invoke_wrapper_ptr);
