@@ -42,6 +42,9 @@ if(WIN32)
   target_compile_options(${CUR_TARGET_NAME} INTERFACE /bigobj)
 endif()
 
+include(AddWerror)
+add_werror(${CUR_TARGET_NAME})
+
 # Set installation of target
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
 install(

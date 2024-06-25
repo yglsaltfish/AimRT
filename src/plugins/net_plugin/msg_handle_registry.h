@@ -46,7 +46,7 @@ class MsgHandleRegistry {
       AIMRT_CHECK_ERROR_THROW(buf_size > 1, "Invalid msg, buf size: {}", buf_size);
 
       uint8_t uri_size = static_cast<const uint8_t*>(buf_data)[0];
-      AIMRT_CHECK_ERROR_THROW(buf_size > uri_size + 1,
+      AIMRT_CHECK_ERROR_THROW(buf_size > static_cast<size_t>(uri_size) + 1,
                               "Invalid msg, buf size: {}, uri size: {}",
                               buf_size, uri_size);
 

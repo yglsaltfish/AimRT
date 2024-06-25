@@ -30,6 +30,9 @@ target_link_libraries(
   PRIVATE gflags::gflags
           aimrt::runtime::core)
 
+include(AddWerror)
+add_werror(${CUR_TARGET_NAME})
+
 # Set installation of target
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
 install(

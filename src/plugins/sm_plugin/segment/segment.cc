@@ -453,7 +453,7 @@ std::string Segment::Info() {
   ss << "intergrity check : " << (IntegrityCheck() ? "true" : "false")
      << std::endl;
 
-  return std::move(ss.str());
+  return ss.str();
 }
 
 void Segment::PrintInfo() { std::cout << Info() << std::endl; }

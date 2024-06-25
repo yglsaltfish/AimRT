@@ -37,6 +37,9 @@ target_link_libraries(
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_fastrtps_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_introspection_cpp)
 
+include(AddWerror)
+add_werror(${CUR_TARGET_NAME})
+
 # Set installation of target
 set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
 install(

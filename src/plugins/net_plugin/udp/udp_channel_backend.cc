@@ -113,7 +113,7 @@ bool UdpChannelBackend::Subscribe(
 
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
-  auto handle = [this, subscribe_wrapper_vec_ptr](
+  auto handle = [subscribe_wrapper_vec_ptr](
                     const std::shared_ptr<boost::asio::streambuf>& msg_buf_ptr) {
     // 1 byte uri len : n byte uri : 1 byte serialization type len : m byte
     // serialization type : buf.len-2-n-m byte data
@@ -135,7 +135,7 @@ bool UdpChannelBackend::Subscribe(
     // 获取消息buf
     uint32_t offset = 2 + uri_size + serialization_type_size;
     const uint8_t* msg_buf = static_cast<const uint8_t*>(buf_data) + offset;
-    uint32_t msg_buf_size = msg_buf_ptr->size() - offset;
+    uint32_t msg_buf_size = buf_size - offset;
 
     aimrt_buffer_view_t buffer_view{
         .data = msg_buf,
