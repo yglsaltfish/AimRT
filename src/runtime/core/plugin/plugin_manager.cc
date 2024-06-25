@@ -187,6 +187,10 @@ YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) con
 }
 
 std::list<std::pair<std::string, std::string>> PluginManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   std::vector<std::vector<std::string>> plugin_info_table =
       {{"name", "path"}};
 

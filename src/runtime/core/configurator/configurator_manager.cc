@@ -166,6 +166,10 @@ YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
 }
 
 std::list<std::pair<std::string, std::string>> ConfiguratorManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   return {{"AimRT Core Option", YAML::Dump((*root_options_node_ptr_)["aimrt"])}};
 }
 

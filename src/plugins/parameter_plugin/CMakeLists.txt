@@ -33,6 +33,7 @@ target_link_libraries(
           aimrt::runtime::core
           aimrt::protocols::parameter_plugin_aimrt_rpc_gencode)
 
+# Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 

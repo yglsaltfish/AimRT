@@ -269,6 +269,9 @@ void AimRTCore::DumpCfgFile() const {
 }
 
 std::string AimRTCore::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(state_ == State::PostInit,
+                          "Initialization report can only be generated after initialization is complete.");
+
   std::list<std::pair<std::string, std::string>> report;
 
   auto configurator_manager_report = configurator_manager_.GenInitializationReport();

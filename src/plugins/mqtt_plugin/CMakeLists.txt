@@ -33,6 +33,7 @@ target_link_libraries(
           aimrt::runtime::core
           paho_mqtt_c::paho-mqtt3as-static)
 
+# Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 

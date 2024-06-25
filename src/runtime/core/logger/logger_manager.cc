@@ -227,6 +227,10 @@ void LoggerManager::RegisterRotateFileLoggerBackendGenFunc() {
 }
 
 std::list<std::pair<std::string, std::string>> LoggerManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   std::vector<std::string> logger_backend_type_vec;
   for (auto& logger_backend : logger_backend_vec_) {
     logger_backend_type_vec.emplace_back(logger_backend->Type());

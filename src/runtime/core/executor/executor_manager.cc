@@ -207,6 +207,10 @@ void ExecutorManager::RegisterTimwWheelExecutorGenFunc() {
 }
 
 std::list<std::pair<std::string, std::string>> ExecutorManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   std::vector<std::vector<std::string>> executor_info_table =
       {{"name", "type", "thread safe", "support time schedule"}};
 

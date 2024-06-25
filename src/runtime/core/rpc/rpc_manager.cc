@@ -238,6 +238,10 @@ void RpcManager::RegisterLocalRpcBackend() {
 }
 
 std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   std::vector<std::vector<std::string>> client_info_table =
       {{"func", "module", "backends"}};
 

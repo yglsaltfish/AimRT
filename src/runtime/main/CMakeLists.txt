@@ -30,6 +30,7 @@ target_link_libraries(
   PRIVATE gflags::gflags
           aimrt::runtime::core)
 
+# Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 

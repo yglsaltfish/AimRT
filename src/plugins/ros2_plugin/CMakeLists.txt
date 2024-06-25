@@ -37,6 +37,7 @@ target_link_libraries(
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_fastrtps_cpp
           ros2_plugin_proto::ros2_plugin_proto__rosidl_typesupport_introspection_cpp)
 
+# Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 

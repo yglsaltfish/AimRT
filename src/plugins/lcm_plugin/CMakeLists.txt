@@ -33,6 +33,7 @@ target_link_libraries(
           aimrt::runtime::core
           lcm::lcm-static)
 
+# Add -Werror option
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 

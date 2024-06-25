@@ -82,6 +82,10 @@ ParameterHandle* ParameterManager::GetParameterHandle(std::string_view module_na
 }
 
 std::list<std::pair<std::string, std::string>> ParameterManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Function can only be called when state is 'Init'.");
+
   return {};
 }
 
