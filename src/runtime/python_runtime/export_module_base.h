@@ -6,20 +6,6 @@
 
 namespace aimrt::runtime::python_runtime {
 
-inline void ExportModuleInfo(pybind11::object m) {
-  using namespace aimrt;
-
-  pybind11::class_<ModuleInfo>(m, "ModuleInfo")
-      .def(pybind11::init<>())
-      .def_readwrite("name", &ModuleInfo::name)
-      .def_readwrite("major_version", &ModuleInfo::major_version)
-      .def_readwrite("minor_version", &ModuleInfo::minor_version)
-      .def_readwrite("patch_version", &ModuleInfo::patch_version)
-      .def_readwrite("build_version", &ModuleInfo::build_version)
-      .def_readwrite("author", &ModuleInfo::author)
-      .def_readwrite("description", &ModuleInfo::description);
-}
-
 class PyModuleBaseAdapter : public ModuleBase {
  public:
   using ModuleBase::ModuleBase;

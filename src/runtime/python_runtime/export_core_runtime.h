@@ -44,7 +44,8 @@ inline void ExportCore(pybind11::object m) {
       .def("Start", &PyCoreStart)
       .def("Shutdown", &AimRTCore::Shutdown)
       .def("RegisterModule", &PyCoreRegisterModule)
-      .def("CreateModule", &PyCoreCreateModule);
+      .def("CreateModule", &PyCoreCreateModule)
+      .def("GenInitializationReport", &AimRTCore::GenInitializationReport);
 }
 
 }  // namespace aimrt::runtime::python_runtime

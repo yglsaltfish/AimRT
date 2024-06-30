@@ -89,6 +89,7 @@ if(AIMRT_BUILD_DOCUMENT)
     execute_process(COMMAND ${AIMRT_DOC_DIR}/doxygen/build.bat ${AIMRT_DOC_DIR}/doxygen WORKING_DIRECTORY ${AIMRT_DOC_DIR}/doxygen)
   elseif(UNIX)
     execute_process(COMMAND ${AIMRT_DOC_DIR}/doxygen/build.sh ${AIMRT_DOC_DIR}/doxygen WORKING_DIRECTORY ${AIMRT_DOC_DIR}/doxygen)
+    execute_process(COMMAND ${AIMRT_DOC_DIR}/sphinx-cn/build.sh ${AIMRT_DOC_DIR}/sphinx-cn WORKING_DIRECTORY ${AIMRT_DOC_DIR}/sphinx-cn)
   endif()
 endif()
 
