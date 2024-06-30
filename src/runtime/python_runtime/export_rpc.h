@@ -17,6 +17,7 @@ inline void ExportRpcStatus(pybind11::object m) {
       .value("UNKNOWN", AIMRT_RPC_STATUS_UNKNOWN)
       .value("TIMEOUT", AIMRT_RPC_STATUS_TIMEOUT)
       .value("SVR_UNKNOWN", AIMRT_RPC_STATUS_SVR_UNKNOWN)
+      .value("SVR_BACKEND_INTERNAL_ERROR", AIMRT_RPC_STATUS_SVR_BACKEND_INTERNAL_ERROR)
       .value("SVR_NOT_IMPLEMENTED", AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED)
       .value("SVR_NOT_FOUND", AIMRT_RPC_STATUS_SVR_NOT_FOUND)
       .value("SVR_INVALID_SERIALIZATION_TYPE", AIMRT_RPC_STATUS_SVR_INVALID_SERIALIZATION_TYPE)
@@ -25,6 +26,7 @@ inline void ExportRpcStatus(pybind11::object m) {
       .value("SVR_DESERIALIZATION_FAILED", AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED)
       .value("SVR_HANDLE_FAILED", AIMRT_RPC_STATUS_SVR_HANDLE_FAILED)
       .value("CLI_UNKNOWN", AIMRT_RPC_STATUS_CLI_UNKNOWN)
+      .value("CLI_BACKEND_INTERNAL_ERROR", AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR)
       .value("CLI_INVALID_ADDR", AIMRT_RPC_STATUS_CLI_INVALID_ADDR)
       .value("CLI_INVALID_SERIALIZATION_TYPE", AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE)
       .value("CLI_SERIALIZATION_FAILED", AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED)
@@ -43,7 +45,7 @@ inline void ExportRpcStatus(pybind11::object m) {
       .def("ToString", &Status::ToString);
 }
 
-inline void ExportRpcContextRef(pybind11::object m) {
+inline void ExportRpcContext(pybind11::object m) {
   using namespace aimrt::rpc;
 
   pybind11::class_<Context>(m, "RpcContext")
@@ -52,10 +54,12 @@ inline void ExportRpcContextRef(pybind11::object m) {
       .def("SetTimeout", &Context::SetTimeout)
       .def("GetMetaValue", &Context::GetMetaValue)
       .def("SetMetaValue", &Context::SetMetaValue)
+      .def("GetMetaKeys", &Context::GetMetaKeys)
       .def("GetToAddr", &Context::GetToAddr)
       .def("SetToAddr", &Context::SetToAddr)
       .def("GetSerializationType", &Context::GetSerializationType)
-      .def("SetSerializationType", &Context::SetSerializationType);
+      .def("SetSerializationType", &Context::SetSerializationType)
+      .def("ToString", &Context::ToString);
 
   pybind11::class_<ContextRef>(m, "RpcContextRef")
       .def(pybind11::init<>())
@@ -67,10 +71,12 @@ inline void ExportRpcContextRef(pybind11::object m) {
       .def("SetTimeout", &ContextRef::SetTimeout)
       .def("GetMetaValue", &ContextRef::GetMetaValue)
       .def("SetMetaValue", &ContextRef::SetMetaValue)
+      .def("GetMetaKeys", &ContextRef::GetMetaKeys)
       .def("GetToAddr", &ContextRef::GetToAddr)
       .def("SetToAddr", &ContextRef::SetToAddr)
       .def("GetSerializationType", &ContextRef::GetSerializationType)
-      .def("SetSerializationType", &ContextRef::SetSerializationType);
+      .def("SetSerializationType", &ContextRef::SetSerializationType)
+      .def("ToString", &ContextRef::ToString);
 }
 
 inline pybind11::bytes rpc_empty_py_bytes;

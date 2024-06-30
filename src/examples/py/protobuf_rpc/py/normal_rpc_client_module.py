@@ -106,9 +106,9 @@ class NormalRpcClientModule(aimrt_py.ModuleBase):
             aimrt_py_log.info(self.logger,
                               "Client start new rpc call. req: {}".format(MessageToJson(req)))
 
-            ctx = self.rpc_handle.NewContextSharedPtr()
-            ctx_ref = aimrt_py.RpcContextRef(ctx)
-            status, rsp = self.proxy.GetFooData(ctx_ref, req)
+            ctx = aimrt_py.RpcContext()
+            ctx.SetTimeout(datetime.timedelta(seconds=30))
+            status, rsp = self.proxy.GetFooData(ctx, req)
 
             if (status):
                 aimrt_py_log.info(

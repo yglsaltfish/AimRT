@@ -70,13 +70,20 @@ class {{service_name}}(aimrt_py.ServiceBase):
 """
 
     t_pyfile_one_service_proxy_func: str = r"""
-    def {{rpc_func_name}}(self, ctx_ref, req):
+    def {{rpc_func_name}}(self, ctx, req):
+        if(type(ctx) == aimrt_py.RpcContext):
+            ctx_ref = aimrt_py.RpcContextRef(ctx)
+        elif(type(ctx) == aimrt_py.RpcContextRef):
+            ctx_ref = ctx
+        else:
+            raise TypeError("ctx must be 'aimrt_py.RpcContext' or 'aimrt_py.RpcContextRef'")
+
         if(ctx_ref):
             if(ctx_ref.GetSerializationType() == ""):
                 ctx_ref.SetSerializationType("pb")
         else:
-            ctx = aimrt_py.RpcContext()
-            ctx_ref = aimrt_py.RpcContextRef(ctx)
+            real_ctx = aimrt_py.RpcContext()
+            ctx_ref = aimrt_py.RpcContextRef(real_ctx)
             ctx_ref.SetSerializationType("pb")
 
         serialization_type = ctx_ref.GetSerializationType()
