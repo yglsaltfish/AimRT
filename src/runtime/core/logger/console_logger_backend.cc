@@ -133,6 +133,8 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
+  main_thread_id_ = std::this_thread::get_id();
+
   run_flag_.store(true);
 }
 
@@ -193,7 +195,11 @@ void ConsoleLoggerBackend::Log(
     std::cout << std::endl;
   };
 
-  log_executor_.Execute(std::move(log_work));
+  if (!start_flag_.load() && main_thread_id_ == std::this_thread::get_id()) [[unlikely]] {
+    log_work();
+  } else {
+    log_executor_.Execute(std::move(log_work));
+  }
 }
 
 bool ConsoleLoggerBackend::CheckLog(const LogDataWrapper& log_data_wrapper) {
