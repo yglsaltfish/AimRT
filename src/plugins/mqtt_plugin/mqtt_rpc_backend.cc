@@ -24,6 +24,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
     for (const auto& client_options : rhs.clients_options) {
       Node client_options_node;
       client_options_node["func_name"] = client_options.func_name;
+      client_options_node["server_mqtt_id"] = client_options.server_mqtt_id;
       node["clients_options"].push_back(client_options_node);
     }
 
@@ -31,6 +32,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
     for (const auto& server_options : rhs.servers_options) {
       Node server_options_node;
       server_options_node["func_name"] = server_options.func_name;
+      server_options_node["allow_share"] = server_options.allow_share;
       node["servers_options"].push_back(server_options_node);
     }
 
@@ -43,8 +45,15 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
 
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
       for (auto& client_options_node : node["clients_options"]) {
-        auto client_options = Options::ClientOptions{
-            .func_name = client_options_node["func_name"].as<std::string>()};
+        auto client_options = Options::ClientOptions{};
+
+        if (client_options_node["func_name"]) {
+          client_options.func_name = client_options_node["func_name"].as<std::string>();
+        }
+
+        if (client_options_node["server_mqtt_id"]) {
+          client_options.server_mqtt_id = client_options_node["server_mqtt_id"].as<std::string>();
+        }
 
         rhs.clients_options.emplace_back(std::move(client_options));
       }
@@ -52,8 +61,15 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
 
     if (node["servers_options"] && node["servers_options"].IsSequence()) {
       for (auto& server_options_node : node["servers_options"]) {
-        auto server_options = Options::ServerOptions{
-            .func_name = server_options_node["func_name"].as<std::string>()};
+        auto server_options = Options::ServerOptions{};
+
+        if (server_options_node["func_name"]) {
+          server_options.func_name = server_options_node["func_name"].as<std::string>();
+        }
+
+        if (server_options_node["allow_share"]) {
+          server_options.allow_share = server_options_node["allow_share"].as<bool>();
+        }
 
         rhs.servers_options.emplace_back(std::move(server_options));
       }
@@ -255,8 +271,29 @@ bool MqttRpcBackend::RegisterServiceFunc(
   };
 
   std::string mqtt_sub_topic = "aimrt_rpc_req/" + util::UrlEncode(GetRealFuncName(service_func_wrapper.func_name));
+
+  auto find_server_option = std::find_if(options_.servers_options.begin(), options_.servers_options.end(),
+                                         [func_name = GetRealFuncName(service_func_wrapper.func_name)](const Options::ServerOptions& server_option) {
+                                           try {
+                                             return std::regex_match(func_name.begin(), func_name.end(), std::regex(server_option.func_name, std::regex::ECMAScript));
+                                           } catch (const std::exception& e) {
+                                             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                                                        server_option.func_name, func_name, e.what());
+                                             return false;
+                                           }
+                                         });
+
+  // check allow_share
   std::string share_mqtt_sub_topic = "$share/aimrt/" + mqtt_sub_topic;
-  sub_info_vec_.emplace_back(share_mqtt_sub_topic);
+
+  if (find_server_option != options_.servers_options.end()) {
+    if (find_server_option->allow_share) {
+      sub_info_vec_.emplace_back(share_mqtt_sub_topic);
+    }
+  } else {
+    // default allow_share
+    sub_info_vec_.emplace_back(share_mqtt_sub_topic);
+  }
 
   msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic,
@@ -295,6 +332,21 @@ bool MqttRpcBackend::RegisterClientFunc(
   }
 
   sub_info_vec_.emplace_back(mqtt_sub_topic);
+
+  auto find_client_option = std::find_if(options_.clients_options.begin(), options_.clients_options.end(),
+                                         [func_name = GetRealFuncName(client_func_wrapper.func_name)](const Options::ClientOptions& client_option) {
+                                           try {
+                                             return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+                                           } catch (const std::exception& e) {
+                                             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                                                        client_option.func_name, func_name, e.what());
+                                             return false;
+                                           }
+                                         });
+
+  if (find_client_option != options_.clients_options.end()) {
+    client_func_to_server_id_[GetRealFuncName(client_func_wrapper.func_name)] = find_client_option->server_mqtt_id;
+  }
 
   msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic,
@@ -368,9 +420,18 @@ bool MqttRpcBackend::TryInvoke(
   std::string_view module_name = client_invoke_wrapper_ptr->module_name;
   std::string_view func_name = client_invoke_wrapper_ptr->func_name;
 
-  // 检查ctx，当前只支持一个server url，且在plugin层配置
-  std::string_view to_addr =
+  std::string to_addr;
+  // check client option, read server url from option
+  if (client_func_to_server_id_.contains(GetRealFuncName(func_name))) {
+    to_addr = fmt::format("{}://{}", Name(), client_func_to_server_id_[GetRealFuncName(func_name)]);
+  }
+
+  // check ctx, read server url from ctx
+  auto ctx_to_addr =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
+  if (!ctx_to_addr.empty()) {
+    to_addr = ctx_to_addr;
+  }
 
   std::string server_mqtt_id;
   if (!to_addr.empty()) {

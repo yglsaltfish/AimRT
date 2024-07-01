@@ -13,11 +13,13 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
     struct ClientOptions {
       std::string func_name;
+      std::string server_mqtt_id;
     };
     std::vector<ClientOptions> clients_options;
 
     struct ServerOptions {
       std::string func_name;
+      bool allow_share{true};
     };
     std::vector<ServerOptions> servers_options;
   };
@@ -91,6 +93,8 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::atomic_uint32_t req_id_ = 0;
+
+  std::map<std::string_view, std::string_view> client_func_to_server_id_;
 
   struct MsgRecorder {
     const runtime::core::rpc::ClientFuncWrapper* client_func_wrapper_ptr;

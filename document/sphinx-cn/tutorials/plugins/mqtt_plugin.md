@@ -49,10 +49,13 @@ aimrt:
 `mqtt`类型的RPC后端是**mqtt_plugin**中提供的一种RPC后端，用于通过mqtt的方式来调用和处理AimRT RPC请求。其所有的配置项如下：
 
 
-| 节点                          | 类型      | 是否可选| 默认值 | 作用 |
-| ----                          | ----      | ----  | ----  | ---- |
-| timeout_executor              | string    | 可选  | ""    | Client端RPC超时情况下的执行器 |
-
+| 节点                                | 类型     | 是否可选    | 默认值    | 作用                                                    |
+|-----------------------------------|--------|---------|--------|-------------------------------------------------------|
+| timeout_executor                  | string | 可选      | ""     | Client端RPC超时情况下的执行器                                   |
+| clients_options[i].func_name      | string | 必选      | ""     | RPC Func名称，支持正则表达式                                    |
+| clients_options[i].server_mqtt_id | string | 可选      | ""     | RPC Func发起调用时请求的mqtt服务端id                             |
+| servers_options[i].func_name      | string | 必选      | ""     | RPC Func名称，支持正则表达式                                    |
+| servers_options[i].allow_share    | bool   | 可选      | ""     | 该RPC服务是否允许共享订阅(不允许的话该服务只能通过指定server id进行调用)，默认为true   |
 
 以下是一个简单的客户端的示例：
 ```yaml
@@ -74,6 +77,9 @@ aimrt:
       - type: mqtt # 【必选】RPC后端类型
         options: # 【可选】RPC Client配置
           timeout_executor: timeout_handle # 【可选】Client端RPC超时情况下的执行器
+          clients_options:
+            #- func_name: "(.*)" # 【必选】RPC Client名称，支持正则表达式
+            #  server_mqtt_id: example_server_id # 【可选】RPC Func发起调用时请求的mqtt服务端id
     clients_options: # 【可选】RPC Client配置
       - func_name: "(.*)" # 【必选】RPC Client名称，支持正则表达式
         enable_backends: [mqtt] # 【必选】RPC Client允许使用的RPC后端列表
@@ -93,6 +99,10 @@ aimrt:
   rpc: # 【可选】RPC配置根节点
     backends: # 【可选】RPC后端列表
       - type: mqtt # 【必选】RPC后端类型
+        options: # 【可选】RPC Server配置
+          servers_options:
+          - func_name: "(.*)"
+            allow_share: true   # 【可选】该RPC服务是否允许共享订阅(不允许的话只能通过client id进行调用，默认为true)
     servers_options: # 【可选】RPC Server配置
       - func_name: "(.*)" # 【必选】RPC Server名称，支持正则表达式
         enable_backends: [mqtt] # 【必选】RPC Server允许使用的RPC后端列表
