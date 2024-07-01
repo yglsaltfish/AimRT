@@ -145,6 +145,9 @@ class PublisherProxyBase {
   std::vector<std::function<void(std::string_view, ContextRef, const void*)>> publish_hook_vec;
 };
 
+template <typename>
+class PublisherProxy;
+
 class SubscriberProxyBase {
  public:
   explicit SubscriberProxyBase(SubscriberRef subscriber)
@@ -158,5 +161,8 @@ class SubscriberProxyBase {
   SubscriberRef subscriber_;
   std::vector<std::function<void(std::string_view, ContextRef, const void*)>> subscribe_hook_vec;  // todo
 };
+
+template <typename>
+class SubscriberProxy;
 
 }  // namespace aimrt::channel
