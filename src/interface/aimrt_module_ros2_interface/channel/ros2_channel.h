@@ -14,14 +14,12 @@
 
 namespace aimrt::channel {
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+template <Ros2MsgType MsgType>
 inline bool RegisterPublishType(PublisherRef publisher) {
   return publisher.RegisterPublishType(GetRos2MessageTypeSupport<MsgType>());
 }
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+template <Ros2MsgType MsgType>
 inline void Publish(PublisherRef publisher, ContextRef ctx_ref, const MsgType& msg) {
   static const std::string msg_type_name =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
@@ -37,14 +35,12 @@ inline void Publish(PublisherRef publisher, ContextRef ctx_ref, const MsgType& m
   publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
 }
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+template <Ros2MsgType MsgType>
 inline void Publish(PublisherRef publisher, const MsgType& msg) {
   Publish(publisher, ContextRef(), msg);
 }
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+template <Ros2MsgType MsgType>
 inline bool Subscribe(
     SubscriberRef subscriber,
     std::function<void(ContextRef ctx_ref, const std::shared_ptr<const MsgType>&)>&& callback) {
@@ -63,8 +59,7 @@ inline bool Subscribe(
       });
 }
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+template <Ros2MsgType MsgType>
 inline bool Subscribe(
     SubscriberRef subscriber,
     std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
@@ -83,8 +78,7 @@ inline bool Subscribe(
       });
 }
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+template <Ros2MsgType MsgType>
 inline bool SubscribeCo(
     SubscriberRef subscriber,
     std::function<co::Task<void>(ContextRef ctx_ref, const MsgType&)>&& callback) {
@@ -103,8 +97,7 @@ inline bool SubscribeCo(
       });
 }
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
+template <Ros2MsgType MsgType>
 inline bool SubscribeCo(
     SubscriberRef subscriber,
     std::function<co::Task<void>(const MsgType&)>&& callback) {
@@ -123,9 +116,8 @@ inline bool SubscribeCo(
       });
 }
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
-class PublisherProxy final : public PublisherProxyBase {
+template <Ros2MsgType MsgType>
+class PublisherProxy<MsgType> : public PublisherProxyBase {
  public:
   explicit PublisherProxy(PublisherRef publisher)
       : PublisherProxyBase(publisher) {}
@@ -140,13 +132,13 @@ class PublisherProxy final : public PublisherProxyBase {
         std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
 
     if (ctx_ref) {
-      if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
+      if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
       PublisherProxyBase::Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
       return;
     }
 
     auto ctx_ptr = NewContextSharedPtr();
-    ctx_ptr->SetSerializationType("pb");
+    ctx_ptr->SetSerializationType("ros2");
     PublisherProxyBase::Publish(msg_type_name, ctx_ptr, static_cast<const void*>(&msg));
   }
 
@@ -155,9 +147,8 @@ class PublisherProxy final : public PublisherProxyBase {
   }
 };
 
-template <class MsgType,
-          typename = std::enable_if_t<rosidl_generator_traits::is_message<MsgType>::value>>
-class SubscriberProxy final : public SubscriberProxyBase {
+template <Ros2MsgType MsgType>
+class SubscriberProxy<MsgType> : public SubscriberProxyBase {
  public:
   explicit SubscriberProxy(SubscriberRef subscriber)
       : SubscriberProxyBase(subscriber) {}

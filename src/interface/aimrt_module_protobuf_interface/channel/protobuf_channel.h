@@ -116,7 +116,7 @@ inline bool SubscribeCo(
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>
-class PublisherProxy final : public PublisherProxyBase {
+class PublisherProxy<MsgType> : public PublisherProxyBase {
  public:
   explicit PublisherProxy(PublisherRef publisher)
       : PublisherProxyBase(publisher) {}
@@ -146,7 +146,7 @@ class PublisherProxy final : public PublisherProxyBase {
 };
 
 template <std::derived_from<google::protobuf::Message> MsgType>
-class SubscriberProxy final : public SubscriberProxyBase {
+class SubscriberProxy<MsgType> : public SubscriberProxyBase {
  public:
   explicit SubscriberProxy(SubscriberRef subscriber)
       : SubscriberProxyBase(subscriber) {}
