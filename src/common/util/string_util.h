@@ -579,15 +579,16 @@ inline std::string ReplaceEnvVars(std::string_view input) {
   std::regex pattern(R"(\$\{([^}]+)\})");
   std::smatch match;
   std::string result(input);
-  std::string::const_iterator search_start(result.cbegin());
+  size_t cur_pos = 0;
 
-  while (std::regex_search(search_start, result.cend(), match, pattern)) {
+  while (std::regex_search(result.cbegin() + cur_pos, result.cend(), match, pattern)) {
     std::string env_name = match[1].str();
     const char* env_val = std::getenv(env_name.c_str());
     if (env_val == nullptr) env_val = "";
 
-    result.replace(match.position(0), match.length(0), env_val);
-    search_start = result.begin() + match.position(0) + strlen(env_val);
+    result.replace(cur_pos + match.position(0), match.length(0), env_val);
+
+    cur_pos += (match.position(0) + strlen(env_val));
   }
 
   return result;
