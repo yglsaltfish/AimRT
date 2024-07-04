@@ -45,11 +45,8 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
 
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
       for (auto& client_options_node : node["clients_options"]) {
-        auto client_options = Options::ClientOptions{};
-
-        if (client_options_node["func_name"]) {
-          client_options.func_name = client_options_node["func_name"].as<std::string>();
-        }
+        auto client_options = Options::ClientOptions{
+            .func_name = client_options_node["func_name"].as<std::string>()};
 
         if (client_options_node["server_mqtt_id"]) {
           client_options.server_mqtt_id = client_options_node["server_mqtt_id"].as<std::string>();
@@ -61,11 +58,8 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
 
     if (node["servers_options"] && node["servers_options"].IsSequence()) {
       for (auto& server_options_node : node["servers_options"]) {
-        auto server_options = Options::ServerOptions{};
-
-        if (server_options_node["func_name"]) {
-          server_options.func_name = server_options_node["func_name"].as<std::string>();
-        }
+        auto server_options = Options::ServerOptions{
+            .func_name = server_options_node["func_name"].as<std::string>()};
 
         if (server_options_node["allow_share"]) {
           server_options.allow_share = server_options_node["allow_share"].as<bool>();
@@ -420,17 +414,15 @@ bool MqttRpcBackend::TryInvoke(
   std::string_view module_name = client_invoke_wrapper_ptr->module_name;
   std::string_view func_name = client_invoke_wrapper_ptr->func_name;
 
-  std::string to_addr;
-  // check client option, read server url from option
-  if (client_func_to_server_id_.contains(GetRealFuncName(func_name))) {
-    to_addr = fmt::format("{}://{}", Name(), client_func_to_server_id_[GetRealFuncName(func_name)]);
-  }
-
-  // check ctx, read server url from ctx
-  auto ctx_to_addr =
-      client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
-  if (!ctx_to_addr.empty()) {
-    to_addr = ctx_to_addr;
+  // check ctx, read server id from ctx
+  std::string to_addr(
+      client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR));
+  if (to_addr.empty()) {
+    // ctx server id not found, try to find server id from option
+    auto find_server_id = client_func_to_server_id_.find(GetRealFuncName(func_name));
+    if (find_server_id != client_func_to_server_id_.end()) {
+      to_addr = std::string(Name()) + "://" + std::string(find_server_id->second);
+    }
   }
 
   std::string server_mqtt_id;

@@ -94,7 +94,7 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::atomic_uint32_t req_id_ = 0;
 
-  std::map<std::string_view, std::string_view> client_func_to_server_id_;
+  std::unordered_map<std::string_view, std::string_view> client_func_to_server_id_;
 
   struct MsgRecorder {
     const runtime::core::rpc::ClientFuncWrapper* client_func_wrapper_ptr;
