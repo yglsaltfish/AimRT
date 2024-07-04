@@ -3,12 +3,12 @@
 
 
 在开发C++工程时，您可以通过两种方式引用AimRT：
-- 基于CMake FetchContent，通过源码进行引用【推荐】
-- 安装后，基于CMake find_package进行引用
+- 基于CMake FetchContent，通过源码进行引用【推荐】；
+- 安装后，基于CMake find_package进行引用；
 
 AimRT比较轻量，推荐用户直接基于源码进行引用。如果要使用基于安装的方式进行引用，AimRT也提供了两种方式：
-- 从源码编译安装
-- 二进制安装
+- 从源码编译安装；
+- 二进制安装；
 
 
 ## 编译环境要求
@@ -16,9 +16,20 @@ AimRT兼容linux、windows等主流操作系统，编译器需要能够支持c++
 - Ubuntu22.04
   - gcc-11.4
   - gcc-13.3
-  - clang-16.0.6
 - Windows11
-  - MSVC-19.36
+  - MSVC-19.40
+
+<!-- - Ubuntu22.04
+  - gcc-11.4
+  - gcc-12.4
+  - gcc-13.3
+  - gcc-14.1
+  - clang-15.0.7
+  - clang-16.0.6
+  - clang-17.0.6
+  - clang-18.1.8
+- Windows11
+  - MSVC-19.40 -->
 
 
 请注意：
@@ -62,11 +73,15 @@ target_link_libraries(
 ### 安装方式一：从源码构建安装
 
 ***TODO待完善***
+
+
 首先通过git等方式下载源码，然后基于CMake进行构建编译，在构建时传入`CMAKE_INSTALL_PREFIX`选项指定安装地址，构建完成后执行install安装。
 
 ### 安装方式二：从二进制包安装
 
 ***TODO待完善***
+
+
 您可以直接在[AimRT的发布页面](https://code.agibot.com/agibot_aima/aimrt)上下载一些主流平台上编译好的二进制包并安装。
 
 注意：
@@ -77,3 +92,5 @@ target_link_libraries(
 ### 安装完成后，使用CMake find_package进行引用
 
 ***TODO待完善***
+
+完成安装后，通过在CMake中`find_package(aimrt)`来引用。

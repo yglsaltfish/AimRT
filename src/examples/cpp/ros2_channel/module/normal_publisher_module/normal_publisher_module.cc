@@ -28,8 +28,7 @@ bool NormalPublisherModule::Initialize(aimrt::CoreRef core) {
     publisher_ = core_.GetChannelHandle().GetPublisher(topic_name_);
     AIMRT_CHECK_ERROR_THROW(publisher_, "Get publisher for topic '{}' failed.", topic_name_);
 
-    aimrt::channel::PublisherProxy<example_ros2::msg::RosTestMsg> publisher_proxy(publisher_);
-    bool ret = publisher_proxy.RegisterPublishType();
+    bool ret = aimrt::channel::RegisterPublishType<example_ros2::msg::RosTestMsg>(publisher_);
     AIMRT_CHECK_ERROR_THROW(ret, "Register publishType failed.");
 
   } catch (const std::exception& e) {

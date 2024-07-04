@@ -43,7 +43,7 @@ inline void Publish(PublisherRef publisher, const MsgType& msg) {
 template <Ros2MsgType MsgType>
 inline bool Subscribe(
     SubscriberRef subscriber,
-    std::function<void(ContextRef ctx_ref, const std::shared_ptr<const MsgType>&)>&& callback) {
+    std::function<void(ContextRef, const std::shared_ptr<const MsgType>&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -81,7 +81,7 @@ inline bool Subscribe(
 template <Ros2MsgType MsgType>
 inline bool SubscribeCo(
     SubscriberRef subscriber,
-    std::function<co::Task<void>(ContextRef ctx_ref, const MsgType&)>&& callback) {
+    std::function<co::Task<void>(ContextRef, const MsgType&)>&& callback) {
   return subscriber.Subscribe(
       GetRos2MessageTypeSupport<MsgType>(),
       [callback{std::move(callback)}](
@@ -123,8 +123,12 @@ class PublisherProxy<MsgType> : public PublisherProxyBase {
       : PublisherProxyBase(publisher) {}
   ~PublisherProxy() = default;
 
+  static bool RegisterPublishType(PublisherRef publisher) {
+    return publisher.RegisterPublishType(GetRos2MessageTypeSupport<MsgType>());
+  }
+
   bool RegisterPublishType() const {
-    return publisher_.RegisterPublishType(GetRos2MessageTypeSupport<MsgType>());
+    return RegisterPublishType(publisher_);
   }
 
   void Publish(ContextRef ctx_ref, const MsgType& msg) const {
@@ -155,7 +159,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
   ~SubscriberProxy() = default;
 
   bool Subscribe(
-      std::function<void(ContextRef ctx_ref, const std::shared_ptr<const MsgType>&)>&& callback) const {
+      std::function<void(ContextRef, const std::shared_ptr<const MsgType>&)>&& callback) const {
     return Subscribe(subscriber_, std::move(callback));
   }
 
@@ -165,7 +169,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
   }
 
   bool SubscribeCo(
-      std::function<co::Task<void>(ContextRef ctx_ref, const MsgType&)>&& callback) const {
+      std::function<co::Task<void>(ContextRef, const MsgType&)>&& callback) const {
     return SubscribeCo(subscriber_, std::move(callback));
   }
 

@@ -109,12 +109,21 @@ class ChannelHandleRef {
 
 class PublisherProxyBase {
  public:
+  using HookFunc = std::function<void(std::string_view, ContextRef, const void*)>;
+
+ public:
   explicit PublisherProxyBase(PublisherRef publisher)
       : publisher_(publisher) {}
   virtual ~PublisherProxyBase() = default;
 
   PublisherProxyBase(const PublisherProxyBase&) = delete;
   PublisherProxyBase& operator=(const PublisherProxyBase&) = delete;
+
+  template <typename... Args>
+    requires std::constructible_from<HookFunc, Args...>
+  void RegisterHook(Args&&... args) {
+    publish_hook_vec.emplace_back(std::forward<Args>(args)...);
+  }
 
   std::shared_ptr<Context> NewContextSharedPtr() const {
     return default_ctx_ptr_
@@ -142,13 +151,16 @@ class PublisherProxyBase {
  protected:
   PublisherRef publisher_;
   std::shared_ptr<Context> default_ctx_ptr_;
-  std::vector<std::function<void(std::string_view, ContextRef, const void*)>> publish_hook_vec;
+  std::vector<HookFunc> publish_hook_vec;
 };
 
 template <typename>
 class PublisherProxy;
 
 class SubscriberProxyBase {
+ public:
+  using HookFunc = std::function<void(std::string_view, ContextRef, const void*)>;
+
  public:
   explicit SubscriberProxyBase(SubscriberRef subscriber)
       : subscriber_(subscriber) {}
@@ -157,9 +169,15 @@ class SubscriberProxyBase {
   SubscriberProxyBase(const SubscriberProxyBase&) = delete;
   SubscriberProxyBase& operator=(const SubscriberProxyBase&) = delete;
 
+  template <typename... Args>
+    requires std::constructible_from<HookFunc, Args...>
+  void RegisterHook(Args&&... args) {
+    subscribe_hook_vec.emplace_back(std::forward<Args>(args)...);
+  }
+
  protected:
   SubscriberRef subscriber_;
-  std::vector<std::function<void(std::string_view, ContextRef, const void*)>> subscribe_hook_vec;  // todo
+  std::vector<HookFunc> subscribe_hook_vec;  // todo
 };
 
 template <typename>
