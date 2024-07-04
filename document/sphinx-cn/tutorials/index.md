@@ -44,16 +44,15 @@ interface/interface.md
 ```{toctree}
 :maxdepth: 1
 
-interface/cpp_common.md
-interface/cpp_core_ref.md
-interface/cpp_module_base.md
-interface/cpp_configurator.md
-interface/cpp_executor.md
-interface/cpp_logger.md
-interface/cpp_parameter.md
-interface/cpp_allocator.md
-interface/cpp_channel.md
-interface/cpp_rpc.md
+interface_cpp/common.md
+interface_cpp/core_ref.md
+interface_cpp/module_base.md
+interface_cpp/configurator.md
+interface_cpp/executor.md
+interface_cpp/logger.md
+interface_cpp/parameter.md
+interface_cpp/channel.md
+interface_cpp/rpc.md
 ```
 
 您可以通过以下文档了解部署运行阶段的C++接口用法。
@@ -61,19 +60,28 @@ interface/cpp_rpc.md
 ```{toctree}
 :maxdepth: 1
 
-interface/cpp_runtime.md
+interface_cpp/runtime.md
 ```
 
-<!-- 以下TODO待整理-------- -->
+
 
 ## Python接口文档
+
+<!-- TODO, 本章节待整理-------- -->
 
 您可以通过以下文档了解逻辑开发阶段的Python接口用法。
 
 ```{toctree}
 :maxdepth: 1
 
-interface/py_module.md
+interface_py/common.md
+interface_py/core_ref.md
+interface_py/module_base.md
+interface_py/configurator.md
+interface_py/executor.md
+interface_py/logger.md
+interface_py/channel.md
+interface_py/rpc.md
 ```
 
 您可以通过以下文档了解部署运行阶段的Python接口用法。
@@ -81,7 +89,7 @@ interface/py_module.md
 ```{toctree}
 :maxdepth: 1
 
-interface/py_runtime.md
+interface_py/runtime.md
 ```
 
 ## 配置文档
@@ -91,10 +99,20 @@ interface/py_runtime.md
 ```{toctree}
 :maxdepth: 1
 
-interface/cfg.md
+cfg/common.md
+cfg/module.md
+cfg/configurator.md
+cfg/plugin.md
+cfg/main_thread.md
+cfg/executor.md
+cfg/log.md
+cfg/channel.md
+cfg/rpc.md
 ```
 
 ## 插件
+
+<!-- TODO, 本章节待整理-------- -->
 
 AimRT提供了大量官方插件，这部分文档将介绍这些插件的功能以及详细的配置选项。
 
@@ -121,6 +139,8 @@ plugins/how_to_dev_plugin.md
 
 ## CLI工具
 
+<!-- TODO, 本章节待整理-------- -->
+
 AimRT提供了一个命令行工具，可以帮助开发者快速完成一些操作。
 
 ```{toctree}
@@ -132,6 +152,8 @@ cli_tool/gen_prj.md
 
 
 ## 示例
+
+<!-- TODO, 本章节待整理-------- -->
 
 AimRT提供了详细且全面的示例，开发者可以基于示例进行深入学习。
 

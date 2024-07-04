@@ -50,7 +50,7 @@ class AimRTCore {
 
 接口使用说明如下：
 - `void Initialize(const Options& options)`：用于初始化框架。
-  - 接收一个`AimRTCore::Options`作为初始化参数。其中最重要的项是`cfg_file_path`，用于设置配置文件路径。关于配置文件的详细说明，请参考[配置](cfg.md)。
+  - 接收一个`AimRTCore::Options`作为初始化参数。其中最重要的项是`cfg_file_path`，用于设置配置文件路径。
   - 如果初始化失败，会抛出一个异常。
 - `void Start()`：启动框架。
   - 如果启动失败，会抛出一个异常。
