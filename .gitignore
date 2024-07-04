@@ -9,6 +9,7 @@ document/doxygen/doxygen.log
 document/sphinx-cn/_build
 document/sphinx-cn/_static
 document/sphinx-cn/_templates
+document/sphinx-cn/dockerfile/html.tar.gz
 
 .idea/
 cmake-build*/

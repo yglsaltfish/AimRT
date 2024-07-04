@@ -254,18 +254,11 @@ class WorkspaceGenerator(GeneratorBase):
                 for name in split_names:
                     std_depend_name += name.capitalize()
 
-                git_split_names = depends_std_module['git_repository'].split('/')
-                if 'code.agibot.com' not in git_split_names:
-                    git_repository_name = depends_std_module['git_repository']
-                else:
-                    git_repository_name = depends_std_module['git_repository'].replace(
-                        'http://code.agibot.com', 'http://${CODE_AGIBOT_COM_HTTP_TOKEN}code.agibot.com')
-
                 depends_std_modules.append(DependsStdModuleExpandInfo(
                     name=depend_module_name,
                     std_depend_name=std_depend_name,
                     git_version=depends_std_module['git_tag'],
-                    git_repository=git_repository_name
+                    git_repository=depends_std_module['git_repository']
                 ))
                 if 'import_options' in depends_std_module.keys() and depends_std_module['import_options']:
                     for option, status in depends_std_module['import_options'].items():

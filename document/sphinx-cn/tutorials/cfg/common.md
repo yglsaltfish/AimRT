@@ -39,7 +39,7 @@ aimrt:
   plugin:
     plugins:
       - name: xxx_plugin
-        path: ./libmqtt_plugin.so
+        path: ./libaimrt_mqtt_plugin.so
   main_thread:
     name: main_thread
   allocator:

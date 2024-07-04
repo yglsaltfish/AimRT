@@ -25,7 +25,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: mqtt_plugin # 【必选】插件名称
-        path: ./libmqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_mqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           broker_addr: tcp://127.0.0.1:1883 # 【必选】mqtt broker的地址
           client_id: example_mqtt_client # 【必选】本节点的mqtt client id
@@ -65,7 +65,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: mqtt_plugin # 【必选】插件名称
-        path: ./libmqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_mqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           broker_addr: tcp://127.0.0.1:1883 # 【必选】mqtt broker的地址
           client_id: example_client # 【必选】本节点的mqtt client id
@@ -93,7 +93,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: mqtt_plugin # 【必选】插件名称
-        path: ./libmqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_mqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           broker_addr: tcp://127.0.0.1:1883 # 【必选】mqtt broker的地址
           client_id: example_server # 【必选】本节点的mqtt client id
@@ -189,7 +189,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: mqtt_plugin # 【必选】插件名称
-        path: ./libmqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_mqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           broker_addr: tcp://127.0.0.1:1883 # 【必选】mqtt broker的地址
           client_id: example_publisher # 【必选】本节点的mqtt client id
@@ -212,7 +212,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: mqtt_plugin # 【必选】插件名称
-        path: ./libmqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_mqtt_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           broker_addr: tcp://127.0.0.1:1883 # 【必选】mqtt broker的地址
           client_id: example_subscriber # 【必选】本节点的mqtt client id

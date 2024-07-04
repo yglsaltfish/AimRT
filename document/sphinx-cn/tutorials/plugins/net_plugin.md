@@ -34,7 +34,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           http_options: # 【可选】http相关选项
@@ -86,7 +86,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           http_options: # 【可选】http相关选项
@@ -110,7 +110,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           http_options: # 【可选】http相关选项
@@ -167,7 +167,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           http_options: # 【可选】http相关选项
@@ -191,7 +191,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           http_options: # 【可选】http相关选项
@@ -248,7 +248,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           tcp_options: # 【可选】tcp相关选项
@@ -272,7 +272,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           tcp_options: # 【可选】tcp相关选项
@@ -310,7 +310,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           udp_options: # 【可选】udp相关选项
@@ -334,7 +334,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: net_plugin # 【必选】插件名称
-        path: ./libnet_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_net_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           thread_num: 4 # 【必选】net插件需要使用的线程数
           udp_options: # 【可选】udp相关选项
