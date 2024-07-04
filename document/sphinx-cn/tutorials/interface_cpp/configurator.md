@@ -22,7 +22,7 @@ class ConfiguratorRef {
 使用注意点：
 - `std::string_view GetConfigFilePath()`接口：用于获取模块配置文件的路径。
   - 请注意，此接口仅返回一个模块配置文件的路径，模块开发者需要自己读取配置文件并解析。
-  - 这个接口具体会返回什么样的路径，请参考部署运行阶段[配置](../interface/cfg.md)文档中的`aimrt.module`章节。
+  - 这个接口具体会返回什么样的路径，请参考部署运行阶段[aimrt.module 配置文档](../cfg/module.md)。
 
 
 一个简单的使用示例如下：
