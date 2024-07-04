@@ -35,8 +35,5 @@ AimRT官方还支持ROS2（Humble）插件，此插件提供了ROS2的RPC和Chan
 - 如果上层逻辑层使用的是非ROS2协议，例如Protobuf，那么它们会将消息序列化到一个特殊的ROS2协议中，外部ROS2节点需要订阅这个特殊协议，并从中反序列化得到正真的Protobuf消息。
 
 
-详情请参考[Module接口-Cpp版本](../tutorials/interface/cpp_module.md)和[ROS2插件](../tutorials/plugins/ros2_plugin.md)文档。
-
-
-注意，截至到AimRT-v0.6.0版本，暂时还不支持与ROS2 Action的兼容。
+注意，截至当前版本，暂时还不支持与ROS2 Action的兼容。
 

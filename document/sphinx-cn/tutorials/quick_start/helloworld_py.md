@@ -12,10 +12,11 @@ AimRT基于pybind11，在CPP接口层之上包装了一层python接口。本Demo
 - 运行Python脚本以体验AimRT的功能。
 
 
-## STEP1：安装AimRT Python包
+## STEP1：确保本地环境符合要求
 
-具体请参考[引用与安装（Python）](installation_py.md)中的步骤。
+请先确保本地的python环境满足要求，并且已经安装有`aimrt_py`包。具体请参考[引用与安装（Python）](installation_py.md)中的步骤。
 
+注意，示例本身是跨平台的，但本文档基于linux进行演示。
 
 ## STEP2: 编写业务代码
 

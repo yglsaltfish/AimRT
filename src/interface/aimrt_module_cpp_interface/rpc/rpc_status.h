@@ -22,6 +22,9 @@ class Status {
 
   operator bool() const { return OK(); }
 
+  void SetCode(uint32_t code) { code_ = code; }
+  void SetCode(aimrt_rpc_status_code_t code) { code_ = code; }
+
   uint32_t Code() const { return code_; }
 
   std::string ToString() const {

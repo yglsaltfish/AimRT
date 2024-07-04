@@ -57,15 +57,12 @@ cmake_minimum_required(VERSION 3.25)
 
 project(helloworld LANGUAGES C CXX)
 
-# 需要启用C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 获取aimrt
 include(cmake/GetAimRT.cmake)
 
-# 引用下层cmake
 add_subdirectory(src)
 ```
 
@@ -74,7 +71,6 @@ add_subdirectory(src)
 ```cmake
 include(FetchContent)
 
-# 请在此处选择使用的版本
 FetchContent_Declare(
   aimrt #
   GIT_REPOSITORY http://code.agibot.com/agibot_aima/aimrt.git #
@@ -295,7 +291,7 @@ HelloWorldModule:
 
 完善代码之后，在linux上执行以下命令完成编译：
 ```shell
-# 先cd到代码根目录
+# cd to root path of aimrt
 cmake -B build
 cd build
 make -j
