@@ -2,7 +2,7 @@ aimrt:
   plugin:
     plugins:
       - name: ros2_plugin
-        path: ./ros2_plugin.dll
+        path: ./aimrt_ros2_plugin.dll
         options:
           node_name: example_ros2_channel_subscriber_node
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded

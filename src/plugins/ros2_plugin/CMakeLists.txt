@@ -54,4 +54,4 @@ if(AIMRT_BUILD_TESTS AND test_files)
 endif()
 
 # Set misc of target
-set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})
+set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_${CUR_DIR}")

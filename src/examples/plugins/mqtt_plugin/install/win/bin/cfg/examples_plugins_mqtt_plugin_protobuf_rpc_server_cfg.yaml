@@ -2,7 +2,7 @@ aimrt:
   plugin:
     plugins:
       - name: mqtt_plugin
-        path: ./mqtt_plugin.dll
+        path: ./aimrt_mqtt_plugin.dll
         options:
           broker_addr: tcp://127.0.0.1:1883
           client_id: example_protobuf_rpc_server

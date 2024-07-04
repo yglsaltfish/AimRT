@@ -17,14 +17,14 @@ aimrt:
   plugin:
     plugins:
       - name: net_plugin # net插件，用于将parameter插件注册的RPC通过Http后端暴露给外部工具调用
-        path: ./libnet_plugin.so
+        path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
           http_options:
             listen_ip: 127.0.0.1
             listen_port: 50080
       - name: log_control_plugin # parameter插件，没有任何额外配置
-        path: ./liblog_control_plugin.so
+        path: ./libaimrt_log_control_plugin.so
   rpc:
     backends:
       - type: http

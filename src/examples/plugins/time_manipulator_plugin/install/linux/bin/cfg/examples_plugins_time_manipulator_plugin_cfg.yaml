@@ -2,14 +2,14 @@ aimrt:
   plugin:
     plugins:
       - name: net_plugin
-        path: ./libnet_plugin.so
+        path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
           http_options:
             listen_ip: 127.0.0.1
             listen_port: 50080
       - name: time_manipulator_plugin
-        path: ./libtime_manipulator_plugin.so
+        path: ./libaimrt_time_manipulator_plugin.so
         options:
           enable_rpc: true
   log: # log配置

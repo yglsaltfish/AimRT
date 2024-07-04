@@ -2,14 +2,14 @@ aimrt:
   plugin:
     plugins:
       - name: net_plugin
-        path: ./libnet_plugin.so
+        path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
           http_options:
             listen_ip: 127.0.0.1
             listen_port: 50080
       - name: log_control_plugin
-        path: ./liblog_control_plugin.so
+        path: ./libaimrt_log_control_plugin.so
   log: # log配置
     core_lvl: INFO # 内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
     backends: # 日志backends

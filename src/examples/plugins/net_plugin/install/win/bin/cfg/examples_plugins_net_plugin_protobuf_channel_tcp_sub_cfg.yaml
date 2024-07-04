@@ -2,7 +2,7 @@ aimrt:
   plugin:
     plugins:
       - name: net_plugin
-        path: ./net_plugin.dll
+        path: ./aimrt_net_plugin.dll
         options:
           thread_num: 4
           tcp_options:

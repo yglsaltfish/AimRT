@@ -2,7 +2,7 @@ aimrt:
   plugin:
     plugins:
       - name: mqtt_plugin
-        path: ./libmqtt_plugin.so
+        path: ./libaimrt_mqtt_plugin.so
         options:
           broker_addr: tcp://127.0.0.1:1883
           client_id: example_ros2_rpc_client

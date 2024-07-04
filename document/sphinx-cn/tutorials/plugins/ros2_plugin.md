@@ -25,7 +25,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: ros2_plugin # 【必选】插件名称
-        path: ./libros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_ros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           node_name: example_ros2_node # 【必选】ROS2节点名称
           executor_type: MultiThreaded # 【可选】ROS2执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded"
@@ -80,7 +80,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: ros2_plugin # 【必选】插件名称
-        path: ./libros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_ros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           node_name: example_ros2_client_node # 【必选】ROS2节点名称
           executor_type: MultiThreaded # 【可选】ROS2执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded"
@@ -111,7 +111,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: ros2_plugin # 【必选】插件名称
-        path: ./libros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_ros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           node_name: example_ros2_server_node # 【必选】ROS2节点名称
           executor_type: MultiThreaded # 【可选】ROS2执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded"
@@ -193,7 +193,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: ros2_plugin # 【必选】插件名称
-        path: ./libros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_ros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           node_name: example_ros2_pub_node # 【必选】ROS2节点名称
           executor_type: MultiThreaded # 【可选】ROS2执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded"
@@ -224,7 +224,7 @@ aimrt:
   plugin: # 【可选】插件配置根节点
     plugins: # 【可选】各个插件的配置
       - name: ros2_plugin # 【必选】插件名称
-        path: ./libros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_ros2_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
         options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
           node_name: example_ros2_sub_node # 【必选】ROS2节点名称
           executor_type: MultiThreaded # 【可选】ROS2执行器类型，可选值："SingleThreaded"、"StaticSingleThreaded"、"MultiThreaded"

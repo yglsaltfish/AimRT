@@ -2,7 +2,7 @@ aimrt:
   plugin:
     plugins:
       - name: ros2_plugin
-        path: ./libros2_plugin.so
+        path: ./libaimrt_ros2_plugin.so
         options:
           node_name: example_ros2_protobuf_channel_subscriber_node
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
