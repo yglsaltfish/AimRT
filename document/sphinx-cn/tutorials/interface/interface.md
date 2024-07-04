@@ -12,12 +12,7 @@
 
 因此，对应与这套设计思想，AimRT中广义的接口分为两大部分：
 - 用户在开发**业务逻辑**时所需要知晓的接口，例如如何打日志、如何调用RPC等：
-  - [CPP模块接口](interface/cpp_module.md)
-  - [Python模块接口](interface/py_module.md)
 - 用户在**部署运行**时所需要知晓的接口/配置，例如如何集成模块、如何选定底层通信方式等。注意：这里所需要关心的不仅包括基于C++/Python等语言的代码形式的接口，也包括配置文件的配置项：
-  - [CPP运行时接口](interface/cpp_runtime.md)
-  - [Python运行时接口](interface/py_runtime.md)
-  - [配置](interface/cfg.md)
 
 
 ## AimRT运行时生命周期
