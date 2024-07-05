@@ -29,7 +29,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   std::string_view Type() const override { return "rotate_file"; }
 
   void Initialize(YAML::Node options_node) override;
-  void Start() override { start_flag_.store(true); }
+  void Start() override {}
   void Shutdown() override { run_flag_.store(false); }
 
   void RegisterGetExecutorFunc(
@@ -57,9 +57,6 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   std::ofstream ofs_;
 
   std::atomic_bool run_flag_ = false;
-  std::atomic_bool start_flag_ = false;
-
-  std::thread::id main_thread_id_;
 
   std::shared_mutex module_filter_map_mutex_;
   std::unordered_map<

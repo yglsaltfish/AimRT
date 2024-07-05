@@ -83,8 +83,6 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
 
   options_node = options_;
 
-  main_thread_id_ = std::this_thread::get_id();
-
   run_flag_.store(true);
 }
 
@@ -121,7 +119,7 @@ void RotateFileLoggerBackend::Log(
     ofs_ << *format_log_str_ptr << std::endl;
   };
 
-  if (!start_flag_.load() && main_thread_id_ == std::this_thread::get_id()) [[unlikely]] {
+  if (!log_executor_ || log_executor_.IsInCurrentExecutor()) [[unlikely]] {
     log_work();
   } else {
     log_executor_.Execute(std::move(log_work));

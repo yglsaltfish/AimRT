@@ -53,7 +53,7 @@
 ### File 1 : /CMakeLists.txt
 根CMake，用于构建工程。
 ```cmake
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.24)
 
 project(helloworld LANGUAGES C CXX)
 
