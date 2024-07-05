@@ -3,7 +3,7 @@ include(FetchContent)
 message(STATUS "get TBB ...")
 
 set(tbb_DOWNLOAD_URL
-    "https://github.com/oneapi-src/oneTBB/archive/v2021.12.0-rc2.tar.gz"
+    "https://github.com/oneapi-src/oneTBB/archive/v2021.13.0.tar.gz"
     CACHE STRING "")
 
 if(${tbb_LOCAL_SOURCE})
@@ -33,12 +33,11 @@ if(NOT tbb_POPULATED)
       OFF
       CACHE BOOL "")
 
-  FetchContent_MakeAvailable(tbb)
+  set(TBB_STRICT
+      OFF
+      CACHE BOOL "")
 
-  # fix gcc13 build error
-  if(UNIX)
-    target_compile_options(tbb PRIVATE "-Wno-error=stringop-overflow")
-  endif()
+  FetchContent_MakeAvailable(tbb)
 endif()
 
 # import targets:

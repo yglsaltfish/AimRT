@@ -66,12 +66,12 @@ protoc --cpp_out=. rpc.proto
 
 在这之后，还需要使用AimRT提供的protoc插件，生成服务定义部分的C++桩代码，例如：
 ```shell
-protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_aimrt_rpc.py rpc.proto
+protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_aimrt_cpp_rpc.py rpc.proto
 ```
 
 这将生成`rpc.aimrt_rpc.pb.h`和`rpc.aimrt_rpc.pb.cc`文件，包含了根据定义的服务生成的C++类和方法。
 
-请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufAimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/protoc_plugin_cpp_gen_aimrt_rpc/ProtobufAimRTRpcGenCode.cmake)文件中提供的CMake方法：
+请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufAimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/protoc_plugin_cpp_gen_aimrt_cpp_rpc/ProtobufAimRTRpcGenCode.cmake)文件中提供的CMake方法：
 
 - `add_protobuf_aimrt_rpc_gencode_target_for_proto_files`：为一些.proto文件生成C++代码，参数如下：
   - **TARGET_NAME**：生成的CMake Target名称；
@@ -123,13 +123,13 @@ rosidl_generate_interfaces(example_srv_gencode
 
 在生成了Req和Rsp消息结构的C++代码后，开发者还需要使用AimRT提供的Python脚本工具，生成服务定义部分的C++桩代码，例如：
 ```shell
-python3 ARGS ./ros2_py_gen_aimrt_rpc.py --pkg_name=example_pkg --srv_file=./example.srv --output_path=./
+python3 ARGS ./ros2_py_gen_aimrt_cpp_rpc.py --pkg_name=example_pkg --srv_file=./example.srv --output_path=./
 ```
 
 这将生成`example.aimrt_rpc.srv.h`和`example.aimrt_rpc.srv.cc`文件，包含了根据定义的服务生成的C++类和方法。
 
 
-请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[Ros2AimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/ros2_py_gen_aimrt_rpc/Ros2AimRTRpcGenCode.cmake)文件中提供的CMake方法：
+请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[Ros2AimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/ros2_py_gen_aimrt_cpp_rpc/Ros2AimRTRpcGenCode.cmake)文件中提供的CMake方法：
 
 
 - `add_ros2_aimrt_rpc_gencode_target_for_one_file`：为单个srv文件生成RPC服务C++代码，参数如下：

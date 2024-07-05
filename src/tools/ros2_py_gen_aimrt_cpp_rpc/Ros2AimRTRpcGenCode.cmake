@@ -15,9 +15,9 @@ function(add_ros2_aimrt_rpc_gencode_target_for_one_file)
 
   add_custom_command(
     OUTPUT ${GEN_SRC} ${GEN_HDR}
-    COMMAND Python3::Interpreter ARGS ${ROS2_AIMRT_RPC_GEN_CODE_TOOL_PATH}/ros2_py_gen_aimrt_rpc.py --pkg_name=${ARG_PACKAGE_NAME} --srv_file=${ARG_PROTO_FILE}
+    COMMAND Python3::Interpreter ARGS ${ROS2_AIMRT_RPC_GEN_CODE_TOOL_PATH}/ros2_py_gen_aimrt_cpp_rpc.py --pkg_name=${ARG_PACKAGE_NAME} --srv_file=${ARG_PROTO_FILE}
             --output_path=${ARG_GENCODE_PATH} ${ARG_OPTIONS}
-    DEPENDS ${ARG_PROTO_FILE} ${ROS2_AIMRT_RPC_GEN_CODE_TOOL_PATH}/ros2_py_gen_aimrt_rpc.py
+    DEPENDS ${ARG_PROTO_FILE} ${ROS2_AIMRT_RPC_GEN_CODE_TOOL_PATH}/ros2_py_gen_aimrt_cpp_rpc.py
     COMMENT "Generating aimrt rpc code for ROS interfaces"
     VERBATIM)
 

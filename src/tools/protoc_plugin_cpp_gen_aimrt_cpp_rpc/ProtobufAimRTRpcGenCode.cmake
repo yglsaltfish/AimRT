@@ -28,8 +28,6 @@ function(add_protobuf_aimrt_rpc_gencode_target_for_proto_files)
     set(CUR_PROTOC_NAMESPACE ${PROTOC_NAMESPACE})
   endif()
 
-  get_property(PROTOC_PLUGIN_PY_GEN_AIMRT_RPC_PATH GLOBAL PROPERTY PROTOC_PLUGIN_PY_GEN_AIMRT_RPC_PATH_PROPERTY)
-
   set(GEN_SRCS)
   set(GEN_HDRS)
 
@@ -45,10 +43,10 @@ function(add_protobuf_aimrt_rpc_gencode_target_for_proto_files)
     add_custom_command(
       OUTPUT ${GEN_SRC} ${GEN_HDR}
       COMMAND ${CUR_PROTOC_NAMESPACE}::protoc ARGS ${ARG_OPTIONS} --proto_path ${PROTO_FILE_PATH} ${PROTOC_EXTERNAL_PROTO_PATH_ARGS} --aimrt_rpc_out ${ARG_GENCODE_PATH}
-              --plugin=protoc-gen-aimrt_rpc=${PROTOC_PLUGIN_PY_GEN_AIMRT_RPC_PATH}/protoc_plugin_py_gen_aimrt_rpc.py ${PROTO_FILE}
-      DEPENDS ${PROTO_FILE} ${CUR_PROTOC_NAMESPACE}::protoc ${PROTOC_PLUGIN_PY_GEN_AIMRT_RPC_PATH}/protoc_plugin_py_gen_aimrt_rpc.py
+              --plugin=protoc-gen-aimrt_rpc=$<TARGET_FILE:aimrt::tools::protoc_plugin_cpp_gen_aimrt_cpp_rpc> ${PROTO_FILE}
+      DEPENDS ${PROTO_FILE} ${CUR_PROTOC_NAMESPACE}::protoc aimrt::tools::protoc_plugin_cpp_gen_aimrt_cpp_rpc
       COMMENT
-        "Running protoc, args: ${ARG_OPTIONS} --proto_path ${PROTO_FILE_PATH} ${PROTOC_EXTERNAL_PROTO_PATH_ARGS} --aimrt_rpc_out ${ARG_GENCODE_PATH} --plugin=protoc-gen-aimrt_rpc=${PROTOC_PLUGIN_PY_GEN_AIMRT_RPC_PATH}/protoc_plugin_py_gen_aimrt_rpc.py ${PROTO_FILE}"
+        "Running protoc, args: ${ARG_OPTIONS} --proto_path ${PROTO_FILE_PATH} ${PROTOC_EXTERNAL_PROTO_PATH_ARGS} --aimrt_rpc_out ${ARG_GENCODE_PATH} --plugin=protoc-gen-aimrt_rpc=$<TARGET_FILE:aimrt::tools::protoc_plugin_cpp_gen_aimrt_cpp_rpc> ${PROTO_FILE}"
       VERBATIM)
   endforeach()
 
