@@ -53,7 +53,7 @@ protoc --python_out=. rpc.proto
 
 在这之后，还需要使用AimRT提供的protoc插件，生成服务定义部分的Python桩代码，例如：
 ```shell
-protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_aimrt_rpc.py rpc.proto
+protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_aimrt_py_rpc.py rpc.proto
 ```
 
 这将生成`rpc_aimrt_rpc_pb2.py`文件，包含了根据定义的服务生成的Python接口。
