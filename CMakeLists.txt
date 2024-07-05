@@ -32,6 +32,8 @@ option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time manipulator plugin.
 option(AIMRT_BUILD_PARAMETER_PLUGIN "AimRT build parameter plugin." OFF)
 option(AIMRT_BUILD_LOG_CONTROL_PLUGIN "AimRT build log control plugin." OFF)
 
+option(AIMRT_INSTALL "Enable installation of AimRT." ON)
+
 option(AIMRT_EXECUTOR_USE_STDEXEC "AimRT use stdexec as executor impl. (Experimental)" OFF)
 option(AIMRT_BUILD_WITH_WERROR "AimRT build with -Werror option. (Experimental)" OFF)
 
@@ -197,11 +199,13 @@ endif()
 # Add subdirectory
 add_subdirectory(src)
 
-# Install
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-  DESTINATION ./
-  FILES_MATCHING
-  PATTERN "*.cmake")
+if(AIMRT_INSTALL)
+  # Install
+  install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+    DESTINATION ./
+    FILES_MATCHING
+    PATTERN "*.cmake")
 
-install(EXPORT ${INSTALL_CONFIG_NAME} DESTINATION lib/cmake/${PROJECT_NAME})
+  install(EXPORT ${INSTALL_CONFIG_NAME} DESTINATION lib/cmake/${PROJECT_NAME})
+endif()

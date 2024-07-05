@@ -3,6 +3,7 @@
 # cmake
 cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
+    -DAIMRT_INSTALL=ON \
     -DCMAKE_INSTALL_PREFIX=./build/install \
     -DAIMRT_BUILD_TESTS=ON \
     -DAIMRT_BUILD_EXAMPLES=ON \

@@ -8,7 +8,9 @@ add_custom_target(
   COMMENT "python3 -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/aimrt_cli.spec"
   DEPENDS ${AIMRT_CLI_SRC_FILES})
 
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dist/
-  DESTINATION bin
-  USE_SOURCE_PERMISSIONS)
+if(AIMRT_INSTALL)
+  install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dist/
+    DESTINATION bin
+    USE_SOURCE_PERMISSIONS)
+endif()

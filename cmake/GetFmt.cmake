@@ -25,7 +25,7 @@ if(NOT fmt_POPULATED)
       OFF
       CACHE BOOL "")
   set(FMT_INSTALL
-      ON
+      ${AIMRT_INSTALL}
       CACHE BOOL "")
 
   FetchContent_MakeAvailable(fmt)

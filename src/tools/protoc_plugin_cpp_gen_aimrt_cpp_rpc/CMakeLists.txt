@@ -31,16 +31,20 @@ target_link_libraries(
           protobuf::libprotoc)
 
 # Set installation of target
-set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
-install(
-  TARGETS ${CUR_TARGET_NAME}
-  EXPORT ${INSTALL_CONFIG_NAME}
-  RUNTIME DESTINATION bin)
+if(AIMRT_INSTALL)
+  set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
+  install(
+    TARGETS ${CUR_TARGET_NAME}
+    EXPORT ${INSTALL_CONFIG_NAME}
+    RUNTIME DESTINATION bin)
+endif()
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})
 
 if(NOT AIMRT_USE_PROTOC_PYTHON_PLUGIN)
   include(${CMAKE_CURRENT_SOURCE_DIR}/ProtobufAimRTRpcGenCode.cmake)
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/ProtobufAimRTRpcGenCode.cmake DESTINATION cmake)
+  if(AIMRT_INSTALL)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/ProtobufAimRTRpcGenCode.cmake DESTINATION cmake)
+  endif()
 endif()
