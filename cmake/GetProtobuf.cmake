@@ -30,6 +30,9 @@ if(NOT protobuf_POPULATED)
   set(protobuf_MSVC_STATIC_RUNTIME
       OFF
       CACHE BOOL "")
+  set(protobuf_INSTALL
+      ${AIMRT_INSTALL}
+      CACHE BOOL "")
 
   FetchContent_MakeAvailable(protobuf)
 endif()

@@ -5,8 +5,10 @@ string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set_namespace()
 
 # py
-file(GLOB_RECURSE py_files ${CMAKE_CURRENT_SOURCE_DIR}/py/*.py)
-install(FILES ${py_files} DESTINATION bin)
+if(AIMRT_INSTALL)
+  file(GLOB_RECURSE py_files ${CMAKE_CURRENT_SOURCE_DIR}/py/*.py)
+  install(FILES ${py_files} DESTINATION bin)
+endif()
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -17,10 +19,12 @@ else()
   message(FATAL_ERROR "Unsupport os")
 endif()
 
-install(
-  DIRECTORY ${CUR_INSTALL_SOURCE_DIR}/bin
-  DESTINATION ./
-  USE_SOURCE_PERMISSIONS)
+if(AIMRT_INSTALL)
+  install(
+    DIRECTORY ${CUR_INSTALL_SOURCE_DIR}/bin
+    DESTINATION ./
+    USE_SOURCE_PERMISSIONS)
+endif()
 
 # build all
 get_namespace(CUR_SUPERIOR_NAMESPACE)

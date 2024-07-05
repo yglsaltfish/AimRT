@@ -38,11 +38,13 @@ include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 
 # Set installation of target
-set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
-install(
-  TARGETS ${CUR_TARGET_NAME}
-  EXPORT ${INSTALL_CONFIG_NAME}
-  LIBRARY DESTINATION bin)
+if(AIMRT_INSTALL)
+  set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
+  install(
+    TARGETS ${CUR_TARGET_NAME}
+    EXPORT ${INSTALL_CONFIG_NAME}
+    LIBRARY DESTINATION bin)
+endif()
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)

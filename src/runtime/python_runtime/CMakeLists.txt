@@ -26,11 +26,13 @@ target_link_libraries(
   PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,aimrt::runtime::core>)
 
 # Set installation of target
-set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
-install(
-  TARGETS ${CUR_TARGET_NAME}
-  EXPORT ${INSTALL_CONFIG_NAME}
-  LIBRARY DESTINATION bin)
+if(AIMRT_INSTALL)
+  set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
+  install(
+    TARGETS ${CUR_TARGET_NAME}
+    EXPORT ${INSTALL_CONFIG_NAME}
+    LIBRARY DESTINATION bin)
+endif()
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_py")
@@ -41,4 +43,6 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy ${py_files} ${CMAKE_BINARY_DIR}
   DEPENDS ${py_files})
 
-install(FILES ${py_files} DESTINATION bin)
+if(AIMRT_INSTALL)
+  install(FILES ${py_files} DESTINATION bin)
+endif()

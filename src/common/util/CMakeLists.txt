@@ -36,12 +36,14 @@ if(AIMRT_USE_FMT_LIB)
 endif()
 
 # Set installation of target
-set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
-install(
-  TARGETS ${CUR_TARGET_NAME}
-  EXPORT ${INSTALL_CONFIG_NAME}
-  FILE_SET HEADERS
-  DESTINATION include/aimrt/${CUR_DIR})
+if(AIMRT_INSTALL)
+  set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
+  install(
+    TARGETS ${CUR_TARGET_NAME}
+    EXPORT ${INSTALL_CONFIG_NAME}
+    FILE_SET HEADERS
+    DESTINATION include/aimrt/${CUR_DIR})
+endif()
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)
