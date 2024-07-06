@@ -8,7 +8,7 @@ void ExampleServiceAsyncServiceImpl::GetFooData(
     aimrt::rpc::ContextRef ctx,
     const ::aimrt::protocols::example::GetFooDataReq& req,
     ::aimrt::protocols::example::GetFooDataRsp& rsp,
-    aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+    std::function<void(aimrt::rpc::Status)>&& callback) {
   rsp.set_msg("echo " + req.msg());
 
   AIMRT_INFO("Server handle new rpc call. context:{}, req: {}, return rsp: {}",
@@ -21,7 +21,7 @@ void ExampleServiceAsyncServiceImpl::GetBarData(
     aimrt::rpc::ContextRef ctx,
     const ::aimrt::protocols::example::GetBarDataReq& req,
     ::aimrt::protocols::example::GetBarDataRsp& rsp,
-    aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+    std::function<void(aimrt::rpc::Status)>&& callback) {
   rsp.set_msg("echo " + req.msg());
 
   AIMRT_INFO("Server handle new rpc call. context:{}, req: {}, return rsp: {}",

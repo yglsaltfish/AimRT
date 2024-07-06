@@ -56,7 +56,7 @@ class {{srv_filename}}AsyncService : public aimrt::rpc::ServiceBase {
       aimrt::rpc::ContextRef ctx_ref,
       const {{srv_filename}}_Request& req,
       {{srv_filename}}_Response& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+      std::function<void(aimrt::rpc::Status)>&& callback) {
     callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED));
   }
 };
@@ -112,12 +112,12 @@ class {{srv_filename}}AsyncProxy : public aimrt::rpc::ProxyBase {
       aimrt::rpc::ContextRef ctx_ref,
       const {{srv_filename}}_Request& req,
       {{srv_filename}}_Response& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback);
+      std::function<void(aimrt::rpc::Status)>&& callback);
 
   void {{srv_filename}}(
       const {{srv_filename}}_Request& req,
       {{srv_filename}}_Response& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+      std::function<void(aimrt::rpc::Status)>&& callback) {
     {{srv_filename}}(aimrt::rpc::ContextRef(), req, rsp, std::move(callback));
   }
 };
@@ -186,7 +186,6 @@ def gen_cc_file(pkg_name, srv_filename):
 
 #include "{{srv_filename}}.aimrt_rpc.srv.h"
 
-#include "aimrt_module_cpp_interface/co/async_wrapper.h"
 #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
 #include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/start_detached.h"
@@ -222,14 +221,14 @@ namespace srv {
 {{srv_filename}}AsyncService::{{srv_filename}}AsyncService() {
   aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
-        aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
+        auto result_callback_func_ptr = std::make_shared<aimrt::util::Function<aimrt_function_service_callback_ops_t>>(result_callback_ptr);
 
         {{srv_filename}}(
             aimrt::rpc::ContextRef(ctx),
             *static_cast<const {{srv_filename}}_Request*>(req),
             *static_cast<{{srv_filename}}_Response*>(rsp),
-            [result_callback{std::move(result_callback)}](aimrt::rpc::Status status) {
-              result_callback(status.Code());
+            [result_callback_func_ptr{std::move(result_callback_func_ptr)}](aimrt::rpc::Status status) {
+              (*result_callback_func_ptr)(status.Code());
             });
       });
   RegisterServiceFunc(
@@ -320,7 +319,7 @@ void {{srv_filename}}AsyncProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp,
-    aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+    std::function<void(aimrt::rpc::Status)>&& callback) {
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
 
@@ -393,16 +392,34 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
   const aimrt::rpc::RpcHandle h =
       [rpc_handle_ref{rpc_handle_ref_}](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
       -> aimrt::co::Task<aimrt::rpc::Status> {
-    co_return co_await aimrt::co::AsyncWrapper<aimrt::rpc::Status>(
-        [rpc_handle_ref, ctx_ref, req_ptr, rsp_ptr](
-            aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
-          rpc_handle_ref.Invoke(
-              "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-              ctx_ref, req_ptr, rsp_ptr,
-              [callback{std::move(callback)}](uint32_t code) {
-                callback(aimrt::rpc::Status(code));
-              });
-        });
+    struct Awaitable {
+      aimrt::rpc::RpcHandleRef rpc_handle_ref;
+      aimrt::rpc::ContextRef ctx_ref;
+      const void* req_ptr;
+      void* rsp_ptr;
+
+      aimrt::rpc::Status status;
+
+      bool await_ready() const noexcept { return false; }
+
+      void await_suspend(std::coroutine_handle<> h) {
+        rpc_handle_ref.Invoke(
+            "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+            ctx_ref, req_ptr, rsp_ptr,
+            [this, h](uint32_t code) {
+              status = aimrt::rpc::Status(code);
+              h.resume();
+            });
+      }
+
+      auto await_resume() noexcept { return status; }
+    };
+
+    co_return co_await Awaitable{
+        .rpc_handle_ref = rpc_handle_ref,
+        .ctx_ref = ctx_ref,
+        .req_ptr = req_ptr,
+        .rsp_ptr = rsp_ptr};
   };
 
   if (ctx_ref) {

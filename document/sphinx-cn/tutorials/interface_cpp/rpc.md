@@ -626,7 +626,7 @@ class ExampleServiceAsyncServiceImpl : public ExampleServiceAsyncService {
 
   void ExampleFunc(
       aimrt::rpc::ContextRef ctx, const ExampleReq& req, ExampleRsp& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) override {
+      std::function<void(aimrt::rpc::Status)>&& callback) override {
     // Step 1-1: Parse req and set rsp
     rsp.set_msg("echo " + req.msg());
 
