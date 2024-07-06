@@ -13,7 +13,7 @@ class RosTestRpcAsyncServiceImpl : public example_ros2::srv::RosTestRpcAsyncServ
       aimrt::rpc::ContextRef ctx,
       const example_ros2::srv::RosTestRpc_Request& req,
       example_ros2::srv::RosTestRpc_Response& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) override;
+      std::function<void(aimrt::rpc::Status)>&& callback) override;
 };
 
 }  // namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_async_server_module

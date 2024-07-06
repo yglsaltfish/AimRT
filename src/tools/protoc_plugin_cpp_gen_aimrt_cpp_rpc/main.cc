@@ -80,7 +80,7 @@ class {{service_name}}SyncService : public aimrt::rpc::ServiceBase {
       aimrt::rpc::ContextRef ctx_ref,
       const {{rpc_req_name}}& req,
       {{rpc_rsp_name}}& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+      std::function<void(aimrt::rpc::Status)>&& callback) {
     callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED));
   })str";
 
@@ -141,12 +141,12 @@ class {{service_name}}SyncProxy : public aimrt::rpc::ProxyBase {
       aimrt::rpc::ContextRef ctx_ref,
       const {{rpc_req_name}}& req,
       {{rpc_rsp_name}}& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback);
+      std::function<void(aimrt::rpc::Status)>&& callback);
 
   void {{rpc_func_name}}(
       const {{rpc_req_name}}& req,
       {{rpc_rsp_name}}& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+      std::function<void(aimrt::rpc::Status)>&& callback) {
     {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp, std::move(callback));
   })str";
 
@@ -271,14 +271,14 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
   {
     aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
-          aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
+          auto result_callback_func_ptr = std::make_shared<aimrt::util::Function<aimrt_function_service_callback_ops_t>>(result_callback_ptr);
 
           {{rpc_func_name}}(
               aimrt::rpc::ContextRef(ctx),
               *static_cast<const {{rpc_req_name}}*>(req),
               *static_cast<{{rpc_rsp_name}}*>(rsp),
-              [result_callback{std::move(result_callback)}](aimrt::rpc::Status status) {
-                result_callback(status.Code());
+              [result_callback_func_ptr{std::move(result_callback_func_ptr)}](aimrt::rpc::Status status) {
+                (*result_callback_func_ptr)(status.Code());
               });
         });
     RegisterServiceFunc(
@@ -390,7 +390,7 @@ void {{service_name}}AsyncProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
     {{rpc_rsp_name}}& rsp,
-    aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
+    std::function<void(aimrt::rpc::Status)>&& callback) {
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
 
@@ -465,16 +465,34 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
   const aimrt::rpc::RpcHandle h =
       [rpc_handle_ref{rpc_handle_ref_}](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
       -> aimrt::co::Task<aimrt::rpc::Status> {
-    co_return co_await aimrt::co::AsyncWrapper<aimrt::rpc::Status>(
-        [rpc_handle_ref, ctx_ref, req_ptr, rsp_ptr](
-            aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) {
-          rpc_handle_ref.Invoke(
-              "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-              ctx_ref, req_ptr, rsp_ptr,
-              [callback{std::move(callback)}](uint32_t code) {
-                callback(aimrt::rpc::Status(code));
-              });
-        });
+    struct Awaitable {
+      aimrt::rpc::RpcHandleRef rpc_handle_ref;
+      aimrt::rpc::ContextRef ctx_ref;
+      const void* req_ptr;
+      void* rsp_ptr;
+
+      aimrt::rpc::Status status;
+
+      bool await_ready() const noexcept { return false; }
+
+      void await_suspend(std::coroutine_handle<> h) {
+        rpc_handle_ref.Invoke(
+            "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+            ctx_ref, req_ptr, rsp_ptr,
+            [this, h](uint32_t code) {
+              status = aimrt::rpc::Status(code);
+              h.resume();
+            });
+      }
+
+      auto await_resume() noexcept { return status; }
+    };
+
+    co_return co_await Awaitable{
+        .rpc_handle_ref = rpc_handle_ref,
+        .ctx_ref = ctx_ref,
+        .req_ptr = req_ptr,
+        .rsp_ptr = rsp_ptr};
   };
 
   if (ctx_ref) {
@@ -510,7 +528,6 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
 
 #include "{{file_name}}.aimrt_rpc.pb.h"
 
-#include "aimrt_module_cpp_interface/co/async_wrapper.h"
 #include "aimrt_module_cpp_interface/co/inline_scheduler.h"
 #include "aimrt_module_cpp_interface/co/on.h"
 #include "aimrt_module_cpp_interface/co/start_detached.h"

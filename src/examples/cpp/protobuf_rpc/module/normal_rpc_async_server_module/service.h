@@ -13,13 +13,13 @@ class ExampleServiceAsyncServiceImpl : public aimrt::protocols::example::Example
       aimrt::rpc::ContextRef ctx,
       const ::aimrt::protocols::example::GetFooDataReq& req,
       ::aimrt::protocols::example::GetFooDataRsp& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) override;
+      std::function<void(aimrt::rpc::Status)>&& callback) override;
 
   void GetBarData(
       aimrt::rpc::ContextRef ctx,
       const ::aimrt::protocols::example::GetBarDataReq& req,
       ::aimrt::protocols::example::GetBarDataRsp& rsp,
-      aimrt::util::Function<void(aimrt::rpc::Status)>&& callback) override;
+      std::function<void(aimrt::rpc::Status)>&& callback) override;
 };
 
 }  // namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_async_server_module

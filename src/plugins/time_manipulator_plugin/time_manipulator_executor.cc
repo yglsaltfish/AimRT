@@ -130,23 +130,18 @@ void TimeManipulatorExecutor::Shutdown() {
 }
 
 bool TimeManipulatorExecutor::ThreadSafe() const {
-  assert(state_.load() == State::Start);
   return bind_executor_ref_.ThreadSafe();
 }
 
 bool TimeManipulatorExecutor::IsInCurrentExecutor() const {
-  assert(state_.load() == State::Start);
   return bind_executor_ref_.IsInCurrentExecutor();
 }
 
 void TimeManipulatorExecutor::Execute(Task&& task) {
-  assert(state_.load() == State::Start);
   bind_executor_ref_.Execute(std::move(task));
 }
 
 std::chrono::system_clock::time_point TimeManipulatorExecutor::Now() const {
-  assert(state_.load() == State::Start);
-
   std::shared_lock<std::shared_mutex> lck(tick_mutex_);
 
   return std::chrono::system_clock::time_point(
@@ -154,8 +149,6 @@ std::chrono::system_clock::time_point TimeManipulatorExecutor::Now() const {
 }
 
 void TimeManipulatorExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
-  assert(state_.load() == State::Start);
-
   uint64_t virtual_tp =
       static_cast<uint64_t>(
           std::chrono::duration_cast<std::chrono::nanoseconds>(
