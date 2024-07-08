@@ -10,7 +10,7 @@ co::Task<aimrt::rpc::Status> ExampleServiceImpl::GetFooData(
     ::aimrt::protocols::example::GetFooDataRsp& rsp) {
   rsp.set_msg("echo " + req.msg());
 
-  AIMRT_INFO("Server handle new rpc call. context:{}, req: {}, return rsp: {}",
+  AIMRT_INFO("Server handle new rpc call. context: {}, req: {}, return rsp: {}",
              ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
 
   co_return aimrt::rpc::Status();
@@ -22,7 +22,7 @@ co::Task<aimrt::rpc::Status> ExampleServiceImpl::GetBarData(
     ::aimrt::protocols::example::GetBarDataRsp& rsp) {
   rsp.set_msg("echo " + req.msg());
 
-  AIMRT_INFO("Server handle new rpc call. context:{}, req: {}, return rsp: {}",
+  AIMRT_INFO("Server handle new rpc call. context: {}, req: {}, return rsp: {}",
              ctx.ToString(), aimrt::Pb2CompactJson(req), aimrt::Pb2CompactJson(rsp));
 
   co_return aimrt::rpc::Status();

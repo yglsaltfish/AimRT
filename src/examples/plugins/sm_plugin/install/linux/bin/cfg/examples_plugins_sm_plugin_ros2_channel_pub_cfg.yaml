@@ -3,31 +3,31 @@ aimrt:
     plugins:
       - name: sm_plugin
         path: ./libaimrt_sm_plugin.so
-  log: # log配置
-    core_lvl: INFO # 内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
-    backends: # 日志backends
-      - type: console # 控制台日志
-  executor: # 执行器配置
-    executors: # 当前先支持thread型，未来可根据加载的网络模块提供更多类型
-      - name: work_thread_pool # 线程池
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+    executors:
+      - name: work_thread_pool
         type: asio_thread
         options:
-          thread_num: 4 # 线程数，不指定则默认单线程
-  channel: # 消息队列相关配置
-    backends: # 消息队列后端配置
+          thread_num: 4
+  channel:
+    backends:
       - type: sm
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [sm]
-  module: # 模块配置
-    pkgs: # 要加载的动态库配置
-      - path: ./libros2_channel_pub_pkg.so # so/dll地址
-        disable_module: [] # 此动态库中要屏蔽的模块名称。默认全部加载
-    modules: # 模块
-      - name: NormalPublisherModule # 模块Name接口返回的名称
-        log_lvl: INFO # 模块日志级别
+  module:
+    pkgs:
+      - path: ./libros2_channel_pub_pkg.so
+        disable_module: []
+    modules:
+      - name: NormalPublisherModule
+        log_lvl: INFO
 
-# 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
+# Module custom configuration
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 0.5 # 发布频率，次/s
+  channel_frq: 0.5

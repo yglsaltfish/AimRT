@@ -10,7 +10,7 @@ aimrt::rpc::Status RosTestRpcSyncServiceImpl::RosTestRpc(
     example_ros2::srv::RosTestRpc_Response& rsp) {
   rsp.code = 123;
 
-  AIMRT_INFO("Get new rpc call. context:{}\n, req:\n{}\nreturn rsp:\n{}",
+  AIMRT_INFO("Get new rpc call. context: {}\n, req:\n{}\nreturn rsp:\n{}",
              ctx.ToString(), example_ros2::srv::to_yaml(req), example_ros2::srv::to_yaml(rsp));
 
   return aimrt::rpc::Status();

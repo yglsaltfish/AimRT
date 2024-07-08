@@ -66,65 +66,44 @@ void NormalRpcAsyncClientModule::Shutdown() {
 
 // Main loop
 void NormalRpcAsyncClientModule::MainLoopFunc() {
+  // Check
   if (!run_flag_) {
     stop_sig_.set_value();
-
     AIMRT_INFO("Exit MainLoop.");
-
     return;
   }
 
   count_++;
   AIMRT_INFO("Loop count : {} -------------------------", count_);
 
+  // Create proxy
   aimrt::protocols::example::ExampleServiceAsyncProxy proxy(core_.GetRpcHandle());
 
-  // call rpc 1
-  {
-    auto req_ptr = std::make_shared<aimrt::protocols::example::GetFooDataReq>();
-    auto rsp_ptr = std::make_shared<aimrt::protocols::example::GetFooDataRsp>();
-    req_ptr->set_msg("hello world foo, count " + std::to_string(count_));
+  // Create req and rsp
+  auto req_ptr = std::make_shared<aimrt::protocols::example::GetFooDataReq>();
+  auto rsp_ptr = std::make_shared<aimrt::protocols::example::GetFooDataRsp>();
+  req_ptr->set_msg("hello world foo, count " + std::to_string(count_));
 
-    auto ctx_ptr = proxy.NewContextSharedPtr();
-    ctx_ptr->SetTimeout(std::chrono::seconds(3));
+  // Create ctx
+  auto ctx_ptr = proxy.NewContextSharedPtr();
+  ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
-    AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(*req_ptr));
+  AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(*req_ptr));
 
-    proxy.GetFooData(
-        ctx_ptr, *req_ptr, *rsp_ptr,
-        [this, ctx_ptr, req_ptr, rsp_ptr](aimrt::rpc::Status status) {
-          if (status.OK()) {
-            AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
-                       aimrt::Pb2CompactJson(*rsp_ptr));
-          } else {
-            AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
-          }
-        });
-  }
+  // Call rpc
+  proxy.GetFooData(
+      ctx_ptr, *req_ptr, *rsp_ptr,
+      [this, ctx_ptr, req_ptr, rsp_ptr](aimrt::rpc::Status status) {
+        // Check result
+        if (status.OK()) {
+          AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
+                     aimrt::Pb2CompactJson(*rsp_ptr));
+        } else {
+          AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
+        }
+      });
 
-  // call rpc 2
-  {
-    auto req_ptr = std::make_shared<aimrt::protocols::example::GetBarDataReq>();
-    auto rsp_ptr = std::make_shared<aimrt::protocols::example::GetBarDataRsp>();
-    req_ptr->set_msg("hello world bar, count " + std::to_string(count_));
-
-    auto ctx_ptr = proxy.NewContextSharedPtr();
-    ctx_ptr->SetTimeout(std::chrono::seconds(3));
-
-    AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(*req_ptr));
-
-    proxy.GetBarData(
-        ctx_ptr, *req_ptr, *rsp_ptr,
-        [this, ctx_ptr, req_ptr, rsp_ptr](aimrt::rpc::Status status) {
-          if (status.OK()) {
-            AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
-                       aimrt::Pb2CompactJson(*rsp_ptr));
-          } else {
-            AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
-          }
-        });
-  }
-
+  // Sleep
   executor_.ExecuteAfter(
       std::chrono::milliseconds(static_cast<uint32_t>(1000 / rpc_frq_)),
       std::bind(&NormalRpcAsyncClientModule::MainLoopFunc, this));

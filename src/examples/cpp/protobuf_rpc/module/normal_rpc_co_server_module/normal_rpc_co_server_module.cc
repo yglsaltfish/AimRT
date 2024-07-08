@@ -10,13 +10,14 @@ bool NormalRpcCoServerModule::Initialize(aimrt::CoreRef core) {
   SetLogger(core_.GetLogger());
 
   try {
-    // 注册rpc服务
+    // Create service
     service_ptr_ = std::make_shared<ExampleServiceImpl>();
 
     // Register filter
     service_ptr_->RegisterFilter(DebugLogServerFilter);
     service_ptr_->RegisterFilter(TimeCostLogServerFilter);
 
+    // Register service
     bool ret = core_.GetRpcHandle().RegisterService(service_ptr_.get());
     AIMRT_CHECK_ERROR_THROW(ret, "Register service failed.");
 

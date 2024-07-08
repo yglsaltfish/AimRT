@@ -7,36 +7,36 @@ aimrt:
           node_name: example_ros2_rpc_server_node
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
           executor_thread_num: 2
-  log: # log配置
-    core_lvl: INFO # 内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
-    backends: # 日志backends
-      - type: console # 控制台日志
-  executor: # 执行器配置
-  rpc: # rpc相关配置
-    backends: # rpc后端配置
-      - type: ros2 # ros2 rpc后端
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+  executor:
+  rpc:
+    backends:
+      - type: ros2
         options:
           servers_options:
-              - func_name: "(.*)"
-                qos:
-                  history: keep_last #keep_last:保存最后的,keep_all:保存所有的记录,default:保持系统默认
-                  depth: 10  #队列深度 与keep_last搭配使用
-                  reliability: reliable #reliable:可靠的,best_effort:尽力而为的,default:保持系统默认
-                  durability: volatile #持续性选项,volatile:易变态(不保留任何数据),transient_local:局部瞬态(发布器为晚连接(late-joining)的订阅器保留数据),default:保持系统默认
-                  deadline: -1 #后续消息发布到主题之间的预期最大时间量(单位毫秒) -1保持系统默认 不设置
-                  lifespan: -1 #消息发布和接收之间的最大时间量(单位毫秒)，而不将消息视为陈旧或过期（过期的消息被静默地丢弃，并且实际上从未被接收）  -1保持系统默认 不设置
-                  liveliness: automatic #如何确定发布者是否活跃,automatic:自动(ROS2会根据消息发布和接收的时间间隔来判断) manual_by_topic:需要发布者定期声明,default:保持系统默认
-                  liveliness_lease_duration: -1 #活跃性租期的时长(单位毫秒)，如果超过这个时间发布者没有声明活跃，则被认为是不活跃的。 -1保持系统默认 不设置
+            - func_name: "(.*)"
+              qos:
+                history: keep_last
+                depth: 10
+                reliability: reliable
+                durability: volatile
+                deadline: -1
+                lifespan: -1
+                liveliness: automatic
+                liveliness_lease_duration: -1
     servers_options:
       - func_name: "(.*)"
         enable_backends: [ros2]
-  module: # 模块配置
-    pkgs: # 要加载的动态库配置
-      - path: ./libros2_rpc_server_pkg.so # so/dll地址
-        disable_module: [] # 此动态库中要屏蔽的模块名称。默认全部加载
-    modules: # 模块
-      - name: NormalRpcCoServerModule # 模块Name接口返回的名称
-        log_lvl: INFO # 模块日志级别
+  module:
+    pkgs:
+      - path: ./libros2_rpc_server_pkg.so
+        disable_module: []
+    modules:
+      - name: NormalRpcCoServerModule
+        log_lvl: INFO
 
-# 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
+# Module custom configuration
 NormalRpcCoServerModule:

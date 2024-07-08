@@ -9,9 +9,10 @@ bool NormalRpcAsyncServerModule::Initialize(aimrt::CoreRef core) {
   SetLogger(core_.GetLogger());
 
   try {
-    // 注册rpc服务
+    // Create service
     service_ptr_ = std::make_shared<ExampleServiceAsyncServiceImpl>();
 
+    // Register service
     bool ret = core_.GetRpcHandle().RegisterService(service_ptr_.get());
     AIMRT_CHECK_ERROR_THROW(ret, "Register service failed.");
 

@@ -17,7 +17,7 @@ class ExampleServiceImpl(rpc_aimrt_rpc_pb2.ExampleService):
         rsp.msg = "echo " + req.msg
 
         aimrt_py_log.info(self.logger,
-                          "Server handle new rpc call. context:{}, req: {}, return rsp: {}"
+                          "Server handle new rpc call. context: {}, req: {}, return rsp: {}"
                           .format(ctx_ref.ToString(), MessageToJson(req), MessageToJson(rsp)))
 
         return aimrt_py.RpcStatus(), rsp
@@ -27,7 +27,7 @@ class ExampleServiceImpl(rpc_aimrt_rpc_pb2.ExampleService):
         rsp.msg = "echo " + req.msg
 
         aimrt_py_log.info(self.logger,
-                          "Server handle new rpc call. context:{}, req: {}, return rsp: {}"
+                          "Server handle new rpc call. context: {}, req: {}, return rsp: {}"
                           .format(ctx_ref.ToString(), MessageToJson(req), MessageToJson(rsp)))
 
         return aimrt_py.RpcStatus(), rsp
