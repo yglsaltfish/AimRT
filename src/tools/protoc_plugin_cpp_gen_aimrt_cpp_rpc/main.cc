@@ -246,8 +246,11 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
           aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
 
+          aimrt::rpc::ContextRef ctx_ref(ctx);
+          ctx_ref.SetFunctionName("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}");
+
           auto status = {{rpc_func_name}}(
-              aimrt::rpc::ContextRef(ctx),
+              ctx_ref,
               *static_cast<const {{rpc_req_name}}*>(req),
               *static_cast<{{rpc_rsp_name}}*>(rsp));
 
@@ -273,8 +276,11 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
           auto result_callback_func_ptr = std::make_shared<aimrt::util::Function<aimrt_function_service_callback_ops_t>>(result_callback_ptr);
 
+          aimrt::rpc::ContextRef ctx_ref(ctx);
+          ctx_ref.SetFunctionName("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}");
+
           {{rpc_func_name}}(
-              aimrt::rpc::ContextRef(ctx),
+              ctx_ref,
               *static_cast<const {{rpc_req_name}}*>(req),
               *static_cast<{{rpc_rsp_name}}*>(rsp),
               [result_callback_func_ptr{std::move(result_callback_func_ptr)}](aimrt::rpc::Status status) {
@@ -310,11 +316,14 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 
           aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
 
+          aimrt::rpc::ContextRef ctx_ref(ctx);
+          ctx_ref.SetFunctionName("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}");
+
           auto* ptr = handle_ptr.get();
           aimrt::co::StartDetached(
               aimrt::co::On(
                   aimrt::co::InlineScheduler(),
-                  filter_mgr_.InvokeRpc(*ptr, aimrt::rpc::ContextRef(ctx), req, rsp)) |
+                  filter_mgr_.InvokeRpc(*ptr, ctx_ref, req, rsp)) |
               aimrt::co::Then(
                   [handle_ptr{std::move(handle_ptr)}, result_callback{std::move(result_callback)}](aimrt::rpc::Status status) {
                     result_callback(status.Code());

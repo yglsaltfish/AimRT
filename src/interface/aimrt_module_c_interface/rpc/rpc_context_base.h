@@ -16,6 +16,9 @@ extern "C" {
 /// eg: json/pb
 #define AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE "aimrt::serialization_type"
 
+/// eg: pb:/example.ExampleService/GetFooData
+#define AIMRT_RPC_CONTEXT_KEY_FUNCTION_NAME "aimrt::function_name"
+
 /**
  * @brief Rpc context operate interface
  *
