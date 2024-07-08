@@ -1,26 +1,26 @@
 aimrt:
-  log: # log配置
-    core_lvl: INFO # 内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
-    backends: # 日志backends
-      - type: console # 控制台日志
-      - type: rotate_file # 文件日志
+  log:
+    core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
+    backends:
+      - type: console
+      - type: rotate_file
         options:
-          path: ./log # 日志文件路径
-          filename: examples_py_helloworld.log # 日志文件名称
-          max_file_size_m: 4 # 日志文件最大尺寸，单位m
-          max_file_num: 10 # 最大日志文件数量，0代表无限
-  executor: # 执行器配置
-    executors: # 当前先支持thread型，未来可根据加载的网络模块提供更多类型
-      - name: work_thread_pool # 线程池
+          path: ./log
+          filename: examples_py_helloworld.log
+          max_file_size_m: 4
+          max_file_num: 10
+  executor:
+    executors:
+      - name: work_thread_pool
         type: asio_thread
         options:
-          thread_num: 2 # 线程数，不指定则默认单线程
-  module: # 模块配置
-    modules: # 模块
-      - name: HelloWorldModule # 模块Name接口返回的名称
-        log_lvl: INFO # 模块日志级别
+          thread_num: 2
+  module:
+    modules:
+      - name: HelloWorldModule
+        log_lvl: INFO
 
-# 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
+# Module custom configuration
 HelloWorldModule:
   key1: val1
   key2: val2

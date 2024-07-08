@@ -68,55 +68,37 @@ void NormalRpcSyncClientModule::MainLoop() {
   try {
     AIMRT_INFO("Start MainLoop.");
 
+    // Create proxy
     aimrt::protocols::example::ExampleServiceSyncProxy proxy(core_.GetRpcHandle());
 
     uint32_t count = 0;
     while (run_flag_) {
+      // Sleep
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<uint32_t>(1000 / rpc_frq_)));
 
       count++;
       AIMRT_INFO("Loop count : {} -------------------------", count);
 
-      // call rpc 1
-      {
-        aimrt::protocols::example::GetFooDataReq req;
-        aimrt::protocols::example::GetFooDataRsp rsp;
-        req.set_msg("hello world foo, count " + std::to_string(count));
+      // Create req and rsp
+      aimrt::protocols::example::GetFooDataReq req;
+      aimrt::protocols::example::GetFooDataRsp rsp;
+      req.set_msg("hello world foo, count " + std::to_string(count));
 
-        auto ctx_ptr = proxy.NewContextSharedPtr();
-        ctx_ptr->SetTimeout(std::chrono::seconds(3));
+      // Create ctx
+      auto ctx_ptr = proxy.NewContextSharedPtr();
+      ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
-        AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(req));
+      AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(req));
 
-        auto status = proxy.GetFooData(ctx_ptr, req, rsp);
+      // Call rpc
+      auto status = proxy.GetFooData(ctx_ptr, req, rsp);
 
-        if (status.OK()) {
-          AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
-                     aimrt::Pb2CompactJson(rsp));
-        } else {
-          AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
-        }
-      }
-
-      // call rpc 2
-      {
-        aimrt::protocols::example::GetBarDataReq req;
-        aimrt::protocols::example::GetBarDataRsp rsp;
-        req.set_msg("hello world bar, count " + std::to_string(count));
-
-        auto ctx_ptr = proxy.NewContextSharedPtr();
-        ctx_ptr->SetTimeout(std::chrono::seconds(3));
-
-        AIMRT_INFO("Client start new rpc call. req: {}", aimrt::Pb2CompactJson(req));
-
-        auto status = proxy.GetBarData(ctx_ptr, req, rsp);
-
-        if (status.OK()) {
-          AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
-                     aimrt::Pb2CompactJson(rsp));
-        } else {
-          AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
-        }
+      // Check result
+      if (status.OK()) {
+        AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
+                   aimrt::Pb2CompactJson(rsp));
+      } else {
+        AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
       }
     }
 

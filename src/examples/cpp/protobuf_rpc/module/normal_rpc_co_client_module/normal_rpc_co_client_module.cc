@@ -43,8 +43,8 @@ bool NormalRpcCoClientModule::Initialize(aimrt::CoreRef core) {
                                   const aimrt::rpc::RpcHandle& next)
                                -> co::Task<aimrt::rpc::Status> {
       // debuglog
-      AIMRT_INFO("Client start new rpc call. req: {}",
-                 aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(req_ptr)));
+      AIMRT_INFO("Client start new rpc call. context: {}, req: {}",
+                 ctx.ToString(), aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(req_ptr)));
       const auto& status = co_await next(ctx, req_ptr, rsp_ptr);
       if (status.OK()) {
         AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
@@ -112,43 +112,33 @@ co::Task<void> NormalRpcCoClientModule::MainLoop() {
 
     co::AimRTScheduler work_thread_pool_scheduler(executor_);
 
-    co_await co::Schedule(work_thread_pool_scheduler);
-
     uint32_t count = 0;
     while (run_flag_) {
+      // Sleep
       co_await co::ScheduleAfter(
           work_thread_pool_scheduler,
           std::chrono::milliseconds(static_cast<uint32_t>(1000 / rpc_frq_)));
       count++;
       AIMRT_INFO("Loop count : {} -------------------------", count);
 
-      // call rpc 1
-      {
-        aimrt::protocols::example::GetFooDataReq req;
-        aimrt::protocols::example::GetFooDataRsp rsp;
-        req.set_msg("hello world foo, count " + std::to_string(count));
+      // Create req and rsp
+      aimrt::protocols::example::GetFooDataReq req;
+      aimrt::protocols::example::GetFooDataRsp rsp;
+      req.set_msg("hello world foo, count " + std::to_string(count));
 
-        auto ctx_ptr = proxy_->NewContextSharedPtr();
-        ctx_ptr->SetTimeout(std::chrono::seconds(3));
+      // Create ctx
+      auto ctx_ptr = proxy_->NewContextSharedPtr();
+      ctx_ptr->SetTimeout(std::chrono::seconds(3));
 
-        auto status = co_await proxy_->GetFooData(ctx_ptr, req, rsp);
-        co_await co::Schedule(work_thread_pool_scheduler);
+      // Call rpc
+      auto status = co_await proxy_->GetFooData(ctx_ptr, req, rsp);
 
-        AIMRT_CHECK_WARN(status, "Call GetFooData failed, status: {}", status.ToString());
-      }
-
-      // call rpc 2
-      {
-        aimrt::protocols::example::GetBarDataReq req;
-        aimrt::protocols::example::GetBarDataRsp rsp;
-        req.set_msg("hello world bar, count " + std::to_string(count));
-
-        auto ctx_ptr = proxy_->NewContextSharedPtr();
-        ctx_ptr->SetTimeout(std::chrono::seconds(3));
-
-        auto status = co_await proxy_->GetBarData(ctx_ptr, req, rsp);
-
-        AIMRT_CHECK_WARN(status, "Call GetBarData failed, status: {}", status.ToString());
+      // Check result
+      if (status.OK()) {
+        AIMRT_INFO("Client get rpc ret, status: {}, rsp: {}", status.ToString(),
+                   aimrt::Pb2CompactJson(rsp));
+      } else {
+        AIMRT_WARN("Client get rpc error ret, status: {}", status.ToString());
       }
     }
 
