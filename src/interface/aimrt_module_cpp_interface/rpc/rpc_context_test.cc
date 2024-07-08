@@ -26,7 +26,7 @@ TEST(RPC_CONTEXT_TEST, Context) {
 
   EXPECT_STREQ(
       ctx.ToString().c_str(),
-      "timeout: 100ms, meta: {{key2,val2},{key1,val1}}");
+      "timeout: 100ms, meta: {{\"key2\":\"val2\"},{\"key1\":\"val1\"}}");
 }
 
 TEST(RPC_CONTEXT_TEST, ContextRef) {
@@ -51,7 +51,7 @@ TEST(RPC_CONTEXT_TEST, ContextRef) {
 
   EXPECT_STREQ(
       ctx.ToString().c_str(),
-      "timeout: 100ms, meta: {{key2,val2},{key1,val1}}");
+      "timeout: 100ms, meta: {{\"key2\":\"val2\"},{\"key1\":\"val1\"}}");
 }
 
 }  // namespace aimrt::rpc

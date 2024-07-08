@@ -70,6 +70,13 @@ class Context {
     SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, val);
   }
 
+  std::string_view GetFunctionName() const {
+    return GetMetaValue(AIMRT_RPC_CONTEXT_KEY_FUNCTION_NAME);
+  }
+  void SetFunctionName(std::string_view val) {
+    SetMetaValue(AIMRT_RPC_CONTEXT_KEY_FUNCTION_NAME, val);
+  }
+
   std::string ToString() const {
     std::stringstream ss;
     ss << "timeout: " << timeout_ns_ / 1000000 << "ms, meta: {";
@@ -80,7 +87,7 @@ class Context {
       else
         ss << ",";
 
-      ss << "{" << itr.first << "," << itr.second << "}";
+      ss << "{\"" << itr.first << "\":\"" << itr.second << "\"}";
     }
 
     ss << "}";
@@ -208,6 +215,13 @@ class ContextRef {
     SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, val.data());
   }
 
+  std::string_view GetFunctionName() const {
+    return GetMetaValue(AIMRT_RPC_CONTEXT_KEY_FUNCTION_NAME);
+  }
+  void SetFunctionName(std::string_view val) {
+    SetMetaValue(AIMRT_RPC_CONTEXT_KEY_FUNCTION_NAME, val);
+  }
+
   std::string ToString() const {
     AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
 
@@ -220,8 +234,8 @@ class ContextRef {
     for (size_t ii = 0; ii < keys.len; ++ii) {
       if (ii != 0) ss << ",";
       auto val = base_ptr_->ops->get_meta_val(base_ptr_->impl, keys.str_array[ii]);
-      ss << "{" << aimrt::util::ToStdStringView(keys.str_array[ii])
-         << "," << aimrt::util::ToStdStringView(val) << "}";
+      ss << "{\"" << aimrt::util::ToStdStringView(keys.str_array[ii])
+         << "\":\"" << aimrt::util::ToStdStringView(val) << "\"}";
     }
 
     ss << "}";

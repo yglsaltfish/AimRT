@@ -203,8 +203,11 @@ namespace srv {
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
         aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
 
+        aimrt::rpc::ContextRef ctx_ref(ctx);
+        ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
+
         auto status = {{srv_filename}}(
-            aimrt::rpc::ContextRef(ctx),
+            ctx_ref,
             *static_cast<const {{srv_filename}}_Request*>(req),
             *static_cast<{{srv_filename}}_Response*>(rsp));
 
@@ -223,8 +226,11 @@ namespace srv {
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
         auto result_callback_func_ptr = std::make_shared<aimrt::util::Function<aimrt_function_service_callback_ops_t>>(result_callback_ptr);
 
+        aimrt::rpc::ContextRef ctx_ref(ctx);
+        ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
+
         {{srv_filename}}(
-            aimrt::rpc::ContextRef(ctx),
+            ctx_ref,
             *static_cast<const {{srv_filename}}_Request*>(req),
             *static_cast<{{srv_filename}}_Response*>(rsp),
             [result_callback_func_ptr{std::move(result_callback_func_ptr)}](aimrt::rpc::Status status) {
@@ -253,11 +259,14 @@ namespace srv {
 
         aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
 
+        aimrt::rpc::ContextRef ctx_ref(ctx);
+        ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
+
         auto* ptr = handle_ptr.get();
         aimrt::co::StartDetached(
             aimrt::co::On(
                 aimrt::co::InlineScheduler(),
-                filter_mgr_.InvokeRpc(*ptr, aimrt::rpc::ContextRef(ctx), req, rsp)) |
+                filter_mgr_.InvokeRpc(*ptr, ctx_ref, req, rsp)) |
             aimrt::co::Then(
                 [handle_ptr{std::move(handle_ptr)}, result_callback{std::move(result_callback)}](aimrt::rpc::Status status) {
                   result_callback(status.Code());
