@@ -168,7 +168,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
     auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, timeout);
     std::atomic_bool handle_flag = false;
 
-    aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
+    aimrt::rpc::ServiceCallback service_callback(
         [&service_func_wrapper,
          ctx_ptr,
          &req,

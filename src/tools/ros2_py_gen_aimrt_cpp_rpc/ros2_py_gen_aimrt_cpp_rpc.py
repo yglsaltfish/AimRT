@@ -199,9 +199,9 @@ namespace {{pkg_name}} {
 namespace srv {
 
 {{srv_filename}}SyncService::{{srv_filename}}SyncService() {
-  aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+  aimrt::rpc::ServiceFunc service_callback(
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
-        aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
+        aimrt::rpc::ServiceCallback result_callback(result_callback_ptr);
 
         aimrt::rpc::ContextRef ctx_ref(ctx);
         ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
@@ -222,9 +222,9 @@ namespace srv {
 }
 
 {{srv_filename}}AsyncService::{{srv_filename}}AsyncService() {
-  aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+  aimrt::rpc::ServiceFunc service_callback(
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
-        auto result_callback_func_ptr = std::make_shared<aimrt::util::Function<aimrt_function_service_callback_ops_t>>(result_callback_ptr);
+        auto result_callback_func_ptr = std::make_shared<aimrt::rpc::ServiceCallback>(result_callback_ptr);
 
         aimrt::rpc::ContextRef ctx_ref(ctx);
         ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
@@ -246,7 +246,7 @@ namespace srv {
 }
 
 {{srv_filename}}CoService::{{srv_filename}}CoService() {
-  aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+  aimrt::rpc::ServiceFunc service_callback(
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
         auto handle_ptr = std::make_unique<const aimrt::rpc::RpcHandle>(
             [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
@@ -257,7 +257,7 @@ namespace srv {
                   *static_cast<{{srv_filename}}_Response*>(rsp_ptr));
             });
 
-        aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
+        aimrt::rpc::ServiceCallback result_callback(result_callback_ptr);
 
         aimrt::rpc::ContextRef ctx_ref(ctx);
         ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
@@ -292,16 +292,15 @@ aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp) {
+  static constexpr std::string_view func_name = "ros2:/{{pkg_name}}/srv/{{srv_filename}}";
+
   std::promise<aimrt::rpc::Status> result_promise;
 
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
 
     rpc_handle_ref_.Invoke(
-        "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-        ctx_ref,
-        &req,
-        &rsp,
+        func_name, ctx_ref, &req, &rsp,
         [&result_promise](uint32_t code) {
           result_promise.set_value(aimrt::rpc::Status(code));
         });
@@ -310,13 +309,10 @@ aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
   }
 
   auto ctx_ptr = NewContextSharedPtr();
-  ctx_ptr->SetSerializationType("pb");
+  ctx_ptr->SetSerializationType("ros2");
 
   rpc_handle_ref_.Invoke(
-      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-      *ctx_ptr,
-      &req,
-      &rsp,
+      func_name, *ctx_ptr, &req, &rsp,
       [&result_promise](uint32_t code) {
         result_promise.set_value(aimrt::rpc::Status(code));
       });
@@ -329,14 +325,13 @@ void {{srv_filename}}AsyncProxy::{{srv_filename}}(
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp,
     std::function<void(aimrt::rpc::Status)>&& callback) {
+  static constexpr std::string_view func_name = "ros2:/{{pkg_name}}/srv/{{srv_filename}}";
+
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
 
     rpc_handle_ref_.Invoke(
-        "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-        ctx_ref,
-        &req,
-        &rsp,
+        func_name, ctx_ref, &req, &rsp,
         [callback{std::move(callback)}](uint32_t code) {
           callback(aimrt::rpc::Status(code));
         });
@@ -345,13 +340,10 @@ void {{srv_filename}}AsyncProxy::{{srv_filename}}(
   }
 
   auto ctx_ptr = NewContextSharedPtr();
-  ctx_ptr->SetSerializationType("pb");
+  ctx_ptr->SetSerializationType("ros2");
 
   rpc_handle_ref_.Invoke(
-      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-      *ctx_ptr,
-      &req,
-      &rsp,
+      func_name, *ctx_ptr, &req, &rsp,
       [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
         callback(aimrt::rpc::Status(code));
       });
@@ -361,6 +353,8 @@ std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp) {
+  static constexpr std::string_view func_name = "ros2:/{{pkg_name}}/srv/{{srv_filename}}";
+
   std::promise<aimrt::rpc::Status> status_promise;
   std::future<aimrt::rpc::Status> status_future = status_promise.get_future();
 
@@ -368,10 +362,7 @@ std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
 
     rpc_handle_ref_.Invoke(
-        "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-        ctx_ref,
-        &req,
-        &rsp,
+        func_name, ctx_ref, &req, &rsp,
         [status_promise{std::move(status_promise)}](uint32_t code) mutable {
           status_promise.set_value(aimrt::rpc::Status(code));
         });
@@ -380,13 +371,10 @@ std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
   }
 
   auto ctx_ptr = NewContextSharedPtr();
-  ctx_ptr->SetSerializationType("pb");
+  ctx_ptr->SetSerializationType("ros2");
 
   rpc_handle_ref_.Invoke(
-      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-      *ctx_ptr,
-      &req,
-      &rsp,
+      func_name, *ctx_ptr, &req, &rsp,
       [ctx_ptr, status_promise{std::move(status_promise)}](uint32_t code) mutable {
         status_promise.set_value(aimrt::rpc::Status(code));
       });
@@ -398,32 +386,33 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{srv_filename}}_Request& req,
     {{srv_filename}}_Response& rsp) {
+  static constexpr std::string_view func_name = "ros2:/{{pkg_name}}/srv/{{srv_filename}}";
+
+  struct Awaitable {
+    aimrt::rpc::RpcHandleRef rpc_handle_ref;
+    aimrt::rpc::ContextRef ctx_ref;
+    const void* req_ptr;
+    void* rsp_ptr;
+
+    aimrt::rpc::Status status;
+
+    bool await_ready() const noexcept { return false; }
+
+    void await_suspend(std::coroutine_handle<> h) {
+      rpc_handle_ref.Invoke(
+          func_name, ctx_ref, req_ptr, rsp_ptr,
+          [this, h](uint32_t code) {
+            status = aimrt::rpc::Status(code);
+            h.resume();
+          });
+    }
+
+    auto await_resume() noexcept { return status; }
+  };
+
   const aimrt::rpc::RpcHandle h =
       [rpc_handle_ref{rpc_handle_ref_}](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
       -> aimrt::co::Task<aimrt::rpc::Status> {
-    struct Awaitable {
-      aimrt::rpc::RpcHandleRef rpc_handle_ref;
-      aimrt::rpc::ContextRef ctx_ref;
-      const void* req_ptr;
-      void* rsp_ptr;
-
-      aimrt::rpc::Status status;
-
-      bool await_ready() const noexcept { return false; }
-
-      void await_suspend(std::coroutine_handle<> h) {
-        rpc_handle_ref.Invoke(
-            "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
-            ctx_ref, req_ptr, rsp_ptr,
-            [this, h](uint32_t code) {
-              status = aimrt::rpc::Status(code);
-              h.resume();
-            });
-      }
-
-      auto await_resume() noexcept { return status; }
-    };
-
     co_return co_await Awaitable{
         .rpc_handle_ref = rpc_handle_ref,
         .ctx_ref = ctx_ref,
@@ -437,7 +426,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
   }
 
   auto ctx_ptr = NewContextSharedPtr();
-  ctx_ptr->SetSerializationType("pb");
+  ctx_ptr->SetSerializationType("ros2");
   co_return co_await filter_mgr_.InvokeRpc(h, *ctx_ptr, static_cast<const void*>(&req), static_cast<void*>(&rsp));
 }
 

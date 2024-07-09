@@ -44,10 +44,10 @@ class TimeWheelExecutor : public ExecutorBase {
   bool IsInCurrentExecutor() const override;
   bool SupportTimerSchedule() const override { return true; }
 
-  void Execute(Task&& task) override;
+  void Execute(aimrt::executor::Task&& task) override;
 
   std::chrono::system_clock::time_point Now() const override;
-  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) override;
 
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
@@ -62,7 +62,7 @@ class TimeWheelExecutor : public ExecutorBase {
 
   struct TaskWithTimestamp {
     uint64_t tick_count;  // 距离start_time的时间tick
-    Task task;
+    aimrt::executor::Task task;
   };
 
   using TaskList = std::list<TaskWithTimestamp>;
@@ -109,7 +109,7 @@ class TimeWheelExecutor : public ExecutorBase {
   std::map<uint64_t, TaskList> timing_task_map_;
 
   mutable std::mutex imd_mutex_;
-  std::queue<Task> imd_queue_;
+  std::queue<aimrt::executor::Task> imd_queue_;
 
   std::unique_ptr<std::thread> timer_thread_;
   std::thread::id tid_;

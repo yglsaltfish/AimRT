@@ -183,7 +183,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
       std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
 
       // service rpc调用
-      aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
+      aimrt::rpc::ServiceCallback service_callback(
           [this,
            &service_func_wrapper,
            ctx_ptr,

@@ -118,12 +118,12 @@ bool AsioThreadExecutor::IsInCurrentExecutor() const {
                     std::this_thread::get_id()) != thread_id_vec_.end());
 }
 
-void AsioThreadExecutor::Execute(Task&& task) {
+void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) {
   assert(state_.load() == State::Start);
   boost::asio::post(*io_ptr_, std::move(task));
 }
 
-void AsioThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
+void AsioThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
   assert(state_.load() == State::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::system_timer>(*io_ptr_);
   timer_ptr_->expires_at(tp);

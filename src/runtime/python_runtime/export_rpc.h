@@ -91,10 +91,10 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
 
-  aimrt::util::Function<aimrt_function_service_func_ops_t> aimrt_service_func(
+  aimrt::rpc::ServiceFunc aimrt_service_func(
       [service_func{std::move(service_func)}](
           const aimrt_rpc_context_base_t* ctx, const void* req_ptr, void* rsp_ptr, aimrt_function_base_t* callback) {
-        aimrt::util::Function<aimrt_function_service_callback_ops_t> callback_f(callback);
+        aimrt::rpc::ServiceCallback callback_f(callback);
 
         aimrt::rpc::ContextRef ctx_ref(ctx);
 
@@ -173,7 +173,7 @@ inline std::tuple<aimrt::rpc::Status, pybind11::bytes> PyRpcHandleRefInvoke(
   std::string rsp_buf;
   std::promise<uint32_t> status_promise;
 
-  aimrt::util::Function<aimrt_function_client_callback_ops_t> callback(
+  aimrt::rpc::ClientCallback callback(
       [&status_promise](uint32_t status) {
         status_promise.set_value(status);
       });

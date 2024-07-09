@@ -5,8 +5,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "util/log_util.h"
 
@@ -19,7 +19,7 @@ struct ServiceFuncWrapper {
   const void* custom_type_support_ptr = nullptr;
   const aimrt_type_support_base_t* req_type_support = nullptr;
   const aimrt_type_support_base_t* rsp_type_support = nullptr;
-  aimrt::util::Function<aimrt_function_service_func_ops_t> service_func;
+  aimrt::rpc::ServiceFunc service_func;
 };
 
 struct ClientFuncWrapper {

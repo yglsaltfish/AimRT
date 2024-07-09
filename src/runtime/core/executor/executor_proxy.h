@@ -40,7 +40,7 @@ class ExecutorProxy {
           return static_cast<ExecutorBase*>(impl)->SupportTimerSchedule();
         },
         .execute = [](void* impl, aimrt_function_base_t* task) {
-          static_cast<ExecutorBase*>(impl)->Execute(ExecutorBase::Task(task));  //
+          static_cast<ExecutorBase*>(impl)->Execute(aimrt::executor::Task(task));  //
         },
         .now = [](void* impl) -> uint64_t {
           return static_cast<uint64_t>(
@@ -53,7 +53,7 @@ class ExecutorProxy {
               std::chrono::system_clock::time_point(
                   std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
                       std::chrono::nanoseconds(tp))),
-              ExecutorBase::Task(task));  //
+              aimrt::executor::Task(task));  //
         },
         .impl = impl};
   }

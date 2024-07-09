@@ -45,10 +45,10 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   bool IsInCurrentExecutor() const override;
   bool SupportTimerSchedule() const override { return true; }
 
-  void Execute(Task&& task) override;
+  void Execute(aimrt::executor::Task&& task) override;
 
   std::chrono::system_clock::time_point Now() const override;
-  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) override;
 
   State GetState() const { return state_.load(); }
 
@@ -63,7 +63,7 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
 
   struct TaskWithTimestamp {
     uint64_t tick_count;  // 距离start_time的时间tick
-    Task task;
+    aimrt::executor::Task task;
   };
 
   using TaskList = std::list<TaskWithTimestamp>;

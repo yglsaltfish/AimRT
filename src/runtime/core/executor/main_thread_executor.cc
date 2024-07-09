@@ -67,7 +67,7 @@ void MainThreadExecutor::Start() {
 
   while (state_.load() != State::Shutdown) {
     // 多生产-单消费优化
-    std::queue<Task> tmp_queue;
+    std::queue<aimrt::executor::Task> tmp_queue;
 
     {
       std::unique_lock<std::mutex> lck(mutex_);
@@ -112,7 +112,7 @@ void MainThreadExecutor::Shutdown() {
   // 并不是真正的shutdown，任务队列还要跑，不能全清了
 }
 
-void MainThreadExecutor::Execute(Task&& task) {
+void MainThreadExecutor::Execute(aimrt::executor::Task&& task) {
   assert(state_.load() == State::Init || state_.load() == State::Start);
 
   std::unique_lock<std::mutex> lck(mutex_);

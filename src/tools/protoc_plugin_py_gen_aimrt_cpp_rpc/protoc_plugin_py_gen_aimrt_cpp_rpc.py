@@ -207,9 +207,9 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 {{service_name}}SyncService::{{service_name}}SyncService() {
 {{for method begin}}
   {
-    aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+    aimrt::rpc::ServiceFunc service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
-          aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
+          aimrt::rpc::ServiceCallback result_callback(result_callback_ptr);
 
           aimrt::rpc::ContextRef ctx_ref(ctx);
           ctx_ref.SetFunctionName("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}");
@@ -236,9 +236,9 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 {{service_name}}AsyncService::{{service_name}}AsyncService() {
 {{for method begin}}
   {
-    aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+    aimrt::rpc::ServiceFunc service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
-          auto result_callback_func_ptr = std::make_shared<aimrt::util::Function<aimrt_function_service_callback_ops_t>>(result_callback_ptr);
+          auto result_callback_func_ptr = std::make_shared<aimrt::rpc::ServiceCallback>(result_callback_ptr);
 
           aimrt::rpc::ContextRef ctx_ref(ctx);
           ctx_ref.SetFunctionName("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}");
@@ -266,7 +266,7 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 {{service_name}}CoService::{{service_name}}CoService() {
 {{for method begin}}
   {
-    aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
+    aimrt::rpc::ServiceFunc service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
           auto handle_ptr = std::make_unique<const aimrt::rpc::RpcHandle>(
               [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
@@ -277,7 +277,7 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
                     *static_cast<{{rpc_rsp_name}}*>(rsp_ptr));
               });
 
-          aimrt::util::Function<aimrt_function_service_callback_ops_t> result_callback(result_callback_ptr);
+          aimrt::rpc::ServiceCallback result_callback(result_callback_ptr);
 
           aimrt::rpc::ContextRef ctx_ref(ctx);
           ctx_ref.SetFunctionName("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}");
@@ -323,16 +323,15 @@ aimrt::rpc::Status {{service_name}}SyncProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
     {{rpc_rsp_name}}& rsp) {
+  static constexpr std::string_view func_name = "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}";
+
   std::promise<aimrt::rpc::Status> result_promise;
 
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
 
     rpc_handle_ref_.Invoke(
-        "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-        ctx_ref,
-        &req,
-        &rsp,
+        func_name, ctx_ref, &req, &rsp,
         [&result_promise](uint32_t code) {
           result_promise.set_value(aimrt::rpc::Status(code));
         });
@@ -344,10 +343,7 @@ aimrt::rpc::Status {{service_name}}SyncProxy::{{rpc_func_name}}(
   ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
-      "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-      *ctx_ptr,
-      &req,
-      &rsp,
+      func_name, *ctx_ptr, &req, &rsp,
       [&result_promise](uint32_t code) {
         result_promise.set_value(aimrt::rpc::Status(code));
       });
@@ -364,14 +360,13 @@ void {{service_name}}AsyncProxy::{{rpc_func_name}}(
     const {{rpc_req_name}}& req,
     {{rpc_rsp_name}}& rsp,
     std::function<void(aimrt::rpc::Status)>&& callback) {
+  static constexpr std::string_view func_name = "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}";
+
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
 
     rpc_handle_ref_.Invoke(
-        "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-        ctx_ref,
-        &req,
-        &rsp,
+        func_name, ctx_ref, &req, &rsp,
         [callback{std::move(callback)}](uint32_t code) {
           callback(aimrt::rpc::Status(code));
         });
@@ -383,10 +378,7 @@ void {{service_name}}AsyncProxy::{{rpc_func_name}}(
   ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
-      "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-      *ctx_ptr,
-      &req,
-      &rsp,
+      func_name, *ctx_ptr, &req, &rsp,
       [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
         callback(aimrt::rpc::Status(code));
       });
@@ -400,6 +392,8 @@ std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
     {{rpc_rsp_name}}& rsp) {
+  static constexpr std::string_view func_name = "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}";
+
   std::promise<aimrt::rpc::Status> status_promise;
   std::future<aimrt::rpc::Status> status_future = status_promise.get_future();
 
@@ -407,10 +401,7 @@ std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
 
     rpc_handle_ref_.Invoke(
-        "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-        ctx_ref,
-        &req,
-        &rsp,
+        func_name, ctx_ref, &req, &rsp,
         [status_promise{std::move(status_promise)}](uint32_t code) mutable {
           status_promise.set_value(aimrt::rpc::Status(code));
         });
@@ -422,10 +413,7 @@ std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
   ctx_ptr->SetSerializationType("pb");
 
   rpc_handle_ref_.Invoke(
-      "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-      *ctx_ptr,
-      &req,
-      &rsp,
+      func_name, *ctx_ptr, &req, &rsp,
       [ctx_ptr, status_promise{std::move(status_promise)}](uint32_t code) mutable {
         status_promise.set_value(aimrt::rpc::Status(code));
       });
@@ -441,32 +429,33 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
     {{rpc_rsp_name}}& rsp) {
+  static constexpr std::string_view func_name = "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}";
+
+  struct Awaitable {
+    aimrt::rpc::RpcHandleRef rpc_handle_ref;
+    aimrt::rpc::ContextRef ctx_ref;
+    const void* req_ptr;
+    void* rsp_ptr;
+
+    aimrt::rpc::Status status;
+
+    bool await_ready() const noexcept { return false; }
+
+    void await_suspend(std::coroutine_handle<> h) {
+      rpc_handle_ref.Invoke(
+          func_name, ctx_ref, req_ptr, rsp_ptr,
+          [this, h](uint32_t code) {
+            status = aimrt::rpc::Status(code);
+            h.resume();
+          });
+    }
+
+    auto await_resume() noexcept { return status; }
+  };
+
   const aimrt::rpc::RpcHandle h =
       [rpc_handle_ref{rpc_handle_ref_}](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
       -> aimrt::co::Task<aimrt::rpc::Status> {
-    struct Awaitable {
-      aimrt::rpc::RpcHandleRef rpc_handle_ref;
-      aimrt::rpc::ContextRef ctx_ref;
-      const void* req_ptr;
-      void* rsp_ptr;
-
-      aimrt::rpc::Status status;
-
-      bool await_ready() const noexcept { return false; }
-
-      void await_suspend(std::coroutine_handle<> h) {
-        rpc_handle_ref.Invoke(
-            "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
-            ctx_ref, req_ptr, rsp_ptr,
-            [this, h](uint32_t code) {
-              status = aimrt::rpc::Status(code);
-              h.resume();
-            });
-      }
-
-      auto await_resume() noexcept { return status; }
-    };
-
     co_return co_await Awaitable{
         .rpc_handle_ref = rpc_handle_ref,
         .ctx_ref = ctx_ref,

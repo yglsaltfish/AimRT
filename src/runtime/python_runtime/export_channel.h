@@ -51,7 +51,7 @@ inline bool PySubscribe(
           const aimrt_channel_context_base_t* ctx_ptr,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
-        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(release_callback_base);
+        aimrt::channel::SubscriberReleaseCallback release_callback(release_callback_base);
 
         const std::string& msg_buf = *static_cast<const std::string*>(msg_ptr);
         auto ctx_ref = aimrt::channel::ContextRef(ctx_ptr);

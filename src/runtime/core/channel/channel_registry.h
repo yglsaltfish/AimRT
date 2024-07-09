@@ -5,7 +5,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "aimrt_module_c_interface/channel/channel_handle_base.h"
+#include "aimrt_module_cpp_interface/channel/channel_handle.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "util/log_util.h"
 
@@ -25,7 +25,7 @@ struct SubscribeWrapper {
   std::string_view module_name;
   std::string_view topic_name;
   const aimrt_type_support_base_t* msg_type_support = nullptr;
-  aimrt::util::Function<aimrt_function_subscriber_callback_ops_t> callback;
+  aimrt::channel::SubscriberCallback callback;
 };
 
 class ChannelRegistry {

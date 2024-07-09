@@ -1,5 +1,6 @@
 #include "core/executor/time_wheel_executor.h"
 #include "core/util/thread_tools.h"
+#include "util/time_util.h"
 
 namespace YAML {
 template <>
@@ -134,7 +135,7 @@ bool TimeWheelExecutor::IsInCurrentExecutor() const {
              : (tid_ == std::this_thread::get_id());
 }
 
-void TimeWheelExecutor::Execute(Task&& task) {
+void TimeWheelExecutor::Execute(aimrt::executor::Task&& task) {
   assert(state_.load() == State::Start);
 
   if (bind_executor_ref_) {
@@ -151,20 +152,13 @@ std::chrono::system_clock::time_point TimeWheelExecutor::Now() const {
 
   std::shared_lock<std::shared_mutex> lck(tick_mutex_);
 
-  return std::chrono::system_clock::time_point(
-      std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
-          std::chrono::nanoseconds(current_tick_count_ * dt_count_ + start_time_point_)));
+  return aimrt::common::util::GetTimePointFromTimestampNs(current_tick_count_ * dt_count_ + start_time_point_);
 }
 
-void TimeWheelExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
+void TimeWheelExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
   assert(state_.load() == State::Start);
 
-  uint64_t virtual_tp =
-      static_cast<uint64_t>(
-          std::chrono::duration_cast<std::chrono::nanoseconds>(
-              tp.time_since_epoch())
-              .count()) -
-      start_time_point_;
+  uint64_t virtual_tp = aimrt::common::util::GetTimestampNs(tp) - start_time_point_;
 
   std::unique_lock<std::shared_mutex> lck(tick_mutex_);
 
@@ -222,10 +216,7 @@ void TimeWheelExecutor::TimerLoop() {
   auto last_loop_time_point = std::chrono::system_clock::now();
 
   // 记录初始时间
-  start_time_point_ = static_cast<uint64_t>(
-      std::chrono::duration_cast<std::chrono::nanoseconds>(
-          last_loop_time_point.time_since_epoch())
-          .count());
+  start_time_point_ = aimrt::common::util::GetTimestampNs(last_loop_time_point);
 
   start_flag_.store(true);
   start_flag_.notify_all();
@@ -255,7 +246,7 @@ void TimeWheelExecutor::TimerLoop() {
 
       // 执行立即任务
       if (!bind_executor_ref_) {
-        std::queue<Task> tmp_queue;
+        std::queue<aimrt::executor::Task> tmp_queue;
 
         imd_mutex_.lock();
         imd_queue_.swap(tmp_queue);

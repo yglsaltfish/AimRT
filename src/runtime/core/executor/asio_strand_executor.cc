@@ -74,12 +74,12 @@ void AsioStrandExecutor::Shutdown() {
     return;
 }
 
-void AsioStrandExecutor::Execute(Task&& task) {
+void AsioStrandExecutor::Execute(aimrt::executor::Task&& task) {
   assert(state_.load() == State::Start);
   boost::asio::post(*strand_ptr_, std::move(task));
 }
 
-void AsioStrandExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
+void AsioStrandExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
   assert(state_.load() == State::Start);
   auto timer_ptr_ = std::make_shared<boost::asio::system_timer>(*strand_ptr_);
   timer_ptr_->expires_at(tp);

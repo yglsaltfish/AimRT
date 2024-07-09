@@ -50,7 +50,7 @@ inline bool Subscribe(
           const aimrt_channel_context_base_t* ctx_ptr,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
-        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(release_callback_base);
+        SubscriberReleaseCallback release_callback(release_callback_base);
         std::shared_ptr<const MsgType> msg_shared_ptr =
             std::shared_ptr<const MsgType>(
                 static_cast<const MsgType*>(msg_ptr),
@@ -69,7 +69,7 @@ inline bool Subscribe(
           const aimrt_channel_context_base_t* ctx_ptr,
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
-        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(release_callback_base);
+        SubscriberReleaseCallback release_callback(release_callback_base);
         std::shared_ptr<const MsgType> msg_shared_ptr =
             std::shared_ptr<const MsgType>(
                 static_cast<const MsgType*>(msg_ptr),
@@ -93,7 +93,7 @@ inline bool SubscribeCo(
                 aimrt::co::InlineScheduler(),
                 callback(ContextRef(ctx_ptr), *(static_cast<const MsgType*>(msg_ptr)))) |
             aimrt::co::Then(
-                aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base)));
+                SubscriberReleaseCallback(release_callback_base)));
       });
 }
 
@@ -112,7 +112,7 @@ inline bool SubscribeCo(
                 aimrt::co::InlineScheduler(),
                 callback(*(static_cast<const MsgType*>(msg_ptr)))) |
             aimrt::co::Then(
-                aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>(release_callback_base)));
+                SubscriberReleaseCallback(release_callback_base)));
       });
 }
 

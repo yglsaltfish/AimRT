@@ -9,6 +9,8 @@
 
 namespace aimrt::parameter {
 
+using ParameterValReleaseCallback = util::Function<aimrt_function_parameter_val_release_callback_ops_t>;
+
 class ParameterHandleRef {
  public:
   ParameterHandleRef() = default;
@@ -27,7 +29,7 @@ class ParameterHandleRef {
     auto view_holder = base_ptr_->get_parameter(base_ptr_->impl, util::ToAimRTStringView(key));
     if (view_holder.parameter_val.len) {
       std::string result = util::ToStdString(view_holder.parameter_val);
-      util::Function<aimrt_function_parameter_val_release_callback_ops_t>(view_holder.release_callback)();
+      ParameterValReleaseCallback(view_holder.release_callback)();
       return result;
     }
 
