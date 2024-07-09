@@ -1,4 +1,5 @@
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <google/protobuf/compiler/code_generator.h>
@@ -40,16 +41,6 @@ std::vector<std::string> SplitToVec(const std::string& source,
   return result;
 }
 
-std::string ReplaceMultiString(
-    std::string_view source, const std::map<std::string, std::string>& replace_info_map) {
-  std::string result(source);
-
-  for (auto& itr : replace_info_map)
-    ReplaceString(result, itr.first, itr.second);
-
-  return result;
-}
-
 class AimRTCodeGenerator final : public google::protobuf::compiler::CodeGenerator {
  public:
   AimRTCodeGenerator() = default;
@@ -58,160 +49,6 @@ class AimRTCodeGenerator final : public google::protobuf::compiler::CodeGenerato
   uint64_t GetSupportedFeatures() const override {
     return FEATURE_PROTO3_OPTIONAL;
   }
-
-  constexpr static std::string_view t_hfile_one_sync_service_func = R"str(
-  virtual aimrt::rpc::Status {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
-  })str";
-
-  constexpr static std::string_view t_hfile_one_sync_service_class = R"str(
-class {{service_name}}SyncService : public aimrt::rpc::ServiceBase {
- public:
-  {{service_name}}SyncService();
-  ~{{service_name}}SyncService() override = default;
-{{hfile_sync_service_func}}
-};)str";
-
-  constexpr static std::string_view t_hfile_one_async_service_func = R"str(
-  virtual void {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp,
-      std::function<void(aimrt::rpc::Status)>&& callback) {
-    callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED));
-  })str";
-
-  constexpr static std::string_view t_hfile_one_async_service_class = R"str(
-class {{service_name}}AsyncService : public aimrt::rpc::ServiceBase {
- public:
-  {{service_name}}AsyncService();
-  ~{{service_name}}AsyncService() override = default;
-{{hfile_async_service_func}}
-};)str";
-
-  constexpr static std::string_view t_hfile_one_service_func = R"str(
-  virtual aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
-  })str";
-
-  constexpr static std::string_view t_hfile_one_service_class = R"str(
-class {{service_name}}CoService : public aimrt::rpc::CoServiceBase {
- public:
-  {{service_name}}CoService();
-  ~{{service_name}}CoService() override = default;
-{{hfile_service_func}}
-};)str";
-
-  constexpr static std::string_view t_hfile_one_service_register_client_func = R"str(
-bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);)str";
-
-  constexpr static std::string_view t_hfile_one_service_sync_proxy_func = R"str(
-  aimrt::rpc::Status {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp);
-
-  aimrt::rpc::Status {{rpc_func_name}}(
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
-  })str";
-
-  constexpr static std::string_view t_hfile_one_service_sync_proxy_class = R"str(
-class {{service_name}}SyncProxy : public aimrt::rpc::ProxyBase {
- public:
-  explicit {{service_name}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
-  ~{{service_name}}SyncProxy() = default;
-
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{service_name}}ClientFunc(rpc_handle_ref);
-  }
-{{hfile_service_sync_proxy_func}}
-};)str";
-
-  constexpr static std::string_view t_hfile_one_service_async_proxy_func = R"str(
-  void {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp,
-      std::function<void(aimrt::rpc::Status)>&& callback);
-
-  void {{rpc_func_name}}(
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp,
-      std::function<void(aimrt::rpc::Status)>&& callback) {
-    {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp, std::move(callback));
-  })str";
-
-  constexpr static std::string_view t_hfile_one_service_async_proxy_class = R"str(
-class {{service_name}}AsyncProxy : public aimrt::rpc::ProxyBase {
- public:
-  explicit {{service_name}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
-  ~{{service_name}}AsyncProxy() = default;
-
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{service_name}}ClientFunc(rpc_handle_ref);
-  }
-{{hfile_service_async_proxy_func}}
-};)str";
-
-  constexpr static std::string_view t_hfile_one_service_future_proxy_func = R"str(
-  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp);
-
-  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
-  })str";
-
-  constexpr static std::string_view t_hfile_one_service_future_proxy_class = R"str(
-class {{service_name}}FutureProxy : public aimrt::rpc::ProxyBase {
- public:
-  explicit {{service_name}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
-  ~{{service_name}}FutureProxy() = default;
-
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{service_name}}ClientFunc(rpc_handle_ref);
-  }
-{{hfile_service_future_proxy_func}}
-};)str";
-
-  constexpr static std::string_view t_hfile_one_service_proxy_func = R"str(
-  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp);
-
-  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
-  })str";
-
-  constexpr static std::string_view t_hfile_one_service_proxy_class = R"str(
-class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
- public:
-  explicit {{service_name}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::CoProxyBase(rpc_handle_ref) {}
-  ~{{service_name}}CoProxy() = default;
-
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{service_name}}ClientFunc(rpc_handle_ref);
-  }
-{{hfile_service_proxy_func}}
-};)str";
 
   constexpr static std::string_view t_hfile = R"str(/**
  * @file {{file_name}}.aimrt_rpc.pb.h
@@ -229,18 +66,186 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 #include "{{file_name}}.pb.h"
 
 {{namespace_begin}}
-{{hfile_sync_service_class}}
-{{hfile_async_service_class}}
-{{hfile_service_class}}
-{{hfile_service_register_client_func}}
-{{hfile_service_sync_proxy_class}}
-{{hfile_service_async_proxy_class}}
-{{hfile_service_future_proxy_class}}
-{{hfile_service_proxy_class}}
+{{for service begin}}
+class {{service_name}}SyncService : public aimrt::rpc::ServiceBase {
+ public:
+  {{service_name}}SyncService();
+  ~{{service_name}}SyncService() override = default;
+{{for method begin}}
+  virtual aimrt::rpc::Status {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
+  }
+{{method end}}
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}AsyncService : public aimrt::rpc::ServiceBase {
+ public:
+  {{service_name}}AsyncService();
+  ~{{service_name}}AsyncService() override = default;
+{{for method begin}}
+  virtual void {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp,
+      std::function<void(aimrt::rpc::Status)>&& callback) {
+    callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED));
+  }
+{{method end}}
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}CoService : public aimrt::rpc::CoServiceBase {
+ public:
+  {{service_name}}CoService();
+  ~{{service_name}}CoService() override = default;
+{{for method begin}}
+  virtual aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
+  }
+{{method end}}
+};
+
+{{service end}}
+
+{{for service begin}}
+bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}SyncProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{service_name}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}SyncProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{for method begin}}
+  aimrt::rpc::Status {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp);
+
+  aimrt::rpc::Status {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
+  }
+{{method end}}
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}AsyncProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{service_name}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}AsyncProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{for method begin}}
+  void {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp,
+      std::function<void(aimrt::rpc::Status)>&& callback);
+
+  void {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp,
+      std::function<void(aimrt::rpc::Status)>&& callback) {
+    {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp, std::move(callback));
+  }
+{{method end}}
+};
+{{service end}}
+
+
+{{for service begin}}
+class {{service_name}}FutureProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{service_name}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}FutureProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{for method begin}}
+  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp);
+
+  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
+  }
+{{method end}}
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
+ public:
+  explicit {{service_name}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::CoProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}CoProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{for method begin}}
+  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp);
+
+  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
+  }
+{{method end}}
+};
+{{service end}}
+
 {{namespace_end}}
 )str";
 
-  constexpr static std::string_view t_ccfile_one_sync_service_register_func = R"str(
+  constexpr static std::string_view t_ccfile = R"str(/**
+ * @file {{file_name}}.aimrt_rpc.pb.cc
+ * @brief This file was generated by protoc-gen-aimrt_rpc which is a self-defined pb compiler plugin, do not edit it!!!
+ */
+
+#include "{{file_name}}.aimrt_rpc.pb.h"
+
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+#include "aimrt_module_cpp_interface/co/on.h"
+#include "aimrt_module_cpp_interface/co/start_detached.h"
+#include "aimrt_module_cpp_interface/co/then.h"
+#include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
+
+#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/util/json_util.h>
+
+{{namespace_begin}}
+{{for service begin}}
+{{service_name}}SyncService::{{service_name}}SyncService() {
+{{for method begin}}
   {
     aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
@@ -262,15 +267,14 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
         aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
         aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>(),
         std::move(service_callback));
-  })str";
-
-  constexpr static std::string_view t_ccfile_one_sync_service_class = R"str(
-{{service_name}}SyncService::{{service_name}}SyncService() {
-{{ccfile_sync_service_register_func}}
+  }
+{{method end}}
 }
-)str";
+{{service end}}
 
-  constexpr static std::string_view t_ccfile_one_async_service_register_func = R"str(
+{{for service begin}}
+{{service_name}}AsyncService::{{service_name}}AsyncService() {
+{{for method begin}}
   {
     aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
@@ -293,15 +297,14 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
         aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
         aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>(),
         std::move(service_callback));
-  })str";
-
-  constexpr static std::string_view t_ccfile_one_async_service_class = R"str(
-{{service_name}}AsyncService::{{service_name}}AsyncService() {
-{{ccfile_async_service_register_func}}
+  }
+{{method end}}
 }
-)str";
+{{service end}}
 
-  constexpr static std::string_view t_ccfile_one_service_register_func = R"str(
+{{for service begin}}
+{{service_name}}CoService::{{service_name}}CoService() {
+{{for method begin}}
   {
     aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
@@ -335,29 +338,27 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
         aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
         aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>(),
         std::move(service_callback));
-  })str";
-
-  constexpr static std::string_view t_ccfile_one_service_class = R"str(
-{{service_name}}CoService::{{service_name}}CoService() {
-{{ccfile_service_register_func}}
+  }
+{{method end}}
 }
-)str";
+{{service end}}
 
-  constexpr static std::string_view t_ccfile_one_service_one_register_client_func = R"str(
+{{for service begin}}
+bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+{{for method begin}}
   if (!(rpc_handle_ref.RegisterClientFunc(
           "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
           nullptr,
           aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
           aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>())))
-    return false;)str";
-
-  constexpr static std::string_view t_ccfile_one_service_register_client_func = R"str(
-bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-{{ccfile_service_one_register_client_func}}
+    return false;
+{{method end}}
   return true;
-})str";
+}
+{{service end}}
 
-  constexpr static std::string_view t_ccfile_one_service_sync_proxy_func = R"str(
+{{for service begin}}
+{{for method begin}}
 aimrt::rpc::Status {{service_name}}SyncProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
@@ -392,9 +393,12 @@ aimrt::rpc::Status {{service_name}}SyncProxy::{{rpc_func_name}}(
       });
 
   return result_promise.get_future().get();
-})str";
+}
+{{method end}}
+{{service end}}
 
-  constexpr static std::string_view t_ccfile_one_service_async_proxy_func = R"str(
+{{for service begin}}
+{{for method begin}}
 void {{service_name}}AsyncProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
@@ -426,9 +430,12 @@ void {{service_name}}AsyncProxy::{{rpc_func_name}}(
       [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
         callback(aimrt::rpc::Status(code));
       });
-})str";
+}
+{{method end}}
+{{service end}}
 
-  constexpr static std::string_view t_ccfile_one_service_future_proxy_func = R"str(
+{{for service begin}}
+{{for method begin}}
 std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
@@ -464,9 +471,12 @@ std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
       });
 
   return status_future;
-})str";
+}
+{{method end}}
+{{service end}}
 
-  constexpr static std::string_view t_ccfile_one_service_proxy_func = R"str(
+{{for service begin}}
+{{for method begin}}
 aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
@@ -512,51 +522,102 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
   auto ctx_ptr = NewContextSharedPtr();
   ctx_ptr->SetSerializationType("pb");
   co_return co_await filter_mgr_.InvokeRpc(h, *ctx_ptr, static_cast<const void*>(&req), static_cast<void*>(&rsp));
-})str";
+}
+{{method end}}
+{{service end}}
 
-  constexpr static std::string_view t_ccfile_one_service_sync_proxy_class = R"str(
-{{ccfile_service_sync_proxy_func}}
-)str";
-
-  constexpr static std::string_view t_ccfile_one_service_async_proxy_class = R"str(
-{{ccfile_service_async_proxy_func}}
-)str";
-
-  constexpr static std::string_view t_ccfile_one_service_future_proxy_class = R"str(
-{{ccfile_service_future_proxy_func}}
-)str";
-
-  constexpr static std::string_view t_ccfile_one_service_proxy_class = R"str(
-{{ccfile_service_proxy_func}}
-)str";
-
-  constexpr static std::string_view t_ccfile = R"str(/**
- * @file {{file_name}}.aimrt_rpc.pb.cc
- * @brief This file was generated by protoc-gen-aimrt_rpc which is a self-defined pb compiler plugin, do not edit it!!!
- */
-
-#include "{{file_name}}.aimrt_rpc.pb.h"
-
-#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
-#include "aimrt_module_cpp_interface/co/on.h"
-#include "aimrt_module_cpp_interface/co/start_detached.h"
-#include "aimrt_module_cpp_interface/co/then.h"
-#include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
-
-#include <google/protobuf/stubs/stringpiece.h>
-#include <google/protobuf/util/json_util.h>
-
-{{namespace_begin}}
-{{ccfile_sync_service_class}}
-{{ccfile_async_service_class}}
-{{ccfile_service_class}}
-{{ccfile_service_register_client_func}}
-{{ccfile_service_sync_proxy_class}}
-{{ccfile_service_async_proxy_class}}
-{{ccfile_service_future_proxy_class}}
-{{ccfile_service_proxy_class}}
 {{namespace_end}}
 )str";
+
+  struct MethodNode {
+    std::unordered_map<std::string, std::string> kv;
+  };
+
+  struct ServiceNode {
+    std::unordered_map<std::string, std::string> kv;
+    std::vector<MethodNode> method_vec;
+  };
+
+  struct PackageNode {
+    std::unordered_map<std::string, std::string> kv;
+    std::vector<ServiceNode> service_vec;
+  };
+
+  static std::string GenMethodCode(std::string_view temp, const MethodNode& method_node) {
+    std::string result(temp);
+
+    for (const auto& item : method_node.kv) {
+      ReplaceString(result, item.first, item.second);
+    }
+
+    return result;
+  }
+
+  static std::string GenServiceCode(std::string_view temp, const ServiceNode& service_node) {
+    std::string result(temp);
+
+    for (const auto& item : service_node.kv) {
+      ReplaceString(result, item.first, item.second);
+    }
+
+    static const std::string method_begin_flag = "{{for method begin}}\n";
+    static const std::string method_end_flag = "{{method end}}\n";
+
+    size_t cur_pos = 0;
+    while (true) {
+      auto begin_pos = result.find(method_begin_flag, cur_pos);
+      if (begin_pos == std::string::npos) break;
+
+      auto end_pos = result.find(method_end_flag, begin_pos + method_begin_flag.size());
+      if (end_pos == std::string::npos) break;
+
+      std::string cur_temp = result.substr(
+          begin_pos + method_begin_flag.size(),
+          end_pos - begin_pos - method_begin_flag.size());
+      std::string cur_result;
+      for (const auto& node : service_node.method_vec) {
+        cur_result += GenMethodCode(cur_temp, node);
+      }
+
+      result.replace(begin_pos, end_pos - begin_pos + method_end_flag.size(), cur_result);
+      cur_pos = begin_pos + cur_result.size();
+    }
+
+    return result;
+  }
+
+  static std::string GenPackageCode(std::string_view temp, const PackageNode& package_node) {
+    std::string result(temp);
+
+    for (const auto& item : package_node.kv) {
+      ReplaceString(result, item.first, item.second);
+    }
+
+    static const std::string service_begin_flag = "{{for service begin}}\n";
+    static const std::string service_end_flag = "{{service end}}\n";
+
+    size_t cur_pos = 0;
+    while (true) {
+      auto begin_pos = result.find(service_begin_flag, cur_pos);
+      if (begin_pos == std::string::npos) break;
+
+      auto end_pos = result.find(service_end_flag, begin_pos + service_begin_flag.size());
+      if (end_pos == std::string::npos) break;
+
+      std::string cur_temp = result.substr(
+          begin_pos + service_begin_flag.size(),
+          end_pos - begin_pos - service_begin_flag.size());
+      std::string cur_result;
+      for (const auto& node : package_node.service_vec) {
+        cur_result += GenServiceCode(cur_temp, node);
+      }
+
+      result.replace(begin_pos, end_pos - begin_pos + service_end_flag.size(), cur_result);
+      cur_pos = begin_pos + cur_result.size();
+    }
+
+    return result;
+  }
 
   static std::string ProtoFileBaseName(const std::string& full_name) {
     return full_name.substr(0, full_name.rfind("."));
@@ -599,232 +660,39 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                 google::protobuf::compiler::GeneratorContext* context,
                 std::string* error) const override {
     const std::string& file_name = ProtoFileBaseName(file->name());
-    const std::string& package_name = file->package();
-    const std::string& namespace_begin = GenNamespaceBeginStr(file->package());
-    const std::string& namespace_end = GenNamespaceEndStr(file->package());
 
-    // file
-    std::string hfile_sync_service_class;
-    std::string hfile_async_service_class;
-    std::string hfile_service_class;
-    std::string hfile_service_register_client_func;
-    std::string hfile_service_sync_proxy_class;
-    std::string hfile_service_async_proxy_class;
-    std::string hfile_service_future_proxy_class;
-    std::string hfile_service_proxy_class;
-
-    std::string ccfile_sync_service_class;
-    std::string ccfile_async_service_class;
-    std::string ccfile_service_class;
-    std::string ccfile_service_register_client_func;
-    std::string ccfile_service_sync_proxy_class;
-    std::string ccfile_service_async_proxy_class;
-    std::string ccfile_service_future_proxy_class;
-    std::string ccfile_service_proxy_class;
+    PackageNode package_node;
+    package_node.kv["{{file_name}}"] = file_name;
+    package_node.kv["{{package_name}}"] = file->package();
+    package_node.kv["{{namespace_begin}}"] = GenNamespaceBeginStr(file->package());
+    package_node.kv["{{namespace_end}}"] = GenNamespaceEndStr(file->package());
 
     for (int ii = 0; ii < file->service_count(); ++ii) {
-      // service
       auto service = file->service(ii);
 
-      if (ii != 0) {
-        hfile_sync_service_class += "\n";
-        hfile_async_service_class += "\n";
-        hfile_service_class += "\n";
-        hfile_service_register_client_func += "\n";
-        hfile_service_sync_proxy_class += "\n";
-        hfile_service_async_proxy_class += "\n";
-        hfile_service_future_proxy_class += "\n";
-        hfile_service_proxy_class += "\n";
-
-        ccfile_sync_service_class += "\n";
-        ccfile_async_service_class += "\n";
-        ccfile_service_class += "\n";
-        ccfile_service_register_client_func += "\n";
-        ccfile_service_sync_proxy_class += "\n";
-        ccfile_service_async_proxy_class += "\n";
-        ccfile_service_future_proxy_class += "\n";
-        ccfile_service_proxy_class += "\n";
-      }
-
-      const std::string& service_name = service->name();
-
-      std::string hfile_sync_service_func;
-      std::string hfile_async_service_func;
-      std::string hfile_service_func;
-      std::string hfile_service_sync_proxy_func;
-      std::string hfile_service_async_proxy_func;
-      std::string hfile_service_future_proxy_func;
-      std::string hfile_service_proxy_func;
-
-      std::string ccfile_sync_service_register_func;
-      std::string ccfile_async_service_register_func;
-      std::string ccfile_service_register_func;
-      std::string ccfile_service_one_register_client_func;
-      std::string ccfile_service_sync_proxy_func;
-      std::string ccfile_service_async_proxy_func;
-      std::string ccfile_service_future_proxy_func;
-      std::string ccfile_service_proxy_func;
+      ServiceNode service_node;
+      service_node.kv["{{service_name}}"] = service->name();
 
       for (int jj = 0; jj < service->method_count(); ++jj) {
-        // method
         auto method = service->method(jj);
 
-        if (jj != 0) {
-          hfile_sync_service_func += "\n";
-          hfile_async_service_func += "\n";
-          hfile_service_func += "\n";
-          hfile_service_sync_proxy_func += "\n";
-          hfile_service_async_proxy_func += "\n";
-          hfile_service_future_proxy_func += "\n";
-          hfile_service_proxy_func += "\n";
+        MethodNode method_node;
+        method_node.kv["{{rpc_func_name}}"] = method->name();
+        method_node.kv["{{rpc_req_name}}"] = "::" + GenNamespaceStr(method->input_type()->full_name());
+        method_node.kv["{{rpc_rsp_name}}"] = "::" + GenNamespaceStr(method->output_type()->full_name());
 
-          ccfile_sync_service_register_func += "\n";
-          ccfile_async_service_register_func += "\n";
-          ccfile_service_register_func += "\n";
-          ccfile_service_one_register_client_func += "\n";
-          ccfile_service_sync_proxy_func += "\n";
-          ccfile_service_async_proxy_func += "\n";
-          ccfile_service_future_proxy_func += "\n";
-          ccfile_service_proxy_func += "\n";
-        }
-
-        const std::string& rpc_func_name = method->name();
-        const std::string& rpc_req_name = "::" + GenNamespaceStr(method->input_type()->full_name());
-        const std::string& rpc_rsp_name = "::" + GenNamespaceStr(method->output_type()->full_name());
-
-        std::map<std::string, std::string> replace_info_map{
-            {"{{rpc_req_name}}", rpc_req_name},
-            {"{{rpc_rsp_name}}", rpc_rsp_name},
-            {"{{rpc_func_name}}", rpc_func_name}};
-
-        hfile_sync_service_func += ReplaceMultiString(t_hfile_one_sync_service_func, replace_info_map);
-        hfile_async_service_func += ReplaceMultiString(t_hfile_one_async_service_func, replace_info_map);
-        hfile_service_func += ReplaceMultiString(t_hfile_one_service_func, replace_info_map);
-        hfile_service_sync_proxy_func += ReplaceMultiString(t_hfile_one_service_sync_proxy_func, replace_info_map);
-        hfile_service_async_proxy_func += ReplaceMultiString(t_hfile_one_service_async_proxy_func, replace_info_map);
-        hfile_service_future_proxy_func += ReplaceMultiString(t_hfile_one_service_future_proxy_func, replace_info_map);
-        hfile_service_proxy_func += ReplaceMultiString(t_hfile_one_service_proxy_func, replace_info_map);
-
-        ccfile_sync_service_register_func += ReplaceMultiString(t_ccfile_one_sync_service_register_func, replace_info_map);
-        ccfile_async_service_register_func += ReplaceMultiString(t_ccfile_one_async_service_register_func, replace_info_map);
-        ccfile_service_register_func += ReplaceMultiString(t_ccfile_one_service_register_func, replace_info_map);
-        ccfile_service_one_register_client_func += ReplaceMultiString(t_ccfile_one_service_one_register_client_func, replace_info_map);
-        ccfile_service_sync_proxy_func += ReplaceMultiString(t_ccfile_one_service_sync_proxy_func, replace_info_map);
-        ccfile_service_async_proxy_func += ReplaceMultiString(t_ccfile_one_service_async_proxy_func, replace_info_map);
-        ccfile_service_future_proxy_func += ReplaceMultiString(t_ccfile_one_service_future_proxy_func, replace_info_map);
-        ccfile_service_proxy_func += ReplaceMultiString(t_ccfile_one_service_proxy_func, replace_info_map);
+        service_node.method_vec.emplace_back(std::move(method_node));
       }
 
-      hfile_sync_service_class += ReplaceMultiString(
-          t_hfile_one_sync_service_class,
-          {{"{{hfile_sync_service_func}}", hfile_sync_service_func},
-           {"{{service_name}}", service_name}});
-
-      hfile_async_service_class += ReplaceMultiString(
-          t_hfile_one_async_service_class,
-          {{"{{hfile_async_service_func}}", hfile_async_service_func},
-           {"{{service_name}}", service_name}});
-
-      hfile_service_class += ReplaceMultiString(
-          t_hfile_one_service_class,
-          {{"{{hfile_service_func}}", hfile_service_func},
-           {"{{service_name}}", service_name}});
-
-      hfile_service_register_client_func += ReplaceMultiString(
-          t_hfile_one_service_register_client_func,
-          {{"{{service_name}}", service_name}});
-
-      hfile_service_sync_proxy_class += ReplaceMultiString(
-          t_hfile_one_service_sync_proxy_class,
-          {{"{{hfile_service_sync_proxy_func}}", hfile_service_sync_proxy_func},
-           {"{{service_name}}", service_name}});
-
-      hfile_service_async_proxy_class += ReplaceMultiString(
-          t_hfile_one_service_async_proxy_class,
-          {{"{{hfile_service_async_proxy_func}}", hfile_service_async_proxy_func},
-           {"{{service_name}}", service_name}});
-
-      hfile_service_future_proxy_class += ReplaceMultiString(
-          t_hfile_one_service_future_proxy_class,
-          {{"{{hfile_service_future_proxy_func}}", hfile_service_future_proxy_func},
-           {"{{service_name}}", service_name}});
-
-      hfile_service_proxy_class += ReplaceMultiString(
-          t_hfile_one_service_proxy_class,
-          {{"{{hfile_service_proxy_func}}", hfile_service_proxy_func},
-           {"{{service_name}}", service_name}});
-
-      ccfile_sync_service_class += ReplaceMultiString(
-          t_ccfile_one_sync_service_class,
-          {{"{{ccfile_sync_service_register_func}}", ccfile_sync_service_register_func},
-           {"{{service_name}}", service_name}});
-
-      ccfile_async_service_class += ReplaceMultiString(
-          t_ccfile_one_async_service_class,
-          {{"{{ccfile_async_service_register_func}}", ccfile_async_service_register_func},
-           {"{{service_name}}", service_name}});
-
-      ccfile_service_class += ReplaceMultiString(
-          t_ccfile_one_service_class,
-          {{"{{ccfile_service_register_func}}", ccfile_service_register_func},
-           {"{{service_name}}", service_name}});
-
-      ccfile_service_register_client_func += ReplaceMultiString(
-          t_ccfile_one_service_register_client_func,
-          {{"{{ccfile_service_one_register_client_func}}", ccfile_service_one_register_client_func},
-           {"{{service_name}}", service_name}});
-
-      ccfile_service_sync_proxy_class += ReplaceMultiString(
-          t_ccfile_one_service_sync_proxy_class,
-          {{"{{ccfile_service_sync_proxy_func}}", ccfile_service_sync_proxy_func},
-           {"{{service_name}}", service_name}});
-
-      ccfile_service_async_proxy_class += ReplaceMultiString(
-          t_ccfile_one_service_async_proxy_class,
-          {{"{{ccfile_service_async_proxy_func}}", ccfile_service_async_proxy_func},
-           {"{{service_name}}", service_name}});
-
-      ccfile_service_future_proxy_class += ReplaceMultiString(
-          t_ccfile_one_service_future_proxy_class,
-          {{"{{ccfile_service_future_proxy_func}}", ccfile_service_future_proxy_func},
-           {"{{service_name}}", service_name}});
-
-      ccfile_service_proxy_class += ReplaceMultiString(
-          t_ccfile_one_service_proxy_class,
-          {{"{{ccfile_service_proxy_func}}", ccfile_service_proxy_func},
-           {"{{service_name}}", service_name}});
+      package_node.service_vec.emplace_back(std::move(service_node));
     }
 
     // hfile
-    std::string hfile = std::string(t_hfile);
-    ReplaceString(hfile, "{{hfile_sync_service_class}}", hfile_sync_service_class);
-    ReplaceString(hfile, "{{hfile_async_service_class}}", hfile_async_service_class);
-    ReplaceString(hfile, "{{hfile_service_class}}", hfile_service_class);
-    ReplaceString(hfile, "{{hfile_service_register_client_func}}", hfile_service_register_client_func);
-    ReplaceString(hfile, "{{hfile_service_sync_proxy_class}}", hfile_service_sync_proxy_class);
-    ReplaceString(hfile, "{{hfile_service_async_proxy_class}}", hfile_service_async_proxy_class);
-    ReplaceString(hfile, "{{hfile_service_future_proxy_class}}", hfile_service_future_proxy_class);
-    ReplaceString(hfile, "{{hfile_service_proxy_class}}", hfile_service_proxy_class);
-    ReplaceString(hfile, "{{file_name}}", file_name);
-    ReplaceString(hfile, "{{namespace_begin}}", namespace_begin);
-    ReplaceString(hfile, "{{namespace_end}}", namespace_end);
-    ReplaceString(hfile, "{{package_name}}", package_name);
+    std::string hfile = GenPackageCode(t_hfile, package_node);
     WriteToFile(context, file_name + ".aimrt_rpc.pb.h", hfile);
 
     // ccfile
-    std::string ccfile = std::string(t_ccfile);
-    ReplaceString(ccfile, "{{ccfile_sync_service_class}}", ccfile_sync_service_class);
-    ReplaceString(ccfile, "{{ccfile_async_service_class}}", ccfile_async_service_class);
-    ReplaceString(ccfile, "{{ccfile_service_class}}", ccfile_service_class);
-    ReplaceString(ccfile, "{{ccfile_service_register_client_func}}", ccfile_service_register_client_func);
-    ReplaceString(ccfile, "{{ccfile_service_sync_proxy_class}}", ccfile_service_sync_proxy_class);
-    ReplaceString(ccfile, "{{ccfile_service_async_proxy_class}}", ccfile_service_async_proxy_class);
-    ReplaceString(ccfile, "{{ccfile_service_future_proxy_class}}", ccfile_service_future_proxy_class);
-    ReplaceString(ccfile, "{{ccfile_service_proxy_class}}", ccfile_service_proxy_class);
-    ReplaceString(ccfile, "{{file_name}}", file_name);
-    ReplaceString(ccfile, "{{namespace_begin}}", namespace_begin);
-    ReplaceString(ccfile, "{{namespace_end}}", namespace_end);
-    ReplaceString(ccfile, "{{package_name}}", package_name);
+    std::string ccfile = GenPackageCode(t_ccfile, package_node);
     WriteToFile(context, file_name + ".aimrt_rpc.pb.cc", ccfile);
 
     return true;

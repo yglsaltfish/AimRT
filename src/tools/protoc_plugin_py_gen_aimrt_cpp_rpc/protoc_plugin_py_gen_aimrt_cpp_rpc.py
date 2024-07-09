@@ -9,161 +9,7 @@ from google.protobuf.compiler.plugin_pb2 import CodeGeneratorResponse as CodeGen
 from google.protobuf.descriptor_pb2 import FileDescriptorProto
 
 
-class AimRTCodeGenerator(object):
-    t_hfile_one_sync_service_func: str = r"""
-  virtual aimrt::rpc::Status {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
-  }"""
-
-    t_hfile_one_sync_service_class: str = r"""
-class {{service_name}}SyncService : public aimrt::rpc::ServiceBase {
- public:
-  {{service_name}}SyncService();
-  ~{{service_name}}SyncService() override = default;
-{{hfile_sync_service_func}}
-};"""
-
-    t_hfile_one_async_service_func: str = r"""
-  virtual void {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp,
-      std::function<void(aimrt::rpc::Status)>&& callback) {
-    callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED));
-  }"""
-
-    t_hfile_one_async_service_class: str = r"""
-class {{service_name}}AsyncService : public aimrt::rpc::ServiceBase {
- public:
-  {{service_name}}AsyncService();
-  ~{{service_name}}AsyncService() override = default;
-{{hfile_async_service_func}}
-};"""
-
-    t_hfile_one_service_func: str = r"""
-  virtual aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
-  }"""
-
-    t_hfile_one_service_class: str = r"""
-class {{service_name}}CoService : public aimrt::rpc::CoServiceBase {
- public:
-  {{service_name}}CoService();
-  ~{{service_name}}CoService() override = default;
-{{hfile_service_func}}
-};"""
-
-    t_hfile_one_service_register_client_func: str = r"""
-bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);"""
-
-    t_hfile_one_service_sync_proxy_func: str = r"""
-  aimrt::rpc::Status {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp);
-
-  aimrt::rpc::Status {{rpc_func_name}}(
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
-  }"""
-
-    t_hfile_one_service_sync_proxy_class: str = r"""
-class {{service_name}}SyncProxy : public aimrt::rpc::ProxyBase {
- public:
-  explicit {{service_name}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
-  ~{{service_name}}SyncProxy() = default;
-
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{service_name}}ClientFunc(rpc_handle_ref);
-  }
-{{hfile_service_sync_proxy_func}}
-};"""
-
-    t_hfile_one_service_async_proxy_func: str = r"""
-  void {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp,
-      std::function<void(aimrt::rpc::Status)>&& callback);
-
-  void {{rpc_func_name}}(
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp,
-      std::function<void(aimrt::rpc::Status)>&& callback) {
-    {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp, std::move(callback));
-  }"""
-
-    t_hfile_one_service_async_proxy_class: str = r"""
-class {{service_name}}AsyncProxy : public aimrt::rpc::ProxyBase {
- public:
-  explicit {{service_name}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
-  ~{{service_name}}AsyncProxy() = default;
-
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{service_name}}ClientFunc(rpc_handle_ref);
-  }
-{{hfile_service_async_proxy_func}}
-};"""
-
-    t_hfile_one_service_future_proxy_func: str = r"""
-  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp);
-
-  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
-  }"""
-
-    t_hfile_one_service_future_proxy_class: str = r"""
-class {{service_name}}FutureProxy : public aimrt::rpc::ProxyBase {
- public:
-  explicit {{service_name}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
-  ~{{service_name}}FutureProxy() = default;
-
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{service_name}}ClientFunc(rpc_handle_ref);
-  }
-{{hfile_service_future_proxy_func}}
-};"""
-
-    t_hfile_one_service_proxy_func: str = r"""
-  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
-      aimrt::rpc::ContextRef ctx_ref,
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp);
-
-  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
-      const {{rpc_req_name}}& req,
-      {{rpc_rsp_name}}& rsp) {
-    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
-  }"""
-
-    t_hfile_one_service_proxy_class: str = r"""
-class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
- public:
-  explicit {{service_name}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
-      : aimrt::rpc::CoProxyBase(rpc_handle_ref) {}
-  ~{{service_name}}CoProxy() = default;
-
-  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{service_name}}ClientFunc(rpc_handle_ref);
-  }
-{{hfile_service_proxy_func}}
-};"""
-
+class AimRTCodeGenerator:
     t_hfile: str = r"""/**
  * @file {{file_name}}.aimrt_rpc.pb.h
  * @brief This file was generated by protoc-gen-aimrt_rpc which is a self-defined pb compiler plugin, do not edit it!!!
@@ -180,18 +26,186 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 #include "{{file_name}}.pb.h"
 
 {{namespace_begin}}
-{{hfile_sync_service_class}}
-{{hfile_async_service_class}}
-{{hfile_service_class}}
-{{hfile_service_register_client_func}}
-{{hfile_service_sync_proxy_class}}
-{{hfile_service_async_proxy_class}}
-{{hfile_service_future_proxy_class}}
-{{hfile_service_proxy_class}}
+{{for service begin}}
+class {{service_name}}SyncService : public aimrt::rpc::ServiceBase {
+ public:
+  {{service_name}}SyncService();
+  ~{{service_name}}SyncService() override = default;
+{{for method begin}}
+  virtual aimrt::rpc::Status {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
+  }
+{{method end}}
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}AsyncService : public aimrt::rpc::ServiceBase {
+ public:
+  {{service_name}}AsyncService();
+  ~{{service_name}}AsyncService() override = default;
+{{for method begin}}
+  virtual void {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp,
+      std::function<void(aimrt::rpc::Status)>&& callback) {
+    callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED));
+  }
+{{method end}}
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}CoService : public aimrt::rpc::CoServiceBase {
+ public:
+  {{service_name}}CoService();
+  ~{{service_name}}CoService() override = default;
+{{for method begin}}
+  virtual aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    co_return aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED);
+  }
+{{method end}}
+};
+
+{{service end}}
+
+{{for service begin}}
+bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref);
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}SyncProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{service_name}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}SyncProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{for method begin}}
+  aimrt::rpc::Status {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp);
+
+  aimrt::rpc::Status {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
+  }
+{{method end}}
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}AsyncProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{service_name}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}AsyncProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{for method begin}}
+  void {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp,
+      std::function<void(aimrt::rpc::Status)>&& callback);
+
+  void {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp,
+      std::function<void(aimrt::rpc::Status)>&& callback) {
+    {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp, std::move(callback));
+  }
+{{method end}}
+};
+{{service end}}
+
+
+{{for service begin}}
+class {{service_name}}FutureProxy : public aimrt::rpc::ProxyBase {
+ public:
+  explicit {{service_name}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::ProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}FutureProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{for method begin}}
+  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp);
+
+  std::future<aimrt::rpc::Status> {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
+  }
+{{method end}}
+};
+{{service end}}
+
+{{for service begin}}
+class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
+ public:
+  explicit {{service_name}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref)
+      : aimrt::rpc::CoProxyBase(rpc_handle_ref) {}
+  ~{{service_name}}CoProxy() = default;
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{service_name}}ClientFunc(rpc_handle_ref);
+  }
+{{for method begin}}
+  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
+      aimrt::rpc::ContextRef ctx_ref,
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp);
+
+  aimrt::co::Task<aimrt::rpc::Status> {{rpc_func_name}}(
+      const {{rpc_req_name}}& req,
+      {{rpc_rsp_name}}& rsp) {
+    return {{rpc_func_name}}(aimrt::rpc::ContextRef(), req, rsp);
+  }
+{{method end}}
+};
+{{service end}}
+
 {{namespace_end}}
 """
 
-    t_ccfile_one_sync_service_register_func: str = r"""
+    t_ccfile: str = r"""/**
+ * @file {{file_name}}.aimrt_rpc.pb.cc
+ * @brief This file was generated by protoc-gen-aimrt_rpc which is a self-defined pb compiler plugin, do not edit it!!!
+ */
+
+#include "{{file_name}}.aimrt_rpc.pb.h"
+
+#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
+#include "aimrt_module_cpp_interface/co/on.h"
+#include "aimrt_module_cpp_interface/co/start_detached.h"
+#include "aimrt_module_cpp_interface/co/then.h"
+#include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
+
+#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/util/json_util.h>
+
+{{namespace_begin}}
+{{for service begin}}
+{{service_name}}SyncService::{{service_name}}SyncService() {
+{{for method begin}}
   {
     aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
@@ -213,15 +227,14 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
         aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
         aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>(),
         std::move(service_callback));
-  }"""
-
-    t_ccfile_one_sync_service_class: str = r"""
-{{service_name}}SyncService::{{service_name}}SyncService() {
-{{ccfile_sync_service_register_func}}
+  }
+{{method end}}
 }
-"""
+{{service end}}
 
-    t_ccfile_one_async_service_register_func: str = r"""
+{{for service begin}}
+{{service_name}}AsyncService::{{service_name}}AsyncService() {
+{{for method begin}}
   {
     aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
@@ -244,15 +257,14 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
         aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
         aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>(),
         std::move(service_callback));
-  }"""
-
-    t_ccfile_one_async_service_class: str = r"""
-{{service_name}}AsyncService::{{service_name}}AsyncService() {
-{{ccfile_async_service_register_func}}
+  }
+{{method end}}
 }
-"""
+{{service end}}
 
-    t_ccfile_one_service_register_func: str = r"""
+{{for service begin}}
+{{service_name}}CoService::{{service_name}}CoService() {
+{{for method begin}}
   {
     aimrt::util::Function<aimrt_function_service_func_ops_t> service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
@@ -286,29 +298,27 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
         aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
         aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>(),
         std::move(service_callback));
-  }"""
-
-    t_ccfile_one_service_class: str = r"""
-{{service_name}}CoService::{{service_name}}CoService() {
-{{ccfile_service_register_func}}
+  }
+{{method end}}
 }
-"""
+{{service end}}
 
-    t_ccfile_one_service_one_register_client_func: str = r"""
+{{for service begin}}
+bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+{{for method begin}}
   if (!(rpc_handle_ref.RegisterClientFunc(
           "pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
           nullptr,
           aimrt::GetProtobufMessageTypeSupport<{{rpc_req_name}}>(),
           aimrt::GetProtobufMessageTypeSupport<{{rpc_rsp_name}}>())))
-    return false;"""
-
-    t_ccfile_one_service_register_client_func: str = r"""
-bool Register{{service_name}}ClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-{{ccfile_service_one_register_client_func}}
+    return false;
+{{method end}}
   return true;
-}"""
+}
+{{service end}}
 
-    t_ccfile_one_service_sync_proxy_func: str = r"""
+{{for service begin}}
+{{for method begin}}
 aimrt::rpc::Status {{service_name}}SyncProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
@@ -343,9 +353,12 @@ aimrt::rpc::Status {{service_name}}SyncProxy::{{rpc_func_name}}(
       });
 
   return result_promise.get_future().get();
-}"""
+}
+{{method end}}
+{{service end}}
 
-    t_ccfile_one_service_async_proxy_func: str = r"""
+{{for service begin}}
+{{for method begin}}
 void {{service_name}}AsyncProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
@@ -377,9 +390,12 @@ void {{service_name}}AsyncProxy::{{rpc_func_name}}(
       [ctx_ptr, callback{std::move(callback)}](uint32_t code) {
         callback(aimrt::rpc::Status(code));
       });
-}"""
+}
+{{method end}}
+{{service end}}
 
-    t_ccfile_one_service_future_proxy_func: str = r"""
+{{for service begin}}
+{{for method begin}}
 std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
@@ -415,9 +431,12 @@ std::future<aimrt::rpc::Status> {{service_name}}FutureProxy::{{rpc_func_name}}(
       });
 
   return status_future;
-}"""
+}
+{{method end}}
+{{service end}}
 
-    t_ccfile_one_service_proxy_func: str = r"""
+{{for service begin}}
+{{for method begin}}
 aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     aimrt::rpc::ContextRef ctx_ref,
     const {{rpc_req_name}}& req,
@@ -463,51 +482,91 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
   auto ctx_ptr = NewContextSharedPtr();
   ctx_ptr->SetSerializationType("pb");
   co_return co_await filter_mgr_.InvokeRpc(h, *ctx_ptr, static_cast<const void*>(&req), static_cast<void*>(&rsp));
-}"""
+}
+{{method end}}
+{{service end}}
 
-    t_ccfile_one_service_sync_proxy_class: str = r"""
-{{ccfile_service_sync_proxy_func}}
-"""
-
-    t_ccfile_one_service_async_proxy_class: str = r"""
-{{ccfile_service_async_proxy_func}}
-"""
-
-    t_ccfile_one_service_future_proxy_class: str = r"""
-{{ccfile_service_future_proxy_func}}
-"""
-
-    t_ccfile_one_service_proxy_class: str = r"""
-{{ccfile_service_proxy_func}}
-"""
-
-    t_ccfile: str = r"""/**
- * @file {{file_name}}.aimrt_rpc.pb.cc
- * @brief This file was generated by protoc-gen-aimrt_rpc which is a self-defined pb compiler plugin, do not edit it!!!
- */
-
-#include "{{file_name}}.aimrt_rpc.pb.h"
-
-#include "aimrt_module_cpp_interface/co/inline_scheduler.h"
-#include "aimrt_module_cpp_interface/co/on.h"
-#include "aimrt_module_cpp_interface/co/start_detached.h"
-#include "aimrt_module_cpp_interface/co/then.h"
-#include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
-
-#include <google/protobuf/stubs/stringpiece.h>
-#include <google/protobuf/util/json_util.h>
-
-{{namespace_begin}}
-{{ccfile_sync_service_class}}
-{{ccfile_async_service_class}}
-{{ccfile_service_class}}
-{{ccfile_service_register_client_func}}
-{{ccfile_service_sync_proxy_class}}
-{{ccfile_service_async_proxy_class}}
-{{ccfile_service_future_proxy_class}}
-{{ccfile_service_proxy_class}}
 {{namespace_end}}
 """
+
+    class MethodNode:
+        def __init__(self):
+            self.kv = {}
+
+    class ServiceNode:
+        def __init__(self):
+            self.kv = {}
+            self.method_vec = []
+
+    class PackageNode:
+        def __init__(self):
+            self.kv = {}
+            self.service_vec = []
+
+    @staticmethod
+    def gen_method_code(temp, method_node) -> str:
+        result = temp
+        for key, value in method_node.kv.items():
+            result = result.replace(key, value)
+        return result
+
+    @staticmethod
+    def gen_service_code(temp, service_node) -> str:
+        result = temp
+
+        for key, value in service_node.kv.items():
+            result = result.replace(key, value)
+
+        method_begin_flag = "{{for method begin}}\n"
+        method_end_flag = "{{method end}}\n"
+
+        cur_pos = 0
+        while True:
+            begin_pos = result.find(method_begin_flag, cur_pos)
+            if begin_pos == -1:
+                break
+            end_pos = result.find(method_end_flag, begin_pos + len(method_begin_flag))
+            if end_pos == -1:
+                break
+
+            cur_temp = result[begin_pos + len(method_begin_flag):end_pos]
+            cur_result = ""
+            for node in service_node.method_vec:
+                cur_result += AimRTCodeGenerator.gen_method_code(cur_temp, node)
+
+            result = result[:begin_pos] + cur_result + result[end_pos + len(method_end_flag):]
+            cur_pos = begin_pos + len(cur_result)
+
+        return result
+
+    @staticmethod
+    def gen_package_code(temp, package_node) -> str:
+        result = temp
+
+        for key, value in package_node.kv.items():
+            result = result.replace(key, value)
+
+        service_begin_flag = "{{for service begin}}\n"
+        service_end_flag = "{{service end}}\n"
+
+        cur_pos = 0
+        while True:
+            begin_pos = result.find(service_begin_flag, cur_pos)
+            if begin_pos == -1:
+                break
+            end_pos = result.find(service_end_flag, begin_pos + len(service_begin_flag))
+            if end_pos == -1:
+                break
+
+            cur_temp = result[begin_pos + len(service_begin_flag):end_pos]
+            cur_result = ""
+            for node in package_node.service_vec:
+                cur_result += AimRTCodeGenerator.gen_service_code(cur_temp, node)
+
+            result = result[:begin_pos] + cur_result + result[end_pos + len(service_end_flag):]
+            cur_pos = begin_pos + len(cur_result)
+
+        return result
 
     @staticmethod
     def gen_name_space_str(ns: str) -> str:
@@ -540,279 +599,50 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
             # Generate code for each file
             file_name: str = proto_file.name
             package_name: str = proto_file.package
-            namespace_begin: str = self.gen_namespace_begin_str(package_name)
-            namespace_end: str = self.gen_namespace_end_str(package_name)
 
-            cc_file_name: str = file_name.replace('.proto', '.aimrt_rpc.pb.cc')
-            h_file_name: str = file_name.replace('.proto', '.aimrt_rpc.pb.h')
-
-            hfile_sync_service_class: str = ""
-            hfile_async_service_class: str = ""
-            hfile_service_class: str = ""
-            hfile_service_register_client_func: str = ""
-            hfile_service_sync_proxy_class: str = ""
-            hfile_service_async_proxy_class: str = ""
-            hfile_service_future_proxy_class: str = ""
-            hfile_service_proxy_class: str = ""
-
-            ccfile_sync_service_class: str = ""
-            ccfile_async_service_class: str = ""
-            ccfile_service_class: str = ""
-            ccfile_service_register_client_func: str = ""
-            ccfile_service_sync_proxy_class: str = ""
-            ccfile_service_async_proxy_class: str = ""
-            ccfile_service_future_proxy_class: str = ""
-            ccfile_service_proxy_class: str = ""
+            package_node = AimRTCodeGenerator.PackageNode()
+            package_node.kv["{{file_name}}"] = file_name.replace('.proto', '')
+            package_node.kv["{{package_name}}"] = package_name
+            package_node.kv["{{namespace_begin}}"] = self.gen_namespace_begin_str(package_name)
+            package_node.kv["{{namespace_end}}"] = self.gen_namespace_end_str(package_name)
 
             for ii in range(0, len(proto_file.service)):
-                service: ServiceDescriptorProto = proto_file.service[ii]
-                if ii != 0:
-                    hfile_sync_service_class += "\n"
-                    hfile_async_service_class += "\n"
-                    hfile_service_class += "\n"
-                    hfile_service_register_client_func += "\n"
-                    hfile_service_sync_proxy_class += "\n"
-                    hfile_service_async_proxy_class += "\n"
-                    hfile_service_future_proxy_class += "\n"
-                    hfile_service_proxy_class += "\n"
+                service = proto_file.service[ii]
 
-                    ccfile_sync_service_class += "\n"
-                    ccfile_async_service_class += "\n"
-                    ccfile_service_class += "\n"
-                    ccfile_service_register_client_func += "\n"
-                    ccfile_service_sync_proxy_class += "\n"
-                    ccfile_service_async_proxy_class += "\n"
-                    ccfile_service_future_proxy_class += "\n"
-                    ccfile_service_proxy_class += "\n"
-
-                service_name: str = service.name
-
-                hfile_sync_service_func: str = ""
-                hfile_async_service_func: str = ""
-                hfile_service_func: str = ""
-                hfile_service_sync_proxy_func: str = ""
-                hfile_service_async_proxy_func: str = ""
-                hfile_service_future_proxy_func: str = ""
-                hfile_service_proxy_func: str = ""
-
-                ccfile_sync_service_register_func: str = ""
-                ccfile_async_service_register_func: str = ""
-                ccfile_service_register_func: str = ""
-                ccfile_service_one_register_client_func: str = ""
-                ccfile_service_sync_proxy_func: str = ""
-                ccfile_service_async_proxy_func: str = ""
-                ccfile_service_future_proxy_func: str = ""
-                ccfile_service_proxy_func: str = ""
+                service_node = AimRTCodeGenerator.ServiceNode()
+                service_node.kv["{{service_name}}"] = service.name
 
                 for jj in range(0, len(service.method)):
-                    method: MethodDescriptorProto = service.method[jj]
+                    method = service.method[jj]
 
-                    if jj != 0:
-                        hfile_sync_service_func += "\n"
-                        hfile_async_service_func += "\n"
-                        hfile_service_func += "\n"
-                        hfile_service_sync_proxy_func += "\n"
-                        hfile_service_async_proxy_func += "\n"
-                        hfile_service_future_proxy_func += "\n"
-                        hfile_service_proxy_func += "\n"
+                    method_node = AimRTCodeGenerator.MethodNode()
 
-                        ccfile_sync_service_register_func += "\n"
-                        ccfile_async_service_register_func += "\n"
-                        ccfile_service_register_func += "\n"
-                        ccfile_service_one_register_client_func += "\n"
-                        ccfile_service_sync_proxy_func += "\n"
-                        ccfile_service_async_proxy_func += "\n"
-                        ccfile_service_future_proxy_func += "\n"
-                        ccfile_service_proxy_func += "\n"
+                    method_node.kv["{{rpc_func_name}}"] = method.name
+                    method_node.kv["{{rpc_req_name}}"] = self.gen_name_space_str(method.input_type)
+                    method_node.kv["{{rpc_rsp_name}}"] = self.gen_name_space_str(method.output_type)
 
-                    rpc_func_name = method.name
-                    rpc_req_name = self.gen_name_space_str(method.input_type)
-                    rpc_rsp_name = self.gen_name_space_str(method.output_type)
+                    service_node.method_vec.append(method_node)
 
-                    hfile_sync_service_func += self.t_hfile_one_sync_service_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
+                package_node.service_vec.append(service_node)
 
-                    hfile_async_service_func += self.t_hfile_one_async_service_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    hfile_service_func += self.t_hfile_one_service_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    hfile_service_sync_proxy_func += self.t_hfile_one_service_sync_proxy_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    hfile_service_async_proxy_func += self.t_hfile_one_service_async_proxy_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    hfile_service_future_proxy_func += self.t_hfile_one_service_future_proxy_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    hfile_service_proxy_func += self.t_hfile_one_service_proxy_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    ccfile_sync_service_register_func += self.t_ccfile_one_sync_service_register_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    ccfile_async_service_register_func += self.t_ccfile_one_async_service_register_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    ccfile_service_register_func += self.t_ccfile_one_service_register_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    ccfile_service_one_register_client_func += self.t_ccfile_one_service_one_register_client_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    ccfile_service_sync_proxy_func += self.t_ccfile_one_service_sync_proxy_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    ccfile_service_async_proxy_func += self.t_ccfile_one_service_async_proxy_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    ccfile_service_future_proxy_func += self.t_ccfile_one_service_future_proxy_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                    ccfile_service_proxy_func += self.t_ccfile_one_service_proxy_func \
-                        .replace("{{rpc_req_name}}", rpc_req_name) \
-                        .replace("{{rpc_rsp_name}}", rpc_rsp_name) \
-                        .replace("{{rpc_func_name}}", rpc_func_name)
-
-                hfile_sync_service_class += self.t_hfile_one_sync_service_class \
-                    .replace("{{hfile_sync_service_func}}", hfile_sync_service_func) \
-                    .replace("{{service_name}}", service_name)
-
-                hfile_async_service_class += self.t_hfile_one_async_service_class \
-                    .replace("{{hfile_async_service_func}}", hfile_async_service_func) \
-                    .replace("{{service_name}}", service_name)
-
-                hfile_service_class += self.t_hfile_one_service_class \
-                    .replace("{{hfile_service_func}}", hfile_service_func) \
-                    .replace("{{service_name}}", service_name)
-
-                hfile_service_register_client_func += self.t_hfile_one_service_register_client_func \
-                    .replace("{{service_name}}", service_name)
-
-                hfile_service_sync_proxy_class += self.t_hfile_one_service_sync_proxy_class \
-                    .replace("{{hfile_service_sync_proxy_func}}", hfile_service_sync_proxy_func) \
-                    .replace("{{service_name}}", service_name)
-
-                hfile_service_async_proxy_class += self.t_hfile_one_service_async_proxy_class \
-                    .replace("{{hfile_service_async_proxy_func}}", hfile_service_async_proxy_func) \
-                    .replace("{{service_name}}", service_name)
-
-                hfile_service_future_proxy_class += self.t_hfile_one_service_future_proxy_class \
-                    .replace("{{hfile_service_future_proxy_func}}", hfile_service_future_proxy_func) \
-                    .replace("{{service_name}}", service_name)
-
-                hfile_service_proxy_class += self.t_hfile_one_service_proxy_class \
-                    .replace("{{hfile_service_proxy_func}}", hfile_service_proxy_func) \
-                    .replace("{{service_name}}", service_name)
-
-                ccfile_sync_service_class += self.t_ccfile_one_sync_service_class \
-                    .replace("{{ccfile_sync_service_register_func}}", ccfile_sync_service_register_func) \
-                    .replace("{{service_name}}", service_name)
-
-                ccfile_async_service_class += self.t_ccfile_one_async_service_class \
-                    .replace("{{ccfile_async_service_register_func}}", ccfile_async_service_register_func) \
-                    .replace("{{service_name}}", service_name)
-
-                ccfile_service_class += self.t_ccfile_one_service_class \
-                    .replace("{{ccfile_service_register_func}}", ccfile_service_register_func) \
-                    .replace("{{service_name}}", service_name)
-
-                ccfile_service_register_client_func += self.t_ccfile_one_service_register_client_func \
-                    .replace("{{ccfile_service_one_register_client_func}}", ccfile_service_one_register_client_func) \
-                    .replace("{{service_name}}", service_name)
-
-                ccfile_service_sync_proxy_class += self.t_ccfile_one_service_sync_proxy_class \
-                    .replace("{{ccfile_service_sync_proxy_func}}", ccfile_service_sync_proxy_func) \
-                    .replace("{{service_name}}", service_name)
-
-                ccfile_service_async_proxy_class += self.t_ccfile_one_service_async_proxy_class \
-                    .replace("{{ccfile_service_async_proxy_func}}", ccfile_service_async_proxy_func) \
-                    .replace("{{service_name}}", service_name)
-
-                ccfile_service_future_proxy_class += self.t_ccfile_one_service_future_proxy_class \
-                    .replace("{{ccfile_service_future_proxy_func}}", ccfile_service_future_proxy_func) \
-                    .replace("{{service_name}}", service_name)
-
-                ccfile_service_proxy_class += self.t_ccfile_one_service_proxy_class \
-                    .replace("{{ccfile_service_proxy_func}}", ccfile_service_proxy_func) \
-                    .replace("{{service_name}}", service_name)
-
-            # hfile
             hfile: CodeGeneratorResponse.File = CodeGeneratorResponse.File()
-            hfile.name = h_file_name
-            hfile.content = self.t_hfile \
-                .replace("{{hfile_sync_service_class}}", hfile_sync_service_class) \
-                .replace("{{hfile_async_service_class}}", hfile_async_service_class) \
-                .replace("{{hfile_service_class}}", hfile_service_class) \
-                .replace("{{hfile_service_register_client_func}}", hfile_service_register_client_func) \
-                .replace("{{hfile_service_sync_proxy_class}}", hfile_service_sync_proxy_class) \
-                .replace("{{hfile_service_async_proxy_class}}", hfile_service_async_proxy_class) \
-                .replace("{{hfile_service_future_proxy_class}}", hfile_service_future_proxy_class) \
-                .replace("{{hfile_service_proxy_class}}", hfile_service_proxy_class) \
-                .replace("{{file_name}}", file_name.replace('.proto', '')) \
-                .replace("{{namespace_begin}}", namespace_begin) \
-                .replace("{{namespace_end}}", namespace_end) \
-                .replace("{{package_name}}", package_name)
+            hfile.name = file_name.replace('.proto', '.aimrt_rpc.pb.h')
+            hfile.content = AimRTCodeGenerator.gen_package_code(self.t_hfile, package_node)
             response.file.append(hfile)
 
-            # ccfile
             ccfile: CodeGeneratorResponse.File = CodeGeneratorResponse.File()
-            ccfile.name = cc_file_name
-            ccfile.content = self.t_ccfile \
-                .replace("{{ccfile_sync_service_class}}", ccfile_sync_service_class) \
-                .replace("{{ccfile_async_service_class}}", ccfile_async_service_class) \
-                .replace("{{ccfile_service_class}}", ccfile_service_class) \
-                .replace("{{ccfile_service_register_client_func}}", ccfile_service_register_client_func) \
-                .replace("{{ccfile_service_sync_proxy_class}}", ccfile_service_sync_proxy_class) \
-                .replace("{{ccfile_service_async_proxy_class}}", ccfile_service_async_proxy_class) \
-                .replace("{{ccfile_service_future_proxy_class}}", ccfile_service_future_proxy_class) \
-                .replace("{{ccfile_service_proxy_class}}", ccfile_service_proxy_class) \
-                .replace("{{file_name}}", file_name.replace('.proto', '')) \
-                .replace("{{namespace_begin}}", namespace_begin) \
-                .replace("{{namespace_end}}", namespace_end) \
-                .replace("{{package_name}}", package_name)
+            ccfile.name = file_name.replace('.proto', '.aimrt_rpc.pb.cc')
+            ccfile.content = AimRTCodeGenerator.gen_package_code(self.t_ccfile, package_node)
             response.file.append(ccfile)
 
         return response
 
 
 if __name__ == '__main__':
-    # Load the request from stdin
     request: CodeGeneratorRequest = CodeGeneratorRequest.FromString(sys.stdin.buffer.read())
 
     aimrt_code_generator: AimRTCodeGenerator = AimRTCodeGenerator()
 
     response: CodeGeneratorResponse = aimrt_code_generator.generate(request)
 
-    # Serialize response and write to stdout
     sys.stdout.buffer.write(response.SerializeToString())
