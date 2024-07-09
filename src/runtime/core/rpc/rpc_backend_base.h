@@ -3,8 +3,8 @@
 #include <memory>
 #include <string_view>
 
-#include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "core/rpc/rpc_registry.h"
 
@@ -19,7 +19,7 @@ struct ClientInvokeWrapper {
   aimrt::rpc::ContextRef ctx_ref;
   const void* req_ptr;
   void* rsp_ptr;
-  aimrt::util::Function<aimrt_function_client_callback_ops_t> callback;
+  aimrt::rpc::ClientCallback callback;
 };
 
 class RpcBackendBase {

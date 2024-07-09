@@ -16,8 +16,7 @@ void Ros2AdapterSubscription::handle_message(
     std::shared_ptr<void>& message, const rclcpp::MessageInfo& message_info) {
   if (!run_flag.load()) return;
 
-  aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>
-      release_callback([message]() {});
+  aimrt::channel::SubscriberReleaseCallback release_callback([message]() {});
   // TODO: context
   subscribe_wrapper_.callback(nullptr, message.get(), release_callback.NativeHandle());
 }

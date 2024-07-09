@@ -11,6 +11,10 @@
 
 namespace aimrt::rpc {
 
+using ServiceCallback = aimrt::util::Function<aimrt_function_service_callback_ops_t>;
+using ClientCallback = aimrt::util::Function<aimrt_function_client_callback_ops_t>;
+using ServiceFunc = aimrt::util::Function<aimrt_function_service_func_ops_t>;
+
 class ServiceBase {
   friend class RpcHandleRef;
 
@@ -26,7 +30,7 @@ class ServiceBase {
       const void* custom_type_support_ptr,
       const aimrt_type_support_base_t* req_type_support,
       const aimrt_type_support_base_t* rsp_type_support,
-      aimrt::util::Function<aimrt_function_service_func_ops_t>&& service_func) {
+      aimrt::rpc::ServiceFunc&& service_func) {
     service_func_wrapper_map_.emplace(
         func_name,
         ServiceFuncWrapper{
@@ -41,7 +45,7 @@ class ServiceBase {
     const void* custom_type_support_ptr;
     const aimrt_type_support_base_t* req_type_support;
     const aimrt_type_support_base_t* rsp_type_support;
-    aimrt::util::Function<aimrt_function_service_func_ops_t> service_func;
+    aimrt::rpc::ServiceFunc service_func;
   };
 
   std::unordered_map<std::string_view, ServiceFuncWrapper> service_func_wrapper_map_;
@@ -135,7 +139,7 @@ class RpcHandleRef {
       ContextRef ctx_ref,
       const void* req_ptr,
       void* rsp_ptr,
-      aimrt::util::Function<aimrt_function_client_callback_ops_t>&& callback) const {
+      aimrt::rpc::ClientCallback&& callback) const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->invoke(
         base_ptr_->impl,

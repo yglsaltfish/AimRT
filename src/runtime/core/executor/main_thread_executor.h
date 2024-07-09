@@ -4,7 +4,7 @@
 #include <mutex>
 #include <queue>
 
-#include "aimrt_module_c_interface/executor/executor_manager_base.h"
+#include "aimrt_module_cpp_interface/executor/executor.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "util/log_util.h"
@@ -28,8 +28,6 @@ class MainThreadExecutor {
     Shutdown,
   };
 
-  using Task = aimrt::util::Function<aimrt_function_executor_task_ops_t>;
-
  public:
   MainThreadExecutor()
       : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()),
@@ -50,7 +48,7 @@ class MainThreadExecutor {
   }
   bool SupportTimerSchedule() const { return false; }
 
-  void Execute(Task&& task);
+  void Execute(aimrt::executor::Task&& task);
 
   State GetState() const { return state_.load(); }
 
@@ -82,7 +80,7 @@ class MainThreadExecutor {
           return static_cast<MainThreadExecutor*>(impl)->SupportTimerSchedule();
         },
         .execute = [](void* impl, aimrt_function_base_t* task) {
-          static_cast<MainThreadExecutor*>(impl)->Execute(Task(task));  //
+          static_cast<MainThreadExecutor*>(impl)->Execute(aimrt::executor::Task(task));  //
         },
         .execute_at_ns = nullptr,
         .impl = impl};
@@ -98,7 +96,7 @@ class MainThreadExecutor {
 
   std::mutex mutex_;
   std::condition_variable cond_;
-  std::queue<Task> queue_;
+  std::queue<aimrt::executor::Task> queue_;
 
   const aimrt_executor_base_t base_;
 };

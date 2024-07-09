@@ -40,12 +40,12 @@ class TBBThreadExecutor : public ExecutorBase {
   bool IsInCurrentExecutor() const override;
   bool SupportTimerSchedule() const override { return false; }
 
-  void Execute(Task&& task) override;
+  void Execute(aimrt::executor::Task&& task) override;
 
   std::chrono::system_clock::time_point Now() const override {
     return std::chrono::system_clock::now();
   }
-  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) override;
 
   State GetState() const { return state_.load(); }
 
@@ -58,7 +58,7 @@ class TBBThreadExecutor : public ExecutorBase {
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  tbb::concurrent_bounded_queue<Task> qu_;
+  tbb::concurrent_bounded_queue<aimrt::executor::Task> qu_;
   std::atomic_uint32_t work_thread_num = 0;
 
   std::vector<std::thread::id> thread_id_vec_;

@@ -41,12 +41,12 @@ class AsioStrandExecutor : public ExecutorBase {
   bool IsInCurrentExecutor() const override { return false; }
   bool SupportTimerSchedule() const override { return true; }
 
-  void Execute(Task&& task) override;
+  void Execute(aimrt::executor::Task&& task) override;
 
   std::chrono::system_clock::time_point Now() const override {
     return std::chrono::system_clock::now();
   }
-  void ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) override;
 
   void RegisterGetAsioHandle(GetAsioHandle&& handle);
 

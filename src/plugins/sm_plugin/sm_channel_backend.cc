@@ -303,16 +303,14 @@ bool SmChannelBackend::Subscribe(const runtime::core::channel::SubscribeWrapper&
 
           if (subscriber_info->executor.ThreadSafe()) {
             // 直接执行
-            aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
-                [msg_ptr, ctx_ptr]() {});
+            aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
             wrapper.callback(ctx_ptr->NativeHandle(),
                              msg_ptr.get(),
                              release_callback.NativeHandle());
           } else {
             // 放入线程池执行
             subscriber_info->executor.Execute([&wrapper, msg_ptr, ctx_ptr]() {
-              aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
-                  [msg_ptr, ctx_ptr]() {});
+              aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
               wrapper.callback(ctx_ptr->NativeHandle(),
                                msg_ptr.get(),
                                release_callback.NativeHandle());

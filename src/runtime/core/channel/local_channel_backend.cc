@@ -221,13 +221,11 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       if (subscribe_executor_ref_) {
         subscribe_executor_ref_.Execute(
             [subscribe_wrapper_ptr, msg_ptr, ctx_ptr]() {
-              aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
-                  [msg_ptr, ctx_ptr]() {});
+              aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
               subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
             });
       } else {
-        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
-            [msg_ptr, ctx_ptr]() {});
+        aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
         subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
       }
     }

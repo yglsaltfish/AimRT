@@ -76,7 +76,7 @@ void TBBThreadExecutor::Initialize(std::string_view name,
                    Name(), e.what());
       }
 
-      Task task;
+      aimrt::executor::Task task;
       while (true) {
         try {
           while (qu_.try_pop(task)) task();
@@ -133,7 +133,7 @@ bool TBBThreadExecutor::IsInCurrentExecutor() const {
                     std::this_thread::get_id()) != thread_id_vec_.end());
 }
 
-void TBBThreadExecutor::Execute(Task&& task) {
+void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) {
   assert(state_.load() == State::Start);
   try {
     qu_.emplace(std::move(task));
@@ -143,7 +143,7 @@ void TBBThreadExecutor::Execute(Task&& task) {
   }
 }
 
-void TBBThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
+void TBBThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
   AIMRT_ERROR_THROW("Tbb thread executor '{}' does not support timer schedule.", Name());
 }
 

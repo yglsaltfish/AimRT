@@ -146,14 +146,10 @@ void ConsoleLoggerBackend::Log(
     return;
 
   if (format_log_str_ptr->empty()) {
-    uint64_t time_stamp_us =
-        std::chrono::duration_cast<std::chrono::microseconds>(
-            log_data_wrapper.t.time_since_epoch())
-            .count();
     *format_log_str_ptr = ::aimrt_fmt::format(
         "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]{}",
         aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
-        (time_stamp_us % 1000000),
+        (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
         LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
         log_data_wrapper.thread_id, log_data_wrapper.module_name,
         log_data_wrapper.file_name, log_data_wrapper.line,

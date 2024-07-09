@@ -47,12 +47,10 @@ class SimpleLogger {
 #endif
 
     auto t = std::chrono::system_clock::now();
-    uint64_t time_stamp_us =
-        std::chrono::duration_cast<std::chrono::microseconds>(t.time_since_epoch()).count();
     std::string log_str = ::aimrt_fmt::format(
         "[{}.{:0>6}][{}][{}][{}:{}:{} @{}]{}",
         GetTimeStr(std::chrono::system_clock::to_time_t(t)),
-        (time_stamp_us % 1000000),
+        (GetTimestampUs(t) % 1000000),
         lvl_name_array[lvl],
         tid,
         file_name,
@@ -103,12 +101,10 @@ class SimpleAsyncLogger {
 #endif
 
     auto t = std::chrono::system_clock::now();
-    uint64_t time_stamp_us =
-        std::chrono::duration_cast<std::chrono::microseconds>(t.time_since_epoch()).count();
     std::string log_str = ::aimrt_fmt::format(
         "[{}.{:0>6}][{}][{}][{}:{}:{} @{}]{}",
         GetTimeStr(std::chrono::system_clock::to_time_t(t)),
-        (time_stamp_us % 1000000),
+        (GetTimestampUs(t) % 1000000),
         lvl_name_array[lvl],
         tid,
         file_name,

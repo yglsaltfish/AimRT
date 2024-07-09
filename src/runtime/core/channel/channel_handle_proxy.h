@@ -98,7 +98,7 @@ class SubscriberProxy {
 
  private:
   bool Subscribe(const aimrt_type_support_base_t* msg_type_support,
-                 aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) {
+                 aimrt::channel::SubscriberCallback&& callback) {
     return channel_backend_manager_.Subscribe(SubscribeWrapper{
         .msg_type = aimrt::util::TypeSupportRef(msg_type_support).TypeName(),
         .pkg_path = pkg_path_,
@@ -112,7 +112,7 @@ class SubscriberProxy {
     return aimrt_channel_subscriber_base_t{
         .subscribe = [](void* impl, const aimrt_type_support_base_t* msg_type_support, aimrt_function_base_t* callback) -> bool {
           return static_cast<SubscriberProxy*>(impl)->Subscribe(
-              msg_type_support, aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>(callback));
+              msg_type_support, aimrt::channel::SubscriberCallback(callback));
         },
         .impl = impl};
   }

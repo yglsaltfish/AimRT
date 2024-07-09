@@ -12,10 +12,10 @@
 
 namespace aimrt::executor {
 
+using Task = aimrt::util::Function<aimrt_function_executor_task_ops_t>;
+
 class ExecutorRef {
  public:
-  using Task = aimrt::util::Function<aimrt_function_executor_task_ops_t>;
-
   ExecutorRef() = default;
   explicit ExecutorRef(const aimrt_executor_base_t* base_ptr)
       : base_ptr_(base_ptr) {}

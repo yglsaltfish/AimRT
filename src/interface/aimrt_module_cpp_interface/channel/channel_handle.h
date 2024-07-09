@@ -10,6 +10,9 @@
 
 namespace aimrt::channel {
 
+using SubscriberReleaseCallback = aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>;
+using SubscriberCallback = aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>;
+
 class PublisherRef {
  public:
   PublisherRef() = default;
@@ -71,7 +74,7 @@ class SubscriberRef {
    */
   bool Subscribe(
       const aimrt_type_support_base_t* msg_type_support,
-      aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>&& callback) const {
+      SubscriberCallback&& callback) const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->subscribe(base_ptr_->impl, msg_type_support, callback.NativeHandle());
   }

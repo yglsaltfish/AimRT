@@ -212,8 +212,7 @@ bool MqttChannelBackend::Subscribe(
       for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
         auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
         std::shared_ptr<void> msg_ptr = finditr->second;
-        aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t> release_callback(
-            [msg_ptr, ctx_ptr]() {});
+        aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
         subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
       }
     } catch (const std::exception& e) {

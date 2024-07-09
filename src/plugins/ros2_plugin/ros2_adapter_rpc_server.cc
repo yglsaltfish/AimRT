@@ -85,7 +85,7 @@ void Ros2AdapterServer::handle_request(
   // service rsp 创建
   std::shared_ptr<void> service_rsp_ptr = aimrt::util::TypeSupportRef(service_func_wrapper_.rsp_type_support).CreateSharedPtr();
 
-  aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
+  aimrt::rpc::ServiceCallback service_callback(
       [this, service_rsp_ptr, ctx_ptr, request, request_header](uint32_t code) {
         AIMRT_TRACE("Handle ros2 req completed, func name '{}', seq num '{}'",
                     service_func_wrapper_.func_name, request_header->sequence_number);
@@ -208,7 +208,7 @@ void Ros2AdapterWrapperServer::handle_request(
   std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
 
   // service rpc调用
-  aimrt::util::Function<aimrt_function_service_callback_ops_t> service_callback(
+  aimrt::rpc::ServiceCallback service_callback(
       [this,
        ctx_ptr,
        service_req_ptr,

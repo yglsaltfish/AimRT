@@ -1,6 +1,7 @@
 #include "time_manipulator_plugin/time_manipulator_executor.h"
 #include "core/util/thread_tools.h"
 #include "time_manipulator_plugin/global.h"
+#include "util/time_util.h"
 
 namespace YAML {
 template <>
@@ -137,24 +138,18 @@ bool TimeManipulatorExecutor::IsInCurrentExecutor() const {
   return bind_executor_ref_.IsInCurrentExecutor();
 }
 
-void TimeManipulatorExecutor::Execute(Task&& task) {
+void TimeManipulatorExecutor::Execute(aimrt::executor::Task&& task) {
   bind_executor_ref_.Execute(std::move(task));
 }
 
 std::chrono::system_clock::time_point TimeManipulatorExecutor::Now() const {
   std::shared_lock<std::shared_mutex> lck(tick_mutex_);
 
-  return std::chrono::system_clock::time_point(
-      std::chrono::nanoseconds(current_tick_count_ * dt_count_ + start_time_point_));
+  return aimrt::common::util::GetTimePointFromTimestampNs(current_tick_count_ * dt_count_ + start_time_point_);
 }
 
-void TimeManipulatorExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, Task&& task) {
-  uint64_t virtual_tp =
-      static_cast<uint64_t>(
-          std::chrono::duration_cast<std::chrono::nanoseconds>(
-              tp.time_since_epoch())
-              .count()) -
-      start_time_point_;
+void TimeManipulatorExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
+  uint64_t virtual_tp = aimrt::common::util::GetTimestampNs(tp) - start_time_point_;
 
   std::unique_lock<std::shared_mutex> lck(tick_mutex_);
 
@@ -249,10 +244,7 @@ void TimeManipulatorExecutor::TimerLoop() {
   auto last_loop_time_point = std::chrono::system_clock::now();
 
   // 记录初始时间
-  start_time_point_ = static_cast<uint64_t>(
-      std::chrono::duration_cast<std::chrono::nanoseconds>(
-          last_loop_time_point.time_since_epoch())
-          .count());
+  start_time_point_ = aimrt::common::util::GetTimestampNs(last_loop_time_point);
 
   start_flag_.store(true);
   start_flag_.notify_all();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "aimrt_module_c_interface/parameter/parameter_handle_base.h"
+#include "aimrt_module_cpp_interface/parameter/parameter_handle.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "core/parameter/parameter_handle.h"
@@ -29,7 +29,7 @@ class ParameterHandleProxy {
                 .release_callback = nullptr};
           }
 
-          auto* f = new aimrt::util::Function<aimrt_function_parameter_val_release_callback_ops_t>();
+          auto* f = new aimrt::parameter::ParameterValReleaseCallback();
           (*f) = [ptr, f]() { delete f; };
 
           return aimrt_parameter_val_view_holder_t{
