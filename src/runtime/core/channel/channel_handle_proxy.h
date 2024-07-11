@@ -65,6 +65,9 @@ class PublisherProxy {
           static_cast<PublisherProxy*>(impl)->Publish(
               aimrt::util::ToStdStringView(msg_type), aimrt::channel::ContextRef(ctx_ptr), msg);  //
         },
+        .get_topic = [](void* impl) -> aimrt_string_view_t {
+          return aimrt::util::ToAimRTStringView(static_cast<PublisherProxy*>(impl)->topic_name_);
+        },
         .impl = impl};
   }
 
@@ -113,6 +116,9 @@ class SubscriberProxy {
         .subscribe = [](void* impl, const aimrt_type_support_base_t* msg_type_support, aimrt_function_base_t* callback) -> bool {
           return static_cast<SubscriberProxy*>(impl)->Subscribe(
               msg_type_support, aimrt::channel::SubscriberCallback(callback));
+        },
+        .get_topic = [](void* impl) -> aimrt_string_view_t {
+          return aimrt::util::ToAimRTStringView(static_cast<SubscriberProxy*>(impl)->topic_name_);
         },
         .impl = impl};
   }

@@ -137,6 +137,7 @@ class AimRTCore {
   aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
   void DumpCfgFile() const;
+  void CheckCfgFile() const;
 
  private:
   Options options_;

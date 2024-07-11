@@ -40,7 +40,10 @@ class ConfiguratorManager {
   void Shutdown();
 
   YAML::Node GetOriRootOptionsNode() const;
-  YAML::Node DumpRootOptionsNode() const;
+  YAML::Node GetRootOptionsNode() const;
+  YAML::Node GetUserRootOptionsNode() const;
+
+  std::string GetConfigureFilePath() const { return cfg_file_path_.string(); }
 
   const ConfiguratorProxy& GetConfiguratorProxy(const util::ModuleDetailInfo& module_info);
 
@@ -49,8 +52,6 @@ class ConfiguratorManager {
   State GetState() const { return state_.load(); }
 
   std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
-
-  void CheckInitizlizationReport() const;
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }

@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "core/util/yaml_tools.h"
+
 namespace aimrt::runtime::core {
 
 AimRTCore::AimRTCore()
@@ -98,7 +100,7 @@ void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PostInitModules);
 
   // Check cfg file
-  configurator_manager_.CheckInitizlizationReport();
+  CheckCfgFile();
 
   // Dump cfg file
   DumpCfgFile();
@@ -253,6 +255,16 @@ void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CorePr
   proxy.SetParameterHandle(parameter_manager_.GetParameterHandleProxy(info).NativeHandle());
 }
 
+void AimRTCore::CheckCfgFile() const {
+  std::string msg = util::CheckYamlNodes(
+      configurator_manager_.GetRootOptionsNode()["aimrt"],
+      configurator_manager_.GetUserRootOptionsNode()["aimrt"],
+      "aimrt");
+
+  if (!msg.empty())
+    AIMRT_WARN("ConfigurationName Warning in \"{}\":\n{}", configurator_manager_.GetConfigureFilePath(), msg);
+}
+
 void AimRTCore::DumpCfgFile() const {
   if (!options_.dump_cfg_file) return;
 
@@ -262,7 +274,7 @@ void AimRTCore::DumpCfgFile() const {
   std::ofstream ofs;
   ofs.open(path, std::ios::trunc);
 
-  YAML::Node dump_node = configurator_manager_.DumpRootOptionsNode();
+  YAML::Node dump_node = configurator_manager_.GetRootOptionsNode();
   ofs << dump_node;
   ofs.flush();
   ofs.clear();

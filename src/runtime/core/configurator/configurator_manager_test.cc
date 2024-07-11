@@ -62,7 +62,7 @@ TEST_F(ConfiguratorManagerTest, initialize) {
   EXPECT_EQ(configurator_ori_options_node.IsNull(), false);
   EXPECT_EQ(configurator_ori_options_node.IsDefined(), true);
 
-  YAML::Node configurator_root_options_node = configurator_manager_.DumpRootOptionsNode();
+  YAML::Node configurator_root_options_node = configurator_manager_.GetRootOptionsNode();
   EXPECT_EQ(configurator_root_options_node.IsNull(), false);
   EXPECT_EQ(configurator_root_options_node.IsDefined(), true);
 }

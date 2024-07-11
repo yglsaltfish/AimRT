@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <fstream>
 
+#include "core/util/yaml_tools.h"
 #include "util/string_util.h"
 
 namespace YAML {
@@ -27,22 +28,6 @@ struct convert<aimrt::runtime::core::configurator::ConfiguratorManager::Options>
     return true;
   }
 };
-// Node节点的深拷贝操作
-Node DeepCopyYamlNode(const Node& node) {
-  Node copy;
-  if (node.IsMap()) {
-    for (auto it = node.begin(); it != node.end(); ++it) {
-      copy[it->first] = DeepCopyYamlNode(it->second);
-    }
-  } else if (node.IsSequence()) {
-    for (size_t i = 0; i < node.size(); ++i) {
-      copy.push_back(DeepCopyYamlNode(node[i]));
-    }
-  } else if (node.IsScalar()) {
-    copy = node.Scalar();
-  }
-  return copy;
-}
 }  // namespace YAML
 
 namespace aimrt::runtime::core::configurator {
@@ -60,9 +45,9 @@ void ConfiguratorManager::Initialize(
   root_options_node_ptr_ = new YAML::Node();
   user_root_options_node_ptr_ = new YAML::Node();
 
-  auto& ori_root_options_node_ = *ori_root_options_node_ptr_;
-  auto& root_options_node_ = *root_options_node_ptr_;
-  auto& user_root_options_node_ = *user_root_options_node_ptr_;
+  auto& ori_root_options_node = *ori_root_options_node_ptr_;
+  auto& root_options_node = *root_options_node_ptr_;
+  auto& user_root_options_node = *user_root_options_node_ptr_;
 
   if (!cfg_file_path_.empty()) {
     std::ifstream file_stream(cfg_file_path_);
@@ -70,15 +55,15 @@ void ConfiguratorManager::Initialize(
 
     std::stringstream file_data;
     file_data << file_stream.rdbuf();
-    ori_root_options_node_ = YAML::Load(aimrt::common::util::ReplaceEnvVars(file_data.str()));
-    user_root_options_node_ = YAML::DeepCopyYamlNode(ori_root_options_node_);
+    ori_root_options_node = YAML::Load(aimrt::common::util::ReplaceEnvVars(file_data.str()));
+    user_root_options_node = util::DeepCopyYamlNode(ori_root_options_node);
   }
 
-  if (!ori_root_options_node_["aimrt"]) {
-    ori_root_options_node_["aimrt"] = YAML::Node();
+  if (!ori_root_options_node["aimrt"]) {
+    ori_root_options_node["aimrt"] = YAML::Node();
   }
 
-  root_options_node_["aimrt"] = YAML::Node();
+  root_options_node["aimrt"] = YAML::Node();
 
   YAML::Node configurator_options_node = GetAimRTOptionsNode("configurator");
   if (configurator_options_node && !configurator_options_node.IsNull())
@@ -112,19 +97,15 @@ void ConfiguratorManager::Shutdown() {
 }
 
 YAML::Node ConfiguratorManager::GetOriRootOptionsNode() const {
-  AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
-
   return *ori_root_options_node_ptr_;
 }
 
-YAML::Node ConfiguratorManager::DumpRootOptionsNode() const {
-  AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
-
+YAML::Node ConfiguratorManager::GetRootOptionsNode() const {
   return *root_options_node_ptr_;
+}
+
+YAML::Node ConfiguratorManager::GetUserRootOptionsNode() const {
+  return *user_root_options_node_ptr_;
 }
 
 const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
@@ -146,21 +127,21 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
     return *(emplace_ret.first->second);
   }
 
-  auto& ori_root_options_node_ = *ori_root_options_node_ptr_;
-  auto& root_options_node_ = *root_options_node_ptr_;
+  auto& ori_root_options_node = *ori_root_options_node_ptr_;
+  auto& root_options_node = *root_options_node_ptr_;
 
   // 如果根配置文件中有这个模块节点，则将内容生成到临时配置文件中
-  if (ori_root_options_node_[module_info.name] &&
-      !ori_root_options_node_[module_info.name].IsNull()) {
-    root_options_node_[module_info.name] =
-        ori_root_options_node_[module_info.name];
+  if (ori_root_options_node[module_info.name] &&
+      !ori_root_options_node[module_info.name].IsNull()) {
+    root_options_node[module_info.name] =
+        ori_root_options_node[module_info.name];
 
     std::filesystem::path temp_cfg_file_path =
         options_.temp_cfg_path /
         ("temp_cfg_file_for_" + module_info.name + ".yaml");
     std::ofstream ofs;
     ofs.open(temp_cfg_file_path, std::ios::trunc);
-    ofs << root_options_node_[module_info.name];
+    ofs << root_options_node[module_info.name];
     ofs.flush();
     ofs.clear();
     ofs.close();
@@ -179,10 +160,10 @@ YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
 
-  auto& ori_root_options_node_ = *ori_root_options_node_ptr_;
-  auto& root_options_node_ = *root_options_node_ptr_;
+  auto& ori_root_options_node = *ori_root_options_node_ptr_;
+  auto& root_options_node = *root_options_node_ptr_;
 
-  return root_options_node_["aimrt"][key] = ori_root_options_node_["aimrt"][key];
+  return root_options_node["aimrt"][key] = ori_root_options_node["aimrt"][key];
 }
 
 std::list<std::pair<std::string, std::string>> ConfiguratorManager::GenInitializationReport() const {
@@ -191,109 +172,6 @@ std::list<std::pair<std::string, std::string>> ConfiguratorManager::GenInitializ
       "Function can only be called when state is 'Init'.");
 
   return {{"AimRT Core Option", YAML::Dump((*root_options_node_ptr_)["aimrt"])}};
-}
-
-// 计算两个字符串的距离
-int LevenshteinDistance(const std::string& s1, const std::string& s2) {
-  int len1 = s1.size();
-  int len2 = s2.size();
-  std::vector<std::vector<int>> dp(len1 + 1, std::vector<int>(len2 + 1));
-
-  for (int i = 0; i <= len1; ++i) dp[i][0] = i;
-  for (int j = 0; j <= len2; ++j) dp[0][j] = j;
-
-  for (int i = 1; i <= len1; ++i) {
-    for (int j = 1; j <= len2; ++j) {
-      if (s1[i - 1] == s2[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1];
-      } else {
-        dp[i][j] = std::min({dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]}) + 1;
-      }
-    }
-  }
-  return dp[len1][len2];
-}
-
-// 找到最接近的匹配节点
-std::string FindClosestMatch(const YAML::Node& node, const std::string& target) {
-  std::string closest_match;
-  int min_distance = INT_MAX;
-
-  for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
-    const std::string& key = it->first.as<std::string>();
-    int distance = LevenshteinDistance(key, target);
-    if (distance < min_distance) {
-      min_distance = distance;
-      closest_match = key;
-    }
-  }
-  return closest_match;
-}
-
-std::string CompareYamlNodes(YAML::Node standard_node, YAML::Node checked_node, const std::string& path, int level = 0) {
-  std::stringstream msg;
-
-  if (!checked_node) {
-    return msg.str();
-  }
-
-  if (!standard_node) {
-    msg << "- Your cfg file has no usibility option: " << path << std::endl;
-    return msg.str();
-  }
-  // 确保YAML文件索引最多嵌套索引到第四层且节点类型为序列，因为前四层的配置条目名称是唯一确定的
-  if (level >= 4 && checked_node.Type() == YAML::NodeType::Sequence) {
-    return msg.str();
-  }
-
-  switch (checked_node.Type()) {
-    case YAML::NodeType::Sequence:
-      if (!standard_node.IsSequence()) {
-        msg << "- Your cfg file has no usibility option: " << path << std::endl;
-      } else {
-        for (size_t i = 0; i < checked_node.size(); ++i) {
-          if (i >= standard_node.size()) {
-            msg << "- Your cfg file has no usibility option: " << path << "[" << checked_node[i] << "]" << std::endl;
-          } else {
-            msg << CompareYamlNodes(standard_node[i], checked_node[i], path + "[" + std::to_string(i) + "]", level + 1);
-          }
-        }
-      }
-      break;
-    case YAML::NodeType::Map:
-      if (!standard_node.IsMap()) {
-        msg << "ConfigurationName Warning:" << path << std::endl;
-      } else {
-        for (YAML::const_iterator it = checked_node.begin(); it != checked_node.end(); ++it) {
-          const std::string& key = it->first.as<std::string>();
-          if (!standard_node[key]) {
-            std::string closest_match = FindClosestMatch(standard_node, key);
-            msg << "- Your cfg file has no usibility option: " << path << "[" << key << "]! ";
-            msg << "Did you mean: " << path << "[" << closest_match << "]?" << std::endl;
-          } else {
-            msg << CompareYamlNodes(standard_node[key], checked_node[key], path + "[" + key + "]", level + 1);
-          }
-        }
-      }
-      break;
-    default:
-      break;
-  }
-
-  return msg.str();
-}
-
-void ConfiguratorManager::CheckInitizlizationReport() const {
-  AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
-
-  std::string msg = CompareYamlNodes((*root_options_node_ptr_)["aimrt"], (*user_root_options_node_ptr_)["aimrt"], "aimrt");
-
-  if (!msg.empty())
-    AIMRT_WARN("ConfigurationName Warning in \"{}\":\n{}", cfg_file_path_.string(), msg);
-
-  return;
 }
 
 }  // namespace aimrt::runtime::core::configurator
