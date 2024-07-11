@@ -24,7 +24,8 @@ class ModuleLoader {
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   void LoadPkg(std::string_view pkg_path,
-               const std::vector<std::string>& disable_modules);
+               const std::vector<std::string>& disable_modules,
+               const std::vector<std::string>& enable_modules);
 
   void UnLoadPkg();
 
@@ -57,6 +58,13 @@ class ModuleLoader {
       aimrt::common::util::StringHash,
       std::equal_to<>>
       module_ptr_map_;
+
+  // 创建一个枚举类，用于标识pkgs模块使用情况(UseNone:全部使用, UseEnable:使用启用的模块, UseDisable:使用禁用的模块,默认使用UseNone)
+  enum class Enable_or_Disable : uint32_t {
+    UseNone,
+    UseEnable,
+    UseDisable,
+  } enable_or_disable_for_pkg_ = Enable_or_Disable::UseNone;
 };
 
 }  // namespace aimrt::runtime::core::module

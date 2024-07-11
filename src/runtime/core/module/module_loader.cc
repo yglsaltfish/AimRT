@@ -14,7 +14,8 @@ static constexpr const char* kDynlibCreateModuleFuncName = "AimRTDynlibCreateMod
 static constexpr const char* kDynlibDestroyModuleFuncName = "AimRTDynlibDestroyModule";
 
 void ModuleLoader::LoadPkg(std::string_view pkg_path,
-                           const std::vector<std::string>& disable_modules) {
+                           const std::vector<std::string>& disable_modules,
+                           const std::vector<std::string>& enable_modules) {
   pkg_path_ = pkg_path;
 
   AIMRT_CHECK_ERROR_THROW(dynamic_lib_.Load(pkg_path_),
@@ -66,11 +67,33 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
 
   // 加载模块
   loaded_module_name_vec_.reserve(module_num);
+
+  // 加载模块之前对使能和禁止模块是否冲突进行检查（只报警一次）
+  if (!disable_modules.empty() && !enable_modules.empty()) {
+    AIMRT_WARN("Enabled modules and disabled modules are conficted! Only enabled modules are loaded, disabled modules are ignored!\n");
+    enable_or_disable_for_pkg_ = Enable_or_Disable::UseEnable;
+  } else if (!disable_modules.empty() && enable_modules.empty()) {
+    enable_or_disable_for_pkg_ = Enable_or_Disable::UseDisable;
+  } else if (disable_modules.empty() && !enable_modules.empty()) {
+    enable_or_disable_for_pkg_ = Enable_or_Disable::UseEnable;
+  } else {
+    enable_or_disable_for_pkg_ = Enable_or_Disable::UseNone;
+  }
+
   for (size_t ii = 0; ii < module_num; ++ii) {
     const auto& module_name = module_name_vec_[ii];
-    auto finditr = std::find(disable_modules.begin(), disable_modules.end(), module_name);
+    auto finditr_disable = std::find(disable_modules.begin(), disable_modules.end(), module_name);
+    auto finditr_enable = std::find(enable_modules.begin(), enable_modules.end(), module_name);
 
-    if (finditr != disable_modules.end()) continue;
+    // 若enable_or_disable_for_pkg_ 选用禁用模块，则遇到在禁用列表中的模块就跳过
+    if (enable_or_disable_for_pkg_ == Enable_or_Disable::UseDisable && finditr_disable != disable_modules.end()) {
+      continue;
+    }
+
+    // 若enable_or_disable_for_pkg_ 选用使能模块，则遇到不在使能列表中的模块就跳过
+    if (enable_or_disable_for_pkg_ == Enable_or_Disable::UseEnable && finditr_enable == enable_modules.end()) {
+      continue;
+    }
 
     const aimrt_module_base_t* module_ptr =
         ((DynlibCreateModuleFunc)create_func)(aimrt::util::ToAimRTStringView(module_name));
