@@ -97,6 +97,9 @@ void AimRTCore::Initialize(const Options& options) {
   module_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("module"));
   EnterState(State::PostInitModules);
 
+  // Check cfg file
+  configurator_manager_.CheckInitizlizationReport();
+
   // Dump cfg file
   DumpCfgFile();
 

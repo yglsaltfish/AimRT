@@ -50,6 +50,8 @@ class ConfiguratorManager {
 
   std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
 
+  void CheckInitizlizationReport() const;
+
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
@@ -61,6 +63,7 @@ class ConfiguratorManager {
 
   YAML::Node* ori_root_options_node_ptr_;
   YAML::Node* root_options_node_ptr_;
+  YAML::Node* user_root_options_node_ptr_;
 
   std::unordered_map<std::string, std::unique_ptr<ConfiguratorProxy>> cfg_proxy_map_;
   ConfiguratorProxy default_cfg_proxy;
