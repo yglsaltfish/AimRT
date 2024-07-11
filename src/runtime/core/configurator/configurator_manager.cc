@@ -241,8 +241,8 @@ std::string CompareYamlNodes(YAML::Node standard_node, YAML::Node checked_node, 
     msg << "- Your cfg file has no usibility option: " << path << std::endl;
     return msg.str();
   }
-  // 确保YAML文件索引最多嵌套索引到第四层，因为前四层的配置条目名称是唯一确定的
-  if (level >= 4) {
+  // 确保YAML文件索引最多嵌套索引到第四层且节点类型为序列，因为前四层的配置条目名称是唯一确定的
+  if (level >= 4 && checked_node.Type() == YAML::NodeType::Sequence) {
     return msg.str();
   }
 
