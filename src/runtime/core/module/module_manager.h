@@ -27,6 +27,7 @@ class ModuleManager {
     struct PkgLoaderOptions {
       std::string path;
       std::vector<std::string> disable_modules;
+      std::vector<std::string> enable_modules;
     };
     std::vector<PkgLoaderOptions> pkgs_options;
 

@@ -18,6 +18,7 @@ struct convert<aimrt::runtime::core::module::ModuleManager::Options> {
       Node pkg_options_node;
       pkg_options_node["path"] = pkg_options.path;
       pkg_options_node["disable_modules"] = pkg_options.disable_modules;
+      pkg_options_node["enable_modules"] = pkg_options.enable_modules;
       node["pkgs"].push_back(pkg_options_node);
     }
 
@@ -47,9 +48,13 @@ struct convert<aimrt::runtime::core::module::ModuleManager::Options> {
         Options::PkgLoaderOptions pkg_options{
             .path = pkg_options_node["path"].as<std::string>()};
 
-        if (pkg_options_node["disable_module"])
+        if (pkg_options_node["disable_modules"])
           pkg_options.disable_modules =
-              pkg_options_node["disable_module"].as<std::vector<std::string>>();
+              pkg_options_node["disable_modules"].as<std::vector<std::string>>();
+
+        if (pkg_options_node["enable_modules"])
+          pkg_options.enable_modules =
+              pkg_options_node["enable_modules"].as<std::vector<std::string>>();
 
         rhs.pkgs_options.emplace_back(std::move(pkg_options));
       }
@@ -100,7 +105,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
   for (auto& pkg_options : options_.pkgs_options) {
     auto module_loader_ptr = std::make_unique<ModuleLoader>();
     module_loader_ptr->SetLogger(logger_ptr_);
-    module_loader_ptr->LoadPkg(pkg_options.path, pkg_options.disable_modules);
+    module_loader_ptr->LoadPkg(pkg_options.path, pkg_options.disable_modules, pkg_options.enable_modules);
 
     AIMRT_TRACE("Load pkg succeeded.\ncfg path: {}\nfull path: {}\nload modules: [{}]",
                 pkg_options.path,

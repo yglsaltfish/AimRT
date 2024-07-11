@@ -14,7 +14,8 @@ static constexpr const char* kDynlibCreateModuleFuncName = "AimRTDynlibCreateMod
 static constexpr const char* kDynlibDestroyModuleFuncName = "AimRTDynlibDestroyModule";
 
 void ModuleLoader::LoadPkg(std::string_view pkg_path,
-                           const std::vector<std::string>& disable_modules) {
+                           const std::vector<std::string>& disable_modules,
+                           const std::vector<std::string>& enable_modules) {
   pkg_path_ = pkg_path;
 
   AIMRT_CHECK_ERROR_THROW(dynamic_lib_.Load(pkg_path_),
@@ -68,9 +69,22 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
   loaded_module_name_vec_.reserve(module_num);
   for (size_t ii = 0; ii < module_num; ++ii) {
     const auto& module_name = module_name_vec_[ii];
-    auto finditr = std::find(disable_modules.begin(), disable_modules.end(), module_name);
+    auto finditr_disable = std::find(disable_modules.begin(), disable_modules.end(), module_name);
 
-    if (finditr != disable_modules.end()) continue;
+    auto finditr_enable = std::find(enable_modules.begin(), enable_modules.end(), module_name);
+
+    if (!disable_modules.empty() && !enable_modules.empty() && finditr_enable == enable_modules.end()) {
+      AIMRT_WARN("Enabled modules and disabled modules are conficted! Only enabled modules are loaded, disabled modules are ignored.\n");
+      continue;
+    }
+
+    if (!disable_modules.empty() && enable_modules.empty() && finditr_disable != disable_modules.end()) {
+      continue;
+    }
+
+    if (disable_modules.empty() && !enable_modules.empty() && finditr_enable == enable_modules.end()) {
+      continue;
+    }
 
     const aimrt_module_base_t* module_ptr =
         ((DynlibCreateModuleFunc)create_func)(aimrt::util::ToAimRTStringView(module_name));

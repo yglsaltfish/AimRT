@@ -24,7 +24,8 @@ class ModuleLoader {
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
   void LoadPkg(std::string_view pkg_path,
-               const std::vector<std::string>& disable_modules);
+               const std::vector<std::string>& disable_modules,
+               const std::vector<std::string>& enable_modules);
 
   void UnLoadPkg();
 
