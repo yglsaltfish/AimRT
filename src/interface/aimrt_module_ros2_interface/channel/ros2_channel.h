@@ -51,11 +51,10 @@ inline bool Subscribe(
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
         SubscriberReleaseCallback release_callback(release_callback_base);
-        std::shared_ptr<const MsgType> msg_shared_ptr =
-            std::shared_ptr<const MsgType>(
-                static_cast<const MsgType*>(msg_ptr),
-                [release_callback{std::move(release_callback)}](const MsgType*) { release_callback(); });
-        callback(ContextRef(ctx_ptr), msg_shared_ptr);
+        callback(ContextRef(ctx_ptr),
+                 std::shared_ptr<const MsgType>(
+                     static_cast<const MsgType*>(msg_ptr),
+                     [release_callback{std::move(release_callback)}](const MsgType*) { release_callback(); }));
       });
 }
 
@@ -70,11 +69,9 @@ inline bool Subscribe(
           const void* msg_ptr,
           aimrt_function_base_t* release_callback_base) {
         SubscriberReleaseCallback release_callback(release_callback_base);
-        std::shared_ptr<const MsgType> msg_shared_ptr =
-            std::shared_ptr<const MsgType>(
-                static_cast<const MsgType*>(msg_ptr),
-                [release_callback{std::move(release_callback)}](const MsgType*) { release_callback(); });
-        callback(msg_shared_ptr);
+        callback(std::shared_ptr<const MsgType>(
+            static_cast<const MsgType*>(msg_ptr),
+            [release_callback{std::move(release_callback)}](const MsgType*) { release_callback(); }));
       });
 }
 
@@ -120,7 +117,7 @@ template <Ros2MsgType MsgType>
 class PublisherProxy<MsgType> : public PublisherProxyBase {
  public:
   explicit PublisherProxy(PublisherRef publisher)
-      : PublisherProxyBase(publisher) {}
+      : PublisherProxyBase(publisher, std::string("ros2:") + rosidl_generator_traits::name<MsgType>()) {}
   ~PublisherProxy() = default;
 
   static bool RegisterPublishType(PublisherRef publisher) {
@@ -128,22 +125,19 @@ class PublisherProxy<MsgType> : public PublisherProxyBase {
   }
 
   bool RegisterPublishType() const {
-    return RegisterPublishType(publisher_);
+    return publisher_.RegisterPublishType(GetRos2MessageTypeSupport<MsgType>());
   }
 
   void Publish(ContextRef ctx_ref, const MsgType& msg) const {
-    static const std::string msg_type_name =
-        std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
-
     if (ctx_ref) {
       if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
-      PublisherProxyBase::Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+      PublishImpl(ctx_ref, static_cast<const void*>(&msg));
       return;
     }
 
     auto ctx_ptr = NewContextSharedPtr();
     ctx_ptr->SetSerializationType("ros2");
-    PublisherProxyBase::Publish(msg_type_name, ctx_ptr, static_cast<const void*>(&msg));
+    PublishImpl(ctx_ptr, static_cast<const void*>(&msg));
   }
 
   void Publish(const MsgType& msg) const {
@@ -155,26 +149,91 @@ template <Ros2MsgType MsgType>
 class SubscriberProxy<MsgType> : public SubscriberProxyBase {
  public:
   explicit SubscriberProxy(SubscriberRef subscriber)
-      : SubscriberProxyBase(subscriber) {}
+      : SubscriberProxyBase(subscriber, std::string("ros2:") + rosidl_generator_traits::name<MsgType>()) {}
   ~SubscriberProxy() = default;
 
   bool Subscribe(
       std::function<void(ContextRef, const std::shared_ptr<const MsgType>&)>&& callback) const {
-    return Subscribe(subscriber_, std::move(callback));
+    return subscriber_.Subscribe(
+        GetRos2MessageTypeSupport<MsgType>(),
+        [this, callback{std::move(callback)}](
+            const aimrt_channel_context_base_t* ctx_ptr,
+            const void* msg_ptr,
+            aimrt_function_base_t* release_callback_base) {
+          ContextRef ctx_ref(ctx_ptr);
+
+          for (const auto& item : subscribe_hook_vec)
+            item(msg_type_name_, ctx_ref, msg_ptr);
+
+          SubscriberReleaseCallback release_callback(release_callback_base);
+          callback(ctx_ref,
+                   std::shared_ptr<const MsgType>(
+                       static_cast<const MsgType*>(msg_ptr),
+                       [release_callback{std::move(release_callback)}](const MsgType*) { release_callback(); }));
+        });
   }
 
   bool Subscribe(
       std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) const {
-    return Subscribe(subscriber_, std::move(callback));
+    return subscriber_.Subscribe(
+        GetRos2MessageTypeSupport<MsgType>(),
+        [this, callback{std::move(callback)}](
+            const aimrt_channel_context_base_t* ctx_ptr,
+            const void* msg_ptr,
+            aimrt_function_base_t* release_callback_base) {
+          ContextRef ctx_ref(ctx_ptr);
+
+          for (const auto& item : subscribe_hook_vec)
+            item(msg_type_name_, ctx_ref, msg_ptr);
+
+          SubscriberReleaseCallback release_callback(release_callback_base);
+          callback(std::shared_ptr<const MsgType>(
+              static_cast<const MsgType*>(msg_ptr),
+              [release_callback{std::move(release_callback)}](const MsgType*) { release_callback(); }));
+        });
   }
 
   bool SubscribeCo(
       std::function<co::Task<void>(ContextRef, const MsgType&)>&& callback) const {
-    return SubscribeCo(subscriber_, std::move(callback));
+    return subscriber_.Subscribe(
+        GetRos2MessageTypeSupport<MsgType>(),
+        [this, callback{std::move(callback)}](
+            const aimrt_channel_context_base_t* ctx_ptr,
+            const void* msg_ptr,
+            aimrt_function_base_t* release_callback_base) {
+          ContextRef ctx_ref(ctx_ptr);
+
+          for (const auto& item : subscribe_hook_vec)
+            item(msg_type_name_, ctx_ref, msg_ptr);
+
+          aimrt::co::StartDetached(
+              aimrt::co::On(
+                  aimrt::co::InlineScheduler(),
+                  callback(ctx_ref, *(static_cast<const MsgType*>(msg_ptr)))) |
+              aimrt::co::Then(
+                  SubscriberReleaseCallback(release_callback_base)));
+        });
   }
 
   bool SubscribeCo(std::function<co::Task<void>(const MsgType&)>&& callback) const {
-    return SubscribeCo(subscriber_, std::move(callback));
+    return subscriber_.Subscribe(
+        GetRos2MessageTypeSupport<MsgType>(),
+        [this, callback{std::move(callback)}](
+            const aimrt_channel_context_base_t* ctx_ptr,
+            const void* msg_ptr,
+            aimrt_function_base_t* release_callback_base) {
+          ContextRef ctx_ref(ctx_ptr);
+
+          for (const auto& item : subscribe_hook_vec)
+            item(msg_type_name_, ctx_ref, msg_ptr);
+
+          aimrt::co::StartDetached(
+              aimrt::co::On(
+                  aimrt::co::InlineScheduler(),
+                  callback(*(static_cast<const MsgType*>(msg_ptr)))) |
+              aimrt::co::Then(
+                  SubscriberReleaseCallback(release_callback_base)));
+        });
   }
 };
 

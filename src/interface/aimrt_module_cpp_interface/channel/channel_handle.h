@@ -48,6 +48,16 @@ class PublisherRef {
     base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx_ref.NativeHandle(), msg_ptr);
   }
 
+  /**
+   * @brief Get the topic for current publisher
+   *
+   * @return Topic for current publisher
+   */
+  std::string_view GetTopic() const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
+    return aimrt::util::ToStdStringView(base_ptr_->get_topic(base_ptr_->impl));
+  }
+
  private:
   const aimrt_channel_publisher_base_t* base_ptr_ = nullptr;
 };
@@ -77,6 +87,16 @@ class SubscriberRef {
       SubscriberCallback&& callback) const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->subscribe(base_ptr_->impl, msg_type_support, callback.NativeHandle());
+  }
+
+  /**
+   * @brief Get the topic for current subscriber
+   *
+   * @return Topic for current subscriber
+   */
+  std::string_view GetTopic() const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
+    return aimrt::util::ToStdStringView(base_ptr_->get_topic(base_ptr_->impl));
   }
 
  private:
@@ -115,8 +135,8 @@ class PublisherProxyBase {
   using HookFunc = std::function<void(std::string_view, ContextRef, const void*)>;
 
  public:
-  explicit PublisherProxyBase(PublisherRef publisher)
-      : publisher_(publisher) {}
+  explicit PublisherProxyBase(PublisherRef publisher, std::string_view msg_type_name)
+      : publisher_(publisher), msg_type_name_(msg_type_name) {}
   virtual ~PublisherProxyBase() = default;
 
   PublisherProxyBase(const PublisherProxyBase&) = delete;
@@ -142,17 +162,21 @@ class PublisherProxyBase {
     return default_ctx_ptr_;
   }
 
- protected:
-  void Publish(std::string_view msg_type, ContextRef ctx_ref, const void* msg_ptr) const {
-    for (const auto& item : publish_hook_vec) {
-      item(msg_type, ctx_ref, msg_ptr);
-    }
+  std::string_view GetTopic() const {
+    return publisher_.GetTopic();
+  }
 
-    publisher_.Publish(msg_type, ctx_ref, msg_ptr);
+ protected:
+  void PublishImpl(ContextRef ctx_ref, const void* msg_ptr) const {
+    for (const auto& item : publish_hook_vec)
+      item(msg_type_name_, ctx_ref, msg_ptr);
+
+    publisher_.Publish(msg_type_name_, ctx_ref, msg_ptr);
   }
 
  protected:
   PublisherRef publisher_;
+  const std::string msg_type_name_;
   std::shared_ptr<Context> default_ctx_ptr_;
   std::vector<HookFunc> publish_hook_vec;
 };
@@ -165,8 +189,8 @@ class SubscriberProxyBase {
   using HookFunc = std::function<void(std::string_view, ContextRef, const void*)>;
 
  public:
-  explicit SubscriberProxyBase(SubscriberRef subscriber)
-      : subscriber_(subscriber) {}
+  explicit SubscriberProxyBase(SubscriberRef subscriber, std::string_view msg_type_name)
+      : subscriber_(subscriber), msg_type_name_(msg_type_name) {}
   virtual ~SubscriberProxyBase() = default;
 
   SubscriberProxyBase(const SubscriberProxyBase&) = delete;
@@ -178,9 +202,14 @@ class SubscriberProxyBase {
     subscribe_hook_vec.emplace_back(std::forward<Args>(args)...);
   }
 
+  std::string_view GetTopic() const {
+    return subscriber_.GetTopic();
+  }
+
  protected:
   SubscriberRef subscriber_;
-  std::vector<HookFunc> subscribe_hook_vec;  // todo
+  const std::string msg_type_name_;
+  std::vector<HookFunc> subscribe_hook_vec;
 };
 
 template <typename>

@@ -52,6 +52,7 @@ typedef struct {
    * @note
    * Input 1: Implement pointer to publisher handle
    * Input 2: Msg type support
+   * Return: Register result
    */
   bool (*register_publish_type)(
       void* impl, const aimrt_type_support_base_t* msg_type_support);
@@ -70,6 +71,14 @@ typedef struct {
       const aimrt_channel_context_base_t* ctx_ptr,
       const void* msg);
 
+  /**
+   * @brief Function to get topic for current publisher
+   * @note
+   * Input 1: Implement pointer to publisher handle
+   * Return: Topic for current publisher
+   */
+  aimrt_string_view_t (*get_topic)(void* impl);
+
   /// Implement pointer
   void* impl;
 } aimrt_channel_publisher_base_t;
@@ -85,11 +94,20 @@ typedef struct {
    * Input 1: Implement pointer to subscriber handle
    * Input 2: Msg type support
    * Input 3: Msg callback, which ops type is 'aimrt_function_subscriber_callback_ops_t'
+   * Return: Subscribe result
    */
   bool (*subscribe)(
       void* impl,
       const aimrt_type_support_base_t* msg_type_support,
       aimrt_function_base_t* callback);
+
+  /**
+   * @brief Function to get topic for current subscriber
+   * @note
+   * Input 1: Implement pointer to subscriber handle
+   * Return: Topic for current subscriber
+   */
+  aimrt_string_view_t (*get_topic)(void* impl);
 
   /// Implement pointer
   void* impl;
