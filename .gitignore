@@ -16,3 +16,6 @@ cmake-build*/
 
 src/tools/aimrt_cli/dist
 src/tools/aimrt_cli/build
+
+dist/
+*.egg-info/

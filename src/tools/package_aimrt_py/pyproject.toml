@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aimrt_py"
+authors = [
+    {name = "xxx", email = "xxx@email.cn"},
+    {name = "yyy", email = "yyy@email.cn"}
+]
+version = "0.0.1"
+requires-python = ">=3.10"
+dependencies = [
+    "protobuf>=3.20.0"
+]
+
+[project.scripts]
+protoc_plugin_py_gen_aimrt_py_rpc = "aimrt_py.protoc_plugin_py_gen_aimrt_py_rpc:generate"

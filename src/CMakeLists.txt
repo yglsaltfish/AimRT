@@ -2,11 +2,15 @@ set_root_namespace("aimrt")
 
 add_subdirectory(common)
 add_subdirectory(interface)
+
+if(AIMRT_BUILD_RUNTIME)
+  add_subdirectory(runtime)
+endif()
+
 add_subdirectory(tools)
 add_subdirectory(protocols)
 
 if(AIMRT_BUILD_RUNTIME)
-  add_subdirectory(runtime)
   add_subdirectory(plugins)
 endif()
 

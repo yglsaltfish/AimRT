@@ -46,3 +46,5 @@ add_custom_target(
 if(AIMRT_INSTALL)
   install(FILES ${py_files} DESTINATION bin)
 endif()
+
+set_property(TARGET ${CUR_TARGET_NAME} PROPERTY PY_FILES ${py_files})
