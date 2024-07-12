@@ -300,7 +300,7 @@ class {{service_name}}Proxy:
         return response
 
 
-if __name__ == '__main__':
+def generate():
     request: CodeGeneratorRequest = CodeGeneratorRequest.FromString(sys.stdin.buffer.read())
 
     aimrt_code_generator: AimRTCodeGenerator = AimRTCodeGenerator()
@@ -308,3 +308,7 @@ if __name__ == '__main__':
     response: CodeGeneratorResponse = aimrt_code_generator.generate(request)
 
     sys.stdout.buffer.write(response.SerializeToString())
+
+
+if __name__ == "__main__":
+    generate()

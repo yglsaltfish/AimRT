@@ -1,5 +1,6 @@
-import aimrt_py
 import google.protobuf
+
+from . import aimrt_py
 
 
 def RegisterPublishType(publisher, protobuf_type):
@@ -21,13 +22,13 @@ def Subscribe(subscriber, protobuf_type, callback):
 
     def handle_callback(serialization_type, msg_buf):
         try:
-            if (serialization_type == "pb"):
+            if serialization_type == "pb":
                 msg = protobuf_type()
                 msg.ParseFromString(msg_buf)
                 callback(msg)
                 return
 
-            if (serialization_type == "json"):
+            if serialization_type == "json":
                 msg = protobuf_type()
                 google.protobuf.json_format.Parse(msg_buf, msg)
                 callback(msg)

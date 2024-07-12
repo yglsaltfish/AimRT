@@ -34,6 +34,8 @@ option(AIMRT_BUILD_LOG_CONTROL_PLUGIN "AimRT build log control plugin." OFF)
 
 option(AIMRT_INSTALL "Enable installation of AimRT." ON)
 
+option(AIMRT_BUILD_PYTHON_PACKAGE "AimRT build python package." OFF)
+
 option(AIMRT_EXECUTOR_USE_STDEXEC "AimRT use stdexec as executor impl. (Experimental)" OFF)
 option(AIMRT_BUILD_WITH_WERROR "AimRT build with -Werror option. (Experimental)" OFF)
 
