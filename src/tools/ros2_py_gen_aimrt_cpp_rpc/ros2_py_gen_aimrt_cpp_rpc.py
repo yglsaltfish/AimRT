@@ -199,12 +199,14 @@ namespace {{pkg_name}} {
 namespace srv {
 
 {{srv_filename}}SyncService::{{srv_filename}}SyncService() {
+  static constexpr std::string_view func_name = "ros2:/{{pkg_name}}/srv/{{srv_filename}}";
+
   aimrt::rpc::ServiceFunc service_callback(
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
         aimrt::rpc::ServiceCallback result_callback(result_callback_ptr);
 
         aimrt::rpc::ContextRef ctx_ref(ctx);
-        ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
+        ctx_ref.SetFunctionName(func_name);
 
         auto status = {{srv_filename}}(
             ctx_ref,
@@ -214,7 +216,7 @@ namespace srv {
         result_callback(status.Code());
       });
   RegisterServiceFunc(
-      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      func_name,
       rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
       aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
       aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>(),
@@ -222,12 +224,14 @@ namespace srv {
 }
 
 {{srv_filename}}AsyncService::{{srv_filename}}AsyncService() {
+  static constexpr std::string_view func_name = "ros2:/{{pkg_name}}/srv/{{srv_filename}}";
+
   aimrt::rpc::ServiceFunc service_callback(
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
         auto result_callback_func_ptr = std::make_shared<aimrt::rpc::ServiceCallback>(result_callback_ptr);
 
         aimrt::rpc::ContextRef ctx_ref(ctx);
-        ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
+        ctx_ref.SetFunctionName(func_name);
 
         {{srv_filename}}(
             ctx_ref,
@@ -238,7 +242,7 @@ namespace srv {
             });
       });
   RegisterServiceFunc(
-      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      func_name,
       rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
       aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
       aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>(),
@@ -246,6 +250,8 @@ namespace srv {
 }
 
 {{srv_filename}}CoService::{{srv_filename}}CoService() {
+  static constexpr std::string_view func_name = "ros2:/{{pkg_name}}/srv/{{srv_filename}}";
+
   aimrt::rpc::ServiceFunc service_callback(
       [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
         auto handle_ptr = std::make_unique<const aimrt::rpc::RpcHandle>(
@@ -260,7 +266,7 @@ namespace srv {
         aimrt::rpc::ServiceCallback result_callback(result_callback_ptr);
 
         aimrt::rpc::ContextRef ctx_ref(ctx);
-        ctx_ref.SetFunctionName("ros2:/{{pkg_name}}/srv/{{srv_filename}}");
+        ctx_ref.SetFunctionName(func_name);
 
         auto* ptr = handle_ptr.get();
         aimrt::co::StartDetached(
@@ -273,7 +279,7 @@ namespace srv {
                 }));
       });
   RegisterServiceFunc(
-      "ros2:/{{pkg_name}}/srv/{{srv_filename}}",
+      func_name,
       rosidl_typesupport_cpp::get_service_type_support_handle<{{pkg_name}}::srv::{{srv_filename}}>(),
       aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Request>(),
       aimrt::GetRos2MessageTypeSupport<{{srv_filename}}_Response>(),
@@ -298,6 +304,7 @@ aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
 
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
+    ctx_ref.SetFunctionName(func_name);
 
     rpc_handle_ref_.Invoke(
         func_name, ctx_ref, &req, &rsp,
@@ -310,6 +317,7 @@ aimrt::rpc::Status {{srv_filename}}SyncProxy::{{srv_filename}}(
 
   auto ctx_ptr = NewContextSharedPtr();
   ctx_ptr->SetSerializationType("ros2");
+  ctx_ptr->SetFunctionName(func_name);
 
   rpc_handle_ref_.Invoke(
       func_name, *ctx_ptr, &req, &rsp,
@@ -329,6 +337,7 @@ void {{srv_filename}}AsyncProxy::{{srv_filename}}(
 
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
+    ctx_ref.SetFunctionName(func_name);
 
     rpc_handle_ref_.Invoke(
         func_name, ctx_ref, &req, &rsp,
@@ -341,6 +350,7 @@ void {{srv_filename}}AsyncProxy::{{srv_filename}}(
 
   auto ctx_ptr = NewContextSharedPtr();
   ctx_ptr->SetSerializationType("ros2");
+  ctx_ptr->SetFunctionName(func_name);
 
   rpc_handle_ref_.Invoke(
       func_name, *ctx_ptr, &req, &rsp,
@@ -360,6 +370,7 @@ std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
 
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
+    ctx_ref.SetFunctionName(func_name);
 
     rpc_handle_ref_.Invoke(
         func_name, ctx_ref, &req, &rsp,
@@ -372,6 +383,7 @@ std::future<aimrt::rpc::Status> {{srv_filename}}FutureProxy::{{srv_filename}}(
 
   auto ctx_ptr = NewContextSharedPtr();
   ctx_ptr->SetSerializationType("ros2");
+  ctx_ptr->SetFunctionName(func_name);
 
   rpc_handle_ref_.Invoke(
       func_name, *ctx_ptr, &req, &rsp,
@@ -422,11 +434,13 @@ aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}CoProxy::{{srv_filename}}(
 
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
+    ctx_ref.SetFunctionName(func_name);
     co_return co_await filter_mgr_.InvokeRpc(h, ctx_ref, static_cast<const void*>(&req), static_cast<void*>(&rsp));
   }
 
   auto ctx_ptr = NewContextSharedPtr();
   ctx_ptr->SetSerializationType("ros2");
+  ctx_ptr->SetFunctionName(func_name);
   co_return co_await filter_mgr_.InvokeRpc(h, *ctx_ptr, static_cast<const void*>(&req), static_cast<void*>(&rsp));
 }
 
