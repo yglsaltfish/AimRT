@@ -33,6 +33,35 @@ aimrt:
   - `executors[i].type`表示执行器类型。AimRT官方提供了几种执行器类型，部分插件也提供了一些执行器类型。
   - `executors[i].options`是AimRT传递给各个执行器的初始化参数，这部分配置格式由各个执行器类型定义，请参考对应执行器类型的文档。
 
+## simple_thread 执行器
+
+`simple_thread`执行器是一种简单的单线程执行器，不支持定时调度。其所有的配置项如下：
+
+| 节点                          | 类型                  | 是否可选| 默认值 | 作用 |
+| ----                          | ----                  | ----  | ----  | ---- |
+| threads_ched_policy           | string                | 可选  | ""    | 线程调度策略 |
+| thread_bind_cpu               | unsigned int array    | 可选  | []    | 绑核配置 |
+
+
+以下是一个简单的示例：
+```yaml
+aimrt:
+  executor: # 【可选】执行器配置根节点
+    executors: # 【可选】执行器列表
+      - name: test_simple_thread_executor # 【必选】执行器名称
+        type: simple_thread # 【必选】执行器类型
+        options: # 【可选】具体执行器的配置
+          thread_sched_policy: SCHED_FIFO:80 # 【可选】线程调度策略
+          thread_bind_cpu: [0, 1] # 【可选】绑核配置
+```
+
+使用注意点如下：
+- `thread_sched_policy`配置了线程调度策略，通过调用操作系统的API来实现。目前仅在Linux下支持，在其他操作系统上此配置无效。
+  - 在Linux下通过调用`pthread_setschedparam`这个API来配置。支持的方式包括：`SCHED_OTHER`、`SCHED_FIFO:xx`、`SCHED_RR:xx`。`xx`为该模式下的权重值。详细的解释请参考[pthread_setschedparam官方文档](https://man7.org/linux/man-pages/man3/pthread_setschedparam.3.html)。
+- `thread_bind_cpu`配置了绑核策略，通过调用操作系统的API来实现。目前仅在Linux下支持，在其他操作系统上此配置无效。
+  - 在Linux下通过调用`pthread_setaffinity_np`这个API来配置，直接在数组中配置CPU ID即可。参考[pthread_setaffinity_np官方文档](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html)。
+
+
 ## asio_thread 执行器
 
 `asio_thread`执行器是一种基于[Asio库](https://github.com/chriskohlhoff/asio)实现的执行器，是一种线程池，可以手动设置线程数，此外它还支持定时调度。其所有的配置项如下：

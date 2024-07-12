@@ -32,7 +32,6 @@ aimrt:
   module:
     pkgs:
       - path: ./libprotobuf_rpc_client_pkg.so
-        disable_module: []
     modules:
       - name: NormalRpcCoClientModule
         log_lvl: INFO

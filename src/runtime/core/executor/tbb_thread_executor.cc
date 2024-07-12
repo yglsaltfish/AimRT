@@ -41,8 +41,7 @@ struct convert<aimrt::runtime::core::executor::TBBThreadExecutor::Options> {
 
 namespace aimrt::runtime::core::executor {
 
-void TBBThreadExecutor::Initialize(std::string_view name,
-                                   YAML::Node options_node) {
+void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "TBBThreadExecutor can only be initialized once.");

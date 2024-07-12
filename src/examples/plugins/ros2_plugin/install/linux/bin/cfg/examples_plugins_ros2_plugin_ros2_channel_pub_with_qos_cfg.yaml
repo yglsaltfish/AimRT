@@ -38,7 +38,6 @@ aimrt:
   module:
     pkgs:
       - path: ./libros2_channel_pub_pkg.so
-        disable_module: []
     modules:
       - name: NormalPublisherModule
         log_lvl: INFO

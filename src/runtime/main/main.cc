@@ -11,6 +11,7 @@ DEFINE_bool(dump_cfg_file, false, "dump config file");
 DEFINE_string(dump_cfg_file_path, "", "dump config file path");
 
 DEFINE_bool(register_signal, true, "register handle for sigint and sigterm");
+DEFINE_int32(running_duration, 0, "running duration, seconds");
 
 using namespace aimrt::runtime::core;
 
@@ -45,9 +46,19 @@ int32_t main(int32_t argc, char** argv) {
     options.dump_cfg_file_path = FLAGS_dump_cfg_file_path;
     core.Initialize(options);
 
-    core.Start();
+    if (FLAGS_running_duration == 0) {
+      core.Start();
 
-    core.Shutdown();
+      core.Shutdown();
+    } else {
+      auto fu = core.AsyncStart();
+
+      std::this_thread::sleep_for(std::chrono::seconds(FLAGS_running_duration));
+
+      core.Shutdown();
+
+      fu.wait();
+    }
 
     global_core_ptr_ = nullptr;
   } catch (const std::exception& e) {
