@@ -21,7 +21,6 @@ aimrt:
   module:
     pkgs:
       - path: ./protobuf_rpc_server_pkg.dll
-        disable_module: []
     modules:
       - name: NormalRpcCoServerModule
         log_lvl: INFO

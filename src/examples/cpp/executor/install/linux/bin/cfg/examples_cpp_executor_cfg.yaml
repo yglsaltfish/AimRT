@@ -20,7 +20,7 @@ aimrt:
   module:
     pkgs:
       - path: ./libexecutor_pkg.so
-        disable_module: [ExecutorCoModule]
+        enable_modules: [ExecutorModule]
     modules:
       - name: ExecutorModule
         log_lvl: INFO

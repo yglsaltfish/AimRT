@@ -45,7 +45,7 @@ int LevenshteinDistance(const std::string& s1, const std::string& s2) {
 // 找到最接近的匹配节点
 std::string FindClosestMatch(const YAML::Node& node, const std::string& target) {
   std::string closest_match;
-  int min_distance = INT_MAX;
+  int min_distance = 4;
 
   for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
     const std::string& key = it->first.as<std::string>();
@@ -96,9 +96,14 @@ std::string CheckYamlNodes(
         for (YAML::const_iterator it = checked_node.begin(); it != checked_node.end(); ++it) {
           const std::string& key = it->first.as<std::string>();
           if (!standard_node[key]) {
+            msg << "- Unused options: '" << path << "." << key << "'!";
+
             std::string closest_match = FindClosestMatch(standard_node, key);
-            msg << "- Unused options: '" << path << "." << key << "'! ";
-            msg << "Did you mean: '" << path << "." << closest_match << "'?" << std::endl;
+            if (!closest_match.empty()) {
+              msg << " Did you mean: '" << path << "." << closest_match << "'?" << std::endl;
+            } else {
+              msg << std::endl;
+            }
           } else {
             msg << CheckYamlNodes(standard_node[key], checked_node[key], path + "." + key, level + 1);
           }

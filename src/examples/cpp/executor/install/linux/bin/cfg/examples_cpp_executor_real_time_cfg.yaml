@@ -29,7 +29,6 @@ aimrt:
   module:
     pkgs:
       - path: ./libreal_time_pkg.so
-        disable_module: []
     modules:
       - name: RealTimeModule
         log_lvl: INFO

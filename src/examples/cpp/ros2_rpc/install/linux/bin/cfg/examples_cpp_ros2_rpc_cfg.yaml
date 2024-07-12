@@ -23,7 +23,6 @@ aimrt:
       - path: ./libros2_rpc_client_pkg.so
         disable_module: [BenchmarkRpcClientModule]
       - path: ./libros2_rpc_server_pkg.so
-        disable_module: []
     modules:
       - name: NormalRpcCoClientModule
         log_lvl: INFO

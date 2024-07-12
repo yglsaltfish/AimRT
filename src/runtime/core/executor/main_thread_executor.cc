@@ -38,7 +38,7 @@ namespace aimrt::runtime::core::executor {
 void MainThreadExecutor::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
-      "Executor can only be initialized once.");
+      "Main thread executor can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();

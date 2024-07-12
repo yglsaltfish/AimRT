@@ -78,7 +78,6 @@ aimrt:
   module:
     pkgs:
       - path: /path/to/libxxx_pkg.so
-        disable_module: [XXXModule]
     modules:
       - name: FooModule
         enable: True

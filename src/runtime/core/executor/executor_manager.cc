@@ -2,6 +2,7 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "core/executor/asio_strand_executor.h"
 #include "core/executor/asio_thread_executor.h"
+#include "core/executor/simple_thread_executor.h"
 #include "core/executor/tbb_thread_executor.h"
 #include "core/executor/time_wheel_executor.h"
 #include "util/string_util.h"
@@ -52,6 +53,7 @@ namespace aimrt::runtime::core::executor {
 void ExecutorManager::Initialize(YAML::Node options_node) {
   RegisterAsioExecutorGenFunc();
   RegisterTBBExecutorGenFunc();
+  RegisterSimpleThreadExecutorGenFunc();
   RegisterTimwWheelExecutorGenFunc();
 
   AIMRT_CHECK_ERROR_THROW(
@@ -195,6 +197,14 @@ void ExecutorManager::RegisterTBBExecutorGenFunc() {
   });
 }
 
+void ExecutorManager::RegisterSimpleThreadExecutorGenFunc() {
+  RegisterExecutorGenFunc("simple_thread", [this]() -> std::unique_ptr<ExecutorBase> {
+    auto ptr = std::make_unique<SimpleThreadExecutor>();
+    ptr->SetLogger(logger_ptr_);
+    return ptr;
+  });
+}
+
 void ExecutorManager::RegisterTimwWheelExecutorGenFunc() {
   RegisterExecutorGenFunc("time_wheel", [this]() -> std::unique_ptr<ExecutorBase> {
     auto ptr = std::make_unique<TimeWheelExecutor>();
@@ -211,6 +221,18 @@ std::list<std::pair<std::string, std::string>> ExecutorManager::GenInitializatio
       state_.load() == State::Init,
       "Function can only be called when state is 'Init'.");
 
+  std::vector<std::string> executor_type_vec;
+  for (const auto& itr : executor_gen_func_map_) {
+    executor_type_vec.emplace_back(itr.first);
+  }
+
+  std::string executor_type_name_list;
+  if (executor_type_vec.empty()) {
+    executor_type_name_list = "<empty>";
+  } else {
+    executor_type_name_list = "[ " + aimrt::common::util::JoinVec(executor_type_vec, " , ") + " ]";
+  }
+
   std::vector<std::vector<std::string>> executor_info_table =
       {{"name", "type", "thread safe", "support time schedule"}};
 
@@ -223,7 +245,8 @@ std::list<std::pair<std::string, std::string>> ExecutorManager::GenInitializatio
     executor_info_table.emplace_back(std::move(cur_executor_info));
   }
 
-  return {{"Executor List", aimrt::common::util::DrawTable(executor_info_table)}};
+  return {{"Executor Type List", executor_type_name_list},
+          {"Executor List", aimrt::common::util::DrawTable(executor_info_table)}};
 }
 
 }  // namespace aimrt::runtime::core::executor

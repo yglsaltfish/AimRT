@@ -12,7 +12,6 @@ aimrt:
   module:
     pkgs:
       - path: ./libparameter_pkg.so
-        disable_module: []
     modules:
       - name: ParameterModule
         log_lvl: INFO

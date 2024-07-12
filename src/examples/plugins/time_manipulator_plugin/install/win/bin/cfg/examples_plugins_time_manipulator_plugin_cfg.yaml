@@ -38,7 +38,6 @@ aimrt:
   module:
     pkgs:
       - path: ./helloworld_pkg.dll
-        disable_module: []
     modules:
       - name: HelloWorldModule
         log_lvl: INFO
