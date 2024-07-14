@@ -108,7 +108,7 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
 void TBBThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 }
 
 void TBBThreadExecutor::Shutdown() {

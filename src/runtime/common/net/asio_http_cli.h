@@ -67,7 +67,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
   }
@@ -75,7 +75,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
@@ -84,7 +84,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Start) == State::Init,
-        "Function can only be called when state is 'Init'.");
+        "Method can only be called when state is 'Init'.");
   }
 
   void Shutdown() {
@@ -119,7 +119,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
         [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
           AIMRT_CHECK_ERROR_THROW(
               state_.load() == State::Start,
-              "Function can only be called when state is 'Start'.");
+              "Method can only be called when state is 'Start'.");
 
           // 找可用session，没有就新建一个。同时清理已失效session
           std::shared_ptr<Session> session_ptr;
@@ -187,7 +187,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
     void Initialize(const std::shared_ptr<const SessionOptions>& session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
-          "Function can only be called when state is 'PreInit'.");
+          "Method can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
     }
@@ -195,7 +195,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
-          "Function can only be called when state is 'Init'.");
+          "Method can only be called when state is 'Init'.");
 
       auto self = shared_from_this();
 
@@ -306,7 +306,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
           [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
             AIMRT_CHECK_ERROR_THROW(
                 state_.load() == SessionState::Start,
-                "Function can only be called when state is 'Start'.");
+                "Method can only be called when state is 'Start'.");
 
             try {
               namespace chrono = std::chrono;
@@ -496,7 +496,7 @@ class AsioHttpClientPool
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
   }
@@ -504,7 +504,7 @@ class AsioHttpClientPool
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
   }
@@ -512,7 +512,7 @@ class AsioHttpClientPool
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Start) == State::Init,
-        "Function can only be called when state is 'Init'.");
+        "Method can only be called when state is 'Init'.");
   }
 
   void Shutdown() {
@@ -540,7 +540,7 @@ class AsioHttpClientPool
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioHttpClient>> {
           AIMRT_CHECK_ERROR_THROW(
               state_.load() == State::Start,
-              "Function can only be called when state is 'Start'.");
+              "Method can only be called when state is 'Start'.");
 
           auto client_key = client_options.host + client_options.service;
 

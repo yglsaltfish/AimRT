@@ -111,7 +111,7 @@ void Ros2RpcBackend::Initialize(YAML::Node options_node,
 void Ros2RpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   for (auto& itr : ros2_adapter_client_map_)
     itr.second->Start();

@@ -65,7 +65,7 @@ void LocalChannelBackend::Initialize(
 void LocalChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 }
 
 void LocalChannelBackend::Shutdown() {
@@ -236,7 +236,7 @@ void LocalChannelBackend::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
 }

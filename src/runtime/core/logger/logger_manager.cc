@@ -100,13 +100,13 @@ void LoggerManager::Initialize(YAML::Node options_node) {
 void LoggerManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   for (auto& backend : logger_backend_vec_) {
     backend->Start();
   }
 
-  AIMRT_INFO("Logger manager start complete.");
+  AIMRT_INFO("Logger manager start completed.");
 }
 
 void LoggerManager::Shutdown() {
@@ -132,7 +132,7 @@ void LoggerManager::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
 }
@@ -142,7 +142,7 @@ void LoggerManager::RegisterLoggerBackendGenFunc(
     LoggerBackendGenFunc&& logger_backend_gen_func) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   logger_backend_gen_func_map_.emplace(type, std::move(logger_backend_gen_func));
 }
@@ -150,7 +150,7 @@ void LoggerManager::RegisterLoggerBackendGenFunc(
 const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init || state_.load() == State::Start,
-      "Function can only be called when state is 'Init' or 'Start'.");
+      "Method can only be called when state is 'Init' or 'Start'.");
 
   // module_name为空等效于aimrt节点
   const std::string& real_module_name =
@@ -175,7 +175,7 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(const util::ModuleDetailInfo& m
 const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init || state_.load() == State::Start,
-      "Function can only be called when state is 'Init' or 'Start'.");
+      "Method can only be called when state is 'Init' or 'Start'.");
 
   // logger_name为空等效于core节点
   const std::string& real_logger_name =
@@ -229,7 +229,7 @@ void LoggerManager::RegisterRotateFileLoggerBackendGenFunc() {
 std::list<std::pair<std::string, std::string>> LoggerManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   std::vector<std::string> logger_backend_type_vec;
   for (auto& logger_backend : logger_backend_vec_) {

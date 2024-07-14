@@ -66,7 +66,7 @@ void AsioStrandExecutor::Initialize(std::string_view name,
 void AsioStrandExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 }
 
 void AsioStrandExecutor::Shutdown() {
@@ -107,7 +107,7 @@ void AsioStrandExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aim
 void AsioStrandExecutor::RegisterGetAsioHandle(GetAsioHandle&& handle) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   get_asio_handle_ = std::move(handle);
 }

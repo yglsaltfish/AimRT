@@ -85,7 +85,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
   }
@@ -95,7 +95,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   void RegisterMsgHandle(Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     msg_handle_ptr_ = std::make_shared<MsgHandle>(std::forward<Args>(args)...);
   }
@@ -103,7 +103,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
@@ -115,7 +115,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Start) == State::Init,
-        "Function can only be called when state is 'Init'.");
+        "Method can only be called when state is 'Init'.");
 
     auto self = shared_from_this();
     boost::asio::co_spawn(
@@ -233,7 +233,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, ep, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_ERROR("Function can only be called when state is 'Start'.");
+        AIMRT_ERROR("Method can only be called when state is 'Start'.");
         return;
       }
 
@@ -299,7 +299,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
-          "Function can only be called when state is 'PreInit'.");
+          "Method can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
     }
@@ -307,7 +307,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
-          "Function can only be called when state is 'Init'.");
+          "Method can only be called when state is 'Init'.");
 
       remote_addr_ = aimrt::common::util::SSToString(stream_.next_layer().socket().remote_endpoint());
       AIMRT_TRACE("WebSocket svr accept a new connect from {}.", RemoteAddr());
@@ -526,7 +526,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_ERROR("Function can only be called when state is 'Start'.");
+              AIMRT_ERROR("Method can only be called when state is 'Start'.");
               return;
             }
 

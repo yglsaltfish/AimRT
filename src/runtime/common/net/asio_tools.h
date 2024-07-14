@@ -44,7 +44,7 @@ class AsioExecutor {
    */
   void RegisterSvrStartFunc(std::function<void()>&& start_func) {
     if (state_.load() != State::PreStart) [[unlikely]]
-      throw std::runtime_error("Function can only be called when state is 'PreStart'.");
+      throw std::runtime_error("Method can only be called when state is 'PreStart'.");
 
     start_func_vec_.emplace_back(std::move(start_func));
   }
@@ -56,7 +56,7 @@ class AsioExecutor {
    */
   void RegisterSvrStopFunc(std::function<void()>&& stop_func) {
     if (state_.load() != State::PreStart) [[unlikely]]
-      throw std::runtime_error("Function can only be called when state is 'PreStart'.");
+      throw std::runtime_error("Method can only be called when state is 'PreStart'.");
 
     stop_func_vec_.emplace_back(std::move(stop_func));
   }
@@ -78,7 +78,7 @@ class AsioExecutor {
    */
   void Start() {
     if (std::atomic_exchange(&state_, State::Start) != State::PreStart) [[unlikely]]
-      throw std::runtime_error("Function can only be called when state is 'PreStart'.");
+      throw std::runtime_error("Method can only be called when state is 'PreStart'.");
 
     std::for_each(start_func_vec_.begin(), start_func_vec_.end(),
                   [](const std::function<void()>& f) {
@@ -136,7 +136,7 @@ class AsioExecutor {
    */
   void EnableStopSignal() {
     if (state_.load() != State::PreStart) [[unlikely]]
-      throw std::runtime_error("Function can only be called when state is 'PreStart'.");
+      throw std::runtime_error("Method can only be called when state is 'PreStart'.");
 
     auto sig_ptr = std::make_shared<boost::asio::signal_set>(*io_ptr_, SIGINT, SIGTERM);
 

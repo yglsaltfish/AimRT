@@ -46,12 +46,14 @@ void MainThreadExecutor::Initialize(YAML::Node options_node) {
   name_ = options_.name;
 
   try {
-    util::SetNameForCurrentThread(Name());
+    util::SetNameForCurrentThread(name_);
     util::BindCpuForCurrentThread(options_.thread_bind_cpu);
     util::SetCpuSchedForCurrentThread(options_.thread_sched_policy);
   } catch (const std::exception& e) {
     AIMRT_WARN("Set thread policy for main thread get exception, {}", e.what());
   }
+
+  main_thread_id_ = std::this_thread::get_id();
 
   options_node = options_;
 
@@ -63,43 +65,9 @@ void MainThreadExecutor::Start() {
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Main thread executor can only run when state is 'Init'.");
 
-  AIMRT_INFO("Main thread executor start complete, will blocks current thread until shutdown.");
-
-  while (state_.load() != State::Shutdown) {
-    // 多生产-单消费优化
-    std::queue<aimrt::executor::Task> tmp_queue;
-
-    {
-      std::unique_lock<std::mutex> lck(mutex_);
-      cond_.wait(lck, [this] { return !queue_.empty(); });
-      queue_.swap(tmp_queue);
-    }
-
-    while (!tmp_queue.empty()) {
-      auto& task = tmp_queue.front();
-
-      try {
-        task();
-      } catch (const std::exception& e) {
-        AIMRT_FATAL("Main thread executor run task get exception, {}", e.what());
-      }
-
-      tmp_queue.pop();
-    }
-  }
-
-  // Shutdown之后再运行一次，不用加锁了，因为不会再有task进入队列了
-  while (!queue_.empty()) {
-    auto& task = queue_.front();
-
-    try {
-      task();
-    } catch (const std::exception& e) {
-      AIMRT_FATAL("Main thread executor run task get exception, {}", e.what());
-    }
-
-    queue_.pop();
-  }
+  AIMRT_CHECK_ERROR_THROW(
+      main_thread_id_ == std::this_thread::get_id(),
+      "'Initialize' and 'Start' method are not called in the same thread.");
 }
 
 void MainThreadExecutor::Shutdown() {
@@ -107,25 +75,6 @@ void MainThreadExecutor::Shutdown() {
     return;
 
   AIMRT_INFO("Main thread executor shutdown.");
-
-  // 对主线程来说，shutdown一定跑在task内
-  // 并不是真正的shutdown，任务队列还要跑，不能全清了
-}
-
-void MainThreadExecutor::Execute(aimrt::executor::Task&& task) {
-  assert(state_.load() == State::Init || state_.load() == State::Start);
-
-  std::unique_lock<std::mutex> lck(mutex_);
-  queue_.emplace(std::move(task));
-  cond_.notify_one();
-}
-
-std::list<std::pair<std::string, std::string>> MainThreadExecutor::GenInitializationReport() const {
-  AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
-
-  return {};
 }
 
 }  // namespace aimrt::runtime::core::executor

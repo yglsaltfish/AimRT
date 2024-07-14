@@ -46,8 +46,8 @@ namespace aimrt::runtime::core::plugin {
 
 void PluginManager::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      plugin_init_func_,
-      "Plugin init func is not set before PluginManager initialize.");
+      core_ptr_,
+      "AimRT core point is not set before PluginManager initialize.");
 
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
@@ -109,7 +109,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
     }
 
     // 初始化插件
-    bool ret = plugin_init_func_(plugin_ptr);
+    bool ret = plugin_ptr->Initialize(core_ptr_);
     AIMRT_CHECK_ERROR_THROW(ret, "Init plugin '{}' failed.", plugin_options.name);
 
     AIMRT_TRACE("Load plugin '{}' succeeded.", plugin_options.name);
@@ -131,9 +131,9 @@ void PluginManager::Initialize(YAML::Node options_node) {
 void PluginManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
-  AIMRT_INFO("Plugin manager start complete.");
+  AIMRT_INFO("Plugin manager start completed.");
 }
 
 void PluginManager::Shutdown() {
@@ -149,31 +149,31 @@ void PluginManager::Shutdown() {
 
   // plugin_loader_vec_ 不能清理掉，有很多回调是从其他dll中注册过来的
 
-  plugin_init_func_ = PluginInitFunc();
+  core_ptr_ = nullptr;
 }
 
 void PluginManager::RegisterPlugin(AimRTCorePluginBase* plugin) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   AIMRT_CHECK_ERROR_THROW(plugin != nullptr, "Register invalid plugin");
 
   registered_plugin_vec_.emplace_back(plugin);
 }
 
-void PluginManager::RegisterPluginInitFunc(PluginInitFunc&& plugin_init_func) {
+void PluginManager::RegisterCorePtr(AimRTCore* core_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
-  plugin_init_func_ = std::move(plugin_init_func);
+  core_ptr_ = core_ptr;
 }
 
 YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   auto finditr = std::find_if(
       options_.plugins_options.begin(),
@@ -189,7 +189,7 @@ YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) con
 std::list<std::pair<std::string, std::string>> PluginManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   std::vector<std::vector<std::string>> plugin_info_table =
       {{"name", "path"}};

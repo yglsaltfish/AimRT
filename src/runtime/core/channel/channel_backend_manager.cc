@@ -18,7 +18,7 @@ void ChannelBackendManager::Initialize(ChannelRegistry* channel_registry_ptr) {
 void ChannelBackendManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   for (auto& backend : channel_backend_index_vec_) {
     AIMRT_TRACE("Start channel backend '{}'.", backend->Name());
@@ -42,7 +42,7 @@ void ChannelBackendManager::SetPubTopicsBackendsRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   pub_topics_backends_rules_ = rules;
 }
@@ -51,7 +51,7 @@ void ChannelBackendManager::SetSubTopicsBackendsRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   sub_topics_backends_rules_ = rules;
 }
@@ -60,7 +60,7 @@ void ChannelBackendManager::RegisterChannelBackend(
     ChannelBackendBase* channel_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   channel_backend_index_vec_.emplace_back(channel_backend_ptr);
 }

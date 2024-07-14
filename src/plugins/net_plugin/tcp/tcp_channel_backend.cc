@@ -62,7 +62,7 @@ void TcpChannelBackend::Initialize(
 void TcpChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 }
 
 void TcpChannelBackend::Shutdown() {

@@ -115,11 +115,7 @@ void RotateFileLoggerBackend::Log(
     ofs_ << *format_log_str_ptr << std::endl;
   };
 
-  if (!log_executor_ || log_executor_.IsInCurrentExecutor()) [[unlikely]] {
-    log_work();
-  } else {
-    log_executor_.Execute(std::move(log_work));
-  }
+  log_executor_.Execute(std::move(log_work));
 }
 
 bool RotateFileLoggerBackend::OpenNewFile() {

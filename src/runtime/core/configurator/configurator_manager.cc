@@ -82,9 +82,9 @@ void ConfiguratorManager::Initialize(
 void ConfiguratorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
-  AIMRT_INFO("Configurator manager start complete.");
+  AIMRT_INFO("Configurator manager start completed.");
 }
 
 void ConfiguratorManager::Shutdown() {
@@ -112,7 +112,7 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   AIMRT_TRACE("Get configurator proxy for module '{}'.", module_info.name);
 
@@ -158,7 +158,7 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
 YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   auto& ori_root_options_node = *ori_root_options_node_ptr_;
   auto& root_options_node = *root_options_node_ptr_;
@@ -169,7 +169,7 @@ YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
 std::list<std::pair<std::string, std::string>> ConfiguratorManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   return {{"AimRT Core Option", YAML::Dump((*root_options_node_ptr_)["aimrt"])}};
 }

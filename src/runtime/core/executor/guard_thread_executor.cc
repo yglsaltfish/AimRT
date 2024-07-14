@@ -1,14 +1,15 @@
-#include "core/executor/simple_thread_executor.h"
+#include "core/executor/guard_thread_executor.h"
 #include "core/util/thread_tools.h"
 
 namespace YAML {
 template <>
-struct convert<aimrt::runtime::core::executor::SimpleThreadExecutor::Options> {
-  using Options = aimrt::runtime::core::executor::SimpleThreadExecutor::Options;
+struct convert<aimrt::runtime::core::executor::GuardThreadExecutor::Options> {
+  using Options = aimrt::runtime::core::executor::GuardThreadExecutor::Options;
 
   static Node encode(const Options& rhs) {
     Node node;
 
+    node["name"] = rhs.name;
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
 
@@ -17,6 +18,9 @@ struct convert<aimrt::runtime::core::executor::SimpleThreadExecutor::Options> {
 
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
+
+    if (node["name"])
+      rhs.name = node["name"].as<std::string>();
 
     if (node["thread_sched_policy"])
       rhs.thread_sched_policy = node["thread_sched_policy"].as<std::string>();
@@ -31,14 +35,15 @@ struct convert<aimrt::runtime::core::executor::SimpleThreadExecutor::Options> {
 
 namespace aimrt::runtime::core::executor {
 
-void SimpleThreadExecutor::Initialize(std::string_view name, YAML::Node options_node) {
+void GuardThreadExecutor::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
-      "SimpleThreadExecutor can only be initialized once.");
+      "GuardThreadExecutor can only be initialized once.");
 
-  name_ = std::string(name);
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
+
+  name_ = options_.name;
 
   thread_ptr_ = std::make_unique<std::thread>([this]() {
     thread_id_ = std::this_thread::get_id();
@@ -48,7 +53,7 @@ void SimpleThreadExecutor::Initialize(std::string_view name, YAML::Node options_
       util::BindCpuForCurrentThread(options_.thread_bind_cpu);
       util::SetCpuSchedForCurrentThread(options_.thread_sched_policy);
     } catch (const std::exception& e) {
-      AIMRT_WARN("Set thread policy for simple thread executor '{}' get exception, {}",
+      AIMRT_WARN("Set thread policy for guard thread executor '{}' get exception, {}",
                  Name(), e.what());
     }
 
@@ -68,7 +73,7 @@ void SimpleThreadExecutor::Initialize(std::string_view name, YAML::Node options_
         try {
           task();
         } catch (const std::exception& e) {
-          AIMRT_FATAL("Simple thread executor run task get exception, {}", e.what());
+          AIMRT_FATAL("Guard thread executor run task get exception, {}", e.what());
         }
 
         tmp_queue.pop();
@@ -82,7 +87,7 @@ void SimpleThreadExecutor::Initialize(std::string_view name, YAML::Node options_
       try {
         task();
       } catch (const std::exception& e) {
-        AIMRT_FATAL("Simple thread executor run task get exception, {}", e.what());
+        AIMRT_FATAL("Guard thread executor run task get exception, {}", e.what());
       }
 
       queue_.pop();
@@ -92,15 +97,17 @@ void SimpleThreadExecutor::Initialize(std::string_view name, YAML::Node options_
   });
 
   options_node = options_;
+
+  AIMRT_INFO("Guard thread executor init complete");
 }
 
-void SimpleThreadExecutor::Start() {
+void GuardThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Method can only be called when state is 'Init'.");
 }
 
-void SimpleThreadExecutor::Shutdown() {
+void GuardThreadExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
@@ -113,20 +120,18 @@ void SimpleThreadExecutor::Shutdown() {
     thread_ptr_->join();
 
   thread_ptr_.reset();
+
+  AIMRT_INFO("Guard thread executor shutdown.");
 }
 
-void SimpleThreadExecutor::Execute(aimrt::executor::Task&& task) {
+void GuardThreadExecutor::Execute(aimrt::executor::Task&& task) {
   if (state_.load() == State::Init || state_.load() == State::Start) {
     std::unique_lock<std::mutex> lck(mutex_);
     queue_.emplace(std::move(task));
     cond_.notify_one();
   } else {
-    AIMRT_WARN("Simple thread executor '{}' can only execute task when state is 'Init' or 'Start'.", Name());
+    AIMRT_WARN("Guard thread executor can only execute task when state is 'Init' or 'Start'.");
   }
-}
-
-void SimpleThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
-  AIMRT_ERROR_THROW("Simple thread executor '{}' does not support timer schedule.", Name());
 }
 
 }  // namespace aimrt::runtime::core::executor
