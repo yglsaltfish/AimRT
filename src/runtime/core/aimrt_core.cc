@@ -12,7 +12,7 @@ AimRTCore::AimRTCore()
 
 AimRTCore::~AimRTCore() {
   try {
-    Shutdown();
+    ShutdownImpl();
   } catch (const std::exception& e) {
     AIMRT_INFO("AimRTCore destruct get exception, {}", e.what());
   }
@@ -36,8 +36,7 @@ void AimRTCore::Initialize(const Options& options) {
   // Init plugin
   EnterState(State::PreInitPlugin);
   plugin_manager_.SetLogger(logger_ptr_);
-  plugin_manager_.RegisterPluginInitFunc(
-      [this](AimRTCorePluginBase* plugin_ptr) { return plugin_ptr->Initialize(this); });
+  plugin_manager_.RegisterCorePtr(this);
   plugin_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("plugin"));
   EnterState(State::PostInitPlugin);
 
@@ -46,6 +45,12 @@ void AimRTCore::Initialize(const Options& options) {
   main_thread_executor_.SetLogger(logger_ptr_);
   main_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("main_thread"));
   EnterState(State::PostInitMainThread);
+
+  // Init guard thread executor
+  EnterState(State::PreInitGuardThread);
+  guard_thread_executor_.SetLogger(logger_ptr_);
+  guard_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("guard_thread"));
+  EnterState(State::PostInitGuardThread);
 
   // Init allocator
   EnterState(State::PreInitAllocator);
@@ -57,6 +62,7 @@ void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PreInitExecutor);
   executor_manager_.SetLogger(logger_ptr_);
   executor_manager_.SetUsedExecutorName(main_thread_executor_.Name());
+  executor_manager_.SetUsedExecutorName(guard_thread_executor_.Name());
   executor_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("executor"));
   EnterState(State::PostInitExecutor);
 
@@ -108,12 +114,14 @@ void AimRTCore::Initialize(const Options& options) {
   EnterState(State::PostInit);
 }
 
-void AimRTCore::Start() {
+void AimRTCore::StartImpl() {
   AIMRT_INFO("Gen initialization report:\n{}", GenInitializationReport());
 
   EnterState(State::PreStart);
   configurator_manager_.Start();
   plugin_manager_.Start();
+  main_thread_executor_.Start();
+  guard_thread_executor_.Start();
   allocator_manager_.Start();
   executor_manager_.Start();
   logger_manager_.Start();
@@ -122,83 +130,66 @@ void AimRTCore::Start() {
   parameter_manager_.Start();
   module_manager_.Start();
   EnterState(State::PostStart);
+}
 
-  main_thread_executor_.Start();
+void AimRTCore::ShutdownImpl() {
+  if (std::atomic_exchange(&shutdown_impl_flag_, true)) return;
+
+  EnterState(State::PreShutdown);
+  module_manager_.Shutdown();
+  parameter_manager_.Shutdown();
+  channel_manager_.Shutdown();
+  rpc_manager_.Shutdown();
+
+  ResetCoreLogger();
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  logger_manager_.Shutdown();
+
+  executor_manager_.Shutdown();
+  allocator_manager_.Shutdown();
+  guard_thread_executor_.Shutdown();
+  main_thread_executor_.Shutdown();
+  plugin_manager_.Shutdown();
+  configurator_manager_.Shutdown();
+  EnterState(State::PostShutdown);
+}
+
+void AimRTCore::Start() {
+  StartImpl();
+
+  AIMRT_INFO("AimRT start completed, will waiting for shutdown.");
+
+  shutdown_promise_.get_future().wait();
+  ShutdownImpl();
 }
 
 std::future<void> AimRTCore::AsyncStart() {
-  AIMRT_INFO("Gen initialization report:\n{}", GenInitializationReport());
+  StartImpl();
 
-  EnterState(State::PreStart);
-  configurator_manager_.Start();
-  plugin_manager_.Start();
-  allocator_manager_.Start();
-  executor_manager_.Start();
-  logger_manager_.Start();
-  rpc_manager_.Start();
-  channel_manager_.Start();
-  parameter_manager_.Start();
-  module_manager_.Start();
-  EnterState(State::PostStart);
+  AIMRT_INFO("AimRT start completed, will waiting for async shutdown.");
 
-  std::promise<void> thread_exit_promise;
-  auto fu = thread_exit_promise.get_future();
-  std::thread(
-      [thread_exit_promise{std::move(thread_exit_promise)}, this]() mutable {
-        try {
-          main_thread_executor_.Start();
-          thread_exit_promise.set_value_at_thread_exit();
-        } catch (std::exception_ptr p) {
-          thread_exit_promise.set_exception_at_thread_exit(p);
-        }
-      })
-      .detach();
+  std::promise<void> end_running_promise;
+  auto fu = end_running_promise.get_future();
+
+  std::thread([this, end_running_promise{std::move(end_running_promise)}]() mutable {
+    shutdown_promise_.get_future().wait();
+    ShutdownImpl();
+    end_running_promise.set_value();
+  }).detach();
 
   return fu;
 }
 
 void AimRTCore::Shutdown() {
-  if (std::atomic_exchange(&stop_flag_, true)) return;
+  if (std::atomic_exchange(&shutdown_flag_, true)) return;
 
-  auto stop_work = [this]() {
-    EnterState(State::PreShutdown);
-
-    module_manager_.Shutdown();
-
-    parameter_manager_.Shutdown();
-
-    channel_manager_.Shutdown();
-
-    rpc_manager_.Shutdown();
-
-    ResetCoreLogger();
-    logger_manager_.Shutdown();
-
-    executor_manager_.Shutdown();
-
-    allocator_manager_.Shutdown();
-
-    plugin_manager_.Shutdown();
-
-    configurator_manager_.Shutdown();
-
-    main_thread_executor_.Shutdown();
-
-    EnterState(State::PostShutdown);
-  };
-
-  if (main_thread_executor_.GetState() == executor::MainThreadExecutor::State::Start) {
-    main_thread_executor_.Execute(std::move(stop_work));
-  } else {
-    stop_work();
-  }
+  shutdown_promise_.set_value();
 }
 
 void AimRTCore::EnterState(State state) {
   state_ = state;
-  for (const auto& func : hook_task_vec_array_[static_cast<uint32_t>(state)]) {
+  for (const auto& func : hook_task_vec_array_[static_cast<uint32_t>(state)])
     func();
-  }
 }
 
 void AimRTCore::SetCoreLogger() {
@@ -240,8 +231,8 @@ void AimRTCore::ResetCoreLogger() {
 }
 
 aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_name) {
-  if (executor_name.empty() || executor_name == main_thread_executor_.Name())
-    return aimrt::executor::ExecutorRef(main_thread_executor_.NativeHandle());
+  if (executor_name.empty() || executor_name == guard_thread_executor_.Name())
+    return aimrt::executor::ExecutorRef(guard_thread_executor_.NativeHandle());
   return GetExecutorManager().GetExecutor(executor_name);
 }
 
@@ -294,9 +285,6 @@ std::string AimRTCore::GenInitializationReport() const {
 
   auto plugin_manager_report = plugin_manager_.GenInitializationReport();
   report.splice(report.end(), plugin_manager_report);
-
-  auto main_thread_executor_report = main_thread_executor_.GenInitializationReport();
-  report.splice(report.end(), main_thread_executor_report);
 
   auto allocator_manager_report = allocator_manager_.GenInitializationReport();
   report.splice(report.end(), allocator_manager_report);

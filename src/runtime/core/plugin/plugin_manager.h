@@ -45,7 +45,7 @@ class PluginManager {
 
   void RegisterPlugin(AimRTCorePluginBase* plugin);
 
-  void RegisterPluginInitFunc(PluginInitFunc&& plugin_init_func);
+  void RegisterCorePtr(AimRTCore* core_ptr);
 
   YAML::Node GetPluginOptionsNode(std::string_view plugin_name) const;
 
@@ -61,7 +61,7 @@ class PluginManager {
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  PluginInitFunc plugin_init_func_;
+  AimRTCore* core_ptr_ = nullptr;
 
   // 直接注册的插件
   std::vector<AimRTCorePluginBase*> registered_plugin_vec_;

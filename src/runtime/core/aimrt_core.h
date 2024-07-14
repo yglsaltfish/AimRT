@@ -8,6 +8,7 @@
 #include "core/channel/channel_manager.h"
 #include "core/configurator/configurator_manager.h"
 #include "core/executor/executor_manager.h"
+#include "core/executor/guard_thread_executor.h"
 #include "core/executor/main_thread_executor.h"
 #include "core/logger/logger_manager.h"
 #include "core/module/module_manager.h"
@@ -38,6 +39,9 @@ class AimRTCore {
 
     PreInitMainThread,
     PostInitMainThread,
+
+    PreInitGuardThread,
+    PostInitGuardThread,
 
     PreInitAllocator,
     PostInitAllocator,
@@ -96,14 +100,17 @@ class AimRTCore {
         .emplace_back(std::forward<Args>(args)...);
   }
 
-  auto& GetMainThreadExecutor() { return main_thread_executor_; }
-  const auto& GetMainThreadExecutor() const { return main_thread_executor_; }
-
   auto& GetConfiguratorManager() { return configurator_manager_; }
   const auto& GetConfiguratorManager() const { return configurator_manager_; }
 
   auto& GetPluginManager() { return plugin_manager_; }
   const auto& GetPluginManager() const { return plugin_manager_; }
+
+  auto& GetMainThreadExecutor() { return main_thread_executor_; }
+  const auto& GetMainThreadExecutor() const { return main_thread_executor_; }
+
+  auto& GetGuardThreadExecutor() { return guard_thread_executor_; }
+  const auto& GetGuardThreadExecutor() const { return guard_thread_executor_; }
 
   auto& GetAllocatorManager() { return allocator_manager_; }
   const auto& GetAllocatorManager() const { return allocator_manager_; }
@@ -138,19 +145,24 @@ class AimRTCore {
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
   void DumpCfgFile() const;
   void CheckCfgFile() const;
+  void StartImpl();
+  void ShutdownImpl();
 
  private:
   Options options_;
-  std::atomic_bool stop_flag_ = false;
   State state_ = State::PreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  std::vector<HookTask> hook_task_vec_array_[static_cast<uint32_t>(State::MaxStateNum)];
+  std::atomic_bool shutdown_flag_ = false;
+  std::promise<void> shutdown_promise_;
+  std::atomic_bool shutdown_impl_flag_ = false;
 
-  executor::MainThreadExecutor main_thread_executor_;
+  std::vector<HookTask> hook_task_vec_array_[static_cast<uint32_t>(State::MaxStateNum)];
 
   configurator::ConfiguratorManager configurator_manager_;
   plugin::PluginManager plugin_manager_;
+  executor::MainThreadExecutor main_thread_executor_;
+  executor::GuardThreadExecutor guard_thread_executor_;
   allocator::AllocatorManager allocator_manager_;
   executor::ExecutorManager executor_manager_;
   logger::LoggerManager logger_manager_;

@@ -100,13 +100,13 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 void ExecutorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   for (auto& itr : executor_vec_) {
     itr->Start();
   }
 
-  AIMRT_INFO("Executor manager start complete.");
+  AIMRT_INFO("Executor manager start completed.");
 }
 
 void ExecutorManager::Shutdown() {
@@ -130,7 +130,7 @@ void ExecutorManager::RegisterExecutorGenFunc(
     std::string_view type, ExecutorGenFunc&& executor_gen_func) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   executor_gen_func_map_.emplace(type, std::move(executor_gen_func));
 }
@@ -138,7 +138,7 @@ void ExecutorManager::RegisterExecutorGenFunc(
 const ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   auto itr = executor_manager_proxy_map_.find(module_info.name);
   if (itr != executor_manager_proxy_map_.end()) return *(itr->second);
@@ -219,7 +219,7 @@ void ExecutorManager::RegisterTimwWheelExecutorGenFunc() {
 std::list<std::pair<std::string, std::string>> ExecutorManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   std::vector<std::string> executor_type_vec;
   for (const auto& itr : executor_gen_func_map_) {

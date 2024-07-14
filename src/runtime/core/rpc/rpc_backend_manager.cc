@@ -19,7 +19,7 @@ void RpcBackendManager::Initialize(RpcRegistry* rpc_registry_ptr) {
 void RpcBackendManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   for (auto& backend : rpc_backend_index_vec_) {
     AIMRT_TRACE("Start rpc backend '{}'.", backend->Name());
@@ -44,7 +44,7 @@ void RpcBackendManager::SetClientsBackendsRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   clients_backends_rules_ = rules;
 }
@@ -53,7 +53,7 @@ void RpcBackendManager::SetServersBackendsRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   servers_backends_rules_ = rules;
 }
@@ -61,7 +61,7 @@ void RpcBackendManager::SetServersBackendsRules(
 void RpcBackendManager::RegisterRpcBackend(RpcBackendBase* rpc_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
-      "Function can only be called when state is 'PreInit'.");
+      "Method can only be called when state is 'PreInit'.");
 
   rpc_backend_index_vec_.emplace_back(rpc_backend_ptr);
   rpc_backend_index_map_.emplace(rpc_backend_ptr->Name(), rpc_backend_ptr);

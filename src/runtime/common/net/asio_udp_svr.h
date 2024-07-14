@@ -80,7 +80,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
   }
@@ -90,7 +90,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   void RegisterMsgHandle(Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     msg_handle_ptr_ = std::make_shared<MsgHandle>(std::forward<Args>(args)...);
   }
@@ -102,7 +102,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Init) == State::PreInit,
-        "Function can only be called when state is 'PreInit'.");
+        "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
     session_options_ptr_ = std::make_shared<SessionOptions>(options_);
@@ -111,7 +111,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, State::Start) == State::Init,
-        "Function can only be called when state is 'Init'.");
+        "Method can only be called when state is 'Init'.");
 
     auto self = shared_from_this();
     boost::asio::co_spawn(
@@ -270,7 +270,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
-          "Function can only be called when state is 'PreInit'.");
+          "Method can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
     }
@@ -278,7 +278,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
-          "Function can only be called when state is 'Init'.");
+          "Method can only be called when state is 'Init'.");
 
       auto self = shared_from_this();
 

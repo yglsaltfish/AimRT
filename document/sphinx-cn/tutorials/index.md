@@ -104,6 +104,7 @@ cfg/module.md
 cfg/configurator.md
 cfg/plugin.md
 cfg/main_thread.md
+cfg/guard_thread.md
 cfg/executor.md
 cfg/log.md
 cfg/channel.md

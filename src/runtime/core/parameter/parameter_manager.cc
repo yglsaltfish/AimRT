@@ -37,9 +37,9 @@ void ParameterManager::Initialize(YAML::Node options_node) {
 void ParameterManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
-  AIMRT_INFO("Parameter manager start complete.");
+  AIMRT_INFO("Parameter manager start completed.");
 }
 
 void ParameterManager::Shutdown() {
@@ -55,7 +55,7 @@ const ParameterHandleProxy& ParameterManager::GetParameterHandleProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   auto itr = parameter_handle_proxy_wrap_map_.find(module_info.name);
   if (itr != parameter_handle_proxy_wrap_map_.end()) return itr->second->parameter_handle_proxy;
@@ -73,7 +73,7 @@ const ParameterHandleProxy& ParameterManager::GetParameterHandleProxy(
 ParameterHandle* ParameterManager::GetParameterHandle(std::string_view module_name) const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Start,
-      "Function can only be called when state is 'Start'.");
+      "Method can only be called when state is 'Start'.");
 
   auto itr = parameter_handle_proxy_wrap_map_.find(module_name);
   if (itr != parameter_handle_proxy_wrap_map_.end()) return &(itr->second->parameter_handle);
@@ -84,7 +84,7 @@ ParameterHandle* ParameterManager::GetParameterHandle(std::string_view module_na
 std::list<std::pair<std::string, std::string>> ParameterManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   return {};
 }

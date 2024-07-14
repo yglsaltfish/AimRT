@@ -37,9 +37,9 @@ void AllocatorManager::Initialize(YAML::Node options_node) {
 void AllocatorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
-  AIMRT_INFO("Allocator manager start complete.");
+  AIMRT_INFO("Allocator manager start completed.");
 }
 
 void AllocatorManager::Shutdown() {
@@ -52,7 +52,7 @@ void AllocatorManager::Shutdown() {
 const AllocatorProxy& AllocatorManager::GetAllocatorProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   return allocator_proxy_;
 }
@@ -60,7 +60,7 @@ const AllocatorProxy& AllocatorManager::GetAllocatorProxy(const util::ModuleDeta
 std::list<std::pair<std::string, std::string>> AllocatorManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   return {};
 }

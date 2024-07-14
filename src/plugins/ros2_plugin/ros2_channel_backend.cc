@@ -128,7 +128,7 @@ void Ros2ChannelBackend::Initialize(
 void Ros2ChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
-      "Function can only be called when state is 'Init'.");
+      "Method can only be called when state is 'Init'.");
 
   for (auto& itr : ros2_subscribe_wrapper_map_) {
     static_cast<Ros2AdapterSubscription*>(itr.second.get())->Start();
