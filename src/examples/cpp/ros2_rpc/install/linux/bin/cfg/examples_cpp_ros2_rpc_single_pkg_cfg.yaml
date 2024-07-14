@@ -21,15 +21,7 @@ aimrt:
   module:
     pkgs:
       - path: ./libros2_rpc_pkg.so
-        disable_module:
-          [
-            BenchmarkRpcClientModule,
-            NormalRpcAsyncClientModule,
-            NormalRpcAsyncServerModule,
-            NormalRpcSyncClientModule,
-            NormalRpcSyncServerModule,
-            NormalRpcFutureClientModule,
-          ]
+        enable_modules: [NormalRpcCoClientModule, NormalRpcCoServerModule]
     modules:
       - name: NormalRpcCoClientModule
         log_lvl: INFO
@@ -39,5 +31,3 @@ aimrt:
 # Module custom configuration
 NormalRpcCoClientModule:
   rpc_frq: 0.5
-
-NormalRpcCoServerModule:

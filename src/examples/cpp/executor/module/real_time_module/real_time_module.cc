@@ -52,6 +52,7 @@ co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
   try {
     AIMRT_INFO("Start WorkLoop in {}.", executor.Name());
 
+#ifdef __linux__
     // Get thread name
     char thread_name[16];
     pthread_getname_np(pthread_self(), thread_name, sizeof(thread_name));
@@ -63,6 +64,7 @@ co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
 
     AIMRT_INFO("Executor name: {}, thread_name: {}, policy: {}, priority: {}",
                executor.Name(), thread_name, policy, param.sched_priority);
+#endif
 
     uint32_t count = 0;
     while (run_flag_) {
@@ -74,6 +76,7 @@ co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
           co::AimRTScheduler(executor), std::chrono::milliseconds(1000));
       auto end_tp = std::chrono::steady_clock::now();
 
+#ifdef __linux__
       // Get cpuset used by the current thread
       cpu_set_t cur_cpuset;
       CPU_ZERO(&cur_cpuset);
@@ -101,6 +104,12 @@ co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
       AIMRT_INFO(
           "Loop count: {}, executor name: {}, sleep for {}, cpu: {}, node: {}, use cpu: '{}'",
           count, executor.Name(), end_tp - start_tp, current_cpu, current_node, cur_cpuset_str);
+#else
+      // Log
+      AIMRT_INFO(
+          "Loop count: {}, executor name: {}, sleep for {}",
+          count, executor.Name(), end_tp - start_tp);
+#endif
     }
 
     AIMRT_INFO("Exit WorkLoop.");

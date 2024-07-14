@@ -26,7 +26,7 @@ aimrt:
   module:
     pkgs:
       - path: ./ros2_rpc_client_pkg.dll
-        disable_module: [BenchmarkRpcClientModule]
+        enable_modules: [NormalRpcCoClientModule]
     modules:
       - name: NormalRpcCoClientModule
         log_lvl: INFO

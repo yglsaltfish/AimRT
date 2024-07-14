@@ -21,7 +21,7 @@ aimrt:
   module:
     pkgs:
       - path: ./libprotobuf_channel_sub_pkg.so
-        disable_module: [NormalSubscriberModule]
+        enable_modules: [BenchmarkSubscriberModule]
     modules:
       - name: BenchmarkSubscriberModule
         log_lvl: INFO

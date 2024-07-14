@@ -22,7 +22,7 @@ aimrt:
   module:
     pkgs:
       - path: ./protobuf_channel_sub_pkg.dll
-        disable_module: [BenchmarkSubscriberModule]
+        enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalSubscriberModule
         log_lvl: INFO

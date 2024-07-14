@@ -21,8 +21,9 @@ aimrt:
   module:
     pkgs:
       - path: ./ros2_rpc_client_pkg.dll
-        disable_module: [BenchmarkRpcClientModule]
+        enable_modules: [NormalRpcCoClientModule]
       - path: ./ros2_rpc_server_pkg.dll
+        enable_modules: [NormalRpcCoServerModule]
     modules:
       - name: NormalRpcCoClientModule
         log_lvl: INFO
@@ -32,5 +33,3 @@ aimrt:
 # Module custom configuration
 NormalRpcCoClientModule:
   rpc_frq: 0.5
-
-NormalRpcCoServerModule:

@@ -39,8 +39,9 @@ aimrt:
   module:
     pkgs:
       - path: ./libros2_rpc_client_pkg.so
-        disable_module: [NormalRpcCoClientModule]
+        enable_modules: [BenchmarkRpcClientModule]
       - path: ./libros2_rpc_server_pkg.so
+        enable_modules: [NormalRpcCoServerModule]
     modules:
       - name: BenchmarkRpcClientModule
         log_lvl: INFO

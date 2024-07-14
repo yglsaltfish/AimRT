@@ -30,7 +30,7 @@ aimrt:
     pkgs: # 要加载的动态库配置
 {%- for pkg in deploy.pkgs %}
       - path: ./lib{{ pkg.name }}.so # so/dll地址
-        disable_module: {{ pkg.disable_modules }} # 此动态库中要屏蔽的模块名称。默认全部加载
+        disable_modules: {{ pkg.disable_modules }} # 此动态库中要屏蔽的模块名称。默认全部加载
 {%- endfor %}
     modules: # 模块
 {%- for pkg in deploy.pkgs %}

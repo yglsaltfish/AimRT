@@ -5,16 +5,11 @@ string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set_namespace()
 
 # module
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-  add_subdirectory(module/real_time_module)
-endif()
 add_subdirectory(module/executor_module)
 add_subdirectory(module/executor_co_module)
+add_subdirectory(module/real_time_module)
 
 # pkg
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-  add_subdirectory(pkg/real_time_pkg)
-endif()
 add_subdirectory(pkg/executor_pkg)
 
 # install
@@ -41,7 +36,3 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin ${CMAKE_BINARY_DIR}
   DEPENDS aimrt::runtime::main
           ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR}::executor_pkg)
-
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-  add_dependencies(${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR}::real_time_pkg)
-endif()
