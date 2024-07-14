@@ -97,7 +97,7 @@ class BufferArrayZeroCopyInputStream
     const size_t buffer_vec_size = buffer_array_view_.len;
 
     for (;;) {
-      if (cur_buf_unused_size_ > count) {
+      if (static_cast<int>(cur_buf_unused_size_) > count) {
         cur_buf_unused_size_ -= count;
         count = 0;
         break;
