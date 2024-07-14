@@ -21,14 +21,7 @@ aimrt:
   module:
     pkgs:
       - path: ./protobuf_rpc_pkg.dll
-        disable_module:
-          [
-            NormalRpcAsyncClientModule,
-            NormalRpcAsyncServerModule,
-            NormalRpcSyncClientModule,
-            NormalRpcSyncServerModule,
-            NormalRpcFutureClientModule,
-          ]
+        enable_modules: [NormalRpcCoClientModule, NormalRpcCoServerModule]
     modules:
       - name: NormalRpcCoClientModule
         log_lvl: INFO

@@ -28,8 +28,8 @@ aimrt:
           timeout_alarm_threshold_us: 100
   module:
     pkgs:
-      - path: ./libreal_time_pkg.so
+      - path: ./libexecutor_pkg.so
+        enable_modules: [RealTimeModule]
     modules:
       - name: RealTimeModule
         log_lvl: INFO
-

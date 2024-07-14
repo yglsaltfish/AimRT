@@ -9,7 +9,8 @@
 | ----                      | ----          | ----  | ----  | ---- |
 | pkgs                     | array         | 可选  | []    | 要加载的Pkg动态库配置 |
 | pkgs[i].path             | string        | 必选  | ""    | 要加载的Pkg动态库路径 |
-| pkgs[i].disable_module   | string array  | 可选  | []    | 此动态库中要屏蔽的模块名称 |
+| pkgs[i].enable_modules   | string array  | 可选  | []    | 此动态库中要加载的模块名称，不可与disable_modules选项同时使用 |
+| pkgs[i].disable_modules  | string array  | 可选  | []    | 此动态库中要屏蔽的模块名称，不可与enable_modules选项同时使用 |
 | modules                  | array         | 可选  | []    | 模块详细配置 |
 | modules[i].name          | string        | 必选  | ""    | 模块名称 |
 | modules[i].enable        | bool          | 可选  | True  | 是否启用 |
@@ -23,7 +24,8 @@ aimrt:
   module: # 【可选】模块配置根节点
     pkgs: # 【可选】要加载的Pkg动态库配置
       - path: /path/to/libxxx_pkg.so # 【必选】so/dll地址
-        disable_module: [XXXModule] # 【可选】此动态库中要屏蔽的模块名称。默认全部加载
+        enable_modules: [FooModule, BarModule] # 【可选】此动态库中要加载的模块名称，不可与disable_modules选项同时使用
+        # disable_modules: [] # 【可选】此动态库中要屏蔽的模块名称，不可与enable_modules选项同时使用
     modules: # 【可选】模块
       - name: FooModule # 【必选】模块名称
         enable: True # 【可选】是否启用。默认True
@@ -42,7 +44,11 @@ BarModule:
 使用时请注意，在`aimrt.module`节点下：
 - `pkg`是一个数组，用于要加载的Pkg动态库。
   - `pkgs[i].path`用于配置要加载的Pkg动态库路径。不允许出现重复的Pkg路径。如果Pkg文件不存在，AimRT进程会抛出异常。
-  - `pkgs[i].disable_module`用于屏蔽Pkg动态库中指定名称的模块。
+  - `pkgs[i].enable_modules`和`pkgs[i].disable_modules`用于配置要加载/屏蔽的模块，其生效逻辑如下：
+    - 如果没有配置`enable_modules`或`disable_modules`，则加载全部模块；
+    - 如果仅配置了`enable_modules`，则加载`enable_modules`中的所有模块；
+    - 如果仅配置了`disable_modules`，则加载除了`disable_modules`中的其他所有模块；
+    - 如果同时配置了`enable_modules`和`disable_modules`，则加载`enable_modules`中的所有模块，忽略`disable_modules`选项，并在初始化时告警；
 - `modules`是一个数组，用于配置各个模块。
   - `modules[i].name`表示模块名称。不允许出现重复的模块名称。
   - `modules[i].log_lvl`用以配置模块日志等级。

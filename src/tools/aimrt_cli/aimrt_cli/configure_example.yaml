@@ -83,7 +83,7 @@ deploy_modes:
         pkgs:
           - name: pkg1
             options:
-              disable_module: []
+              disable_modules: []
       - name: local_ins_2
       - name: remote_ins_123
 

@@ -153,7 +153,7 @@ deploy_modes:
         pkgs:
           - name: pkg1
             options:
-              disable_module: []
+              disable_modules: []
       - name: local_ins_2
       - name: remote_ins_123
 
@@ -167,7 +167,7 @@ deploy_modes:
 + `deploy_ins`是具体的部署配置：
   + 子项 `name`指定具体部署的名称。
   + 子项 `pkgs` 自定部署依赖的模块包的名称，这将会在自动生成部署配置文件时将模块关联的动态库关联过去。注意如果没有配置任何的模块包将不会生成具体的部署配置。
-  + 子项 `pkgs` 下还可以配置 `options`标签，目前 `options`支持配置 `disable_module`选项，该选项可指定在此部署下pkg中不会包含的module模块名。在运行时，这些模块将不会被加载。
+  + 子项 `pkgs` 下还可以配置 `options`标签，目前 `options`支持配置 `disable_modules`选项，该选项可指定在此部署下pkg中不会包含的module模块名。在运行时，这些模块将不会被加载。
 
 注意，代码自动生成工具，给予部署配置生成的具体部署的配置文件中并没有为关联的模块生成具体配置项，需要您自己指定。
 

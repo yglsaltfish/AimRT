@@ -24,9 +24,9 @@ aimrt:
   module:
     pkgs:
       - path: ./protobuf_channel_pub_pkg.dll
-        disable_module: [NormalPublisherModule]
+        enable_modules: [BenchmarkPublisherModule]
       - path: ./protobuf_channel_sub_pkg.dll
-        disable_module: [NormalSubscriberModule]
+        enable_modules: [BenchmarkSubscriberModule]
     modules:
       - name: BenchmarkPublisherModule
         log_lvl: INFO

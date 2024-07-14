@@ -23,7 +23,7 @@ aimrt:
   module:
     pkgs:
       - path: ./libros2_channel_sub_pkg.so
-        disable_module: [BenchmarkSubscriberModule]
+        enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalSubscriberModule
         log_lvl: INFO

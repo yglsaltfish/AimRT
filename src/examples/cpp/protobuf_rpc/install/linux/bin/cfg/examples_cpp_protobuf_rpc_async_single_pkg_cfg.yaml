@@ -21,14 +21,7 @@ aimrt:
   module:
     pkgs:
       - path: ./libprotobuf_rpc_pkg.so
-        disable_module:
-          [
-            NormalRpcCoClientModule,
-            NormalRpcCoServerModule,
-            NormalRpcSyncClientModule,
-            NormalRpcSyncServerModule,
-            NormalRpcFutureClientModule,
-          ]
+        enable_modules: [NormalRpcAsyncClientModule, NormalRpcAsyncServerModule]
     modules:
       - name: NormalRpcAsyncClientModule
         log_lvl: INFO

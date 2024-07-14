@@ -37,7 +37,7 @@ aimrt:
   module:
     pkgs:
       - path: ./executor_pkg.dll
-        disable_module: [ExecutorModule]
+        enable_modules: [ExecutorCoModule]
     modules:
       - name: ExecutorCoModule
         log_lvl: INFO

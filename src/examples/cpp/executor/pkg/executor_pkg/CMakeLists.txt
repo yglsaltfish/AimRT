@@ -24,7 +24,8 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_pkg_c_interface
           ${CUR_SUPERIOR_NAMESPACE}::executor_module
-          ${CUR_SUPERIOR_NAMESPACE}::executor_co_module)
+          ${CUR_SUPERIOR_NAMESPACE}::executor_co_module
+          ${CUR_SUPERIOR_NAMESPACE}::real_time_module)
 
 # Set installation of target
 if(AIMRT_INSTALL)

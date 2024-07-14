@@ -91,9 +91,9 @@ class DeployGenerator(GeneratorBase):
                 for pkg in deploy_ins['pkgs']:
                     pkg_name = pkg['name']
                     relate_modules = []
-                    pkg_disable_module = []
-                    if 'options' in pkg.keys() and 'disable_module' in pkg['options'].keys():
-                        pkg_disable_module = pkg['options']['disable_module']
+                    pkg_disable_modules = []
+                    if 'options' in pkg.keys() and 'disable_modules' in pkg['options'].keys():
+                        pkg_disable_modules = pkg['options']['disable_modules']
 
                     if pkg_name not in pkg_names:
                         print_warnings("Pkg name: " + pkg_name +
@@ -105,7 +105,7 @@ class DeployGenerator(GeneratorBase):
                                 check_pkg_build_mode(pkg_cfg, deploy_build_modes, pkg_build_modes)
                                 pkg_modules = pkg_cfg.local_modules + pkg_cfg.remote_modules
                                 for related_module in pkg_modules:
-                                    if related_module.class_name not in pkg_disable_module:
+                                    if related_module.class_name not in pkg_disable_modules:
                                         if related_module.name not in already_used_modules:
                                             relate_modules.append(related_module.class_name)
                                             already_used_modules.append(related_module.name)
@@ -115,7 +115,7 @@ class DeployGenerator(GeneratorBase):
                                 break
 
                     deploy_pkgs.append(DeployedPackages(name=pkg_name, deployed_modules=relate_modules,
-                                                        disable_modules=pkg_disable_module))
+                                                        disable_modules=pkg_disable_modules))
                 self.expand_infos_.append(DeployExpandInfo(name=deploy_name, pkgs=deploy_pkgs))
 
     def generate(self):
