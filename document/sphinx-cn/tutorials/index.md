@@ -124,7 +124,6 @@ plugins/net_plugin.md
 plugins/mqtt_plugin.md
 plugins/ros2_plugin.md
 plugins/sm_plugin.md
-plugins/lcm_plugin.md
 plugins/parameter_plugin.md
 plugins/time_manipulator_plugin.md
 plugins/log_control_plugin.md

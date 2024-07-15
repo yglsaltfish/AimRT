@@ -35,7 +35,6 @@ set(PLUGIN_LIST
     net
     sm
     ros2
-    lcm
     mqtt
     time_manipulator
     parameter

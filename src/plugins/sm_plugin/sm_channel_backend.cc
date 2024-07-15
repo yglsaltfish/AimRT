@@ -109,7 +109,7 @@ void SmChannelBackend::Start() {
     (void)id;
     auto dispatcher_ptr = pair.second;
     pair.first.Execute([this, dispatcher_ptr]() {
-      dispatcher_ptr->Run();  // run lcm dispatcher
+      dispatcher_ptr->Run();
     });
   }
 }
