@@ -31,14 +31,7 @@ function(copy_plugin_if_enabled PLUGIN_NAME)
 endfunction()
 
 # record_playback plugin not included
-set(PLUGIN_LIST
-    net
-    sm
-    ros2
-    mqtt
-    time_manipulator
-    parameter
-    log_control)
+set(PLUGIN_LIST net ros2 mqtt time_manipulator parameter log_control)
 
 foreach(PLUGIN_NAME ${PLUGIN_LIST})
   copy_plugin_if_enabled(${PLUGIN_NAME})

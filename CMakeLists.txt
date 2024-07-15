@@ -23,7 +23,6 @@ option(AIMRT_USE_PROTOC_PYTHON_PLUGIN "AimRT use protoc python plugin." OFF)
 option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
 
 option(AIMRT_BUILD_NET_PLUGIN "AimRT build net plugin." OFF)
-option(AIMRT_BUILD_SM_PLUGIN "AimRT build sm plugin." OFF)
 option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF)
 option(AIMRT_BUILD_MQTT_PLUGIN "AimRT build mqtt plugin." OFF)
 option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF)
