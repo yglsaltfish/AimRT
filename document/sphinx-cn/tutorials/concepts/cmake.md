@@ -40,7 +40,6 @@ AimRT框架由其interface层、runtime主体，加上多个插件、工具共�
 |  AIMRT_BUILD_NET_PLUGIN               | BOOL  | OFF   | 是否编译Net插件  |
 |  AIMRT_BUILD_SM_PLUGIN                | BOOL  | OFF   | 是否编译共享内存插件 |
 |  AIMRT_BUILD_ROS2_PLUGIN              | BOOL  | OFF   | 是否编译ROS2 Humble插件  |
-|  AIMRT_BUILD_LCM_PLUGIN               | BOOL  | OFF   | 是否编译LCM插件  |
 |  AIMRT_BUILD_MQTT_PLUGIN              | BOOL  | OFF   | 是否编译Mqtt插件  |
 |  AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN   | BOOL  | OFF   | 是否编译录播插件  |
 |  AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN  | BOOL  | OFF   | 是否编译time manipulator插件  |

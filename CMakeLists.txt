@@ -25,7 +25,6 @@ option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
 option(AIMRT_BUILD_NET_PLUGIN "AimRT build net plugin." OFF)
 option(AIMRT_BUILD_SM_PLUGIN "AimRT build sm plugin." OFF)
 option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF)
-option(AIMRT_BUILD_LCM_PLUGIN "AimRT build lcm plugin." OFF)
 option(AIMRT_BUILD_MQTT_PLUGIN "AimRT build mqtt plugin." OFF)
 option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF)
 option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time manipulator plugin." OFF)
@@ -205,10 +204,6 @@ if(AIMRT_BUILD_RUNTIME)
 
   if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
     include(GetSqlite)
-  endif()
-
-  if(AIMRT_BUILD_LCM_PLUGIN AND CMAKE_SYSTEM_NAME MATCHES "Linux")
-    include(GetLcm)
   endif()
 
   if(AIMRT_BUILD_MQTT_PLUGIN)
