@@ -1,41 +1,32 @@
-#include "channel_manager.h"
+#include "core/channel/channel_manager.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "core/channel/channel_manager.h"
 
 namespace aimrt::runtime::core::channel {
-
-YAML::Node options_node_test = YAML::Load(R"str(
-aimrt:
-  channel: # 【可选】Channel配置根节点
-    backends: # 【可选】Channel后端列表
-      - type: mock_backend_test # 【必选】Channel后端类型
-    pub_topics_options: # 【可选】Channel Pub Topic配置
-      - topic_name: "(.*)" # 【必选】Channel Pub Topic名称，支持正则表达式
-        enable_backends: [mock_backend_test] # 【必选】Channel Pub Topic允许使用的Channel后端列表
-    sub_topics_options: # 【可选】Channel Sub Topic配置
-      - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
-        enable_backends: [mock_backend_test] # 【必选】Channel Sub Topic允许使用的Channel后端列表
-)str");
-
-#include <gmock/gmock.h>
 
 // 模拟的通道后端类，继承自ChannelBackendBase
 class MockChannelBackendBase : public ChannelBackendBase {
  public:
-  std::string_view Name() const noexcept override { return "mock_backend_test"; }
+  std::string_view Name() const override { return "mock_backend_test"; }
   MOCK_METHOD2(Initialize, void(YAML::Node options_node, const ChannelRegistry* channel_registry_ptr));
   MOCK_METHOD0(Start, void());
   MOCK_METHOD0(Shutdown, void());
   bool RegisterPublishType(
-      const PublishTypeWrapper& publish_type_wrapper) noexcept { return false; }
-  bool Subscribe(const SubscribeWrapper& subscribe_wrapper) noexcept { return false; }
-  void Publish(const PublishWrapper& publish_wrapper) noexcept { return; }
+      const PublishTypeWrapper& publish_type_wrapper) noexcept override { return false; }
+  bool Subscribe(const SubscribeWrapper& subscribe_wrapper) noexcept override { return false; }
+  void Publish(const PublishWrapper& publish_wrapper) noexcept override { return; }
 };
 
 class ChannelManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    YAML::Node options_node_test = YAML::Load(R"str(
+aimrt:
+  channel: # 【可选】Channel配置根节点
+    backends: # 【可选】Channel后端列表
+      - type: mock_backend_test # 【必选】Channel后端类型
+)str");
+
     EXPECT_EQ(channel_manager_.GetState(), ChannelManager::State::PreInit);
     channel_manager_.RegisterChannelBackend(std::move(channel_backend_test_ptr_));
 
@@ -51,6 +42,8 @@ class ChannelManagerTest : public ::testing::Test {
 
   ChannelManager channel_manager_;
   std::unique_ptr<MockChannelBackendBase> channel_backend_test_ptr_ = std::make_unique<MockChannelBackendBase>();
+
+  ;
 };
 
 // 测试Initialize、RegisterChannelBackend、GetChannelBackendNameList
@@ -59,6 +52,12 @@ TEST_F(ChannelManagerTest, GetChannelBackendNameList) {
   // 验证返回的名称列表是否包含我们模拟的名称
   EXPECT_EQ(channel_backend_name_test_list.size(), 1);
   EXPECT_EQ(channel_backend_name_test_list[0], "mock_backend_test");
+}
+
+// 测试Start
+TEST_F(ChannelManagerTest, Start) {
+  channel_manager_.Start();
+  EXPECT_EQ(channel_manager_.GetState(), ChannelManager::State::Start);
 }
 
 }  // namespace aimrt::runtime::core::channel
