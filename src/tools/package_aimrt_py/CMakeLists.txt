@@ -10,8 +10,10 @@ add_custom_target(
 add_custom_target(
   create_python_pkg ALL
   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/aimrt_py_pkg
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml ${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_BINARY_DIR}/aimrt_py_pkg/
-  COMMAND ${Python3_EXECUTABLE} setup.py sdist bdist_wheel
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml ${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_CURRENT_SOURCE_DIR}/MANIFEST.in
+          ${CMAKE_BINARY_DIR}/aimrt_py_pkg/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/VERSION ${CMAKE_SOURCE_DIR}/README.md ${CMAKE_SOURCE_DIR}/LICENSE ${CMAKE_BINARY_DIR}/aimrt_py_pkg/
+  COMMAND ${Python3_EXECUTABLE} -m build
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/aimrt_py_pkg)
 
 function(copy_plugin_if_enabled PLUGIN_NAME)
