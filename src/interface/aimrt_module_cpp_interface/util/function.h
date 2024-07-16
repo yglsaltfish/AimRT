@@ -50,8 +50,8 @@ class Function<Ops> {
 
  private:
   using InvokerTypeHelper = InvokerTraitsHelper<decltype(OpsType::invoker)>;
-  using R = InvokerTypeHelper::ReturnType;
-  using ArgsTuple = InvokerTypeHelper::ArgsTuple;
+  using R = typename InvokerTypeHelper::ReturnType;
+  using ArgsTuple = typename InvokerTypeHelper::ArgsTuple;
   using Indices = std::make_index_sequence<InvokerTypeHelper::ArgCount>;
 
  public:
