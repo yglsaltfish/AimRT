@@ -95,14 +95,14 @@ class NormalRpcClientModule(aimrt_py.ModuleBase):
         try:
             self.loop_count = self.loop_count + 1
             aimrt_py.info(self.logger,
-                              "Loop count : {} -------------------------".format(self.loop_count))
+                          "Loop count : {} -------------------------".format(self.loop_count))
 
             # call rpc
             req = rpc_pb2.GetFooDataReq()
             req.msg = "count {}".format(self.loop_count)
 
             aimrt_py.info(self.logger,
-                              "Client start new rpc call. req: {}".format(MessageToJson(req)))
+                          "Client start new rpc call. req: {}".format(MessageToJson(req)))
 
             ctx = aimrt_py.RpcContext()
             ctx.SetTimeout(datetime.timedelta(seconds=30))
@@ -114,7 +114,7 @@ class NormalRpcClientModule(aimrt_py.ModuleBase):
                         status.ToString(), MessageToJson(rsp)))
             else:
                 aimrt_py.warn(self.logger,
-                                  "Client get rpc error ret, status: {}".format(status.ToString()))
+                              "Client get rpc error ret, status: {}".format(status.ToString()))
 
             # next loop
             self.work_executor.ExecuteAfter(

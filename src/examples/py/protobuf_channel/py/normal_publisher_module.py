@@ -93,14 +93,14 @@ class NormalPublisherModule(aimrt_py.ModuleBase):
         try:
             self.loop_count = self.loop_count + 1
             aimrt_py.info(self.logger,
-                              "Loop count : {} -------------------------".format(self.loop_count))
+                          "Loop count : {} -------------------------".format(self.loop_count))
 
             # publish event
             event_msg = event_pb2.ExampleEventMsg()
             event_msg.msg = "count {}".format(self.loop_count)
             event_msg.num = self.loop_count
             aimrt_py.info(self.logger,
-                              "Publish new pb event, data: {}".format(MessageToJson(event_msg)))
+                          "Publish new pb event, data: {}".format(MessageToJson(event_msg)))
 
             aimrt_py.Publish(self.publisher, event_msg)
 
