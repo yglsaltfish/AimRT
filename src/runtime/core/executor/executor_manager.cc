@@ -54,7 +54,7 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
   RegisterAsioExecutorGenFunc();
   RegisterTBBExecutorGenFunc();
   RegisterSimpleThreadExecutorGenFunc();
-  RegisterTimwWheelExecutorGenFunc();
+  RegisterTImeWheelExecutorGenFunc();
 
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
@@ -205,7 +205,7 @@ void ExecutorManager::RegisterSimpleThreadExecutorGenFunc() {
   });
 }
 
-void ExecutorManager::RegisterTimwWheelExecutorGenFunc() {
+void ExecutorManager::RegisterTImeWheelExecutorGenFunc() {
   RegisterExecutorGenFunc("time_wheel", [this]() -> std::unique_ptr<ExecutorBase> {
     auto ptr = std::make_unique<TimeWheelExecutor>();
     ptr->SetLogger(logger_ptr_);
