@@ -64,10 +64,6 @@ void MainThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Main thread executor can only run when state is 'Init'.");
-
-  AIMRT_CHECK_ERROR_THROW(
-      main_thread_id_ == std::this_thread::get_id(),
-      "'Initialize' and 'Start' method are not called in the same thread.");
 }
 
 void MainThreadExecutor::Shutdown() {
