@@ -1,6 +1,4 @@
 import aimrt_py
-import aimrt_py_log
-import aimrt_py_pb_chn
 import yaml
 
 from google.protobuf.json_format import MessageToJson
@@ -26,7 +24,7 @@ class NormalSubscriberModule(aimrt_py.ModuleBase):
         self.logger = self.core.GetLogger()
 
         # log
-        aimrt_py_log.info(self.logger, "Module initialize")
+        aimrt_py.info(self.logger, "Module initialize")
 
         try:
             # configure
@@ -41,24 +39,24 @@ class NormalSubscriberModule(aimrt_py.ModuleBase):
             # channel-subscriber
             self.subscriber = self.core.GetChannelHandle().GetSubscriber(self.topic_name)
             if (not self.subscriber):
-                aimrt_py_log.error(self.logger, "Get subscriber for '{}' failed.".format(self.topic_name))
+                aimrt_py.error(self.logger, "Get subscriber for '{}' failed.".format(self.topic_name))
                 return False
 
             def EventHandle(msg):
-                aimrt_py_log.info(self.logger, "Receive new pb event, data: {}".format(MessageToJson(msg)))
+                aimrt_py.info(self.logger, "Receive new pb event, data: {}".format(MessageToJson(msg)))
 
-            aimrt_py_pb_chn.Subscribe(self.subscriber, event_pb2.ExampleEventMsg, EventHandle)
+            aimrt_py.Subscribe(self.subscriber, event_pb2.ExampleEventMsg, EventHandle)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
+            aimrt_py.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
 
     def Start(self):
-        aimrt_py_log.info(self.logger, "Module start")
+        aimrt_py.info(self.logger, "Module start")
 
         return True
 
     def Shutdown(self):
-        aimrt_py_log.info(self.logger, "Module shutdown")
+        aimrt_py.info(self.logger, "Module shutdown")

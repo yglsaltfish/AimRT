@@ -45,7 +45,7 @@ def run_aimrt_core(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Example helloworld app.')
+    parser = argparse.ArgumentParser(description='Example helloworld registration mode.')
 
     parser.add_argument('--cfg_file_path', type=str, default="", help='config file path')
     parser.add_argument('--dump_cfg_file', type=bool, default=False, help='dump config file')

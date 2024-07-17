@@ -1,6 +1,4 @@
 import aimrt_py
-import aimrt_py_log
-
 import yaml
 import datetime
 import time
@@ -36,7 +34,7 @@ class NormalRpcClientModule(aimrt_py.ModuleBase):
         self.logger = self.core.GetLogger()
 
         # log
-        aimrt_py_log.info(self.logger, "Module initialize")
+        aimrt_py.info(self.logger, "Module initialize")
 
         try:
             # configure
@@ -51,32 +49,32 @@ class NormalRpcClientModule(aimrt_py.ModuleBase):
             # executor
             self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
             if (not self.work_executor):
-                aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
+                aimrt_py.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 
             # rpc-client
             self.rpc_handle = self.core.GetRpcHandle()
             ret = rpc_aimrt_rpc_pb2.ExampleServiceProxy.RegisterClientFunc(self.rpc_handle)
             if (not ret):
-                aimrt_py_log.error(self.logger, "Register client failed.")
+                aimrt_py.error(self.logger, "Register client failed.")
                 return False
 
             self.proxy = rpc_aimrt_rpc_pb2.ExampleServiceProxy(self.rpc_handle)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
+            aimrt_py.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
 
     def Start(self):
-        aimrt_py_log.info(self.logger, "Module start")
+        aimrt_py.info(self.logger, "Module start")
 
         try:
             self.work_executor.Execute(self.ClientLoop)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
+            aimrt_py.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
@@ -87,7 +85,7 @@ class NormalRpcClientModule(aimrt_py.ModuleBase):
         while (not self.stoped_flag):
             time.sleep(1)
 
-        aimrt_py_log.info(self.logger, "Module shutdown")
+        aimrt_py.info(self.logger, "Module shutdown")
 
     def ClientLoop(self):
         if (self.stop_flag):
@@ -96,27 +94,27 @@ class NormalRpcClientModule(aimrt_py.ModuleBase):
 
         try:
             self.loop_count = self.loop_count + 1
-            aimrt_py_log.info(self.logger,
-                              "Loop count : {} -------------------------".format(self.loop_count))
+            aimrt_py.info(self.logger,
+                          "Loop count : {} -------------------------".format(self.loop_count))
 
             # call rpc
             req = rpc_pb2.GetFooDataReq()
             req.msg = "count {}".format(self.loop_count)
 
-            aimrt_py_log.info(self.logger,
-                              "Client start new rpc call. req: {}".format(MessageToJson(req)))
+            aimrt_py.info(self.logger,
+                          "Client start new rpc call. req: {}".format(MessageToJson(req)))
 
             ctx = aimrt_py.RpcContext()
             ctx.SetTimeout(datetime.timedelta(seconds=30))
             status, rsp = self.proxy.GetFooData(ctx, req)
 
             if (status):
-                aimrt_py_log.info(
+                aimrt_py.info(
                     self.logger, "Client get rpc ret, status: {}, rsp: {}".format(
                         status.ToString(), MessageToJson(rsp)))
             else:
-                aimrt_py_log.warn(self.logger,
-                                  "Client get rpc error ret, status: {}".format(status.ToString()))
+                aimrt_py.warn(self.logger,
+                              "Client get rpc error ret, status: {}".format(status.ToString()))
 
             # next loop
             self.work_executor.ExecuteAfter(
@@ -124,5 +122,5 @@ class NormalRpcClientModule(aimrt_py.ModuleBase):
                 self.ClientLoop)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "ClientLoop failed. {}".format(e))
+            aimrt_py.error(self.logger, "ClientLoop failed. {}".format(e))
             self.stoped_flag = True
