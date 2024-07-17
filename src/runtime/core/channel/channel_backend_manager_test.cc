@@ -35,6 +35,17 @@ class MockChannelBackendBase : public ChannelBackendBase {
 class ChannelBackendManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    // 定义发布主题后端规则
+    std::vector<std::pair<std::string, std::vector<std::string>>> pub_topics_backends_rules_test_ = {
+        {"(.*)", {"mock_backend_test"}},
+    };
+    // 定义订阅主题后端规则
+    std::vector<std::pair<std::string, std::vector<std::string>>> sub_topics_backends_rules_test_ = {
+        {"(.*)", {"mock_backend_test"}},
+    };
+
+    ChannelRegistry* channel_registry_test_ptr_ = new ChannelRegistry();
+
     // 测试用发布类型包装器，用于初始化
     publish_type_wrapper_test_ptr_->msg_type = "publish_msg_type_test";
     publish_type_wrapper_test_ptr_->pkg_path = "publish_pkg_path_test";
@@ -69,17 +80,10 @@ class ChannelBackendManagerTest : public ::testing::Test {
   }
 
   ChannelBackendManager channel_backend_manager_;
-  ChannelRegistry* channel_registry_test_ptr_ = new ChannelRegistry();
   MockChannelBackendBase* mock_backend_test_ptr_ = new MockChannelBackendBase();
   PublishTypeWrapper* publish_type_wrapper_test_ptr_ = new PublishTypeWrapper();
   SubscribeWrapper* subscribe_wrapper_test_ptr_ = new SubscribeWrapper();
   PublishWrapper* publish_wrapper_test_ptr_ = new PublishWrapper();
-  std::vector<std::pair<std::string, std::vector<std::string>>> pub_topics_backends_rules_test_ = {
-      {"(.*)", {"mock_backend_test"}},
-  };
-  std::vector<std::pair<std::string, std::vector<std::string>>> sub_topics_backends_rules_test_ = {
-      {"(.*)", {"mock_backend_test"}},
-  };
 };
 
 // 测试 RegisterChannelBackend 、Start

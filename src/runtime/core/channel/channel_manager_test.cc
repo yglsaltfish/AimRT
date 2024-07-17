@@ -22,9 +22,9 @@ class ChannelManagerTest : public ::testing::Test {
   void SetUp() override {
     YAML::Node options_node_test = YAML::Load(R"str(
 aimrt:
-  channel: # 【可选】Channel配置根节点
-    backends: # 【可选】Channel后端列表
-      - type: mock_backend_test # 【必选】Channel后端类型
+  channel: 
+    backends: 
+      - type: mock_backend_test 
 )str");
 
     EXPECT_EQ(channel_manager_.GetState(), ChannelManager::State::PreInit);
@@ -42,8 +42,6 @@ aimrt:
 
   ChannelManager channel_manager_;
   std::unique_ptr<MockChannelBackendBase> channel_backend_test_ptr_ = std::make_unique<MockChannelBackendBase>();
-
-  ;
 };
 
 // 测试Initialize、RegisterChannelBackend、GetChannelBackendNameList

@@ -27,12 +27,16 @@ TEST_F(ExecutorManagerTest, initialize1) {
 
 TEST_F(ExecutorManagerTest, initialize2) {
   YAML::Node options_node = YAML::Load(R"str(
-    executors:
-    - name: work_thread_pool
-      type: asio_thread
-      options:
-        thread_num: 2
-  )str");
+executors:
+  - name: test_executor_1 
+    type: asio_thread 
+    options: 
+      thread_num: 2
+  - name: test_executor_2
+    type: tbb_thread 
+    options: 
+      thread_num: 1
+)str");
 
   executor_manager_.Initialize(options_node);
 
@@ -43,11 +47,27 @@ TEST_F(ExecutorManagerTest, initialize2) {
   auto executor_manager = executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle();
 
   auto executor_ptr = executor_manager->get_executor(
-      executor_manager->impl, aimrt::util::ToAimRTStringView("work_thread_pool"));
+      executor_manager->impl, aimrt::util::ToAimRTStringView("test_executor_1"));
 
   ASSERT_NE(executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle(), nullptr);
   EXPECT_EQ(aimrt::util::ToStdStringView(executor_ptr->type(executor_ptr->impl)), "asio_thread");
-  EXPECT_EQ(aimrt::util::ToStdStringView(executor_ptr->name(executor_ptr->impl)), "work_thread_pool");
+  EXPECT_EQ(aimrt::util::ToStdStringView(executor_ptr->name(executor_ptr->impl)), "test_executor_1");
+  EXPECT_EQ(executor_manager_.GetAllExecutors().size(), 2);
+}
+
+TEST_F(ExecutorManagerTest, initialize3) {
+  YAML::Node options_node = YAML::Load(R"str(
+executors:
+  - name: test_executor_1 
+    type: asio_thread 
+    options: 
+      thread_num: 2
+)str");
+
+  executor_manager_.Initialize(options_node);
+
+  EXPECT_EQ(executor_manager_.GetExecutor("test_executor_1").Name(), "test_executor_1");
+  EXPECT_EQ(executor_manager_.GetExecutor("test_executor_1").Type(), "asio_thread");
 }
 
 TEST_F(ExecutorManagerTest, start) {
