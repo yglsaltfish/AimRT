@@ -1,5 +1,4 @@
 import aimrt_py
-import aimrt_py_log
 
 import rpc_pb2
 import rpc_aimrt_rpc_pb2
@@ -16,7 +15,7 @@ class ExampleServiceImpl(rpc_aimrt_rpc_pb2.ExampleService):
         rsp = rpc_pb2.GetFooDataRsp()
         rsp.msg = "echo " + req.msg
 
-        aimrt_py_log.info(self.logger,
+        aimrt_py.info(self.logger,
                           "Server handle new rpc call. context: {}, req: {}, return rsp: {}"
                           .format(ctx_ref.ToString(), MessageToJson(req), MessageToJson(rsp)))
 
@@ -26,7 +25,7 @@ class ExampleServiceImpl(rpc_aimrt_rpc_pb2.ExampleService):
         rsp = rpc_pb2.GetBarDataRsp()
         rsp.msg = "echo " + req.msg
 
-        aimrt_py_log.info(self.logger,
+        aimrt_py.info(self.logger,
                           "Server handle new rpc call. context: {}, req: {}, return rsp: {}"
                           .format(ctx_ref.ToString(), MessageToJson(req), MessageToJson(rsp)))
 
@@ -49,26 +48,26 @@ class NormalRpcServerModule(aimrt_py.ModuleBase):
         self.logger = self.core.GetLogger()
 
         # log
-        aimrt_py_log.info(self.logger, "Module initialize")
+        aimrt_py.info(self.logger, "Module initialize")
 
         try:
             # rpc-server
             self.service = ExampleServiceImpl(self.logger)
             ret = self.core.GetRpcHandle().RegisterService(self.service)
             if (not ret):
-                aimrt_py_log.error(self.logger, "Register service failed.")
+                aimrt_py.error(self.logger, "Register service failed.")
                 return False
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
+            aimrt_py.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
 
     def Start(self):
-        aimrt_py_log.info(self.logger, "Module start")
+        aimrt_py.info(self.logger, "Module start")
 
         return True
 
     def Shutdown(self):
-        aimrt_py_log.info(self.logger, "Module shutdown")
+        aimrt_py.info(self.logger, "Module shutdown")

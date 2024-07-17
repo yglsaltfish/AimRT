@@ -1,5 +1,4 @@
 import aimrt_py
-import aimrt_py_log
 import yaml
 import datetime
 
@@ -21,47 +20,44 @@ class HelloWorldModule(aimrt_py.ModuleBase):
         self.logger = self.core.GetLogger()
 
         # log
-        aimrt_py_log.info(self.logger, "Module initialize")
+        aimrt_py.info(self.logger, "Module initialize")
 
         try:
             # configure
-            configurator = self.core.GetConfigurator()
-            if (configurator):
-                module_cfg_file_path = configurator.GetConfigFilePath()
-                if (module_cfg_file_path):
-                    with open(module_cfg_file_path, 'r') as file:
-                        data = yaml.safe_load(file)
-                        aimrt_py_log.info(self.logger, str(data))
+            module_cfg_file_path = self.core.GetConfigurator().GetConfigFilePath()
+            with open(module_cfg_file_path, 'r') as file:
+                data = yaml.safe_load(file)
+                aimrt_py.info(self.logger, str(data))
 
             # executor
             self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
             if (not self.work_executor):
-                aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
+                aimrt_py.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
+            aimrt_py.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
 
     def Start(self):
-        aimrt_py_log.info(self.logger, "Module start")
+        aimrt_py.info(self.logger, "Module start")
 
         try:
             # executor
             def test_task():
-                aimrt_py_log.info(self.logger, "run test task.")
+                aimrt_py.info(self.logger, "run test task.")
 
             self.work_executor.Execute(test_task)
             self.work_executor.ExecuteAfter(datetime.timedelta(seconds=1), test_task)
             self.work_executor.ExecuteAt(datetime.datetime.now() + datetime.timedelta(seconds=2), test_task)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
+            aimrt_py.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
 
     def Shutdown(self):
-        aimrt_py_log.info(self.logger, "Module shutdown")
+        aimrt_py.info(self.logger, "Module shutdown")

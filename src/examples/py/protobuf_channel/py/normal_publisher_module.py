@@ -1,6 +1,4 @@
 import aimrt_py
-import aimrt_py_log
-import aimrt_py_pb_chn
 import yaml
 import datetime
 import time
@@ -34,7 +32,7 @@ class NormalPublisherModule(aimrt_py.ModuleBase):
         self.logger = self.core.GetLogger()
 
         # log
-        aimrt_py_log.info(self.logger, "Module initialize")
+        aimrt_py.info(self.logger, "Module initialize")
 
         try:
             # configure
@@ -50,31 +48,31 @@ class NormalPublisherModule(aimrt_py.ModuleBase):
             # executor
             self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
             if (not self.work_executor):
-                aimrt_py_log.error(self.logger, "Get executor 'work_thread_pool' failed.")
+                aimrt_py.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 
             # channel-publisher
             self.publisher = self.core.GetChannelHandle().GetPublisher(self.topic_name)
             if (not self.publisher):
-                aimrt_py_log.error(self.logger, "Get publisher for '{}' failed.".format(self.topic_name))
+                aimrt_py.error(self.logger, "Get publisher for '{}' failed.".format(self.topic_name))
                 return False
 
-            aimrt_py_pb_chn.RegisterPublishType(self.publisher, event_pb2.ExampleEventMsg)
+            aimrt_py.RegisterPublishType(self.publisher, event_pb2.ExampleEventMsg)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
+            aimrt_py.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
 
     def Start(self):
-        aimrt_py_log.info(self.logger, "Module start")
+        aimrt_py.info(self.logger, "Module start")
 
         try:
             self.work_executor.Execute(self.PublishLoop)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "Initialize failed. {}".format(e))
+            aimrt_py.error(self.logger, "Initialize failed. {}".format(e))
             return False
 
         return True
@@ -85,7 +83,7 @@ class NormalPublisherModule(aimrt_py.ModuleBase):
         while (not self.stoped_flag):
             time.sleep(1)
 
-        aimrt_py_log.info(self.logger, "Module shutdown")
+        aimrt_py.info(self.logger, "Module shutdown")
 
     def PublishLoop(self):
         if (self.stop_flag):
@@ -94,17 +92,17 @@ class NormalPublisherModule(aimrt_py.ModuleBase):
 
         try:
             self.loop_count = self.loop_count + 1
-            aimrt_py_log.info(self.logger,
+            aimrt_py.info(self.logger,
                               "Loop count : {} -------------------------".format(self.loop_count))
 
             # publish event
             event_msg = event_pb2.ExampleEventMsg()
             event_msg.msg = "count {}".format(self.loop_count)
             event_msg.num = self.loop_count
-            aimrt_py_log.info(self.logger,
+            aimrt_py.info(self.logger,
                               "Publish new pb event, data: {}".format(MessageToJson(event_msg)))
 
-            aimrt_py_pb_chn.Publish(self.publisher, event_msg)
+            aimrt_py.Publish(self.publisher, event_msg)
 
             # next loop
             self.work_executor.ExecuteAfter(
@@ -112,5 +110,5 @@ class NormalPublisherModule(aimrt_py.ModuleBase):
                 self.PublishLoop)
 
         except Exception as e:
-            aimrt_py_log.error(self.logger, "PublishLoop failed. {}".format(e))
+            aimrt_py.error(self.logger, "PublishLoop failed. {}".format(e))
             self.stoped_flag = True
