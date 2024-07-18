@@ -26,6 +26,7 @@ if(NOT libunifex_POPULATED)
       CACHE BOOL "")
 
   FetchContent_MakeAvailable(libunifex)
+  target_compile_options(unifex PRIVATE -Wno-unused-but-set-variable)
 
   add_library(unifex::unifex ALIAS unifex)
 endif()
