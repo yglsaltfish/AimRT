@@ -3,24 +3,6 @@
 
 namespace aimrt::runtime::core::util {
 
-YAML::Node DeepCopyYamlNode(const YAML::Node& node) {
-  YAML::Node copy;
-
-  if (node.IsMap()) {
-    for (auto it = node.begin(); it != node.end(); ++it) {
-      copy[it->first] = DeepCopyYamlNode(it->second);
-    }
-  } else if (node.IsSequence()) {
-    for (size_t i = 0; i < node.size(); ++i) {
-      copy.push_back(DeepCopyYamlNode(node[i]));
-    }
-  } else if (node.IsScalar()) {
-    copy = node.Scalar();
-  }
-
-  return copy;
-}
-
 // 计算两个字符串的距离
 int LevenshteinDistance(const std::string& s1, const std::string& s2) {
   int len1 = s1.size();

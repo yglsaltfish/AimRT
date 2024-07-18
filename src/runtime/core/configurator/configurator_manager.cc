@@ -56,7 +56,7 @@ void ConfiguratorManager::Initialize(
     std::stringstream file_data;
     file_data << file_stream.rdbuf();
     ori_root_options_node = YAML::Load(aimrt::common::util::ReplaceEnvVars(file_data.str()));
-    user_root_options_node = util::DeepCopyYamlNode(ori_root_options_node);
+    user_root_options_node = YAML::Clone(ori_root_options_node);
   }
 
   if (!ori_root_options_node["aimrt"]) {
