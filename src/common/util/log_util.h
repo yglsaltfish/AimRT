@@ -12,6 +12,11 @@
 #include "util/format.h"
 #include "util/time_util.h"
 
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ < 30
+  #include <sys/syscall.h>
+  #define gettid() syscall(SYS_gettid)
+#endif
+
 namespace aimrt::common::util {
 
 constexpr uint32_t kLogLevelTrace = 0;

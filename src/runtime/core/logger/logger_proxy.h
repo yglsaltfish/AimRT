@@ -6,6 +6,11 @@
 #include "aimrt_module_c_interface/logger/logger_base.h"
 #include "core/logger/logger_backend_base.h"
 
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ < 30
+  #include <sys/syscall.h>
+  #define gettid() syscall(SYS_gettid)
+#endif
+
 namespace aimrt::runtime::core::logger {
 
 class LoggerProxy {
