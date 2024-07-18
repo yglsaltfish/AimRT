@@ -179,7 +179,7 @@ if(AIMRT_BUILD_RUNTIME)
   include(GetTBB)
 
   if(AIMRT_BUILD_PYTHON_RUNTIME)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
     include(GetPybind11)
     if(AIMRT_BUILD_PYTHON_PACKAGE)
       execute_process(
