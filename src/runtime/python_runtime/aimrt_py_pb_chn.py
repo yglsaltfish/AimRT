@@ -1,10 +1,10 @@
 import google.protobuf
 
-from . import aimrt_py
+from . import aimrt_python_runtime
 
 
 def RegisterPublishType(publisher, protobuf_type):
-    aimrt_ts = aimrt_py.TypeSupport()
+    aimrt_ts = aimrt_python_runtime.TypeSupport()
     aimrt_ts.SetTypeName("pb:" + protobuf_type.DESCRIPTOR.full_name)
     aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 
@@ -16,7 +16,7 @@ def Publish(publisher, pb_msg):
 
 
 def Subscribe(subscriber, protobuf_type, callback):
-    aimrt_ts = aimrt_py.TypeSupport()
+    aimrt_ts = aimrt_python_runtime.TypeSupport()
     aimrt_ts.SetTypeName("pb:" + protobuf_type.DESCRIPTOR.full_name)
     aimrt_ts.SetSerializationTypesSupportedList(["pb", "json"])
 

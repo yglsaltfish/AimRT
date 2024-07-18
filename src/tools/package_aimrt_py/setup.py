@@ -7,7 +7,7 @@ with open("VERSION", "r") as f:
 setup(
     packages=find_packages(where="."),
     package_dir={"": "."},
-    package_data={"aimrt_py": ["libaimrt_*_plugin.so", "aimrt_py.*.so"]},
+    package_data={"aimrt_py": ["*.so"]},
     version=version,
     ext_modules=[setuptools.Extension(name="dummy", sources=[])],
 )

@@ -12,7 +12,7 @@
 
 using namespace aimrt::runtime::python_runtime;
 
-PYBIND11_MODULE(aimrt_py, m) {
+PYBIND11_MODULE(aimrt_python_runtime, m) {
   m.doc() = "AimRT Python Runtime Module";
 
   // core runtime

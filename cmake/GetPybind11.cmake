@@ -3,7 +3,7 @@ include(FetchContent)
 message(STATUS "get pybind11 ...")
 
 set(pybind11_DOWNLOAD_URL
-    "https://github.com/pybind/pybind11/archive/v2.11.1.tar.gz"
+    "https://github.com/pybind/pybind11/archive/v2.13.1.tar.gz"
     CACHE STRING "")
 
 if(${pybind11_LOCAL_SOURCE})
