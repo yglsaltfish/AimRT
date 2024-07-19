@@ -1,42 +1,41 @@
 #include "core/util/thread_tools.h"
 #include <gtest/gtest.h>
 #include "util/exception.h"
+#include "util/log_util.h"
 
 namespace aimrt::runtime::core::util {
 
-class ThreadToolsTest : public ::testing::Test {
- protected:
 #if !defined(_WIN32)
-  // 非Windows系统下，获取当前线程的名字
-  std::string GetCurrentThreadName() {
-    char name[16];
-    pthread_getname_np(pthread_self(), name, 16);
-    return std::string(name);
+// 非Windows系统下，获取当前线程的名字
+std::string GetCurrentThreadName() {
+  char name[16];
+  pthread_getname_np(pthread_self(), name, 16);
+  return std::string(name);
+}
+
+// 获取当前线程的CPU亲和性掩码
+std::vector<uint32_t> GetCurrentThreadAffinity() {
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+
+  if (pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) != 0) {
+    std::cerr << "Failed to get thread affinity" << std::endl;
   }
 
-  // 获取当前线程的CPU亲和性掩码
-  std::vector<uint32_t> GetCurrentThreadAffinity() {
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-
-    if (pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) != 0) {
-      std::cerr << "Failed to get thread affinity" << std::endl;
+  std::vector<uint32_t> cpu_indices;
+  for (int i = 0; i < CPU_SETSIZE; ++i) {
+    if (CPU_ISSET(i, &cpuset)) {
+      cpu_indices.push_back(i);
     }
-
-    std::vector<uint32_t> cpu_indices;
-    for (int i = 0; i < CPU_SETSIZE; ++i) {
-      if (CPU_ISSET(i, &cpuset)) {
-        cpu_indices.push_back(i);
-      }
-    }
-    return cpu_indices;
   }
+  return cpu_indices;
+}
 #endif
-};
 
-TEST_F(ThreadToolsTest, SetNameForCurrentThread) {
+TEST(ThreadToolsTest, SetNameForCurrentThread) {
   // 测试给一个短名字的线程设置名字
 #if !defined(_WIN32)
+
   std::string short_name = "short_name";
   SetNameForCurrentThread(short_name);
   EXPECT_EQ(GetCurrentThreadName(), short_name);
@@ -47,11 +46,12 @@ TEST_F(ThreadToolsTest, SetNameForCurrentThread) {
   std::string expected_name = "long_thr.._long";
   EXPECT_EQ(GetCurrentThreadName(), expected_name);
 #else
+  // 测试Windows平台不支持的情况
   GTEST_SKIP() << "Skipping this test on Windows as it is not supported.";
 #endif
 }
 
-TEST_F(ThreadToolsTest, BindCpuForCurrentThread) {
+TEST(ThreadToolsTest, BindCpuForCurrentThread) {
 #if !defined(_WIN32)
   // 测试正常情况
   std::vector<uint32_t> cpu_set = {0, 1};
@@ -68,14 +68,17 @@ TEST_F(ThreadToolsTest, BindCpuForCurrentThread) {
   std::vector<uint32_t> invalid_cpu_set = {1000};
   EXPECT_ANY_THROW(BindCpuForCurrentThread(invalid_cpu_set));
 
-  // 测试Windows平台不支持的情况
 #else
+  // 测试Windows平台不支持的情况
   EXPECT_ANY_THROW(BindCpuForCurrentThread(invalid_cpu_set));
 #endif
 }
 
-TEST_F(ThreadToolsTest, SetCpuSchedForCurrentThread) {
+TEST(ThreadToolsTest, SetCpuSchedForCurrentThread) {
 #if !defined(_WIN32)
+
+  auto lgr = aimrt::common::util::SimpleLogger();
+
   // 测试传入空字符串
   EXPECT_NO_THROW(SetCpuSchedForCurrentThread(""));
 
@@ -89,6 +92,8 @@ TEST_F(ThreadToolsTest, SetCpuSchedForCurrentThread) {
     int priority_fifo = (priority_max_fifo + priority_min_fifo) / 2;
     std::string sched_fifo = "SCHED_FIFO:" + std::to_string(priority_fifo);
     EXPECT_NO_THROW(SetCpuSchedForCurrentThread(sched_fifo));
+  } else {
+    AIMRT_HL_WARN(lgr, "This is a test warning: Failed to set SCHED_FIFO scheduler, permission denied !");
   }
 
   // 测试传入SCHED_RR,先判断是否有权限访问
@@ -98,6 +103,8 @@ TEST_F(ThreadToolsTest, SetCpuSchedForCurrentThread) {
     int priority_rr = (priority_max_rr + priority_min_rr) / 2;
     std::string sched_rr = "SCHED_RR:" + std::to_string(priority_rr);
     EXPECT_NO_THROW(SetCpuSchedForCurrentThread(sched_rr));
+  } else {
+    AIMRT_HL_WARN(lgr, "This is a test warning: Failed to set SCHED_RR scheduler, permission denied !");
   }
 
   // 测试传入无效策略
@@ -113,9 +120,9 @@ TEST_F(ThreadToolsTest, SetCpuSchedForCurrentThread) {
   // 测试传入无效格式、
   EXPECT_THROW(SetCpuSchedForCurrentThread("SCHED_FIFO"), aimrt::common::util::AimRTException);
   EXPECT_THROW(SetCpuSchedForCurrentThread("SCHED_FIFO:"), aimrt::common::util::AimRTException);
-  // 测试Windows平台不支持的情况
 
 #else
+  // 测试Windows平台不支持的情况
   EXPECT_NO_THROW(SetCpuSchedForCurrentThread("SCHED_OTHER"));
 #endif
 }

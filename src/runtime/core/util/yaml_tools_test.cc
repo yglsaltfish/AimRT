@@ -3,11 +3,7 @@
 
 namespace aimrt::runtime::core::util {
 
-class YamlToolsTest : public ::testing::Test {
- protected:
-};
-
-TEST_F(YamlToolsTest, CheckYamlNodes) {
+TEST(YamlToolsTest, CheckYamlNodes) {
   YAML::Node standard_node = YAML::Load(R"str(
 aimrt:
   executor:
