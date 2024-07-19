@@ -180,6 +180,7 @@ if(AIMRT_BUILD_RUNTIME)
 
   if(AIMRT_BUILD_PYTHON_RUNTIME)
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+    set(PYBIND11_PYTHON_VERSION ${Python3_VERSION})
     include(GetPybind11)
     if(AIMRT_BUILD_PYTHON_PACKAGE)
       execute_process(
