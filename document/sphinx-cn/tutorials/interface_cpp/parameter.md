@@ -46,7 +46,6 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 
   // Get
   std::string check_val = parameter_handle_.GetParameter(key);
-  assert(check_val == val);
 
   return true;
 }

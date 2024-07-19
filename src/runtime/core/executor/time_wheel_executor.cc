@@ -129,15 +129,12 @@ void TimeWheelExecutor::Shutdown() {
 }
 
 bool TimeWheelExecutor::IsInCurrentExecutor() const {
-  assert(state_.load() == State::Start);
   return bind_executor_ref_
              ? bind_executor_ref_.IsInCurrentExecutor()
              : (tid_ == std::this_thread::get_id());
 }
 
 void TimeWheelExecutor::Execute(aimrt::executor::Task&& task) {
-  assert(state_.load() == State::Start);
-
   if (bind_executor_ref_) {
     bind_executor_ref_.Execute(std::move(task));
     return;
@@ -148,16 +145,12 @@ void TimeWheelExecutor::Execute(aimrt::executor::Task&& task) {
 }
 
 std::chrono::system_clock::time_point TimeWheelExecutor::Now() const {
-  assert(state_.load() == State::Start);
-
   std::shared_lock<std::shared_mutex> lck(tick_mutex_);
 
   return aimrt::common::util::GetTimePointFromTimestampNs(current_tick_count_ * dt_count_ + start_time_point_);
 }
 
 void TimeWheelExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
-  assert(state_.load() == State::Start);
-
   uint64_t virtual_tp = aimrt::common::util::GetTimestampNs(tp) - start_time_point_;
 
   std::unique_lock<std::shared_mutex> lck(tick_mutex_);

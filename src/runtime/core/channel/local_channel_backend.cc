@@ -103,7 +103,10 @@ bool LocalChannelBackend::Subscribe(const SubscribeWrapper& subscribe_wrapper) n
 }
 
 void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcept {
-  assert(state_.load() == State::Start);
+  if (state_.load() != State::Start) [[unlikely]] {
+    AIMRT_WARN("Method can only be called when state is 'Start'.");
+    return;
+  }
 
   std::string_view msg_type = publish_wrapper.msg_type;
   std::string_view pkg_path = publish_wrapper.pkg_path;
@@ -127,7 +130,9 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
     // 随便选取一个模块的对该类型的创建/销毁方法作为pkg的全局选择
     const auto* tpl_subscribe_wrapper_ptr =
         GetTplSubscribeWrapper(subscribe_pkg_path, topic_name, msg_type);
-    assert(tpl_subscribe_wrapper_ptr != nullptr);
+
+    // 不可能选不出来
+    // assert(tpl_subscribe_wrapper_ptr != nullptr);
 
     auto tpl_subscribe_type_support_ref = aimrt::util::TypeSupportRef(tpl_subscribe_wrapper_ptr->msg_type_support);
 
@@ -157,7 +162,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
               msg_type);
 
       // 本pkg中没有同一种序列化方法，应该不可能出现
-      assert(subscribe_wrapper_ptr != nullptr && !serialization_type.empty());
+      // assert(subscribe_wrapper_ptr != nullptr && !serialization_type.empty());
 
       ctx_ptr->SetSerializationType(serialization_type);
 
@@ -216,7 +221,9 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       };
 
       const auto* subscribe_wrapper_ptr = get_subscribe_wrapper_ptr_func();
-      assert(subscribe_wrapper_ptr != nullptr);
+
+      // 不可能为空
+      // assert(subscribe_wrapper_ptr != nullptr);
 
       if (subscribe_executor_ref_) {
         subscribe_executor_ref_.Execute(

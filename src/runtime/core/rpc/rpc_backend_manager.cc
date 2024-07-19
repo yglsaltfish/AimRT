@@ -126,7 +126,10 @@ bool RpcBackendManager::RegisterClientFunc(ClientFuncWrapper&& client_func_wrapp
 }
 
 void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
-  assert(state_.load() == State::Start);
+  if (state_.load() != State::Start) [[unlikely]] {
+    AIMRT_WARN("Method can only be called when state is 'Start'.");
+    return;
+  }
 
   auto client_invoke_wrapper_ptr =
       std::make_shared<ClientInvokeWrapper>(std::move(client_invoke_wrapper));
@@ -208,7 +211,10 @@ std::vector<RpcBackendBase*> RpcBackendManager::GetBackendsByRules(
                 return backend_ptr->Name() == backend_name;
               });
 
-          assert(itr != rpc_backend_index_vec_.end());
+          if (itr == rpc_backend_index_vec_.end()) [[unlikely]] {
+            AIMRT_WARN("Can not find '{}' in backend list.", backend_name);
+            continue;
+          }
 
           backend_ptr_vec.emplace_back(*itr);
         }

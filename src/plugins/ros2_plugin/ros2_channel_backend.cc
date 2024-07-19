@@ -440,7 +440,10 @@ bool Ros2ChannelBackend::Subscribe(
 
 void Ros2ChannelBackend::Publish(
     const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
-  assert(state_.load() == State::Start);
+  if (state_.load() != State::Start) [[unlikely]] {
+    AIMRT_WARN("Method can only be called when state is 'Start'.");
+    return;
+  }
 
   std::string_view msg_type = publish_wrapper.msg_type;
   std::string_view pkg_path = publish_wrapper.pkg_path;

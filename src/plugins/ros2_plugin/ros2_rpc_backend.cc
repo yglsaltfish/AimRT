@@ -373,7 +373,10 @@ bool Ros2RpcBackend::RegisterClientFunc(
 
 bool Ros2RpcBackend::TryInvoke(
     const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
-  assert(state_.load() == State::Start);
+  if (state_.load() != State::Start) [[unlikely]] {
+    AIMRT_WARN("Method can only be called when state is 'Start'.");
+    return false;
+  }
 
   // 检查ctx
   std::string_view to_addr =

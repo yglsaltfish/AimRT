@@ -231,7 +231,10 @@ bool MqttChannelBackend::Subscribe(
 
 void MqttChannelBackend::Publish(
     const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
-  assert(state_.load() == State::Start);
+  if (state_.load() != State::Start) [[unlikely]] {
+    AIMRT_WARN("Method can only be called when state is 'Start'.");
+    return;
+  }
 
   namespace util = aimrt::common::util;
 
