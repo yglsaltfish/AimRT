@@ -22,16 +22,16 @@ class RpcRegistryTest : public ::testing::Test {
   }
 
   RpcRegistry rpc_registry_;
-  ServiceFuncWrapper* service_func_wrapper_1_ = new ServiceFuncWrapper();
-  ServiceFuncWrapper* service_func_wrapper_2_ = new ServiceFuncWrapper();
-  ClientFuncWrapper* client_func_wrapper_ = new ClientFuncWrapper();
+  std::unique_ptr<ServiceFuncWrapper> service_func_wrapper_1_ = std::make_unique<ServiceFuncWrapper>();
+  std::unique_ptr<ServiceFuncWrapper> service_func_wrapper_2_ = std::make_unique<ServiceFuncWrapper>();
+  std::unique_ptr<ClientFuncWrapper> client_func_wrapper_ = std::make_unique<ClientFuncWrapper>();
 };
 
 // 测试RegisterServiceFunc
 TEST_F(RpcRegistryTest, RegisterServiceFunc) {
   auto& service_func_wrapper_map = rpc_registry_.GetServiceFuncWrapperMap();
   EXPECT_EQ(service_func_wrapper_map.size(), 0);
-  rpc_registry_.RegisterServiceFunc(std::unique_ptr<ServiceFuncWrapper>(service_func_wrapper_1_));
+  rpc_registry_.RegisterServiceFunc(std::move(service_func_wrapper_1_));
   EXPECT_EQ(service_func_wrapper_map.size(), 1);
 }
 
@@ -39,7 +39,7 @@ TEST_F(RpcRegistryTest, RegisterServiceFunc) {
 TEST_F(RpcRegistryTest, RegisterClientFunc) {
   auto& service_func_wrapper_map = rpc_registry_.GetClientFuncWrapperMap();
   EXPECT_EQ(service_func_wrapper_map.size(), 0);
-  rpc_registry_.RegisterClientFunc(std::unique_ptr<ClientFuncWrapper>(client_func_wrapper_));
+  rpc_registry_.RegisterClientFunc(std::move(client_func_wrapper_));
   EXPECT_EQ(service_func_wrapper_map.size(), 1);
 }
 
@@ -47,9 +47,9 @@ TEST_F(RpcRegistryTest, RegisterClientFunc) {
 TEST_F(RpcRegistryTest, GetServiceIndexMap) {
   auto& service_index_map = rpc_registry_.GetServiceIndexMap();
   EXPECT_EQ(service_index_map.size(), 0);
-  rpc_registry_.RegisterServiceFunc(std::unique_ptr<ServiceFuncWrapper>(service_func_wrapper_1_));
+  rpc_registry_.RegisterServiceFunc(std::move(service_func_wrapper_1_));
   EXPECT_EQ(service_index_map.find("ServiceFuncTest")->second.size(), 1);
-  rpc_registry_.RegisterServiceFunc(std::unique_ptr<ServiceFuncWrapper>(service_func_wrapper_2_));
+  rpc_registry_.RegisterServiceFunc(std::move(service_func_wrapper_2_));
   EXPECT_EQ(service_index_map.find("ServiceFuncTest")->second.size(), 2);
 }
 
@@ -57,7 +57,7 @@ TEST_F(RpcRegistryTest, GetServiceIndexMap) {
 TEST_F(RpcRegistryTest, GetCLientIndexMap) {
   auto& client_index_map = rpc_registry_.GetClientIndexMap();
   EXPECT_EQ(client_index_map.size(), 0);
-  rpc_registry_.RegisterClientFunc(std::unique_ptr<ClientFuncWrapper>(client_func_wrapper_));
+  rpc_registry_.RegisterClientFunc(std::move(client_func_wrapper_));
   EXPECT_EQ(client_index_map.size(), 1);
 }
 

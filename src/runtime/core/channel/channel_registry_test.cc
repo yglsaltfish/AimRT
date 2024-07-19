@@ -15,10 +15,6 @@ class ChannelRegistryTest : public ::testing::Test {
     subscribe_wrapper_test_ptr_->module_name = "subscribe_module_name_test";
     subscribe_wrapper_test_ptr_->topic_name = "subscribe_topic_name_test";
   }
-  // 测试用例结束后清理工作
-  void TearDown() override {
-    ;
-  }
 
   ChannelRegistry channel_registry_test_;
   std::unique_ptr<PublishTypeWrapper> publish_type_wrapper_test_ptr_ = std::make_unique<PublishTypeWrapper>();
@@ -38,7 +34,6 @@ TEST_F(ChannelRegistryTest, RegisterPublishType_GetPubTopicIndexMap) {
       "publish_topic_name_test",
       "publish_msg_type_test");
   EXPECT_EQ(publisher_type_wrapper_test_->module_name, "publish_module_name_test");
-
   EXPECT_EQ(channel_registry_test_.GetPublishTypeWrapperMap().size(), 1);
 }
 
