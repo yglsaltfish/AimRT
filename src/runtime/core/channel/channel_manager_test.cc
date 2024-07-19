@@ -4,19 +4,6 @@
 
 namespace aimrt::runtime::core::channel {
 
-// 模拟的通道后端类，继承自ChannelBackendBase
-class MockChannelBackendBase : public ChannelBackendBase {
- public:
-  std::string_view Name() const override { return "mock_backend_test"; }
-  MOCK_METHOD2(Initialize, void(YAML::Node options_node, const ChannelRegistry* channel_registry_ptr));
-  MOCK_METHOD0(Start, void());
-  MOCK_METHOD0(Shutdown, void());
-  bool RegisterPublishType(
-      const PublishTypeWrapper& publish_type_wrapper) noexcept override { return false; }
-  bool Subscribe(const SubscribeWrapper& subscribe_wrapper) noexcept override { return false; }
-  void Publish(const PublishWrapper& publish_wrapper) noexcept override { return; }
-};
-
 class ChannelManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -40,8 +27,20 @@ aimrt:
     EXPECT_EQ(channel_manager_.GetState(), ChannelManager::State::Shutdown);
   }
 
+  // 模拟的通道后端类，继承自ChannelBackendBase
+  class MockChannelBackend : public ChannelBackendBase {
+   public:
+    std::string_view Name() const override { return "mock_backend_test"; }
+    MOCK_METHOD2(Initialize, void(YAML::Node options_node, const ChannelRegistry* channel_registry_ptr));
+    MOCK_METHOD0(Start, void());
+    MOCK_METHOD0(Shutdown, void());
+    bool RegisterPublishType(
+        const PublishTypeWrapper& publish_type_wrapper) noexcept override { return false; }
+    bool Subscribe(const SubscribeWrapper& subscribe_wrapper) noexcept override { return false; }
+    void Publish(const PublishWrapper& publish_wrapper) noexcept override { return; }
+  };
+  std::unique_ptr<MockChannelBackend> channel_backend_test_ptr_ = std::make_unique<MockChannelBackend>();
   ChannelManager channel_manager_;
-  std::unique_ptr<MockChannelBackendBase> channel_backend_test_ptr_ = std::make_unique<MockChannelBackendBase>();
 };
 
 // 测试Initialize、RegisterChannelBackend、GetChannelBackendNameList

@@ -27,12 +27,11 @@ class ConfiguratorManagerTest : public ::testing::Test {
     auto cfg_content = R"str(
 aimrt:
   configurator:
-    temp_cfg_path: ./cfg/tmp # 生成的临时模块配置文件存放路径
-  module: # 模块配置
-    modules: # 模块
-      - name: ConfiguratorManagerTest # 模块Name接口返回的名称
-        log_lvl: INFO # 模块日志级别
-# 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
+    temp_cfg_path: ./cfg/tmp 
+  module: 
+    modules: 
+      - name: ConfiguratorManagerTest 
+        log_lvl: INFO 
 ConfiguratorManagerTest:
   key1: val1
   key2: val2
