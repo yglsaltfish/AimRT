@@ -112,7 +112,10 @@ bool LocalRpcBackend::RegisterClientFunc(
 
 bool LocalRpcBackend::TryInvoke(
     const std::shared_ptr<ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
-  assert(state_.load() == State::Start);
+  if (state_.load() != State::Start) [[unlikely]] {
+    AIMRT_WARN("Method can only be called when state is 'Start'.");
+    return false;
+  }
 
   namespace util = aimrt::common::util;
 
@@ -147,7 +150,6 @@ bool LocalRpcBackend::TryInvoke(
   if (!to_addr.empty()) {
     auto url = util::ParseUrl<std::string_view>(to_addr);
     if (url) {
-      assert(url->protocol == Name());
       service_pkg_path = util::GetValueFromStrKV(url->query, "pkg_path");
       service_module_name = util::GetValueFromStrKV(url->query, "module_name");
     }

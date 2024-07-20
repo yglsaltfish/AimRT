@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cstdint>
 
 #include "aimrt_module_c_interface/util/buffer_base.h"
@@ -24,7 +23,8 @@ class BufferArrayZeroCopyOutputStream
     if (cur_buf_used_size_ == cur_block_size) {
       aimrt_buffer_t new_buffer = allocator_ptr_->allocate(
           allocator_ptr_->impl, buffer_array_ptr_, cur_block_size <<= 1);
-      assert(new_buffer.len == cur_block_size);
+      if (new_buffer.data == nullptr) [[unlikely]]
+        return false;
       *data = new_buffer.data;
       byte_count_ += (*size = cur_buf_used_size_ = cur_block_size);
     } else {

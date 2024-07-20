@@ -120,7 +120,9 @@ void ModuleManager::Initialize(YAML::Node options_node) {
   // 初始化直接注册的模块
   for (const auto& item : registered_module_vec_) {
     auto module_ptr = item.second;
-    assert(module_ptr != nullptr);
+
+    AIMRT_CHECK_ERROR_THROW(module_ptr != nullptr, "Module point is null!");
+
     auto info = module_ptr->info(module_ptr->impl);
     const std::string& module_name = aimrt::util::ToStdString(info.name);
 
@@ -179,7 +181,9 @@ void ModuleManager::Initialize(YAML::Node options_node) {
 
       // 初始化module wrapper
       auto module_ptr = module_loader.GetModule(module_name);
-      assert(module_ptr != nullptr);
+
+      AIMRT_CHECK_ERROR_THROW(module_ptr != nullptr, "Module point is null!");
+
       auto info = module_ptr->info(module_ptr->impl);
 
       auto module_wrapper_ptr = std::make_unique<ModuleWrapper>(
@@ -217,7 +221,9 @@ void ModuleManager::Start() {
 
   for (const auto& module_name : module_init_order_) {
     auto module_wrapper_map_itr = module_wrapper_map_.find(module_name);
-    assert(module_wrapper_map_itr != module_wrapper_map_.end());
+
+    AIMRT_CHECK_ERROR_THROW(module_wrapper_map_itr != module_wrapper_map_.end(),
+                            "Can not find module '{}'.", module_name);
 
     auto module_ptr = module_wrapper_map_itr->second->module_ptr;
 
@@ -240,7 +246,11 @@ void ModuleManager::Shutdown() {
   for (auto itr = module_init_order_.rbegin(); itr != module_init_order_.rend(); ++itr) {
     const auto& module_name = *itr;
     auto find_itr = module_wrapper_map_.find(module_name);
-    assert(find_itr != module_wrapper_map_.end());
+
+    if (find_itr == module_wrapper_map_.end()) [[unlikely]] {
+      AIMRT_ERROR("Can not find module '{}'.", module_name);
+      continue;
+    }
 
     AIMRT_TRACE("Start shutdown module '{}'.", module_name);
     find_itr->second->module_ptr->shutdown(find_itr->second->module_ptr->impl);

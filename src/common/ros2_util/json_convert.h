@@ -564,7 +564,7 @@ inline void BasicValueToJson(
           member);
       break;
     default:
-      assert(0 && "unknown type");
+      throw std::runtime_error("unknown type");
       break;
   }
 }

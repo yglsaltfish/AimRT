@@ -138,9 +138,15 @@ const aimrt_module_base_t* ModuleLoader::GetModule(std::string_view module_name)
 }
 
 void ModuleLoader::DestroyModule(const aimrt_module_base_t* module_ptr) {
-  if (module_ptr == nullptr) return;
+  if (module_ptr == nullptr) {
+    AIMRT_WARN("Destroy a null pointer!");
+    return;
+  }
 
-  assert(destroy_func_ != nullptr);
+  if (destroy_func_ == nullptr) {
+    AIMRT_WARN("Destroy func is null!");
+    return;
+  }
 
   ((DynlibDestroyModuleFunc)destroy_func_)(module_ptr);
 }

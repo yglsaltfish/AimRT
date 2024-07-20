@@ -191,8 +191,6 @@ void TimeManipulatorExecutor::RegisterGetExecutorFunc(
 }
 
 void TimeManipulatorExecutor::SetTimeRatio(double ratio) {
-  assert(state_.load() == State::Init || state_.load() == State::Start);
-
   std::unique_lock<std::shared_mutex> lck(ratio_mutex_);
 
   // 大于1，快进
@@ -216,8 +214,6 @@ void TimeManipulatorExecutor::SetTimeRatio(double ratio) {
 }
 
 double TimeManipulatorExecutor::GetTimeRatio() const {
-  assert(state_.load() == State::Init || state_.load() == State::Start);
-
   std::shared_lock<std::shared_mutex> lck(ratio_mutex_);
 
   if (ratio_direction_)

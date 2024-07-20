@@ -35,5 +35,7 @@ function(copy_plugin_if_enabled PLUGIN_NAME)
 endfunction()
 
 foreach(PLUGIN_NAME ${PLUGIN_LIST})
-  copy_plugin_if_enabled(${PLUGIN_NAME})
+  if(TARGET ${PLUGIN_NAME})
+    copy_plugin_if_enabled(${PLUGIN_NAME})
+  endif()
 endforeach()

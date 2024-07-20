@@ -36,9 +36,13 @@ void PluginLoader::UnLoadPlugin() {
   if (!dynamic_lib_.IsLoaded()) return;
 
   if (plugin_ptr_ != nullptr) {
-    assert(destroy_func_ != nullptr);
-    ((DynlibDestroyCorePluginFunc)destroy_func_)(plugin_ptr_);
+    if (destroy_func_ != nullptr) {
+      ((DynlibDestroyCorePluginFunc)destroy_func_)(plugin_ptr_);
+    } else {
+      AIMRT_WARN("Destroy func is null!");
+    }
   }
+
   destroy_func_ = nullptr;
   dynamic_lib_.Unload();
 }

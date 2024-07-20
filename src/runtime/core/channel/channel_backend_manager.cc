@@ -123,7 +123,10 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
 }
 
 void ChannelBackendManager::Publish(const PublishWrapper& publish_wrapper) {
-  assert(state_.load() == State::Start);
+  if (state_.load() != State::Start) [[unlikely]] {
+    AIMRT_WARN("Method can only be called when state is 'Start'.");
+    return;
+  }
 
   std::string_view topic_name = publish_wrapper.topic_name;
 
@@ -144,7 +147,10 @@ void ChannelBackendManager::Publish(const PublishWrapper& publish_wrapper) {
 
   auto find_itr = pub_topics_backend_index_map_.find(topic_name);
 
-  assert(find_itr != pub_topics_backend_index_map_.end());
+  if (find_itr == pub_topics_backend_index_map_.end()) [[unlikely]] {
+    AIMRT_WARN("Topic '{}' has no backend.", topic_name);
+    return;
+  }
 
   for (auto& itr : find_itr->second) {
     AIMRT_TRACE("Publish msg '{}' to channel backend '{}'",
@@ -171,7 +177,10 @@ std::vector<ChannelBackendBase*> ChannelBackendManager::GetBackendsByRules(
                 return backend_ptr->Name() == backend_name;
               });
 
-          assert(itr != channel_backend_index_vec_.end());
+          if (itr == channel_backend_index_vec_.end()) [[unlikely]] {
+            AIMRT_WARN("Can not find '{}' in backend list.", backend_name);
+            continue;
+          }
 
           backend_ptr_vec.emplace_back(*itr);
         }

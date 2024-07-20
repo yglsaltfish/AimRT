@@ -127,13 +127,11 @@ void TBBThreadExecutor::Shutdown() {
 }
 
 bool TBBThreadExecutor::IsInCurrentExecutor() const {
-  assert(state_.load() == State::Start);
   return (std::find(thread_id_vec_.begin(), thread_id_vec_.end(),
                     std::this_thread::get_id()) != thread_id_vec_.end());
 }
 
 void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) {
-  assert(state_.load() == State::Start);
   try {
     qu_.emplace(std::move(task));
   } catch (const std::exception& e) {
