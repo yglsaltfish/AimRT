@@ -254,7 +254,6 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
           aimrt::rpc::ServiceCallback result_callback(result_callback_ptr);
 
           aimrt::rpc::ContextRef ctx_ref(ctx);
-          ctx_ref.SetFunctionName(func_name);
 
           auto status = {{rpc_func_name}}(
               ctx_ref,
@@ -285,7 +284,6 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
           auto result_callback_func_ptr = std::make_shared<aimrt::rpc::ServiceCallback>(result_callback_ptr);
 
           aimrt::rpc::ContextRef ctx_ref(ctx);
-          ctx_ref.SetFunctionName(func_name);
 
           {{rpc_func_name}}(
               ctx_ref,
@@ -314,7 +312,7 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 
     aimrt::rpc::ServiceFunc service_callback(
         [this](const aimrt_rpc_context_base_t* ctx, const void* req, void* rsp, aimrt_function_base_t* result_callback_ptr) {
-          auto handle_ptr = std::make_unique<const aimrt::rpc::RpcHandle>(
+          auto handle_ptr = std::make_unique<const aimrt::rpc::CoRpcHandle>(
               [this](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
                   -> aimrt::co::Task<aimrt::rpc::Status> {
                 return {{rpc_func_name}}(
@@ -326,7 +324,6 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
           aimrt::rpc::ServiceCallback result_callback(result_callback_ptr);
 
           aimrt::rpc::ContextRef ctx_ref(ctx);
-          ctx_ref.SetFunctionName(func_name);
 
           auto* ptr = handle_ptr.get();
           aimrt::co::StartDetached(
@@ -505,7 +502,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     auto await_resume() noexcept { return status; }
   };
 
-  const aimrt::rpc::RpcHandle h =
+  const aimrt::rpc::CoRpcHandle h =
       [rpc_handle_ref{rpc_handle_ref_}](aimrt::rpc::ContextRef ctx_ref, const void* req_ptr, void* rsp_ptr)
       -> aimrt::co::Task<aimrt::rpc::Status> {
     co_return co_await Awaitable{

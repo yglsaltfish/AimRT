@@ -72,7 +72,7 @@ void Ros2AdapterClient::handle_response(
   auto client_invoke_wrapper_ptr = cb_wrapper->client_invoke_wrapper_ptr;
   aimrt::util::TypeSupportRef(client_func_wrapper_.rsp_type_support)
       .Move(response.get(), client_invoke_wrapper_ptr->rsp_ptr);
-  client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_OK);
+  client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 }
 
 void Ros2AdapterClient::Invoke(
@@ -89,7 +89,7 @@ void Ros2AdapterClient::Invoke(
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
                client_invoke_wrapper_ptr->func_name, rcl_get_error_string().str);
     rcl_reset_error();
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED));
     return;
   }
   pending_requests_.try_emplace(
@@ -167,7 +167,7 @@ void Ros2AdapterWrapperClient::handle_response(
   auto& wrapper_rsp = *(static_cast<ros2_plugin_proto::srv::RosRpcWrapper::Response*>(response.get()));
 
   if (wrapper_rsp.code) {
-    client_invoke_wrapper_ptr->callback(wrapper_rsp.code);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(wrapper_rsp.code));
     return;
   }
 
@@ -186,11 +186,11 @@ void Ros2AdapterWrapperClient::handle_response(
 
   if (!deserialize_ret) {
     // 调用回调
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
     return;
   }
 
-  client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_OK);
+  client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 }
 
 void Ros2AdapterWrapperClient::Invoke(
@@ -210,7 +210,7 @@ void Ros2AdapterWrapperClient::Invoke(
       serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
   if (!serialize_ret) [[unlikely]] {
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
     return;
   }
 
@@ -238,7 +238,7 @@ void Ros2AdapterWrapperClient::Invoke(
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
                client_invoke_wrapper_ptr->func_name, rcl_get_error_string().str);
     rcl_reset_error();
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED));
     return;
   }
   pending_requests_.try_emplace(

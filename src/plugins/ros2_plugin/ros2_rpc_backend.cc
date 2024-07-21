@@ -400,7 +400,7 @@ bool Ros2RpcBackend::TryInvoke(
           client_invoke_wrapper_ptr->module_name,
           client_invoke_wrapper_ptr->pkg_path);
 
-      client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR);
+      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return true;
     }
 
@@ -410,7 +410,7 @@ bool Ros2RpcBackend::TryInvoke(
                   client_invoke_wrapper_ptr->module_name,
                   client_invoke_wrapper_ptr->pkg_path);
 
-      client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR);
+      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return true;
     }
 
@@ -429,7 +429,7 @@ bool Ros2RpcBackend::TryInvoke(
         client_invoke_wrapper_ptr->module_name,
         client_invoke_wrapper_ptr->pkg_path);
 
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     return true;
   }
 
@@ -439,7 +439,7 @@ bool Ros2RpcBackend::TryInvoke(
                 client_invoke_wrapper_ptr->module_name,
                 client_invoke_wrapper_ptr->pkg_path);
 
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     return true;
   }
 

@@ -6,6 +6,7 @@
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "net_plugin/global.h"
+#include "util/url_encode.h"
 
 namespace YAML {
 template <>
@@ -105,7 +106,9 @@ bool HttpRpcBackend::RegisterServiceFunc(
           std::chrono::nanoseconds timeout)
       -> asio::awaitable<runtime::common::net::AsioHttpServer::HttpHandleStatus> {
     // ctx 创建
-    auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
+    auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
+    ctx_ptr->SetFunctionName(service_func_wrapper.func_name);
+    ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
 
     // 序列化类型
     std::string serialization_type;
@@ -130,6 +133,13 @@ bool HttpRpcBackend::RegisterServiceFunc(
       rsp.set(http::field::content_type, "application/ros2");
     } else {
       AIMRT_ERROR_THROW("Http req has invalid content type {}.", req_content_type);
+    }
+
+    // 从http header中读取其他字段到context中
+    for (auto const& field : req) {
+      ctx_ptr->SetMetaValue(
+          aimrt::common::util::HttpHeaderDecode(field.name_string()),
+          aimrt::common::util::HttpHeaderDecode(field.value()));
     }
 
     // 超时
@@ -168,7 +178,10 @@ bool HttpRpcBackend::RegisterServiceFunc(
     auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, timeout);
     std::atomic_bool handle_flag = false;
 
-    aimrt::rpc::ServiceCallback service_callback(
+    service_func_wrapper.service_func(
+        ctx_ptr,
+        service_req_ptr.get(),
+        service_rsp_ptr.get(),
         [&service_func_wrapper,
          ctx_ptr,
          &req,
@@ -178,9 +191,9 @@ bool HttpRpcBackend::RegisterServiceFunc(
          serialization_type{std::move(serialization_type)},
          sig_timer_ptr,
          &handle_flag,
-         &ret_code](uint32_t code) {
-          if (code) [[unlikely]] {
-            ret_code = code;
+         &ret_code](aimrt::rpc::Status status) {
+          if (!status.OK()) [[unlikely]] {
+            ret_code = status.Code();
 
           } else {
             aimrt::util::BufferArray buffer_array;
@@ -235,12 +248,6 @@ bool HttpRpcBackend::RegisterServiceFunc(
           // TODO: 这里可能会有提前cancel的风险。可能的解决方案：多cancel几次？
           sig_timer_ptr->cancel();
         });
-
-    service_func_wrapper.service_func(
-        ctx_ptr->NativeHandle(),
-        service_req_ptr.get(),
-        service_rsp_ptr.get(),
-        service_callback.NativeHandle());
 
     bool finish_flag = true;
     if (!handle_flag.load()) {
@@ -319,7 +326,7 @@ bool HttpRpcBackend::TryInvoke(
   // 协议为http，需要由http后端处理。之后只能使用callback报错，不能返回false
   auto url_op = aimrt::common::util::ParseUrl(to_addr);
   if (!url_op) {
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
     return true;
   }
 
@@ -379,8 +386,16 @@ bool HttpRpcBackend::TryInvoke(
           } else if (serialization_type == "ros2") {
             req.set(http::field::content_type, "application/ros2");
           } else {
-            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE);
+            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE));
             co_return;
+          }
+
+          // 向http header中设置其他context meta字段
+          std::vector<std::string_view> meta_keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
+          for (const auto& item : meta_keys) {
+            req.set(
+                aimrt::common::util::HttpHeaderEncode(item),
+                aimrt::common::util::HttpHeaderEncode(client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(item)));
           }
 
           aimrt::util::BufferArray buffer_array;
@@ -392,7 +407,7 @@ bool HttpRpcBackend::TryInvoke(
               serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
           if (!serialize_ret) [[unlikely]] {
-            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED);
+            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
             co_return;
           }
 
@@ -455,11 +470,11 @@ bool HttpRpcBackend::TryInvoke(
 
           if (!deserialize_ret) {
             // 调用回调
-            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED);
+            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
             co_return;
           }
 
-          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_OK);
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 
           co_return;
         } catch (const std::exception& e) {
@@ -467,7 +482,7 @@ bool HttpRpcBackend::TryInvoke(
         }
 
         // TODO
-        client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
+        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
         co_return;
       },
       asio::detached);

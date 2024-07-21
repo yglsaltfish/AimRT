@@ -38,7 +38,7 @@ class TypeSupportRef {
     base_ptr_->destroy(base_ptr_->impl, msg);
   }
 
-  std::shared_ptr<void> CreateSharedPtr() {
+  std::shared_ptr<void> CreateSharedPtr() const {
     return std::shared_ptr<void>(
         base_ptr_->create(base_ptr_->impl),
         [base_ptr{this->base_ptr_}](void* ptr) {

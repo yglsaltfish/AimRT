@@ -12,7 +12,7 @@ class RpcBackendManagerTest : public ::testing::Test {
     service_func_wrapper.func_name = "ServiceFuncTest";
     service_func_wrapper.module_name = "ServiceModulecTest";
     service_func_wrapper.pkg_path = "ServicePkgPathTest";
-    service_func_wrapper.service_func = aimrt::util::Function<aimrt_function_service_func_ops_t>();
+    service_func_wrapper.service_func = ServiceFunc();
 
     client_func_wrapper.func_name = "ClientFuncTest";
     client_func_wrapper.module_name = "ClientModuleTest";
@@ -25,7 +25,7 @@ class RpcBackendManagerTest : public ::testing::Test {
     client_invoke_wrapper.ctx_ref = aimrt::rpc::ContextRef(ctx_ptr);
     client_invoke_wrapper.req_ptr = nullptr;
     client_invoke_wrapper.rsp_ptr = nullptr;
-    client_invoke_wrapper.callback = aimrt::rpc::ClientCallback();
+    client_invoke_wrapper.callback = std::function<void(aimrt::rpc::Status)>();
 
     rpc_backend_manager_.RegisterRpcBackend(mock_rpc_backend.get());
     rpc_backend_manager_.SetClientsBackendsRules(clients_backend_rules);

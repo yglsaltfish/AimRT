@@ -128,7 +128,7 @@ bool TcpChannelBackend::Subscribe(
         std::string(static_cast<const char*>(buf_data) + 2 + uri_size, serialization_type_size);
 
     // context
-    auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
+    auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
 
     ctx_ptr->SetSerializationType(serialization_type);
 

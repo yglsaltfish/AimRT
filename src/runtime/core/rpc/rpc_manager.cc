@@ -172,6 +172,9 @@ void RpcManager::Shutdown() {
 
   rpc_registry_ptr_.reset();
 
+  server_filter_manager_.Clear();
+  client_filter_manager_.Clear();
+
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
 
@@ -203,8 +206,11 @@ const RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo
 
   auto emplace_ret = rpc_handle_proxy_map_.emplace(
       module_info.name, std::make_unique<RpcHandleProxy>(
-                            module_info.pkg_path, module_info.name,
-                            rpc_backend_manager_));
+                            module_info.pkg_path,
+                            module_info.name,
+                            rpc_backend_manager_,
+                            client_filter_manager_,
+                            server_filter_manager_));
   return *(emplace_ret.first->second);
 }
 

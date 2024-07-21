@@ -100,7 +100,7 @@ void MqttRpcBackend::Initialize(YAML::Node options_node,
 
     client_tool_.RegisterTimeoutExecutor(timeout_executor);
     client_tool_.RegisterTimeoutHandle([](MsgRecorder&& msg_recorder) {
-      msg_recorder.client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_TIMEOUT);
+      msg_recorder.client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
     });
 
     AIMRT_TRACE("Mqtt rpc backend enable the timeout function, use '{}' as timeout executor.",
@@ -138,7 +138,9 @@ bool MqttRpcBackend::RegisterServiceFunc(
 
   auto handle = [this, &service_func_wrapper](MQTTAsync_message* message) {
     try {
-      auto ctx_ptr = std::make_shared<aimrt::rpc::Context>();
+      auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
+      ctx_ptr->SetFunctionName(service_func_wrapper.func_name);
+      ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
 
       // 获取字段
       util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
@@ -183,7 +185,10 @@ bool MqttRpcBackend::RegisterServiceFunc(
       std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
 
       // service rpc调用
-      aimrt::rpc::ServiceCallback service_callback(
+      service_func_wrapper.service_func(
+          ctx_ptr,
+          service_req_ptr.get(),
+          service_rsp_ptr.get(),
           [this,
            &service_func_wrapper,
            ctx_ptr,
@@ -191,11 +196,11 @@ bool MqttRpcBackend::RegisterServiceFunc(
            service_rsp_ptr,
            serialization_type{std::move(serialization_type)},
            mqtt_pub_topic{std::move(mqtt_pub_topic)},
-           req_id_buf](uint32_t code) {
-            if (code) [[unlikely]] {
+           req_id_buf](aimrt::rpc::Status status) {
+            if (!status.OK()) [[unlikely]] {
               // 如果code不为suc，则没必要反序列化
               ReturnRspWithStatusCode(
-                  mqtt_pub_topic, serialization_type, req_id_buf, code);
+                  mqtt_pub_topic, serialization_type, req_id_buf, status.Code());
 
               return;
             }
@@ -253,12 +258,6 @@ bool MqttRpcBackend::RegisterServiceFunc(
                              "publish mqtt msg failed, topic: {}, code: {}",
                              mqtt_pub_topic, rc);
           });
-
-      service_func_wrapper.service_func(
-          ctx_ptr->NativeHandle(),
-          service_req_ptr.get(),
-          service_rsp_ptr.get(),
-          service_callback.NativeHandle());
     } catch (const std::exception& e) {
       AIMRT_WARN("Handle mqtt rpc msg failed, exception info: {}", e.what());
     }
@@ -365,7 +364,7 @@ bool MqttRpcBackend::RegisterClientFunc(
           client_invoke_wrapper_ptr = std::move(msg_recorder->client_invoke_wrapper_ptr);
 
           if (code) [[unlikely]] {
-            client_invoke_wrapper_ptr->callback(code);
+            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(code));
             return;
           }
 
@@ -386,11 +385,11 @@ bool MqttRpcBackend::RegisterClientFunc(
 
           if (!deserialize_ret) {
             // 调用回调
-            client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED);
+            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
             return;
           }
 
-          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_OK);
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
           return;
 
         } catch (const std::exception& e) {
@@ -398,7 +397,7 @@ bool MqttRpcBackend::RegisterClientFunc(
         }
 
         if (client_invoke_wrapper_ptr)
-          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
       });
 
   return true;
@@ -436,7 +435,7 @@ bool MqttRpcBackend::TryInvoke(
 
     auto url_op = aimrt::common::util::ParseUrl(to_addr);
     if (!url_op) {
-      client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
+      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
       return true;
     }
 
@@ -467,7 +466,7 @@ bool MqttRpcBackend::TryInvoke(
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
 
   if (serialization_type.size() > 255) [[unlikely]] {
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
     return true;
   }
 
@@ -478,7 +477,7 @@ bool MqttRpcBackend::TryInvoke(
       util::UrlEncode(GetRealFuncName(func_name));
 
   if (mqtt_sub_topic.size() > 255) [[unlikely]] {
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
     return true;
   }
 
@@ -491,7 +490,7 @@ bool MqttRpcBackend::TryInvoke(
       serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
   if (!serialize_ret) [[unlikely]] {
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
     return true;
   }
 
@@ -509,7 +508,7 @@ bool MqttRpcBackend::TryInvoke(
     AIMRT_WARN("Mqtt publish failed, pkg is too large, limit {}k, actual {}k",
                max_pkg_size_ / 1024, mqtt_pkg_size / 1024);
 
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED));
 
     return true;
   }
@@ -525,7 +524,7 @@ bool MqttRpcBackend::TryInvoke(
   if (!ret) [[unlikely]] {
     // 一般不太可能出现
     AIMRT_WARN("Failed to record msg.");
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
     return true;
   }
 

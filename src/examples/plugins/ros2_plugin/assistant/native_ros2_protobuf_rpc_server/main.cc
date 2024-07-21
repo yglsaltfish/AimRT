@@ -21,15 +21,15 @@ class RosTestRpcWrapperServer : public rclcpp::Node {
     // create service
     service_ = this->create_service<RosRpcWrapper>(
         "/aimrt_2Eprotocols_2Eexample_2EExampleService/GetFooData",
-        std::bind(&RosTestRpcWrapperServer::RpcHandle, this, std::placeholders::_1, std::placeholders::_2),
+        std::bind(&RosTestRpcWrapperServer::CoRpcHandle, this, std::placeholders::_1, std::placeholders::_2),
         qos.get_rmw_qos_profile());
   }
 
  private:
   rclcpp::Service<RosRpcWrapper>::SharedPtr service_;
 
-  void RpcHandle(const std::shared_ptr<RosRpcWrapper::Request> wrapper_req,
-                 std::shared_ptr<RosRpcWrapper::Response> wrapper_rsp) {
+  void CoRpcHandle(const std::shared_ptr<RosRpcWrapper::Request> wrapper_req,
+                   std::shared_ptr<RosRpcWrapper::Response> wrapper_rsp) {
     // deserialize protobuf req from RosRpcWrapper Request
     aimrt::protocols::example::GetFooDataReq req;
 

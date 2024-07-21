@@ -8,7 +8,8 @@
   - [aimrt_module_cpp_interface/rpc/rpc_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_handle.h)
   - [aimrt_module_cpp_interface/rpc/rpc_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_context.h)
   - [aimrt_module_cpp_interface/rpc/rpc_status.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_status.h)
-  - [aimrt_module_cpp_interface/rpc/rpc_filter.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_filter.h)
+  - [aimrt_module_cpp_interface/rpc/rpc_co_filter.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_co_filter.h)
+  - [aimrt_module_cpp_interface/rpc/rpc_async_filter.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_async_filter.h)
 - 参考示例：
   - [protobuf_rpc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc)
   - [ros2_rpc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc)
@@ -216,7 +217,7 @@ class Context {
 
   std::string_view GetMetaValue(std::string_view key) const;
   void SetMetaValue(std::string_view key, std::string_view val);
-  std::set<std::string_view> GetMetaKeys() const;
+  std::vector<std::string_view> GetMetaKeys() const;
 
   std::string_view GetToAddr() const;
   void SetToAddr(std::string_view val);
@@ -234,7 +235,7 @@ class ContextRef {
 
   std::string_view GetMetaValue(std::string_view key) const;
   void SetMetaValue(std::string_view key, std::string_view val);
-  std::set<std::string_view> GetMetaKeys() const;
+  std::vector<std::string_view> GetMetaKeys() const;
 
   std::string_view GetToAddr() const;
   void SetToAddr(std::string_view val);

@@ -59,7 +59,7 @@ void LocalRpcBackend::Initialize(YAML::Node options_node,
     client_tool_.RegisterTimeoutExecutor(timeout_executor);
     client_tool_.RegisterTimeoutHandle(
         [](std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>&& client_invoke_wrapper_ptr) {
-          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_TIMEOUT);
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
         });
 
     AIMRT_TRACE("Local rpc backend enable the timeout function, use '{}' as timeout executor.",
@@ -174,7 +174,7 @@ bool LocalRpcBackend::TryInvoke(
         AIMRT_WARN("Can not find service func '{}' in module '{}'. Addr: {}",
                    func_name, service_module_name, to_addr);
 
-        client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
+        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
 
         return true;
       }
@@ -189,7 +189,7 @@ bool LocalRpcBackend::TryInvoke(
       AIMRT_WARN("Can not find service func '{}' in pkg '{}'. Addr: {}",
                  func_name, service_pkg_path, to_addr);
 
-      client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
+      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
 
       return true;
     }
@@ -205,7 +205,7 @@ bool LocalRpcBackend::TryInvoke(
         AIMRT_WARN("Can not find service func '{}' in pkg '{}' module '{}'. Addr: {}",
                    func_name, service_pkg_path, service_module_name, to_addr);
 
-        client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_INVALID_ADDR);
+        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
 
         return true;
       }
@@ -231,12 +231,21 @@ bool LocalRpcBackend::TryInvoke(
 
   const auto* service_func_wrapper_ptr = get_service_func_wrapper_ptr_func();
 
+  // ctx 创建
+  auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
+  ctx_ptr->SetFunctionName(service_func_wrapper_ptr->func_name);
+  ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
+  aimrt::rpc::MergeContextMeta(*ctx_ptr, client_invoke_wrapper_ptr->ctx_ref, {AIMRT_RPC_CONTEXT_KEY_PREFIX});
+
   // 在同一个pkg内，直接调用，无需序列化
   if (service_pkg_path == client_invoke_wrapper_ptr->pkg_path) {
     service_func_wrapper_ptr->service_func(
-        client_invoke_wrapper_ptr->ctx_ref.NativeHandle(),
-        client_invoke_wrapper_ptr->req_ptr, client_invoke_wrapper_ptr->rsp_ptr,
-        client_invoke_wrapper_ptr->callback.NativeHandle());
+        ctx_ptr,
+        client_invoke_wrapper_ptr->req_ptr,
+        client_invoke_wrapper_ptr->rsp_ptr,
+        [ctx_ptr, callback{std::move(client_invoke_wrapper_ptr->callback)}](aimrt::rpc::Status status) {
+          callback(status);
+        });
     return true;
   }
 
@@ -269,7 +278,7 @@ bool LocalRpcBackend::TryInvoke(
   if (!ret) [[unlikely]] {
     // 一般不太可能出现
     AIMRT_WARN("Failed to record msg.");
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_UNKNOWN);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
     return true;
   }
 
@@ -286,7 +295,7 @@ bool LocalRpcBackend::TryInvoke(
         "Req serialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
         serialization_type, pkg_path, module_name, func_name);
 
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
 
     return true;
   }
@@ -305,7 +314,7 @@ bool LocalRpcBackend::TryInvoke(
         "Rsp deserialization failed in local rpc backend, serialization_type {}, pkg_path: {}, module_name: {}, func_name: {}",
         serialization_type, pkg_path, module_name, func_name);
 
-    client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED);
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
 
     return true;
   }
@@ -316,14 +325,18 @@ bool LocalRpcBackend::TryInvoke(
   std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
 
   // service rpc调用
-  aimrt::rpc::ServiceCallback service_callback(
+  service_func_wrapper_ptr->service_func(
+      ctx_ptr,
+      service_req_ptr.get(),
+      service_rsp_ptr.get(),
       [this,
+       ctx_ptr,
        service_func_wrapper_ptr,
        client_func_wrapper_ptr,
        cur_req_id,
        service_req_ptr,
        service_rsp_ptr,
-       serialization_type{std::move(serialization_type)}](uint32_t code) {
+       serialization_type{std::move(serialization_type)}](aimrt::rpc::Status status) {
         auto msg_recorder = client_tool_.GetRecord(cur_req_id);
         if (!msg_recorder) [[unlikely]] {
           // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
@@ -349,7 +362,7 @@ bool LocalRpcBackend::TryInvoke(
               service_func_wrapper_ptr->module_name,
               service_func_wrapper_ptr->func_name);
 
-          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED));
 
           return;
         }
@@ -370,17 +383,14 @@ bool LocalRpcBackend::TryInvoke(
               service_func_wrapper_ptr->module_name,
               service_func_wrapper_ptr->func_name);
 
-          client_invoke_wrapper_ptr->callback(AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED);
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED));
 
           return;
         }
 
         // 调用回调
-        client_invoke_wrapper_ptr->callback(code);
+        client_invoke_wrapper_ptr->callback(status);
       });
-  service_func_wrapper_ptr->service_func(
-      client_invoke_wrapper_ptr->ctx_ref.NativeHandle(), service_req_ptr.get(),
-      service_rsp_ptr.get(), service_callback.NativeHandle());
 
   return true;
 }

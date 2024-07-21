@@ -61,6 +61,7 @@ aimrt_core_options = [
     'AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN',
     'AIMRT_BUILD_PARAMETER_PLUGIN',
     'AIMRT_BUILD_LOG_CONTROL_PLUGIN',
+    'AIMRT_BUILD_OPENTELEMETRY_PLUGIN',
 ]
 
 workspace_template_infos = [
