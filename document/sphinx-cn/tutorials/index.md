@@ -126,6 +126,7 @@ plugins/ros2_plugin.md
 plugins/parameter_plugin.md
 plugins/time_manipulator_plugin.md
 plugins/log_control_plugin.md
+plugins/opentelemetry_plugin.md
 ```
 
 如果开发者想定制开发自己的插件，可以参考以下文档。

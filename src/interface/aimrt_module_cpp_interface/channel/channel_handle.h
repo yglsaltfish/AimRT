@@ -32,7 +32,7 @@ class PublisherRef {
    * @param msg_type_support
    * @return Register result
    */
-  bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) const {
+  bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->register_publish_type(base_ptr_->impl, msg_type_support);
   }
@@ -43,7 +43,7 @@ class PublisherRef {
    * @param msg_type
    * @param msg_ptr
    */
-  void Publish(std::string_view msg_type, ContextRef ctx_ref, const void* msg_ptr) const {
+  void Publish(std::string_view msg_type, ContextRef ctx_ref, const void* msg_ptr) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->publish(base_ptr_->impl, aimrt::util::ToAimRTStringView(msg_type), ctx_ref.NativeHandle(), msg_ptr);
   }
@@ -84,7 +84,7 @@ class SubscriberRef {
    */
   bool Subscribe(
       const aimrt_type_support_base_t* msg_type_support,
-      SubscriberCallback&& callback) const {
+      SubscriberCallback&& callback) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return base_ptr_->subscribe(base_ptr_->impl, msg_type_support, callback.NativeHandle());
   }
@@ -114,13 +114,13 @@ class ChannelHandleRef {
 
   const aimrt_channel_handle_base_t* NativeHandle() const { return base_ptr_; }
 
-  PublisherRef GetPublisher(std::string_view topic) const {
+  PublisherRef GetPublisher(std::string_view topic) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return PublisherRef(
         base_ptr_->get_publisher(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
   }
 
-  SubscriberRef GetSubscriber(std::string_view topic) const {
+  SubscriberRef GetSubscriber(std::string_view topic) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return SubscriberRef(
         base_ptr_->get_subscriber(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
@@ -167,7 +167,7 @@ class PublisherProxyBase {
   }
 
  protected:
-  void PublishImpl(ContextRef ctx_ref, const void* msg_ptr) const {
+  void PublishImpl(ContextRef ctx_ref, const void* msg_ptr) {
     for (const auto& item : publish_hook_vec)
       item(msg_type_name_, ctx_ref, msg_ptr);
 

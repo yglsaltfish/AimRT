@@ -12,6 +12,9 @@
 
 namespace aimrt::runtime::core::rpc {
 
+using ServiceFunc =
+    std::function<void(aimrt::rpc::ContextRef, const void*, void*, std::function<void(aimrt::rpc::Status)>&&)>;
+
 struct ServiceFuncWrapper {
   std::string_view func_name;
   std::string_view pkg_path;
@@ -19,7 +22,7 @@ struct ServiceFuncWrapper {
   const void* custom_type_support_ptr = nullptr;
   const aimrt_type_support_base_t* req_type_support = nullptr;
   const aimrt_type_support_base_t* rsp_type_support = nullptr;
-  aimrt::rpc::ServiceFunc service_func;
+  ServiceFunc service_func;
 };
 
 struct ClientFuncWrapper {

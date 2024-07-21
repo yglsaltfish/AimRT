@@ -23,7 +23,10 @@ variables:
       -Dlibunifex_DOWNLOAD_URL=https://file.agibot.com/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz \
       -Dtbb_DOWNLOAD_URL=https://file.agibot.com/third_party/oneTBB-2021.13.0.tar.gz \
       -Dpybind11_DOWNLOAD_URL=https://file.agibot.com/third_party/pybind11-2.13.1.tar.gz \
-      -Dpaho_mqtt_c_DOWNLOAD_URL=https://file.agibot.com/third_party/paho.mqtt.c-1.3.13.tar.gz
+      -Dpaho_mqtt_c_DOWNLOAD_URL=https://file.agibot.com/third_party/paho.mqtt.c-1.3.13.tar.gz \
+      -Dnlohmann_json_DOWNLOAD_URL=https://file.agibot.com/third_party/nlohmann-json-3.11.3.tar.gz \
+      -Dopentelemetry_proto_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-proto-1.3.2.tar.gz \
+      -Dopentelemetry_cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-cpp-1.16.1.tar.gz
 
   TEST_CMD:
     value: |
@@ -45,4 +48,7 @@ variables:
       -Dlibunifex_DOWNLOAD_URL=https://file.agibot.com/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz \
       -Dtbb_DOWNLOAD_URL=https://file.agibot.com/third_party/oneTBB-2021.13.0.tar.gz  \
       -Dpybind11_DOWNLOAD_URL=https://file.agibot.com/third_party/pybind11-2.13.1.tar.gz \
-      -Dpaho_mqtt_c_DOWNLOAD_URL=https://file.agibot.com/third_party/paho.mqtt.c-1.3.13.tar.gz
+      -Dpaho_mqtt_c_DOWNLOAD_URL=https://file.agibot.com/third_party/paho.mqtt.c-1.3.13.tar.gz \
+      -Dnlohmann_json_DOWNLOAD_URL=https://file.agibot.com/third_party/nlohmann-json-3.11.3.tar.gz \
+      -Dopentelemetry_proto_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-proto-1.3.2.tar.gz \
+      -Dopentelemetry_cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-cpp-1.16.1.tar.gz

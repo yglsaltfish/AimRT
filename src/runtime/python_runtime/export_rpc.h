@@ -50,6 +50,7 @@ inline void ExportRpcContext(pybind11::object m) {
 
   pybind11::class_<Context>(m, "RpcContext")
       .def(pybind11::init<>())
+      .def("GetType", &Context::GetType)
       .def("Timeout", &Context::Timeout)
       .def("SetTimeout", &Context::SetTimeout)
       .def("GetMetaValue", &Context::GetMetaValue)
@@ -67,6 +68,7 @@ inline void ExportRpcContext(pybind11::object m) {
       .def(pybind11::init<Context*>())
       .def(pybind11::init<const std::shared_ptr<Context>&>())
       .def("__bool__", &ContextRef::operator bool)
+      .def("GetType", &ContextRef::GetType)
       .def("Timeout", &ContextRef::Timeout)
       .def("SetTimeout", &ContextRef::SetTimeout)
       .def("GetMetaValue", &ContextRef::GetMetaValue)

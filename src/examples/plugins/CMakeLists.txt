@@ -33,3 +33,7 @@ if(AIMRT_BUILD_WITH_PROTOBUF
    AND AIMRT_BUILD_LOG_CONTROL_PLUGIN)
   add_subdirectory(log_control_plugin)
 endif()
+
+if(AIMRT_BUILD_OPENTELEMETRY_PLUGIN)
+  add_subdirectory(opentelemetry_plugin)
+endif()

@@ -140,7 +140,7 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
     std::shared_ptr<void> msg_ptr = tpl_subscribe_type_support_ref.CreateSharedPtr();
 
     // context
-    auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
+    auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
 
     if (subscribe_pkg_path == pkg_path) {
       // 在同一个pkg中，直接复制

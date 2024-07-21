@@ -123,11 +123,11 @@ class PublisherProxy<MsgType> : public PublisherProxyBase {
     return publisher.RegisterPublishType(GetProtobufMessageTypeSupport<MsgType>());
   }
 
-  bool RegisterPublishType() const {
+  bool RegisterPublishType() {
     return publisher_.RegisterPublishType(GetProtobufMessageTypeSupport<MsgType>());
   }
 
-  void Publish(ContextRef ctx_ref, const MsgType& msg) const {
+  void Publish(ContextRef ctx_ref, const MsgType& msg) {
     if (ctx_ref) {
       if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
       PublishImpl(ctx_ref, static_cast<const void*>(&msg));
@@ -139,7 +139,7 @@ class PublisherProxy<MsgType> : public PublisherProxyBase {
     PublishImpl(ctx_ptr, static_cast<const void*>(&msg));
   }
 
-  void Publish(const MsgType& msg) const {
+  void Publish(const MsgType& msg) {
     Publish(ContextRef(), msg);
   }
 };
@@ -152,7 +152,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
   ~SubscriberProxy() = default;
 
   bool Subscribe(
-      std::function<void(ContextRef, const std::shared_ptr<const MsgType>&)>&& callback) const {
+      std::function<void(ContextRef, const std::shared_ptr<const MsgType>&)>&& callback) {
     return subscriber_.Subscribe(
         GetProtobufMessageTypeSupport<MsgType>(),
         [this, callback{std::move(callback)}](
@@ -173,7 +173,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
   }
 
   bool Subscribe(
-      std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) const {
+      std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
     return subscriber_.Subscribe(
         GetProtobufMessageTypeSupport<MsgType>(),
         [this, callback{std::move(callback)}](
@@ -193,7 +193,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
   }
 
   bool SubscribeCo(
-      std::function<co::Task<void>(ContextRef, const MsgType&)>&& callback) const {
+      std::function<co::Task<void>(ContextRef, const MsgType&)>&& callback) {
     return subscriber_.Subscribe(
         GetProtobufMessageTypeSupport<MsgType>(),
         [this, callback{std::move(callback)}](
@@ -214,7 +214,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
         });
   }
 
-  bool SubscribeCo(std::function<co::Task<void>(const MsgType&)>&& callback) const {
+  bool SubscribeCo(std::function<co::Task<void>(const MsgType&)>&& callback) {
     return subscriber_.Subscribe(
         GetProtobufMessageTypeSupport<MsgType>(),
         [this, callback{std::move(callback)}](

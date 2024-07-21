@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
 #include "aimrt_module_cpp_interface/co/sync_wait.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_filter.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_co_filter.h"
 
 namespace aimrt::rpc {
 
-TEST(RPC_FILTER_TEST, FilterManager_base) {
-  FilterManager m;
+TEST(RPC_FILTER_TEST, CoFilterManager_base) {
+  CoFilterManager m;
 
   auto rpc_handle = [](ContextRef ctx, const void *req, void *rsp) -> co::Task<Status> {
     *static_cast<std::string *>(rsp) = *static_cast<const std::string *>(req);
@@ -25,11 +25,11 @@ TEST(RPC_FILTER_TEST, FilterManager_base) {
   EXPECT_EQ(rsp, req);
 }
 
-TEST(RPC_FILTER_TEST, FilterManager_multiple_filters) {
-  FilterManager m;
+TEST(RPC_FILTER_TEST, CoFilterManager_multiple_filters) {
+  CoFilterManager m;
 
   // 先注册的在内层
-  m.RegisterFilter([](ContextRef ctx, const void *req, void *rsp, const RpcHandle &h) -> co::Task<Status> {
+  m.RegisterFilter([](ContextRef ctx, const void *req, void *rsp, const CoRpcHandle &h) -> co::Task<Status> {
     ctx.SetMetaValue("order", std::string(ctx.GetMetaValue("order")) + " -> f1 begin");
 
     auto status = co_await h(ctx, req, rsp);
@@ -40,7 +40,7 @@ TEST(RPC_FILTER_TEST, FilterManager_multiple_filters) {
   });
 
   // 后注册的在外层
-  m.RegisterFilter([](ContextRef ctx, const void *req, void *rsp, const RpcHandle &h) -> co::Task<Status> {
+  m.RegisterFilter([](ContextRef ctx, const void *req, void *rsp, const CoRpcHandle &h) -> co::Task<Status> {
     ctx.SetMetaValue("order", std::string(ctx.GetMetaValue("order")) + " -> f2 begin");
 
     auto status = co_await h(ctx, req, rsp);

@@ -1,0 +1,225 @@
+#include "opentelemetry_plugin/opentelemetry_plugin.h"
+
+#include "core/aimrt_core.h"
+#include "opentelemetry_plugin/global.h"
+#include "opentelemetry_plugin/rpc_context_carrier.h"
+#include "opentelemetry_plugin/util.h"
+
+namespace YAML {
+template <>
+struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Options> {
+  using Options = aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Options;
+
+  static Node encode(const Options& rhs) {
+    Node node;
+
+    node["node_name"] = rhs.node_name;
+    node["otlp_http_exporter_url"] = rhs.otlp_http_exporter_url;
+
+    node["attributes"] = YAML::Node();
+    for (const auto& attribute : rhs.attributes) {
+      Node attribute_node;
+      attribute_node["key"] = attribute.key;
+      attribute_node["val"] = attribute.val;
+      node["attributes"].push_back(attribute_node);
+    }
+
+    return node;
+  }
+
+  static bool decode(const Node& node, Options& rhs) {
+    if (!node.IsMap()) return false;
+
+    rhs.node_name = node["node_name"].as<std::string>();
+    rhs.otlp_http_exporter_url = node["otlp_http_exporter_url"].as<std::string>();
+
+    for (auto& attribute_node : node["attributes"]) {
+      auto attribute = Options::Attribute{
+          .key = attribute_node["key"].as<std::string>(),
+          .val = attribute_node["val"].as<std::string>(),
+      };
+      rhs.attributes.emplace_back(std::move(attribute));
+    }
+
+    return true;
+  }
+};
+}  // namespace YAML
+
+namespace trace_api = opentelemetry::trace;
+namespace trace_sdk = opentelemetry::sdk::trace;
+namespace resource = opentelemetry::sdk::resource;
+namespace otlp = opentelemetry::exporter::otlp;
+
+namespace aimrt::plugins::opentelemetry_plugin {
+
+bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
+  try {
+    core_ptr_ = core_ptr;
+
+    YAML::Node plugin_options_node = core_ptr_->GetPluginManager().GetPluginOptionsNode(Name());
+
+    if (plugin_options_node && !plugin_options_node.IsNull()) {
+      options_ = plugin_options_node.as<Options>();
+    }
+
+    init_flag_ = true;
+
+    AIMRT_CHECK_ERROR_THROW(!options_.node_name.empty(), "node name is empty!");
+
+    // init opentelemetry
+    auto resource_attributes = resource::ResourceAttributes{
+        {"service.name", options_.node_name}};
+    for (auto& itr : options_.attributes) {
+      resource_attributes.SetAttribute(itr.key, itr.val);
+    }
+    auto resource = resource::Resource::Create(resource_attributes);
+
+    otlp::OtlpHttpExporterOptions opts;
+    opts.url = options_.otlp_http_exporter_url;
+    auto exporter = otlp::OtlpHttpExporterFactory::Create(opts);
+
+    trace_sdk::BatchSpanProcessorOptions bspOpts{};
+    auto processor = trace_sdk::BatchSpanProcessorFactory::Create(std::move(exporter), bspOpts);
+
+    provider_ = trace_sdk::TracerProviderFactory::Create(std::move(processor), resource);
+
+    propagator_ = std::make_shared<trace_api::propagation::HttpTraceContext>();
+
+    // register hook
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
+                                [this] { SetPluginLogger(); });
+
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
+                                [this] { RegisterRpcFilter(); });
+
+    plugin_options_node = options_;
+    return true;
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("Initialize failed, {}", e.what());
+  }
+
+  return false;
+}
+
+void OpenTelemetryPlugin::Shutdown() noexcept {
+  try {
+    if (!init_flag_) return;
+
+    provider_.reset();
+    propagator_.reset();
+
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("Shutdown failed, {}", e.what());
+  }
+}
+
+void OpenTelemetryPlugin::SetPluginLogger() {
+  SetLogger(aimrt::logger::LoggerRef(
+      core_ptr_->GetLoggerManager().GetLoggerProxy().NativeHandle()));
+}
+
+void OpenTelemetryPlugin::RegisterRpcFilter() {
+  auto& rpc_manager = core_ptr_->GetRpcManager();
+  rpc_manager.RegisterClientFilter(
+      [this](aimrt::rpc::ContextRef ctx_ref,
+             const void* req,
+             void* rsp,
+             std::function<void(aimrt::rpc::Status)>&& callback,
+             const aimrt::rpc::AsyncRpcHandle& h) {
+        auto tracer = provider_->GetTracer(options_.node_name);
+        RpcContextCarrier carrier(ctx_ref);
+
+        // 解压传进来的context，得到父span
+        trace_api::StartSpanOptions op{
+            .kind = trace_api::SpanKind::kClient,
+        };
+
+        opentelemetry::context::Context input_ot_ctx;
+        auto extract_ctx = propagator_->Extract(carrier, input_ot_ctx);
+
+        auto extract_ctx_val = extract_ctx.GetValue(trace_api::kSpanKey);
+        if (!::opentelemetry::nostd::holds_alternative<::opentelemetry::nostd::monostate>(extract_ctx_val)) {
+          auto parent_span =
+              ::opentelemetry::nostd::get<::opentelemetry::nostd::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
+          op.parent = parent_span->GetContext();
+        }
+
+        auto span = tracer->StartSpan(ToNoStdStringView(ctx_ref.GetFunctionName()), op);
+
+        // 将当前span的context打包
+        opentelemetry::context::Context output_ot_ctx(trace_api::kSpanKey, span);
+        propagator_->Inject(carrier, output_ot_ctx);
+
+        // 添加context中的属性
+        auto keys = ctx_ref.GetMetaKeys();
+        for (auto& itr : keys) {
+          span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
+        }
+
+        h(ctx_ref, req, rsp,
+          [span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) mutable {
+            if (status.OK()) {
+              span->SetStatus(trace_api::StatusCode::kOk);
+            } else {
+              span->SetStatus(trace_api::StatusCode::kError, status.ToString());
+            }
+
+            span->End();
+
+            callback(status);
+          });
+      });
+
+  rpc_manager.RegisterServerFilter(
+      [this](aimrt::rpc::ContextRef ctx_ref,
+             const void* req,
+             void* rsp,
+             std::function<void(aimrt::rpc::Status)>&& callback,
+             const aimrt::rpc::AsyncRpcHandle& h) {
+        auto tracer = provider_->GetTracer(options_.node_name);
+        RpcContextCarrier carrier(ctx_ref);
+
+        // 解压传进来的context，得到父span
+        trace_api::StartSpanOptions op{
+            .kind = trace_api::SpanKind::kServer,
+        };
+
+        opentelemetry::context::Context input_ot_ctx;
+        auto extract_ctx = propagator_->Extract(carrier, input_ot_ctx);
+
+        auto extract_ctx_val = extract_ctx.GetValue(trace_api::kSpanKey);
+        if (!::opentelemetry::nostd::holds_alternative<::opentelemetry::nostd::monostate>(extract_ctx_val)) {
+          auto parent_span =
+              ::opentelemetry::nostd::get<::opentelemetry::nostd::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
+          op.parent = parent_span->GetContext();
+        }
+
+        auto span = tracer->StartSpan(ToNoStdStringView(ctx_ref.GetFunctionName()), op);
+
+        // 将当前span的context打包
+        opentelemetry::context::Context output_ot_ctx(trace_api::kSpanKey, span);
+        propagator_->Inject(carrier, output_ot_ctx);
+
+        // 添加context中的属性
+        auto keys = ctx_ref.GetMetaKeys();
+        for (auto& itr : keys) {
+          span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
+        }
+
+        h(ctx_ref, req, rsp,
+          [span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) mutable {
+            if (status.OK()) {
+              span->SetStatus(trace_api::StatusCode::kOk);
+            } else {
+              span->SetStatus(trace_api::StatusCode::kError, status.ToString());
+            }
+
+            span->End();
+
+            callback(status);
+          });
+      });
+}
+
+}  // namespace aimrt::plugins::opentelemetry_plugin

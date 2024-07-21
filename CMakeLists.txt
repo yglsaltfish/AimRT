@@ -29,6 +29,7 @@ option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." 
 option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time manipulator plugin." OFF)
 option(AIMRT_BUILD_PARAMETER_PLUGIN "AimRT build parameter plugin." OFF)
 option(AIMRT_BUILD_LOG_CONTROL_PLUGIN "AimRT build log control plugin." OFF)
+option(AIMRT_BUILD_OPENTELEMETRY_PLUGIN "AimRT build opentelemetry plugin." OFF)
 
 option(AIMRT_INSTALL "Enable installation of AimRT." ON)
 
@@ -208,6 +209,13 @@ if(AIMRT_BUILD_RUNTIME)
 
   if(AIMRT_BUILD_MQTT_PLUGIN)
     include(GetPahoMqttC)
+  endif()
+
+  if(AIMRT_BUILD_OPENTELEMETRY_PLUGIN)
+    include(GetProtobuf)
+    include(GetNlohmannJson)
+    include(GetOpenTelemetryProto)
+    include(GetOpenTelemetryCpp)
   endif()
 endif()
 

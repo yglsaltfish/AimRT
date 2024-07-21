@@ -5,6 +5,7 @@
 #include <memory>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "aimrt_module_c_interface/rpc/rpc_context_base.h"
 #include "aimrt_module_cpp_interface/util/string.h"
@@ -17,12 +18,22 @@ namespace aimrt::rpc {
 
 class Context {
  public:
-  Context() : base_(aimrt_rpc_context_base_t{
-                  .ops = GenOpsBase(),
-                  .impl = this}) {}
+  explicit Context(aimrt_rpc_context_type_t type = aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT)
+      : type_(type),
+        base_(aimrt_rpc_context_base_t{
+            .ops = GenOpsBase(),
+            .impl = this}) {}
   ~Context() = default;
 
   const aimrt_rpc_context_base_t* NativeHandle() const { return &base_; }
+
+  bool CheckUsed() const { return used_; }
+  void SetUsed() { used_ = true; }
+  void ResetUsed() { used_ = false; }
+
+  aimrt_rpc_context_type_t GetType() const {
+    return type_;
+  }
 
   // Timeout
   std::chrono::nanoseconds Timeout() const {
@@ -50,9 +61,9 @@ class Context {
     meta_data_map_.emplace(key, val);
   }
 
-  std::set<std::string_view> GetMetaKeys() const {
-    std::set<std::string_view> result;
-    for (const auto& it : meta_data_map_) result.emplace(it.first);
+  std::vector<std::string_view> GetMetaKeys() const {
+    std::vector<std::string_view> result;
+    for (const auto& it : meta_data_map_) result.emplace_back(it.first);
     return result;
   }
 
@@ -79,6 +90,13 @@ class Context {
 
   std::string ToString() const {
     std::stringstream ss;
+    if (type_ == aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT) {
+      ss << "Client context, ";
+    } else if (type_ == aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT) {
+      ss << "Server context, ";
+    } else {
+      ss << "Unknown context, ";
+    }
     ss << "timeout: " << timeout_ns_ / 1000000 << "ms, meta: {";
     bool flag = true;
     for (const auto& itr : meta_data_map_) {
@@ -98,6 +116,15 @@ class Context {
  private:
   static const aimrt_rpc_context_base_ops_t* GenOpsBase() {
     static constexpr aimrt_rpc_context_base_ops_t ops{
+        .check_used = [](void* impl) -> bool {
+          return static_cast<Context*>(impl)->used_;
+        },
+        .set_used = [](void* impl) {
+          static_cast<Context*>(impl)->used_ = true;  //
+        },
+        .get_type = [](void* impl) -> aimrt_rpc_context_type_t {
+          return static_cast<Context*>(impl)->type_;
+        },
         .get_timeout_ns = [](void* impl) -> uint64_t {
           return static_cast<Context*>(impl)->timeout_ns_;
         },
@@ -133,6 +160,7 @@ class Context {
 
  private:
   uint64_t timeout_ns_ = 0;
+  bool used_ = false;
 
   std::unordered_map<
       std::string,
@@ -143,6 +171,7 @@ class Context {
 
   std::vector<aimrt_string_view_t> meta_keys_vec_;
 
+  const aimrt_rpc_context_type_t type_;
   const aimrt_rpc_context_base_t base_;
 };
 
@@ -163,6 +192,21 @@ class ContextRef {
 
   const aimrt_rpc_context_base_t* NativeHandle() const {
     return base_ptr_;
+  }
+
+  bool CheckUsed() const {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+    return base_ptr_->ops->check_used(base_ptr_->impl);
+  }
+
+  void SetUsed() {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+    base_ptr_->ops->set_used(base_ptr_->impl);
+  }
+
+  aimrt_rpc_context_type_t GetType() const {
+    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
+    return base_ptr_->ops->get_type(base_ptr_->impl);
   }
 
   // Timeout manager
@@ -189,13 +233,13 @@ class ContextRef {
         base_ptr_->impl, aimrt::util::ToAimRTStringView(key), aimrt::util::ToAimRTStringView(val));
   }
 
-  std::set<std::string_view> GetMetaKeys() const {
+  std::vector<std::string_view> GetMetaKeys() const {
     AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
     aimrt_string_view_array_t keys = base_ptr_->ops->get_meta_keys(base_ptr_->impl);
 
-    std::set<std::string_view> result;
+    std::vector<std::string_view> result;
     for (size_t ii = 0; ii < keys.len; ++ii) {
-      result.emplace(aimrt::util::ToStdStringView(keys.str_array[ii]));
+      result.emplace_back(aimrt::util::ToStdStringView(keys.str_array[ii]));
     }
 
     return result;
@@ -227,6 +271,15 @@ class ContextRef {
 
     std::stringstream ss;
 
+    auto type = base_ptr_->ops->get_type(base_ptr_->impl);
+    if (type == aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT) {
+      ss << "Client context, ";
+    } else if (type == aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT) {
+      ss << "Server context, ";
+    } else {
+      ss << "Unknown context, ";
+    }
+
     auto timeout = base_ptr_->ops->get_timeout_ns(base_ptr_->impl);
     ss << "timeout: " << timeout / 1000000 << "ms, meta: {";
 
@@ -246,5 +299,25 @@ class ContextRef {
  private:
   const aimrt_rpc_context_base_t* base_ptr_;
 };
+
+template <typename ContextLhs, typename ContextRhs>
+void MergeContextMeta(
+    ContextLhs& lhs,
+    const ContextRhs& rhs,
+    const std::unordered_set<std::string_view>& exclude_prefixs = {}) {
+  const auto& meta_keys = rhs.GetMetaKeys();
+
+  for (const auto& item : meta_keys) {
+    auto find_itr = std::find_if(
+        exclude_prefixs.begin(), exclude_prefixs.end(),
+        [&item](std::string_view prefix) {
+          return item.starts_with(prefix);
+        });
+
+    if (find_itr != exclude_prefixs.end()) continue;
+
+    lhs.SetMetaValue(item, rhs.GetMetaValue(item));
+  }
+}
 
 }  // namespace aimrt::rpc

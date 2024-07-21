@@ -390,7 +390,7 @@ bool Ros2ChannelBackend::Subscribe(
           real_ros2_topic_name,
           10,
           [subscribe_wrapper_vec_ptr](ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
-            auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
+            auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
 
             const std::string& serialization_type = wrapper_msg->serialization_type;
             ctx_ptr->SetSerializationType(serialization_type);

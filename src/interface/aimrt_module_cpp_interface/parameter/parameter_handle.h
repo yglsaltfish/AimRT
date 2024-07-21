@@ -36,7 +36,7 @@ class ParameterHandleRef {
     return "";
   }
 
-  void SetParameter(std::string_view key, std::string_view val) const {
+  void SetParameter(std::string_view key, std::string_view val) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->set_parameter(base_ptr_->impl, util::ToAimRTStringView(key), util::ToAimRTStringView(val));
   }

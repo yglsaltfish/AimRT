@@ -21,13 +21,13 @@ TEST(RPC_CONTEXT_TEST, Context) {
   EXPECT_EQ(ctx.GetMetaValue("key2"), "val2");
   EXPECT_EQ(ctx.GetMetaValue("key3"), "");
 
-  EXPECT_TRUE(aimrt::common::util::CheckContainerEqual(
+  EXPECT_TRUE(aimrt::common::util::CheckContainerEqualNoOrder(
       ctx.GetMetaKeys(),
-      std::set<std::string_view>{"key1", "key2"}));
+      std::vector<std::string_view>{"key1", "key2"}));
 
   EXPECT_STREQ(
       ctx.ToString().c_str(),
-      "timestamp: 1718975718352594780, meta: {{key2,val2},{key1,val1}}");
+      "Publisher context, timestamp: 1718975718352594780, meta: {{key2,val2},{key1,val1}}");
 }
 
 TEST(RPC_CONTEXT_TEST, ContextRef) {
@@ -47,13 +47,13 @@ TEST(RPC_CONTEXT_TEST, ContextRef) {
   EXPECT_EQ(ctx.GetMetaValue("key2"), "val2");
   EXPECT_EQ(ctx.GetMetaValue("key3"), "");
 
-  EXPECT_TRUE(aimrt::common::util::CheckContainerEqual(
+  EXPECT_TRUE(aimrt::common::util::CheckContainerEqualNoOrder(
       ctx.GetMetaKeys(),
-      std::set<std::string_view>{"key1", "key2"}));
+      std::vector<std::string_view>{"key1", "key2"}));
 
   EXPECT_STREQ(
       ctx.ToString().c_str(),
-      "timestamp: 1718975718352594780, meta: {{key2,val2},{key1,val1}}");
+      "Publisher context, timestamp: 1718975718352594780, meta: {{key2,val2},{key1,val1}}");
 }
 
 }  // namespace aimrt::channel

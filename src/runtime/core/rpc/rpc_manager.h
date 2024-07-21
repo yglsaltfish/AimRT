@@ -9,6 +9,7 @@
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_async_filter.h"
 #include "core/rpc/rpc_backend_manager.h"
 #include "core/rpc/rpc_handle_proxy.h"
 #include "core/util/module_detail_info.h"
@@ -68,6 +69,24 @@ class RpcManager {
         util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});
   }
 
+  template <typename T>
+    requires std::constructible_from<aimrt::rpc::AsyncRpcFilter, T>
+  void RegisterClientFilter(T&& filter) {
+    AIMRT_CHECK_ERROR_THROW(
+        state_.load() == State::PreInit,
+        "Method can only be called when state is 'PreInit'.");
+    client_filter_manager_.RegisterFilter((T &&) filter);
+  }
+
+  template <typename T>
+    requires std::constructible_from<aimrt::rpc::AsyncRpcFilter, T>
+  void RegisterServerFilter(T&& filter) {
+    AIMRT_CHECK_ERROR_THROW(
+        state_.load() == State::PreInit,
+        "Method can only be called when state is 'PreInit'.");
+    server_filter_manager_.RegisterFilter((T &&) filter);
+  }
+
   // 信息查询类接口
   const RpcRegistry* GetRpcRegistry() const;
   const std::vector<std::string>& GetRpcBackendNameList() const;
@@ -88,6 +107,9 @@ class RpcManager {
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
+
+  aimrt::rpc::AsyncFilterManager client_filter_manager_;
+  aimrt::rpc::AsyncFilterManager server_filter_manager_;
 
   std::unique_ptr<RpcRegistry> rpc_registry_ptr_;
 

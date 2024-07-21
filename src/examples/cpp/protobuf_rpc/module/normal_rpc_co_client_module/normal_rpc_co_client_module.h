@@ -6,7 +6,7 @@
 #include "aimrt_module_cpp_interface/co/async_scope.h"
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/module_base.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_filter.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_co_filter.h"
 
 #include "rpc.aimrt_rpc.pb.h"
 

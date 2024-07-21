@@ -172,7 +172,7 @@ bool MqttChannelBackend::Subscribe(
 
   auto handle = [this, subscribe_wrapper_vec_ptr](MQTTAsync_message* message) {
     try {
-      auto ctx_ptr = std::make_shared<aimrt::channel::Context>();
+      auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
 
       util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 

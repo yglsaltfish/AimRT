@@ -39,7 +39,7 @@ bool NormalRpcCoClientModule::Initialize(aimrt::CoreRef core) {
     // Register filter
     proxy_->RegisterFilter([this](aimrt::rpc::ContextRef ctx,
                                   const void* req_ptr, void* rsp_ptr,
-                                  const aimrt::rpc::RpcHandle& next)
+                                  const aimrt::rpc::CoRpcHandle& next)
                                -> co::Task<aimrt::rpc::Status> {
       // timecost count
       auto begin_time = std::chrono::steady_clock::now();

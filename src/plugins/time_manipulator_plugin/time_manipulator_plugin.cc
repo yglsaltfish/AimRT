@@ -32,7 +32,7 @@ namespace aimrt::plugins::time_manipulator_plugin {
 
 co::Task<aimrt::rpc::Status> DebugLogServerFilter(
     aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
-    const aimrt::rpc::RpcHandle& next) {
+    const aimrt::rpc::CoRpcHandle& next) {
   AIMRT_INFO("Svr get new rpc call. req: {}",
              aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(req_ptr)));
   const auto& status = co_await next(ctx, req_ptr, rsp_ptr);

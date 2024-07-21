@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <concepts>
 #include <functional>
 #include <map>
@@ -122,6 +123,28 @@ std::string Map2Str(const T& m) {
 
 template <IterableType T>
 bool CheckContainerEqual(const T& t1, const T& t2) {
+  if (t1.size() != t2.size()) return false;
+
+  auto len = t1.size();
+  auto itr1 = t1.begin();
+  auto itr2 = t2.begin();
+
+  for (size_t ii = 0; ii < len; ++ii) {
+    if (*itr1 != *itr2) return false;
+    ++itr1;
+    ++itr2;
+  }
+  return true;
+}
+
+template <IterableType T>
+bool CheckContainerEqualNoOrder(const T& input_t1, const T& input_t2) {
+  auto t1(input_t1);
+  auto t2(input_t2);
+
+  std::sort(t1.begin(), t1.end());
+  std::sort(t2.begin(), t2.end());
+
   if (t1.size() != t2.size()) return false;
 
   auto len = t1.size();

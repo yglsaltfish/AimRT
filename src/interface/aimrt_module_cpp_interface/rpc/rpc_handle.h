@@ -5,7 +5,8 @@
 #include <unordered_map>
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_filter.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_async_filter.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_co_filter.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
@@ -57,7 +58,7 @@ class CoServiceBase : public ServiceBase {
   virtual ~CoServiceBase() = default;
 
   template <typename T>
-    requires std::constructible_from<RpcFilter, T>
+    requires std::constructible_from<CoRpcFilter, T>
   void RegisterFilter(T&& filter) {
     filter_mgr_.RegisterFilter((T &&) filter);
   }
@@ -65,7 +66,24 @@ class CoServiceBase : public ServiceBase {
   auto& GetFilterManager() { return filter_mgr_; }
 
  protected:
-  FilterManager filter_mgr_;
+  CoFilterManager filter_mgr_;
+};
+
+class AsyncFilterServiceBase : public ServiceBase {
+ public:
+  AsyncFilterServiceBase() = default;
+  virtual ~AsyncFilterServiceBase() = default;
+
+  template <typename T>
+    requires std::constructible_from<AsyncRpcFilter, T>
+  void RegisterFilter(T&& filter) {
+    filter_mgr_.RegisterFilter((T &&) filter);
+  }
+
+  auto& GetFilterManager() { return filter_mgr_; }
+
+ protected:
+  AsyncFilterManager filter_mgr_;
 };
 
 class RpcHandleRef {
@@ -139,7 +157,7 @@ class RpcHandleRef {
       ContextRef ctx_ref,
       const void* req_ptr,
       void* rsp_ptr,
-      aimrt::rpc::ClientCallback&& callback) const {
+      aimrt::rpc::ClientCallback&& callback) {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     base_ptr_->invoke(
         base_ptr_->impl,
@@ -163,10 +181,15 @@ class ProxyBase {
   ProxyBase(const ProxyBase&) = delete;
   ProxyBase& operator=(const ProxyBase&) = delete;
 
-  std::shared_ptr<Context> NewContextSharedPtr() const {
-    return default_ctx_ptr_
-               ? std::make_shared<Context>(*default_ctx_ptr_)
-               : std::make_shared<Context>();
+  std::shared_ptr<Context> NewContextSharedPtr(ContextRef ctx_ref = ContextRef()) const {
+    auto result = default_ctx_ptr_
+                      ? std::make_shared<Context>(*default_ctx_ptr_)
+                      : std::make_shared<Context>();
+    if (ctx_ref) {
+      MergeContextMeta(*result, ctx_ref, {AIMRT_RPC_CONTEXT_KEY_PREFIX});
+    }
+
+    return result;
   }
 
   void SetDefaultContextSharedPtr(const std::shared_ptr<Context>& ctx_ptr) {
@@ -188,11 +211,8 @@ class CoProxyBase : public ProxyBase {
       : ProxyBase(rpc_handle_ref) {}
   virtual ~CoProxyBase() = default;
 
-  CoProxyBase(const CoProxyBase&) = delete;
-  CoProxyBase& operator=(const CoProxyBase&) = delete;
-
   template <typename T>
-    requires std::constructible_from<RpcFilter, T>
+    requires std::constructible_from<CoRpcFilter, T>
   void RegisterFilter(T&& filter) {
     filter_mgr_.RegisterFilter((T &&) filter);
   }
@@ -200,7 +220,25 @@ class CoProxyBase : public ProxyBase {
   auto& GetFilterManager() { return filter_mgr_; }
 
  protected:
-  FilterManager filter_mgr_;
+  CoFilterManager filter_mgr_;
+};
+
+class AsyncFilterProxyBase : public ProxyBase {
+ public:
+  explicit AsyncFilterProxyBase(RpcHandleRef rpc_handle_ref)
+      : ProxyBase(rpc_handle_ref) {}
+  virtual ~AsyncFilterProxyBase() = default;
+
+  template <typename T>
+    requires std::constructible_from<AsyncRpcFilter, T>
+  void RegisterFilter(T&& filter) {
+    filter_mgr_.RegisterFilter((T &&) filter);
+  }
+
+  auto& GetFilterManager() { return filter_mgr_; }
+
+ protected:
+  AsyncFilterManager filter_mgr_;
 };
 
 template <class ProxyType>

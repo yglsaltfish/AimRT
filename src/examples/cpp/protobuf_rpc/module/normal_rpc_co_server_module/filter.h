@@ -1,6 +1,6 @@
 #pragma once
 
-#include "aimrt_module_cpp_interface/rpc/rpc_filter.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_co_filter.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 #include "normal_rpc_co_server_module/global.h"
 
@@ -8,7 +8,7 @@ namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_co_server_module {
 
 inline co::Task<aimrt::rpc::Status> DebugLogServerFilter(
     aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
-    const aimrt::rpc::RpcHandle& next) {
+    const aimrt::rpc::CoRpcHandle& next) {
   AIMRT_INFO("Svr get new rpc call. context: {}, req: {}",
              ctx.ToString(), aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(req_ptr)));
 
@@ -22,7 +22,7 @@ inline co::Task<aimrt::rpc::Status> DebugLogServerFilter(
 
 inline co::Task<aimrt::rpc::Status> TimeCostLogServerFilter(
     aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
-    const aimrt::rpc::RpcHandle& next) {
+    const aimrt::rpc::CoRpcHandle& next) {
   auto begin_time = std::chrono::steady_clock::now();
   const auto& status = co_await next(ctx, req_ptr, rsp_ptr);
   auto end_time = std::chrono::steady_clock::now();

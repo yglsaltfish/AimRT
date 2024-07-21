@@ -9,12 +9,12 @@ class RpcRegistryTest : public ::testing::Test {
     service_func_wrapper_1_->func_name = "ServiceFuncTest";
     service_func_wrapper_1_->module_name = "ServiceModulecTest1";
     service_func_wrapper_1_->pkg_path = "ServicePkgPathTest1";
-    service_func_wrapper_1_->service_func = aimrt::util::Function<aimrt_function_service_func_ops_t>();
+    service_func_wrapper_1_->service_func = ServiceFunc();
 
     service_func_wrapper_2_->func_name = "ServiceFuncTest";
     service_func_wrapper_2_->module_name = "ServiceModulecTest2";
     service_func_wrapper_2_->pkg_path = "ServicePkgPathTest2";
-    service_func_wrapper_2_->service_func = aimrt::util::Function<aimrt_function_service_func_ops_t>();
+    service_func_wrapper_2_->service_func = ServiceFunc();
 
     client_func_wrapper_->func_name = "ClientFuncTest";
     client_func_wrapper_->module_name = "ClientModuleTest";

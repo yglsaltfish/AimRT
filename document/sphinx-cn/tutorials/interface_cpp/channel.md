@@ -130,7 +130,7 @@ class Context {
 
   std::string_view GetMetaValue(std::string_view key) const;
   void SetMetaValue(std::string_view key, std::string_view val);
-  std::set<std::string_view> GetMetaKeys() const;
+  std::vector<std::string_view> GetMetaKeys() const;
 
   std::string_view GetSerializationType() const;
   void SetSerializationType(std::string_view val);
@@ -145,7 +145,7 @@ class ContextRef {
 
   std::string_view GetMetaValue(std::string_view key) const;
   void SetMetaValue(std::string_view key, std::string_view val);
-  std::set<std::string_view> GetMetaKeys() const;
+  std::vector<std::string_view> GetMetaKeys() const;
 
   std::string_view GetSerializationType() const;
   void SetSerializationType(std::string_view val);
