@@ -33,6 +33,9 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
       node["servers_options"].push_back(server_options_node);
     }
 
+    node["client_filters"] = rhs.client_filters;
+    node["server_filters"] = rhs.server_filters;
+
     return node;
   }
 
@@ -71,6 +74,12 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
       }
     }
 
+    if (node["client_filters"])
+      rhs.client_filters = node["client_filters"].as<std::vector<std::string>>();
+
+    if (node["server_filters"])
+      rhs.server_filters = node["server_filters"].as<std::vector<std::string>>();
+
     return true;
   }
 };
@@ -87,6 +96,23 @@ void RpcManager::Initialize(YAML::Node options_node) {
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
+
+  // 根据配置初始化filter
+  for (const auto& item : options_.client_filters) {
+    auto finditr = client_filter_map_.find(item);
+    AIMRT_CHECK_ERROR_THROW(finditr != client_filter_map_.end(),
+                            "Invalid client filter '{}'", item);
+
+    client_filter_manager_.RegisterFilter(std::move(finditr->second));
+  }
+
+  for (const auto& item : options_.server_filters) {
+    auto finditr = server_filter_map_.find(item);
+    AIMRT_CHECK_ERROR_THROW(finditr != server_filter_map_.end(),
+                            "Invalid server filter '{}'", item);
+
+    server_filter_manager_.RegisterFilter(std::move(finditr->second));
+  }
 
   rpc_registry_ptr_ = std::make_unique<RpcRegistry>();
   rpc_registry_ptr_->SetLogger(logger_ptr_);
@@ -174,6 +200,9 @@ void RpcManager::Shutdown() {
 
   server_filter_manager_.Clear();
   client_filter_manager_.Clear();
+
+  server_filter_map_.clear();
+  client_filter_map_.clear();
 
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
@@ -295,9 +324,25 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
     rpc_backend_name_list = "[ " + aimrt::common::util::JoinVec(rpc_backend_name_vec_, " , ") + " ]";
   }
 
+  std::string rpc_client_filter_name_list;
+  if (options_.client_filters.empty()) {
+    rpc_client_filter_name_list = "<empty>";
+  } else {
+    rpc_client_filter_name_list = "[ " + aimrt::common::util::JoinVec(options_.client_filters, " , ") + " ]";
+  }
+
+  std::string rpc_server_filter_name_list;
+  if (options_.server_filters.empty()) {
+    rpc_server_filter_name_list = "<empty>";
+  } else {
+    rpc_server_filter_name_list = "[ " + aimrt::common::util::JoinVec(options_.server_filters, " , ") + " ]";
+  }
+
   return {{"Rpc Backend List", rpc_backend_name_list},
           {"Rpc Client Info", aimrt::common::util::DrawTable(client_info_table)},
-          {"Rpc Server Info", aimrt::common::util::DrawTable(server_info_table)}};
+          {"Rpc Server Info", aimrt::common::util::DrawTable(server_info_table)},
+          {"Rpc Client Filter List", rpc_client_filter_name_list},
+          {"Rpc Server Filter List", rpc_server_filter_name_list}};
 }
 
 }  // namespace aimrt::runtime::core::rpc

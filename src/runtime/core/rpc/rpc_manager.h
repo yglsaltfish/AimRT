@@ -37,6 +37,9 @@ class RpcManager {
       std::vector<std::string> enable_backends;
     };
     std::vector<ServerOptions> servers_options;
+
+    std::vector<std::string> client_filters;
+    std::vector<std::string> server_filters;
   };
 
   enum class State : uint32_t {
@@ -71,20 +74,20 @@ class RpcManager {
 
   template <typename T>
     requires std::constructible_from<aimrt::rpc::AsyncRpcFilter, T>
-  void RegisterClientFilter(T&& filter) {
+  void RegisterClientFilter(std::string_view name, T&& filter) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Method can only be called when state is 'PreInit'.");
-    client_filter_manager_.RegisterFilter((T &&) filter);
+    client_filter_map_.emplace(name, (T &&) filter);
   }
 
   template <typename T>
     requires std::constructible_from<aimrt::rpc::AsyncRpcFilter, T>
-  void RegisterServerFilter(T&& filter) {
+  void RegisterServerFilter(std::string_view name, T&& filter) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Method can only be called when state is 'PreInit'.");
-    server_filter_manager_.RegisterFilter((T &&) filter);
+    server_filter_map_.emplace(name, (T &&) filter);
   }
 
   // 信息查询类接口
@@ -107,6 +110,9 @@ class RpcManager {
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
+
+  std::unordered_map<std::string, aimrt::rpc::AsyncRpcFilter> client_filter_map_;
+  std::unordered_map<std::string, aimrt::rpc::AsyncRpcFilter> server_filter_map_;
 
   aimrt::rpc::AsyncFilterManager client_filter_manager_;
   aimrt::rpc::AsyncFilterManager server_filter_manager_;
