@@ -182,6 +182,8 @@ void Ros2AdapterWrapperServer::handle_request(
   // service req 创建、序列化
   auto& wrapper_req = *(static_cast<ros2_plugin_proto::srv::RosRpcWrapper::Request*>(request.get()));
 
+  ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, wrapper_req.serialization_type);
+
   aimrt_buffer_view_t buffer_view{
       .data = wrapper_req.data.data(),
       .len = wrapper_req.data.size()};
