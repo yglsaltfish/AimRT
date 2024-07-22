@@ -26,7 +26,10 @@ if(NOT libunifex_POPULATED)
       CACHE BOOL "")
 
   FetchContent_MakeAvailable(libunifex)
-  target_compile_options(unifex PRIVATE -Wno-unused-but-set-variable)
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(unifex PRIVATE -Wno-unused-but-set-variable)
+  endif()
 
   add_library(unifex::unifex ALIAS unifex)
 endif()
