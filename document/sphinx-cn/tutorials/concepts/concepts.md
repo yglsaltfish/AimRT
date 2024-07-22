@@ -87,6 +87,13 @@ AimRT目前官方支持两种IDL：
 ![](./picture/pic_4.png)
 
 
+### AimRT中的"Rpc Filter"概念
+Filter是一层贴着Interface层的、用户可自定义的逻辑插接点，按照相对于Interface层的位置，分为框架侧Filter（Framework Filter）和用户侧Filter（User Filter）。
+
+***TODO待完善***
+
+
+
 ## AimRT中的"Executor"概念
 `Executor`，或者叫执行器，是指一个可以运行任务的抽象概念，一个执行器可以是一个Fiber、Thread或者Thread Pool，我们平常写的代码也是默认的直接指定了一个执行器：Main线程。一般来说，能提供以下接口的就可以算是一个执行器：
 ```cpp

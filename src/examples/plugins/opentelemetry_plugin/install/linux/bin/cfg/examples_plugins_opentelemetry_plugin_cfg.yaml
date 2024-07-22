@@ -34,6 +34,8 @@ aimrt:
     servers_options:
       - func_name: "(.*)"
         enable_backends: [local]
+    client_filters: [otp_trace]
+    server_filters: [otp_trace]
   module:
     pkgs:
       - path: ./libprotobuf_rpc_client_pkg.so

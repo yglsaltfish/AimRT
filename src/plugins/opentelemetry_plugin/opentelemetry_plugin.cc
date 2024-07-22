@@ -122,6 +122,7 @@ void OpenTelemetryPlugin::SetPluginLogger() {
 void OpenTelemetryPlugin::RegisterRpcFilter() {
   auto& rpc_manager = core_ptr_->GetRpcManager();
   rpc_manager.RegisterClientFilter(
+      "otp_trace",
       [this](aimrt::rpc::ContextRef ctx_ref,
              const void* req,
              void* rsp,
@@ -172,6 +173,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
       });
 
   rpc_manager.RegisterServerFilter(
+      "otp_trace",
       [this](aimrt::rpc::ContextRef ctx_ref,
              const void* req,
              void* rsp,

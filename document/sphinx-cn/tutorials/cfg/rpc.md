@@ -17,7 +17,8 @@
 | servers_options                     | array     | 可选  | ""    | RPC Server配置 |
 | servers_options[i].func_name        | string    | 必选  | ""    | RPC Server名称，支持正则表达式 |
 | servers_options[i].enable_backends  | string array | 必选  | [] | RPC Server允许使用的RPC后端列表 |
-
+| client_filters                      | string array | 可选  | [] | RPC client端需要加载的框架侧过滤器列表 |
+| server_filters                      | string array | 可选  | [] | RPC Server端需要加载的框架侧过滤器列表 |
 
 以下是一个简单的示例：
 ```yaml
@@ -32,6 +33,8 @@ aimrt:
     servers_options: # 【可选】RPC Server配置
       - func_name: "(.*)" # 【必选】RPC Server名称，支持正则表达式
         enable_backends: [local] # 【必选】RPC Server允许使用的RPC后端列表
+    client_filters: [] # 【可选】RPC client端需要注册的框架侧过滤器列表
+    server_filters: [] # 【可选】RPC Server端需要注册的框架侧过滤器列表
 ```
 
 
@@ -44,6 +47,7 @@ aimrt:
   - `func_name`表示本条规则的RPC方法名称，以正则表达式形式配置，如果RPC方法名称命中了该正则表达式，则会应用该条规则。
   - `enable_backends`是一个字符串数组，表示如果RPC方法名称命中了本条规则，则此数组就定义了该RPC方法能被处理的RPC后端。注意，该数组中出现的名称都必须要在`backends`中配置过。
   - 采用由上往下的顺序检查命中的规则，当某个RPC方法命中某条规则后，则不会针对此RPC方法再检查后面的规则。
+- `client_filters`和`server_filters`是一个字符串数组，表示需要注册的client/server端框架侧过滤器列表，数组中的顺序为过滤器注册的顺序。一些插件会提供一些框架侧过滤器，用于在rpc调用时做一些前置/后置操作。
 
 
 在AimRT中，RPC的前端接口和后端实现是解耦的，当开发者使用接口发起一个RPC调用，最终是要RPC后端来执行正真的RPC调用操作。
