@@ -102,10 +102,7 @@ void MqttChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  // todo:换成MQTTClient_unsubscribeMany
-  for (auto sub_info : sub_info_vec_) {
-    MQTTAsync_unsubscribe(client_, sub_info.topic.data(), NULL);
-  }
+  UnSubscribeMqttTopic();
 }
 
 bool MqttChannelBackend::RegisterPublishType(
@@ -344,4 +341,10 @@ void MqttChannelBackend::SubscribeMqttTopic() {
   }
 }
 
+void MqttChannelBackend::UnSubscribeMqttTopic() {
+  // todo:换成MQTTClient_unsubscribeMany
+  for (auto sub_info : sub_info_vec_) {
+    MQTTAsync_unsubscribe(client_, sub_info.topic.data(), NULL);
+  }
+}
 }  // namespace aimrt::plugins::mqtt_plugin

@@ -25,6 +25,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
       Node client_options_node;
       client_options_node["func_name"] = client_options.func_name;
       client_options_node["server_mqtt_id"] = client_options.server_mqtt_id;
+      client_options_node["qos"] = client_options.qos;
       node["clients_options"].push_back(client_options_node);
     }
 
@@ -33,6 +34,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
       Node server_options_node;
       server_options_node["func_name"] = server_options.func_name;
       server_options_node["allow_share"] = server_options.allow_share;
+      server_options_node["qos"] = server_options.qos;
       node["servers_options"].push_back(server_options_node);
     }
 
@@ -48,9 +50,14 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
         auto client_options = Options::ClientOptions{
             .func_name = client_options_node["func_name"].as<std::string>()};
 
-        if (client_options_node["server_mqtt_id"]) {
+        if (client_options_node["server_mqtt_id"])
           client_options.server_mqtt_id = client_options_node["server_mqtt_id"].as<std::string>();
-        }
+
+        int qos = 2;
+        if (client_options_node["qos"]) qos = client_options_node["qos"].as<int>();
+        if (qos < 0 || qos > 2)
+          throw aimrt::common::util::AimRTException("Invalid Mqtt qos: " + std::to_string(qos));
+        client_options.qos = qos;
 
         rhs.clients_options.emplace_back(std::move(client_options));
       }
@@ -61,9 +68,14 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
         auto server_options = Options::ServerOptions{
             .func_name = server_options_node["func_name"].as<std::string>()};
 
-        if (server_options_node["allow_share"]) {
+        if (server_options_node["allow_share"])
           server_options.allow_share = server_options_node["allow_share"].as<bool>();
-        }
+
+        int qos = 2;
+        if (server_options_node["qos"]) qos = server_options_node["qos"].as<int>();
+        if (qos < 0 || qos > 2)
+          throw aimrt::common::util::AimRTException("Invalid Mqtt qos: " + std::to_string(qos));
+        server_options.qos = qos;
 
         rhs.servers_options.emplace_back(std::move(server_options));
       }
@@ -136,9 +148,25 @@ bool MqttRpcBackend::RegisterServiceFunc(
 
   namespace util = aimrt::common::util;
 
-  auto handle = [this, &service_func_wrapper](MQTTAsync_message* message) {
+  auto find_server_option = std::find_if(
+      options_.servers_options.begin(), options_.servers_options.end(),
+      [func_name = GetRealFuncName(service_func_wrapper.func_name)](const Options::ServerOptions& server_option) {
+        try {
+          return std::regex_match(func_name.begin(), func_name.end(), std::regex(server_option.func_name, std::regex::ECMAScript));
+        } catch (const std::exception& e) {
+          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                     server_option.func_name, func_name, e.what());
+          return false;
+        }
+      });
+
+  bool allow_share = true;
+  int qos = 2;
+
+  auto handle = [this, qos, &service_func_wrapper](MQTTAsync_message* message) {
     try {
       auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
+      ctx_ptr->SetUsed();
       ctx_ptr->SetFunctionName(service_func_wrapper.func_name);
       ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
 
@@ -152,6 +180,14 @@ bool MqttRpcBackend::RegisterServiceFunc(
 
       char req_id_buf[4];
       buf_oper.GetBuffer(req_id_buf, 4);
+
+      // 获取context
+      size_t ctx_num = buf_oper.GetUint8();
+      for (size_t ii = 0; ii < ctx_num; ++ii) {
+        auto key = buf_oper.GetString(util::BufferLenType::UINT16);
+        auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+        ctx_ptr->SetMetaValue(key, val);
+      }
 
       // service req反序列化
       auto remaining_buf = buf_oper.GetRemainingBuffer();
@@ -174,7 +210,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
         AIMRT_ERROR("Mqtt req deserialize failed.");
 
         ReturnRspWithStatusCode(
-            mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED);
+            mqtt_pub_topic, qos, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED);
 
         return;
       }
@@ -190,6 +226,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
           service_req_ptr.get(),
           service_rsp_ptr.get(),
           [this,
+           qos,
            &service_func_wrapper,
            ctx_ptr,
            service_req_ptr,
@@ -200,7 +237,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
             if (!status.OK()) [[unlikely]] {
               // 如果code不为suc，则没必要反序列化
               ReturnRspWithStatusCode(
-                  mqtt_pub_topic, serialization_type, req_id_buf, status.Code());
+                  mqtt_pub_topic, qos, serialization_type, req_id_buf, status.Code());
 
               return;
             }
@@ -213,7 +250,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
                 serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
 
             if (!serialize_ret) [[unlikely]] {
-              ReturnRspWithStatusCode(mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
+              ReturnRspWithStatusCode(mqtt_pub_topic, qos, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
 
               return;
             }
@@ -229,7 +266,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
                          max_pkg_size_ / 1024, mqtt_pkg_size / 1024);
 
               ReturnRspWithStatusCode(
-                  mqtt_pub_topic, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_UNKNOWN);
+                  mqtt_pub_topic, qos, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_UNKNOWN);
               return;
             }
 
@@ -249,7 +286,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
             MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
             pubmsg.payload = msg_buf_vec.data();
             pubmsg.payloadlen = msg_buf_vec.size();
-            pubmsg.qos = 2;
+            pubmsg.qos = qos;
             pubmsg.retained = 0;
 
             AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
@@ -263,40 +300,28 @@ bool MqttRpcBackend::RegisterServiceFunc(
     }
   };
 
-  std::string mqtt_sub_topic = "aimrt_rpc_req/" + util::UrlEncode(GetRealFuncName(service_func_wrapper.func_name));
-
-  auto find_server_option = std::find_if(options_.servers_options.begin(), options_.servers_options.end(),
-                                         [func_name = GetRealFuncName(service_func_wrapper.func_name)](const Options::ServerOptions& server_option) {
-                                           try {
-                                             return std::regex_match(func_name.begin(), func_name.end(), std::regex(server_option.func_name, std::regex::ECMAScript));
-                                           } catch (const std::exception& e) {
-                                             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                                                        server_option.func_name, func_name, e.what());
-                                             return false;
-                                           }
-                                         });
-
-  // check allow_share
-  std::string share_mqtt_sub_topic = "$share/aimrt/" + mqtt_sub_topic;
-
   if (find_server_option != options_.servers_options.end()) {
-    if (find_server_option->allow_share) {
-      sub_info_vec_.emplace_back(share_mqtt_sub_topic);
-    }
-  } else {
-    // default allow_share
-    sub_info_vec_.emplace_back(share_mqtt_sub_topic);
+    allow_share = find_server_option->allow_share;
+    qos = find_server_option->qos;
   }
 
-  msg_handle_registry_ptr_->RegisterMsgHandle(
-      mqtt_sub_topic,
-      handle);
+  // check allow_share
+  if (allow_share) {
+    std::string mqtt_sub_topic = "aimrt_rpc_req/" + util::UrlEncode(GetRealFuncName(service_func_wrapper.func_name));
+
+    std::string share_mqtt_sub_topic = "$share/aimrt/" + mqtt_sub_topic;
+    sub_info_vec_.emplace_back(MqttSubInfo{share_mqtt_sub_topic, qos});
+
+    msg_handle_registry_ptr_->RegisterMsgHandle(
+        mqtt_sub_topic,
+        handle);
+  }
 
   std::string mqtt_sub_topic_2 =
       "aimrt_rpc_req/" +
       util::UrlEncode(client_id_) + "/" +
       util::UrlEncode(GetRealFuncName(service_func_wrapper.func_name));
-  sub_info_vec_.emplace_back(mqtt_sub_topic_2);
+  sub_info_vec_.emplace_back(MqttSubInfo{mqtt_sub_topic_2, qos});
 
   msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic_2,
@@ -314,6 +339,32 @@ bool MqttRpcBackend::RegisterClientFunc(
 
   namespace util = aimrt::common::util;
 
+  auto find_client_option = std::find_if(
+      options_.clients_options.begin(), options_.clients_options.end(),
+      [func_name = GetRealFuncName(client_func_wrapper.func_name)](const Options::ClientOptions& client_option) {
+        try {
+          return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+        } catch (const std::exception& e) {
+          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                     client_option.func_name, func_name, e.what());
+          return false;
+        }
+      });
+
+  std::string server_mqtt_id;
+  int qos = 2;
+
+  if (find_client_option != options_.clients_options.end()) {
+    server_mqtt_id = find_client_option->server_mqtt_id;
+    qos = find_client_option->qos;
+  }
+
+  client_cfg_info_map_.emplace(
+      GetRealFuncName(client_func_wrapper.func_name),
+      ClientCfgInfo{
+          .server_mqtt_id = server_mqtt_id,
+          .qos = qos});
+
   std::string mqtt_sub_topic =
       "aimrt_rpc_rsp/" +
       util::UrlEncode(client_id_) + "/" +
@@ -324,22 +375,7 @@ bool MqttRpcBackend::RegisterClientFunc(
     return false;
   }
 
-  sub_info_vec_.emplace_back(mqtt_sub_topic);
-
-  auto find_client_option = std::find_if(options_.clients_options.begin(), options_.clients_options.end(),
-                                         [func_name = GetRealFuncName(client_func_wrapper.func_name)](const Options::ClientOptions& client_option) {
-                                           try {
-                                             return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
-                                           } catch (const std::exception& e) {
-                                             AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                                                        client_option.func_name, func_name, e.what());
-                                             return false;
-                                           }
-                                         });
-
-  if (find_client_option != options_.clients_options.end()) {
-    client_func_to_server_id_[GetRealFuncName(client_func_wrapper.func_name)] = find_client_option->server_mqtt_id;
-  }
+  sub_info_vec_.emplace_back(MqttSubInfo{mqtt_sub_topic, qos});
 
   msg_handle_registry_ptr_->RegisterMsgHandle(
       mqtt_sub_topic,
@@ -416,18 +452,18 @@ bool MqttRpcBackend::TryInvoke(
   std::string_view module_name = client_invoke_wrapper_ptr->module_name;
   std::string_view func_name = client_invoke_wrapper_ptr->func_name;
 
+  std::string server_mqtt_id;
+  int qos = 2;
+
+  auto find_itr = client_cfg_info_map_.find(GetRealFuncName(func_name));
+  if (find_itr != client_cfg_info_map_.end()) {
+    server_mqtt_id = find_itr->second.server_mqtt_id;
+    qos = find_itr->second.qos;
+  }
+
   // check ctx, read server id from ctx
   std::string to_addr(
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR));
-  if (to_addr.empty()) {
-    // ctx server id not found, try to find server id from option
-    auto find_server_id = client_func_to_server_id_.find(GetRealFuncName(func_name));
-    if (find_server_id != client_func_to_server_id_.end()) {
-      to_addr = std::string(Name()) + "://" + std::string(find_server_id->second);
-    }
-  }
-
-  std::string server_mqtt_id;
   if (!to_addr.empty()) {
     auto pos = to_addr.find("://");
     if (pos == std::string_view::npos) return false;
@@ -499,9 +535,29 @@ bool MqttRpcBackend::TryInvoke(
   const size_t buffer_array_len = buffer_array.Size();
   size_t req_size = buffer_array.BufferSize();
 
+  // context
+  const auto& keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
+  if (keys.size() > 255) [[unlikely]] {
+    AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+    return true;
+  }
+
+  std::vector<std::string_view> context_meta_kv;
+  size_t context_meta_kv_size = 1;
+  for (const auto& key : keys) {
+    context_meta_kv_size += (2 + key.size());
+    context_meta_kv.emplace_back(key);
+
+    auto val = client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(key);
+    context_meta_kv_size += (2 + val.size());
+    context_meta_kv.emplace_back(val);
+  }
+
   size_t mqtt_pkg_size = 1 + serialization_type.size() +
                          1 + mqtt_sub_topic.size() +
                          4 +
+                         context_meta_kv_size +
                          req_size;
 
   if (mqtt_pkg_size > max_pkg_size_) [[unlikely]] {
@@ -536,6 +592,11 @@ bool MqttRpcBackend::TryInvoke(
   buf_oper.SetString(mqtt_sub_topic, util::BufferLenType::UINT8);
   buf_oper.SetUint32(cur_req_id);
 
+  buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
+  for (const auto& s : context_meta_kv) {
+    buf_oper.SetString(s, util::BufferLenType::UINT16);
+  }
+
   // data
   for (size_t ii = 0; ii < buffer_array_len; ++ii) {
     buf_oper.SetBuffer(
@@ -547,7 +608,7 @@ bool MqttRpcBackend::TryInvoke(
   MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
   pubmsg.payload = msg_buf_vec.data();
   pubmsg.payloadlen = msg_buf_vec.size();
-  pubmsg.qos = 2;
+  pubmsg.qos = qos;
   pubmsg.retained = 0;
 
   // topic: aimrt_rpc_req/uri
@@ -579,12 +640,11 @@ void MqttRpcBackend::RegisterGetExecutorFunc(
 }
 
 void MqttRpcBackend::SubscribeMqttTopic() {
-  // todo:换成MQTTClient_subscribeMany
   for (auto sub_info : sub_info_vec_) {
-    AIMRT_TRACE("Mqtt subscribe for '{}'", sub_info);
-    int rc = MQTTAsync_subscribe(client_, sub_info.data(), 2, NULL);  // rpc qos默认都是2
+    // todo:换成MQTTClient_subscribeMany
+    int rc = MQTTAsync_subscribe(client_, sub_info.topic.data(), sub_info.qos, NULL);
     if (rc != MQTTASYNC_SUCCESS) {
-      AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info, rc);
+      AIMRT_ERROR("Failed to subscribe mqtt, topic: {} return code: {}", sub_info.topic, rc);
     }
   }
 }
@@ -592,13 +652,13 @@ void MqttRpcBackend::SubscribeMqttTopic() {
 void MqttRpcBackend::UnSubscribeMqttTopic() {
   // todo:换成MQTTClient_unsubscribeMany
   for (auto sub_info : sub_info_vec_) {
-    AIMRT_TRACE("Mqtt unsubscribe for '{}'", sub_info);
-    MQTTAsync_unsubscribe(client_, sub_info.data(), NULL);
+    MQTTAsync_unsubscribe(client_, sub_info.topic.data(), NULL);
   }
 }
 
 void MqttRpcBackend::ReturnRspWithStatusCode(
     std::string_view mqtt_pub_topic,
+    int qos,
     std::string_view serialization_type,
     const char* req_id_buf,
     uint32_t code) {
@@ -614,7 +674,7 @@ void MqttRpcBackend::ReturnRspWithStatusCode(
   MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
   pubmsg.payload = msg_buf_vec.data();
   pubmsg.payloadlen = msg_buf_vec.size();
-  pubmsg.qos = 2;
+  pubmsg.qos = qos;
   pubmsg.retained = 0;
 
   AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);

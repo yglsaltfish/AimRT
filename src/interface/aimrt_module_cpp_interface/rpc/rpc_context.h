@@ -29,7 +29,14 @@ class Context {
 
   bool CheckUsed() const { return used_; }
   void SetUsed() { used_ = true; }
-  void ResetUsed() { used_ = false; }
+
+  void Reset() {
+    used_ = false;
+    timeout_ns_ = 0;
+
+    meta_data_map_.clear();
+    meta_keys_vec_.clear();
+  }
 
   aimrt_rpc_context_type_t GetType() const {
     return type_;
@@ -54,11 +61,16 @@ class Context {
   void SetMetaValue(std::string_view key, std::string_view val) {
     auto finditr = meta_data_map_.find(key);
     if (finditr != meta_data_map_.end()) {
-      finditr->second = std::string(val);
+      if (!val.empty()) {
+        finditr->second = std::string(val);
+      } else {
+        meta_data_map_.erase(finditr);
+      }
       return;
     }
 
-    meta_data_map_.emplace(key, val);
+    if (!val.empty())
+      meta_data_map_.emplace(key, val);
   }
 
   std::vector<std::string_view> GetMetaKeys() const {
@@ -159,8 +171,9 @@ class Context {
   }
 
  private:
-  uint64_t timeout_ns_ = 0;
   bool used_ = false;
+
+  uint64_t timeout_ns_ = 0;
 
   std::unordered_map<
       std::string,
@@ -299,25 +312,5 @@ class ContextRef {
  private:
   const aimrt_rpc_context_base_t* base_ptr_;
 };
-
-template <typename ContextLhs, typename ContextRhs>
-void MergeContextMeta(
-    ContextLhs& lhs,
-    const ContextRhs& rhs,
-    const std::unordered_set<std::string_view>& exclude_prefixs = {}) {
-  const auto& meta_keys = rhs.GetMetaKeys();
-
-  for (const auto& item : meta_keys) {
-    auto find_itr = std::find_if(
-        exclude_prefixs.begin(), exclude_prefixs.end(),
-        [&item](std::string_view prefix) {
-          return item.starts_with(prefix);
-        });
-
-    if (find_itr != exclude_prefixs.end()) continue;
-
-    lhs.SetMetaValue(item, rhs.GetMetaValue(item));
-  }
-}
 
 }  // namespace aimrt::rpc

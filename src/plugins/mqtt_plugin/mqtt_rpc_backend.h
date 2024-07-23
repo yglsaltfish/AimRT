@@ -14,12 +14,14 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
     struct ClientOptions {
       std::string func_name;
       std::string server_mqtt_id;
+      int qos = 2;
     };
     std::vector<ClientOptions> clients_options;
 
     struct ServerOptions {
       std::string func_name;
-      bool allow_share{true};
+      bool allow_share = true;
+      int qos = 2;
     };
     std::vector<ServerOptions> servers_options;
   };
@@ -65,6 +67,7 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   void ReturnRspWithStatusCode(
       std::string_view mqtt_pub_topic,
+      int qos,
       std::string_view serialization_type,
       const char* req_id_buf,
       uint32_t code);
@@ -88,13 +91,21 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   MQTTAsync& client_;
   uint32_t max_pkg_size_;
 
-  std::vector<std::string> sub_info_vec_;
+  struct MqttSubInfo {
+    std::string topic;
+    int qos;
+  };
+  std::vector<MqttSubInfo> sub_info_vec_;
 
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::atomic_uint32_t req_id_ = 0;
 
-  std::unordered_map<std::string_view, std::string_view> client_func_to_server_id_;
+  struct ClientCfgInfo {
+    std::string server_mqtt_id;
+    int qos;
+  };
+  std::unordered_map<std::string_view, ClientCfgInfo> client_cfg_info_map_;
 
   struct MsgRecorder {
     const runtime::core::rpc::ClientFuncWrapper* client_func_wrapper_ptr;

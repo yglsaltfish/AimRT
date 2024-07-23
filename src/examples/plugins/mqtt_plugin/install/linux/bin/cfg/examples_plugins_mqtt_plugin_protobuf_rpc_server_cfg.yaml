@@ -15,6 +15,10 @@ aimrt:
   rpc:
     backends:
       - type: mqtt
+        options:
+          servers_options:
+            - func_name: "(.*)"
+              qos: 0
     servers_options:
       - func_name: "(.*)"
         enable_backends: [mqtt]

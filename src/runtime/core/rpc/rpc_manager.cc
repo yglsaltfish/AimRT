@@ -238,9 +238,17 @@ const RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo
                             module_info.pkg_path,
                             module_info.name,
                             rpc_backend_manager_,
+                            passed_context_meta_keys_,
                             client_filter_manager_,
                             server_filter_manager_));
   return *(emplace_ret.first->second);
+}
+
+void RpcManager::SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  passed_context_meta_keys_.insert(keys.begin(), keys.end());
 }
 
 const RpcRegistry* RpcManager::GetRpcRegistry() const {

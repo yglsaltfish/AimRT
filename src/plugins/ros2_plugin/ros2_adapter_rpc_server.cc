@@ -81,6 +81,7 @@ void Ros2AdapterServer::handle_request(
 
   // ctx 创建
   auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
+  ctx_ptr->SetUsed();
   ctx_ptr->SetFunctionName(service_func_wrapper_.func_name);
   ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, "ros2");
 
@@ -176,6 +177,7 @@ void Ros2AdapterWrapperServer::handle_request(
 
   // ctx 创建
   auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
+  ctx_ptr->SetUsed();
   ctx_ptr->SetFunctionName(service_func_wrapper_.func_name);
   ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, "ros2");
 

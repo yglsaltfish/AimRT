@@ -168,6 +168,15 @@ class RpcHandleRef {
         callback.NativeHandle());
   }
 
+  void MergeServerContextToClientContext(
+      const ContextRef server_ctx_ref, ContextRef client_ctx_ref) const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
+    base_ptr_->merge_server_context_to_client_context(
+        base_ptr_->impl,
+        server_ctx_ref.NativeHandle(),
+        client_ctx_ref.NativeHandle());
+  }
+
  private:
   const aimrt_rpc_handle_base_t* base_ptr_ = nullptr;
 };
@@ -182,14 +191,14 @@ class ProxyBase {
   ProxyBase& operator=(const ProxyBase&) = delete;
 
   std::shared_ptr<Context> NewContextSharedPtr(ContextRef ctx_ref = ContextRef()) const {
-    auto result = default_ctx_ptr_
-                      ? std::make_shared<Context>(*default_ctx_ptr_)
-                      : std::make_shared<Context>();
+    auto result_ctx = default_ctx_ptr_
+                          ? std::make_shared<Context>(*default_ctx_ptr_)
+                          : std::make_shared<Context>();
     if (ctx_ref) {
-      MergeContextMeta(*result, ctx_ref, {AIMRT_RPC_CONTEXT_KEY_PREFIX});
+      rpc_handle_ref_.MergeServerContextToClientContext(ctx_ref, result_ctx);
     }
 
-    return result;
+    return result_ctx;
   }
 
   void SetDefaultContextSharedPtr(const std::shared_ptr<Context>& ctx_ptr) {

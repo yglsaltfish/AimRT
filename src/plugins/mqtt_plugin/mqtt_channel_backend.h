@@ -50,6 +50,7 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
   void Publish(const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept override;
 
   void SubscribeMqttTopic();
+  void UnSubscribeMqttTopic();
 
  private:
   enum class State : uint32_t {

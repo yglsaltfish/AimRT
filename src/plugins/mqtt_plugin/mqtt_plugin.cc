@@ -73,6 +73,8 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
       static_cast<std::promise<bool> *>(context)->set_value(true);
     };
     conn_opts.onFailure = [](void *context, MQTTAsync_failureData *response) {
+      AIMRT_ERROR("Failed to connect mqtt broker, code: {}, msg: {}",
+                  response->code, response->message);
       static_cast<std::promise<bool> *>(context)->set_value(false);
     };
     conn_opts.context = &connect_ret_promise;
