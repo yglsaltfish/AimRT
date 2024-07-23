@@ -232,3 +232,10 @@ if(AIMRT_INSTALL)
 
   install(EXPORT ${INSTALL_CONFIG_NAME} DESTINATION lib/cmake/${PROJECT_NAME})
 endif()
+
+# Put at last to ensure ros2 installation is done
+if(AIMRT_INSTALL
+   AND AIMRT_BUILD_PYTHON_RUNTIME
+   AND AIMRT_BUILD_PYTHON_PACKAGE)
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target create_python_pkg)")
+endif()
