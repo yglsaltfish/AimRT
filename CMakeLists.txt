@@ -237,5 +237,5 @@ endif()
 if(AIMRT_INSTALL
    AND AIMRT_BUILD_PYTHON_RUNTIME
    AND AIMRT_BUILD_PYTHON_PACKAGE)
-  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target create_python_pkg)")
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
 endif()
