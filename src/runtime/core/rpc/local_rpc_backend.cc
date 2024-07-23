@@ -233,9 +233,15 @@ bool LocalRpcBackend::TryInvoke(
 
   // ctx 创建
   auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
+  ctx_ptr->SetUsed();
+  ctx_ptr->SetTimeout(client_invoke_wrapper_ptr->ctx_ref.Timeout());
+  const auto& meta_keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
+  for (const auto& item : meta_keys) {
+    ctx_ptr->SetMetaValue(item, client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(item));
+  }
+
   ctx_ptr->SetFunctionName(service_func_wrapper_ptr->func_name);
   ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
-  aimrt::rpc::MergeContextMeta(*ctx_ptr, client_invoke_wrapper_ptr->ctx_ref, {AIMRT_RPC_CONTEXT_KEY_PREFIX});
 
   // 在同一个pkg内，直接调用，无需序列化
   if (service_pkg_path == client_invoke_wrapper_ptr->pkg_path) {

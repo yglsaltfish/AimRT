@@ -140,30 +140,41 @@ auto status = co_await proxy_->Foo(ctx_ptr, req, rsp);
 
 
 
-Client -> Server的Mqtt数据包格式整体分4段:
+Client -> Server的Mqtt数据包格式整体分5段:
 - 序列化类型，一般是`pb`或`json`
 - client端想要server端回复rsp的mqtt topic名称。client端自己需要订阅这个mqtt topic
 - msg id，4字节，server端会原封不动的封装到rsp包里，供client端定位rsp对应哪个req
-- 数据
+- context区
+  - context数量，1字节，最大255个context
+  - context_1 key, 2字节长度 + 数据区
+  - context_2 key, 2字节长度 + 数据区
+  - ...
+- msg数据
 
 ```
 | n(0~255) [1 byte] | content type [n byte]
 | m(0~255) [1 byte] | rsp topic name [m byte]
 | msg id [4 byte]
-| msg data [len - 1 - n - 1 - m - 4 byte]
+| context num [1 byte]
+| context_1 key size [2 byte] | context_1 key data [key_1_size byte]
+| context_1 val size [2 byte] | context_1 val data [val_1_size byte]
+| context_2 key size [2 byte] | context_2 key data [key_2_size byte]
+| context_2 val size [2 byte] | context_2 val data [val_2_size byte]
+| ...
+| msg data [remaining byte]
 ```
 
-Server -> Client的Mqtt数据包格式也是整体分4段:
+Server -> Client的Mqtt数据包格式整体分4段:
 - 序列化类型，一般是`pb`或`json`
 - msg id，4字节，req中的msg id
 - status code，4字节，框架错误码，如果这个部分不为零，则代表服务端发生了错误，数据段将没有内容
-- 数据
+- msg数据
 
 ```
 | n(0~255) [1 byte] | content type [n byte]
 | msg id [4 byte]
 | status code [4 byte]
-| msg data [len - 1 - n - 4 -2 byte]
+| msg data [remaining byte]
 ```
 
 

@@ -90,6 +90,8 @@ class RpcManager {
     server_filter_map_.emplace(name, (T &&) filter);
   }
 
+  void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
+
   // 信息查询类接口
   const RpcRegistry* GetRpcRegistry() const;
   const std::vector<std::string>& GetRpcBackendNameList() const;
@@ -110,6 +112,8 @@ class RpcManager {
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
+
+  std::unordered_set<std::string> passed_context_meta_keys_;
 
   std::unordered_map<std::string, aimrt::rpc::AsyncRpcFilter> client_filter_map_;
   std::unordered_map<std::string, aimrt::rpc::AsyncRpcFilter> server_filter_map_;

@@ -36,7 +36,7 @@ typedef aimrt_function_rpc_callback_ops_t aimrt_function_client_callback_ops_t;
  *     const void* req,
  *     void* rsp,
  *     aimrt_function_base_t* callback)
- * Input 1: Rpc invoke context
+ * Input 1: Rpc server context
  * Input 2: Const pointer to req
  * Input 3: Pointer to rsp
  * Input 4: Rpc result callback, which ops type is 'aimrt_function_service_callback_ops_t'
@@ -98,7 +98,7 @@ typedef struct {
    * @note
    * Input 1: Implement pointer to rpc handle
    * Input 2: func name
-   * Input 3: Rpc invoke context
+   * Input 3: Rpc client context
    * Input 4: Const pointer to req
    * Input 5: Pointer to rsp
    * Input 5: Rpc Invoke callback, which ops type is 'aimrt_function_client_callback_ops_t'
@@ -110,6 +110,18 @@ typedef struct {
       const void* req_ptr,
       void* rsp_ptr,
       aimrt_function_base_t* callback);
+
+  /**
+   * @brief Function to merge server context to client context
+   * @note
+   * Input 1: Implement pointer to rpc handle
+   * Input 2: Rpc server context
+   * Input 3: Rpc client context, for output
+   */
+  void (*merge_server_context_to_client_context)(
+      void* impl,
+      const aimrt_rpc_context_base_t* server_ctx_ptr,
+      const aimrt_rpc_context_base_t* client_ctx_ptr);
 
   /// Implement pointer
   void* impl;

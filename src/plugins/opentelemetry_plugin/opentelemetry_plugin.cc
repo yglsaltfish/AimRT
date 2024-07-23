@@ -121,6 +121,12 @@ void OpenTelemetryPlugin::SetPluginLogger() {
 
 void OpenTelemetryPlugin::RegisterRpcFilter() {
   auto& rpc_manager = core_ptr_->GetRpcManager();
+
+  rpc_manager.SetPassedContextMetaKeys(
+      {std::string(kCtxKeyStartNewTrace),
+       std::string(kCtxKeyTraceParent),
+       std::string(kCtxKeyTraceState)});
+
   rpc_manager.RegisterClientFilter(
       "otp_trace",
       [this](aimrt::rpc::ContextRef ctx_ref,
@@ -128,6 +134,10 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
              void* rsp,
              std::function<void(aimrt::rpc::Status)>&& callback,
              const aimrt::rpc::AsyncRpcHandle& h) {
+        // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
+        std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
+        bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
+
         auto tracer = provider_->GetTracer(options_.node_name);
         RpcContextCarrier carrier(ctx_ref);
 
@@ -144,8 +154,16 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
           auto parent_span =
               ::opentelemetry::nostd::get<::opentelemetry::nostd::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
           op.parent = parent_span->GetContext();
+          start_new_trace = true;
         }
 
+        // 不需要启动一个新trace
+        if (!start_new_trace) {
+          h(ctx_ref, req, rsp, std::move(callback));
+          return;
+        }
+
+        // 需要启动一个新trace
         auto span = tracer->StartSpan(ToNoStdStringView(ctx_ref.GetFunctionName()), op);
 
         // 将当前span的context打包
@@ -179,6 +197,10 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
              void* rsp,
              std::function<void(aimrt::rpc::Status)>&& callback,
              const aimrt::rpc::AsyncRpcHandle& h) {
+        // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
+        std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
+        bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
+
         auto tracer = provider_->GetTracer(options_.node_name);
         RpcContextCarrier carrier(ctx_ref);
 
@@ -195,8 +217,16 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
           auto parent_span =
               ::opentelemetry::nostd::get<::opentelemetry::nostd::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
           op.parent = parent_span->GetContext();
+          start_new_trace = true;
         }
 
+        // 不需要启动一个新trace
+        if (!start_new_trace) {
+          h(ctx_ref, req, rsp, std::move(callback));
+          return;
+        }
+
+        // 需要启动一个新trace
         auto span = tracer->StartSpan(ToNoStdStringView(ctx_ref.GetFunctionName()), op);
 
         // 将当前span的context打包

@@ -107,6 +107,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
       -> asio::awaitable<runtime::common::net::AsioHttpServer::HttpHandleStatus> {
     // ctx 创建
     auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
+    ctx_ptr->SetUsed();
     ctx_ptr->SetFunctionName(service_func_wrapper.func_name);
     ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
 

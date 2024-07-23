@@ -26,6 +26,9 @@ aimrt:
       - type: mqtt
         options:
           timeout_executor: timeout_handle
+          clients_options:
+            - func_name: "(.*)"
+              qos: 0
     clients_options:
       - func_name: "(.*)"
         enable_backends: [mqtt]

@@ -49,6 +49,7 @@ class Status {
         {AIMRT_RPC_STATUS_SVR_HANDLE_FAILED, "Server handle failed"},
         {AIMRT_RPC_STATUS_CLI_UNKNOWN, "Client side unknown error"},
         {AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR, "Client side backend internal error"},
+        {AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT, "Client side invalid context"},
         {AIMRT_RPC_STATUS_CLI_INVALID_ADDR, "Client side invalid address"},
         {AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE, "Client side invalid serialization type"},
         {AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED, "Client side serialization failed"},
