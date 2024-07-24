@@ -97,27 +97,25 @@ void ChannelManager::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
+  channel_registry_ptr_ = std::make_unique<ChannelRegistry>();
+  channel_registry_ptr_->SetLogger(logger_ptr_);
+
+  channel_backend_manager_.SetLogger(logger_ptr_);
+
   // 根据配置初始化hook
   for (const auto& item : options_.pub_hooks) {
     auto finditr = publish_hook_map_.find(item);
     AIMRT_CHECK_ERROR_THROW(finditr != publish_hook_map_.end(),
                             "Invalid publish hook '{}'", item);
-
-    publish_hook_vec_.emplace_back(std::move(finditr->second));
+    channel_backend_manager_.RegisterPublishHook(std::move(finditr->second));
   }
 
   for (const auto& item : options_.sub_hooks) {
     auto finditr = subscribe_hook_map_.find(item);
     AIMRT_CHECK_ERROR_THROW(finditr != subscribe_hook_map_.end(),
                             "Invalid subscribe hook '{}'", item);
-
-    subscribe_hook_vec_.emplace_back(std::move(finditr->second));
+    channel_backend_manager_.RegisterSubscribeHook(std::move(finditr->second));
   }
-
-  channel_registry_ptr_ = std::make_unique<ChannelRegistry>();
-  channel_registry_ptr_->SetLogger(logger_ptr_);
-
-  channel_backend_manager_.SetLogger(logger_ptr_);
 
   // 根据配置初始化指定的backend
   for (auto& backend_options : options_.backends_options) {
@@ -198,9 +196,6 @@ void ChannelManager::Shutdown() {
 
   channel_registry_ptr_.reset();
 
-  subscribe_hook_vec_.clear();
-  publish_hook_vec_.clear();
-
   subscribe_hook_map_.clear();
   publish_hook_map_.clear();
 
@@ -242,8 +237,6 @@ const ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
           *logger_ptr_,
           channel_backend_manager_,
           passed_context_meta_keys_,
-          publish_hook_vec_,
-          subscribe_hook_vec_,
           channel_handle_proxy_start_flag_));
 
   return emplace_ret.first->second->channel_handle_proxy;

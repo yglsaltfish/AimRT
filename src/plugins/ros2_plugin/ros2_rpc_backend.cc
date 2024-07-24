@@ -8,6 +8,55 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 
 namespace YAML {
+
+template <>
+struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options::QosOptions> {
+  using Options = aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options::QosOptions;
+
+  static Node encode(const Options& rhs) {
+    Node node;
+
+    node["history"] = rhs.history;
+    node["depth"] = rhs.depth;
+    node["reliability"] = rhs.reliability;
+    node["durability"] = rhs.durability;
+    node["lifespan"] = rhs.lifespan;
+    node["deadline"] = rhs.deadline;
+    node["liveliness"] = rhs.liveliness;
+    node["liveliness_lease_duration"] = rhs.liveliness_lease_duration;
+
+    return node;
+  }
+
+  static bool decode(const Node& node, Options& rhs) {
+    if (node["history"])
+      rhs.history = node["history"].as<std::string>();
+
+    if (node["depth"])
+      rhs.depth = node["depth"].as<int>();
+
+    if (node["reliability"])
+      rhs.reliability = node["reliability"].as<std::string>();
+
+    if (node["durability"])
+      rhs.durability = node["durability"].as<std::string>();
+
+    if (node["lifespan"])
+      rhs.lifespan = node["lifespan"].as<int>();
+
+    if (node["deadline"])
+      rhs.deadline = node["deadline"].as<int>();
+
+    if (node["liveliness"])
+      rhs.liveliness = node["liveliness"].as<std::string>();
+
+    if (node["liveliness_lease_duration"])
+      rhs.liveliness_lease_duration = node["liveliness_lease_duration"].as<int>();
+
+    return true;
+  }
+};
+
 template <>
 struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
   using Options = aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options;
@@ -19,6 +68,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
     for (const auto& client_options : rhs.clients_options) {
       Node client_options_node;
       client_options_node["func_name"] = client_options.func_name;
+      client_options_node["qos"] = client_options.qos;
       node["clients_options"].push_back(client_options_node);
     }
 
@@ -26,40 +76,11 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
     for (const auto& server_options : rhs.servers_options) {
       Node server_options_node;
       server_options_node["func_name"] = server_options.func_name;
+      server_options_node["qos"] = server_options.qos;
       node["servers_options"].push_back(server_options_node);
     }
 
     return node;
-  }
-
-  static bool decodeQos(const Node& node, Options::QosOptions& qos) {
-    if (node) {
-      if (node["history"]) {
-        qos.history = node["history"].as<std::string>();
-      }
-      if (node["depth"]) {
-        qos.depth = node["depth"].as<int>();
-      }
-      if (node["reliability"]) {
-        qos.reliability = node["reliability"].as<std::string>();
-      }
-      if (node["durability"]) {
-        qos.durability = node["durability"].as<std::string>();
-      }
-      if (node["lifespan"]) {
-        qos.lifespan = node["lifespan"].as<int>();
-      }
-      if (node["deadline"]) {
-        qos.deadline = node["deadline"].as<int>();
-      }
-      if (node["liveliness"]) {
-        qos.liveliness = node["liveliness"].as<std::string>();
-      }
-      if (node["liveliness_lease_duration"]) {
-        qos.liveliness_lease_duration = node["liveliness_lease_duration"].as<int>();
-      }
-    }
-    return true;
   }
 
   static bool decode(const Node& node, Options& rhs) {
@@ -69,7 +90,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
             .func_name = client_options_node["func_name"].as<std::string>()};
 
         if (client_options_node["qos"]) {
-          decodeQos(client_options_node["qos"], client_options.qos);
+          client_options.qos = client_options_node["qos"].as<Options::QosOptions>();
         }
         rhs.clients_options.emplace_back(std::move(client_options));
       }
@@ -79,8 +100,9 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
       for (auto& server_options_node : node["servers_options"]) {
         auto server_options = Options::ServerOptions{
             .func_name = server_options_node["func_name"].as<std::string>()};
+
         if (server_options_node["qos"]) {
-          decodeQos(server_options_node["qos"], server_options.qos);
+          server_options.qos = server_options_node["qos"].as<Options::QosOptions>();
         }
 
         rhs.servers_options.emplace_back(std::move(server_options));

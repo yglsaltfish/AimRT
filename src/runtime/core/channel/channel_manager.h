@@ -70,7 +70,7 @@ class ChannelManager {
   }
 
   template <typename... Args>
-    requires std::constructible_from<aimrt::channel::HookFunc, Args...>
+    requires std::constructible_from<FrameworkHookFunc, Args...>
   void RegisterPublishHook(std::string_view name, Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
@@ -79,7 +79,7 @@ class ChannelManager {
   }
 
   template <typename... Args>
-    requires std::constructible_from<aimrt::channel::HookFunc, Args...>
+    requires std::constructible_from<FrameworkHookFunc, Args...>
   void RegisterSubscribeHook(std::string_view name, Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
@@ -112,11 +112,8 @@ class ChannelManager {
 
   std::unordered_set<std::string> passed_context_meta_keys_;
 
-  std::unordered_map<std::string, aimrt::channel::HookFunc> publish_hook_map_;
-  std::unordered_map<std::string, aimrt::channel::HookFunc> subscribe_hook_map_;
-
-  std::vector<aimrt::channel::HookFunc> publish_hook_vec_;
-  std::vector<aimrt::channel::HookFunc> subscribe_hook_vec_;
+  std::unordered_map<std::string, FrameworkHookFunc> publish_hook_map_;
+  std::unordered_map<std::string, FrameworkHookFunc> subscribe_hook_map_;
 
   std::unique_ptr<ChannelRegistry> channel_registry_ptr_;
 
@@ -132,8 +129,6 @@ class ChannelManager {
         aimrt::common::util::LoggerWrapper& logger,
         ChannelBackendManager& channel_backend_manager,
         const std::unordered_set<std::string>& passed_context_meta_keys,
-        const std::vector<aimrt::channel::HookFunc>& publish_hook_vec,
-        const std::vector<aimrt::channel::HookFunc>& subscribe_hook_vec,
         std::atomic_bool& channel_handle_proxy_start_flag)
         : pkg_path(input_pkg_path),
           module_name(input_module_name),
@@ -143,8 +138,6 @@ class ChannelManager {
               logger,
               channel_backend_manager,
               passed_context_meta_keys,
-              publish_hook_vec,
-              subscribe_hook_vec,
               channel_handle_proxy_start_flag,
               publisher_proxy_map,
               subscriber_proxy_map) {}

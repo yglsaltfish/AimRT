@@ -3,6 +3,7 @@
 #include <atomic>
 
 #include "core/rpc/rpc_backend_base.h"
+#include "core/rpc/rpc_framework_async_filter.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::rpc {
@@ -27,6 +28,9 @@ class RpcBackendManager {
   void Initialize(RpcRegistry* rpc_registry_ptr);
   void Start();
   void Shutdown();
+
+  void RegisterClientFilter(FrameworkAsyncRpcFilter&& filter);
+  void RegisterServerFilter(FrameworkAsyncRpcFilter&& filter);
 
   void SetClientsBackendsRules(
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
@@ -55,6 +59,9 @@ class RpcBackendManager {
  private:
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
+
+  FrameworkAsyncFilterManager client_filter_manager_;
+  FrameworkAsyncFilterManager server_filter_manager_;
 
   RpcRegistry* rpc_registry_ptr_ = nullptr;
 

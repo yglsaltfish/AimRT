@@ -18,7 +18,7 @@ struct PublishWrapper {
   std::string_view module_name;
   std::string_view topic_name;
 
-  aimrt::channel::ContextRef ctx_ref;
+  mutable aimrt::channel::ContextRef ctx_ref;
   const void* msg_ptr = nullptr;
 
   // cache

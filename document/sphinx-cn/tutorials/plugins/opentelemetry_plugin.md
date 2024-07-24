@@ -67,5 +67,5 @@ docker run -d \
   jaegertracing/all-in-one:latest
 ```
 
-启动之后，即可将opentelemetry插件的otlp_http_exporter_url配置指向Jaeger所开的4318端口，从而将trace信息上报到Jaeger平台上。
+启动之后，即可将opentelemetry插件的otlp_http_exporter_url配置指向Jaeger所开的4318端口，从而将trace信息上报到Jaeger平台上。可以访问Jaeger在16686端口上的web页面查看trace信息。
 

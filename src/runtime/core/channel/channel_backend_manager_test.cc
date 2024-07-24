@@ -117,12 +117,13 @@ TEST_F(ChannelBackendManagerTest, Publish) {
 
   channel_backend_manager_.Start();
 
+  aimrt::channel::Context ctx;
   channel_backend_manager_.Publish(PublishWrapper{
       .msg_type = "publish_msg_type_test",
       .pkg_path = "publish_pkg_path_test",
       .module_name = "publish_module_name_test",
       .topic_name = "publish_topic_name_test",
-      .ctx_ref = aimrt::channel::ContextRef(),
+      .ctx_ref = ctx,
   });
   EXPECT_EQ(mock_backend_ptr_->is_published, true);
 }

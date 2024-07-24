@@ -97,27 +97,25 @@ void RpcManager::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
+  rpc_registry_ptr_ = std::make_unique<RpcRegistry>();
+  rpc_registry_ptr_->SetLogger(logger_ptr_);
+
+  rpc_backend_manager_.SetLogger(logger_ptr_);
+
   // 根据配置初始化filter
   for (const auto& item : options_.client_filters) {
     auto finditr = client_filter_map_.find(item);
     AIMRT_CHECK_ERROR_THROW(finditr != client_filter_map_.end(),
                             "Invalid client filter '{}'", item);
-
-    client_filter_manager_.RegisterFilter(std::move(finditr->second));
+    rpc_backend_manager_.RegisterClientFilter(std::move(finditr->second));
   }
 
   for (const auto& item : options_.server_filters) {
     auto finditr = server_filter_map_.find(item);
     AIMRT_CHECK_ERROR_THROW(finditr != server_filter_map_.end(),
                             "Invalid server filter '{}'", item);
-
-    server_filter_manager_.RegisterFilter(std::move(finditr->second));
+    rpc_backend_manager_.RegisterServerFilter(std::move(finditr->second));
   }
-
-  rpc_registry_ptr_ = std::make_unique<RpcRegistry>();
-  rpc_registry_ptr_->SetLogger(logger_ptr_);
-
-  rpc_backend_manager_.SetLogger(logger_ptr_);
 
   // 根据配置初始化指定的backend
   for (auto& backend_options : options_.backends_options) {
@@ -198,9 +196,6 @@ void RpcManager::Shutdown() {
 
   rpc_registry_ptr_.reset();
 
-  server_filter_manager_.Clear();
-  client_filter_manager_.Clear();
-
   server_filter_map_.clear();
   client_filter_map_.clear();
 
@@ -238,9 +233,7 @@ const RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo
                             module_info.pkg_path,
                             module_info.name,
                             rpc_backend_manager_,
-                            passed_context_meta_keys_,
-                            client_filter_manager_,
-                            server_filter_manager_));
+                            passed_context_meta_keys_));
   return *(emplace_ret.first->second);
 }
 
