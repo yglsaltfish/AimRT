@@ -164,6 +164,8 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
 endif()
 
 if(AIMRT_BUILD_WITH_ROS2)
+  # fix cmake policy for using FindPythonInterp and FindPythonLibs (ros2)
+  cmake_policy(SET CMP0148 OLD)
   # fix gflag
   set(BUILD_TESTING
       OFF
@@ -184,20 +186,13 @@ if(AIMRT_BUILD_RUNTIME)
     set(PYBIND11_PYTHON_VERSION ${Python3_VERSION})
     include(GetPybind11)
     if(AIMRT_BUILD_PYTHON_PACKAGE)
+      message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
       execute_process(
-        COMMAND pip3 show build
+        COMMAND ${Python3_EXECUTABLE} -m pip show build
         RESULT_VARIABLE BUILD_RESULT
         OUTPUT_QUIET ERROR_QUIET)
       if(NOT ${BUILD_RESULT} EQUAL 0)
         message(WARNING "Can not find build in your python environment, will not compile package_aimrt_py!")
-        set(AIMRT_BUILD_PYTHON_PACKAGE OFF)
-      endif()
-      execute_process(
-        COMMAND pip3 show setuptools
-        RESULT_VARIABLE SETUPTOOLS_RESULT
-        OUTPUT_QUIET ERROR_QUIET)
-      if(NOT ${SETUPTOOLS_RESULT} EQUAL 0)
-        message(WARNING "Can not find setuptools in your python environment, will not compile package_aimrt_py!")
         set(AIMRT_BUILD_PYTHON_PACKAGE OFF)
       endif()
     endif()
@@ -237,5 +232,5 @@ endif()
 if(AIMRT_INSTALL
    AND AIMRT_BUILD_PYTHON_RUNTIME
    AND AIMRT_BUILD_PYTHON_PACKAGE)
-  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
+  install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target create_python_pkg)")
 endif()
