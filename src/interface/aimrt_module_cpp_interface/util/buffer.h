@@ -78,6 +78,16 @@ class BufferArray {
     return result;
   }
 
+  std::string JoinToString() const {
+    std::string result;
+    for (size_t ii = 0; ii < buffer_array_.len; ++ii) {
+      result += std::string_view(
+          static_cast<const char*>(buffer_array_.data[ii].data),
+          buffer_array_.data[ii].len);
+    }
+    return result;
+  }
+
  private:
   aimrt_buffer_array_t buffer_array_;
   const aimrt_buffer_array_allocator_t* allocator_ptr_;

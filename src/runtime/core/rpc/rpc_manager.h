@@ -9,7 +9,6 @@
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
 #include "aimrt_module_cpp_interface/executor/executor.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_async_filter.h"
 #include "core/rpc/rpc_backend_manager.h"
 #include "core/rpc/rpc_handle_proxy.h"
 #include "core/util/module_detail_info.h"
@@ -73,7 +72,7 @@ class RpcManager {
   }
 
   template <typename T>
-    requires std::constructible_from<aimrt::rpc::AsyncRpcFilter, T>
+    requires std::constructible_from<FrameworkAsyncRpcFilter, T>
   void RegisterClientFilter(std::string_view name, T&& filter) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
@@ -82,7 +81,7 @@ class RpcManager {
   }
 
   template <typename T>
-    requires std::constructible_from<aimrt::rpc::AsyncRpcFilter, T>
+    requires std::constructible_from<FrameworkAsyncRpcFilter, T>
   void RegisterServerFilter(std::string_view name, T&& filter) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
@@ -115,11 +114,8 @@ class RpcManager {
 
   std::unordered_set<std::string> passed_context_meta_keys_;
 
-  std::unordered_map<std::string, aimrt::rpc::AsyncRpcFilter> client_filter_map_;
-  std::unordered_map<std::string, aimrt::rpc::AsyncRpcFilter> server_filter_map_;
-
-  aimrt::rpc::AsyncFilterManager client_filter_manager_;
-  aimrt::rpc::AsyncFilterManager server_filter_manager_;
+  std::unordered_map<std::string, FrameworkAsyncRpcFilter> client_filter_map_;
+  std::unordered_map<std::string, FrameworkAsyncRpcFilter> server_filter_map_;
 
   std::unique_ptr<RpcRegistry> rpc_registry_ptr_;
 

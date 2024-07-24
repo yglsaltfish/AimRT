@@ -23,14 +23,12 @@ class PublisherProxy {
                  std::string_view module_name,
                  std::string_view topic_name,
                  ChannelBackendManager& channel_backend_manager,
-                 const std::unordered_set<std::string>& passed_context_meta_keys,
-                 const std::vector<aimrt::channel::HookFunc>& publish_hook_vec)
+                 const std::unordered_set<std::string>& passed_context_meta_keys)
       : pkg_path_(pkg_path),
         module_name_(module_name),
         topic_name_(topic_name),
         channel_backend_manager_(channel_backend_manager),
         passed_context_meta_keys_(passed_context_meta_keys),
-        publish_hook_vec_(publish_hook_vec),
         base_(GenBase(this)) {}
   ~PublisherProxy() = default;
 
@@ -52,19 +50,6 @@ class PublisherProxy {
   void Publish(std::string_view msg_type,
                aimrt::channel::ContextRef ctx_ref,
                const void* msg_ptr) {
-    if (ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT ||
-        ctx_ref.CheckUsed()) {
-      // todo: log warn
-      return;
-    }
-
-    ctx_ref.SetUsed();
-
-    ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name_);
-
-    for (const auto& item : publish_hook_vec_)
-      item(msg_type, ctx_ref, msg_ptr);
-
     channel_backend_manager_.Publish(PublishWrapper{
         .msg_type = msg_type,
         .pkg_path = pkg_path_,
@@ -117,7 +102,6 @@ class PublisherProxy {
   ChannelBackendManager& channel_backend_manager_;
 
   const std::unordered_set<std::string>& passed_context_meta_keys_;
-  const std::vector<aimrt::channel::HookFunc>& publish_hook_vec_;
 
   const aimrt_channel_publisher_base_t base_;
 };
@@ -127,13 +111,11 @@ class SubscriberProxy {
   SubscriberProxy(std::string_view pkg_path,
                   std::string_view module_name,
                   std::string_view topic_name,
-                  ChannelBackendManager& channel_backend_manager,
-                  const std::vector<aimrt::channel::HookFunc>& subscribe_hook_vec)
+                  ChannelBackendManager& channel_backend_manager)
       : pkg_path_(pkg_path),
         module_name_(module_name),
         topic_name_(topic_name),
         channel_backend_manager_(channel_backend_manager),
-        subscribe_hook_vec_(subscribe_hook_vec),
         base_(GenBase(this)) {}
   ~SubscriberProxy() = default;
 
@@ -154,13 +136,10 @@ class SubscriberProxy {
         .topic_name = topic_name_,
         .msg_type_support = msg_type_support,
         .callback =
-            [this, msg_type, callback_ptr{std::make_shared<aimrt::channel::SubscriberCallback>(std::move(callback))}](
+            [callback_ptr{std::make_shared<aimrt::channel::SubscriberCallback>(std::move(callback))}](
                 aimrt::channel::ContextRef ctx_ref,
                 const void* msg_ptr,
                 std::function<void()>&& input_release_callback) {
-              for (const auto& item : subscribe_hook_vec_)
-                item(msg_type, ctx_ref, msg_ptr);
-
               aimrt::channel::SubscriberReleaseCallback release_callback(std::move(input_release_callback));
               (*callback_ptr)(ctx_ref.NativeHandle(), msg_ptr, release_callback.NativeHandle());
             }});
@@ -183,7 +162,6 @@ class SubscriberProxy {
   const std::string_view module_name_;
   const std::string topic_name_;
   ChannelBackendManager& channel_backend_manager_;
-  const std::vector<aimrt::channel::HookFunc>& subscribe_hook_vec_;
 
   const aimrt_channel_subscriber_base_t base_;
 };
@@ -207,8 +185,6 @@ class ChannelHandleProxy {
                      aimrt::common::util::LoggerWrapper& logger,
                      ChannelBackendManager& channel_backend_manager,
                      const std::unordered_set<std::string>& passed_context_meta_keys,
-                     const std::vector<aimrt::channel::HookFunc>& publish_hook_vec,
-                     const std::vector<aimrt::channel::HookFunc>& subscribe_hook_vec,
                      std::atomic_bool& start_flag,
                      PublisherProxyMap& publisher_proxy_map,
                      SubscriberProxyMap& subscriber_proxy_map)
@@ -217,8 +193,6 @@ class ChannelHandleProxy {
         logger_(logger),
         channel_backend_manager_(channel_backend_manager),
         passed_context_meta_keys_(passed_context_meta_keys),
-        publish_hook_vec_(publish_hook_vec),
-        subscribe_hook_vec_(subscribe_hook_vec),
         start_flag_(start_flag),
         publisher_proxy_map_(publisher_proxy_map),
         subscriber_proxy_map_(subscriber_proxy_map),
@@ -252,8 +226,7 @@ class ChannelHandleProxy {
             module_name_,
             topic,
             channel_backend_manager_,
-            passed_context_meta_keys_,
-            publish_hook_vec_));
+            passed_context_meta_keys_));
 
     return emplace_ret.first->second.get();
   }
@@ -275,8 +248,7 @@ class ChannelHandleProxy {
             pkg_path_,
             module_name_,
             topic,
-            channel_backend_manager_,
-            subscribe_hook_vec_));
+            channel_backend_manager_));
 
     return emplace_ret.first->second.get();
   }
@@ -303,9 +275,6 @@ class ChannelHandleProxy {
   ChannelBackendManager& channel_backend_manager_;
 
   const std::unordered_set<std::string>& passed_context_meta_keys_;
-
-  const std::vector<aimrt::channel::HookFunc>& publish_hook_vec_;
-  const std::vector<aimrt::channel::HookFunc>& subscribe_hook_vec_;
 
   std::atomic_bool& start_flag_;
   PublisherProxyMap& publisher_proxy_map_;

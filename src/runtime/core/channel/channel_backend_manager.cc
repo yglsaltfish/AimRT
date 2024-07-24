@@ -36,6 +36,23 @@ void ChannelBackendManager::Shutdown() {
   }
 
   channel_backend_index_vec_.clear();
+
+  subscribe_hook_vec_.clear();
+  publish_hook_vec_.clear();
+}
+
+void ChannelBackendManager::RegisterPublishHook(FrameworkHookFunc&& hook) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  publish_hook_vec_.emplace_back(std::move(hook));
+}
+
+void ChannelBackendManager::RegisterSubscribeHook(FrameworkHookFunc&& hook) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  subscribe_hook_vec_.emplace_back(std::move(hook));
 }
 
 void ChannelBackendManager::SetPubTopicsBackendsRules(
@@ -101,6 +118,26 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
     return false;
   }
 
+  FrameworkHookData hook_data{
+      .topic_name = subscribe_wrapper.topic_name,
+      .msg_type = subscribe_wrapper.msg_type,
+      .pkg_path = subscribe_wrapper.pkg_path,
+      .module_name = subscribe_wrapper.module_name,
+      .type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper.msg_type_support)};
+
+  subscribe_wrapper.callback =
+      [this,
+       hook_data{std::move(hook_data)},
+       callback{std::move(subscribe_wrapper.callback)}](
+          aimrt::channel::ContextRef ctx_ref,
+          const void* msg_ptr,
+          std::function<void()>&& release_callback) mutable {
+        for (const auto& item : subscribe_hook_vec_)
+          item(hook_data, ctx_ref, msg_ptr);
+
+        callback(ctx_ref, msg_ptr, std::move(release_callback));
+      };
+
   auto subscribe_wrapper_ptr =
       std::make_unique<SubscribeWrapper>(std::move(subscribe_wrapper));
   const auto& subscribe_wrapper_ref = *subscribe_wrapper_ptr;
@@ -128,7 +165,13 @@ void ChannelBackendManager::Publish(const PublishWrapper& publish_wrapper) {
     return;
   }
 
-  std::string_view topic_name = publish_wrapper.topic_name;
+  if (publish_wrapper.ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT ||
+      publish_wrapper.ctx_ref.CheckUsed()) {
+    AIMRT_WARN("Publish context has been used!");
+    return;
+  }
+
+  publish_wrapper.ctx_ref.SetUsed();
 
   const auto* publish_type_wrapper_ptr =
       channel_registry_ptr_->GetPublishTypeWrapper(
@@ -142,6 +185,20 @@ void ChannelBackendManager::Publish(const PublishWrapper& publish_wrapper) {
         publish_wrapper.topic_name, publish_wrapper.msg_type);
     return;
   }
+
+  publish_wrapper.ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, publish_wrapper.topic_name);
+
+  FrameworkHookData hook_data{
+      .topic_name = publish_wrapper.topic_name,
+      .msg_type = publish_wrapper.msg_type,
+      .pkg_path = publish_wrapper.pkg_path,
+      .module_name = publish_wrapper.module_name,
+      .type_support_ref = aimrt::util::TypeSupportRef(publish_type_wrapper_ptr->msg_type_support)};
+
+  for (const auto& item : publish_hook_vec_)
+    item(hook_data, publish_wrapper.ctx_ref, publish_wrapper.msg_ptr);
+
+  std::string_view topic_name = publish_wrapper.topic_name;
 
   publish_wrapper.msg_type_support = publish_type_wrapper_ptr->msg_type_support;
 

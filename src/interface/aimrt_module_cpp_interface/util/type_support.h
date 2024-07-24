@@ -4,6 +4,7 @@
 #include <span>
 
 #include "aimrt_module_c_interface/util/type_support_base.h"
+#include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 
 namespace aimrt::util {
@@ -94,6 +95,22 @@ class TypeSupportRef {
 
   const void* CustomTypeSupportPtr() const {
     return base_ptr_->custom_type_support_ptr(base_ptr_->impl);
+  }
+
+  std::string SimpleSerialize(std::string_view serialization_type, const void* msg) const {
+    aimrt::util::BufferArray buffer_array;
+
+    bool ret = base_ptr_->serialize(
+        base_ptr_->impl,
+        ToAimRTStringView(serialization_type),
+        msg,
+        buffer_array.AllocatorNativeHandle(),
+        buffer_array.BufferArrayNativeHandle());
+
+    if (ret)
+      return buffer_array.JoinToString();
+
+    return "";
   }
 
  private:

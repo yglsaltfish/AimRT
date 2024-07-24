@@ -12,15 +12,11 @@ class RpcHandleProxy {
       std::string_view pkg_path,
       std::string_view module_name,
       RpcBackendManager& rpc_backend_manager,
-      const std::unordered_set<std::string>& passed_context_meta_keys,
-      const aimrt::rpc::AsyncFilterManager& client_filter_manager,
-      const aimrt::rpc::AsyncFilterManager& server_filter_manager)
+      const std::unordered_set<std::string>& passed_context_meta_keys)
       : pkg_path_(pkg_path),
         module_name_(module_name),
         rpc_backend_manager_(rpc_backend_manager),
         passed_context_meta_keys_(passed_context_meta_keys),
-        client_filter_manager_(client_filter_manager),
-        server_filter_manager_(server_filter_manager),
         base_(GenBase(this)) {}
 
   ~RpcHandleProxy() = default;
@@ -51,27 +47,16 @@ class RpcHandleProxy {
                     const void* req_ptr,
                     void* rsp_ptr,
                     std::function<void(aimrt::rpc::Status)>&& callback) {
-                  server_filter_manager_.InvokeRpc(
-                      [service_func_ptr{std::move(service_func_ptr)}](
-                          aimrt::rpc::ContextRef ctx_ref,
-                          const void* req_ptr,
-                          void* rsp_ptr,
-                          std::function<void(aimrt::rpc::Status)>&& callback) {
-                        aimrt::rpc::ServiceCallback service_callback(
-                            [callback{std::move(callback)}](uint32_t status) {
-                              callback(aimrt::rpc::Status(status));
-                            });
+                  aimrt::rpc::ServiceCallback service_callback(
+                      [callback{std::move(callback)}](uint32_t status) {
+                        callback(aimrt::rpc::Status(status));
+                      });
 
-                        (*service_func_ptr)(
-                            ctx_ref.NativeHandle(),
-                            req_ptr,
-                            rsp_ptr,
-                            service_callback.NativeHandle());
-                      },
-                      ctx_ref,
+                  (*service_func_ptr)(
+                      ctx_ref.NativeHandle(),
                       req_ptr,
                       rsp_ptr,
-                      std::move(callback));
+                      service_callback.NativeHandle());
                 }});
   }
 
@@ -96,36 +81,19 @@ class RpcHandleProxy {
       const void* req_ptr,
       void* rsp_ptr,
       aimrt::rpc::ClientCallback&& callback) noexcept {
-    if (ctx_ref.GetType() != aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT ||
-        ctx_ref.CheckUsed()) {
-      callback(AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT);
-      return;
-    }
-
-    ctx_ref.SetUsed();
-
-    client_filter_manager_.InvokeRpc(
-        [this, func_name](
-            aimrt::rpc::ContextRef ctx_ref,
-            const void* req_ptr,
-            void* rsp_ptr,
-            std::function<void(aimrt::rpc::Status)>&& callback) {
-          rpc_backend_manager_.Invoke(
-              ClientInvokeWrapper{
-                  .func_name = func_name,
-                  .pkg_path = pkg_path_,
-                  .module_name = module_name_,
-                  .ctx_ref = ctx_ref,
-                  .req_ptr = req_ptr,
-                  .rsp_ptr = rsp_ptr,
-                  .callback = std::move(callback)});
-        },
-        ctx_ref,
-        req_ptr,
-        rsp_ptr,
-        [callback_ptr{std::make_shared<aimrt::rpc::ClientCallback>(std::move(callback))}](aimrt::rpc::Status status) {
-          (*callback_ptr)(status.Code());
-        });
+    rpc_backend_manager_.Invoke(
+        ClientInvokeWrapper{
+            .func_name = func_name,
+            .pkg_path = pkg_path_,
+            .module_name = module_name_,
+            .ctx_ref = ctx_ref,
+            .req_ptr = req_ptr,
+            .rsp_ptr = rsp_ptr,
+            .callback =
+                [callback_ptr{std::make_shared<aimrt::rpc::ClientCallback>(std::move(callback))}](
+                    aimrt::rpc::Status status) {
+                  (*callback_ptr)(status.Code());
+                }});
   }
 
   void MergeServerContextToClientContext(
@@ -197,9 +165,6 @@ class RpcHandleProxy {
   RpcBackendManager& rpc_backend_manager_;
 
   const std::unordered_set<std::string>& passed_context_meta_keys_;
-
-  const aimrt::rpc::AsyncFilterManager& client_filter_manager_;
-  const aimrt::rpc::AsyncFilterManager& server_filter_manager_;
 
   const aimrt_rpc_handle_base_t base_;
 };

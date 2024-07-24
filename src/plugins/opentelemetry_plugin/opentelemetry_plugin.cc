@@ -132,7 +132,7 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
 
   channel_manager.RegisterPublishHook(
       "otp_trace",
-      [this](std::string_view msg_type,
+      [this](const aimrt::runtime::core::channel::FrameworkHookData& hook_data,
              aimrt::channel::ContextRef ctx_ref,
              const void* msg) {
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
@@ -163,7 +163,9 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
           return;
 
         // 需要启动一个新trace
-        std::string span_name = std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" + std::string(msg_type);
+        std::string span_name =
+            std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" +
+            std::string(hook_data.msg_type);
         auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
 
         // 将当前span的context打包
@@ -176,12 +178,16 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
+        // 序列化包成json
+        auto s = hook_data.type_support_ref.SimpleSerialize("json", msg);
+        if (!s.empty()) span->SetAttribute("msg_data", s);
+
         span->End();
       });
 
   channel_manager.RegisterSubscribeHook(
       "otp_trace",
-      [this](std::string_view msg_type,
+      [this](const aimrt::runtime::core::channel::FrameworkHookData& hook_data,
              aimrt::channel::ContextRef ctx_ref,
              const void* msg) {
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
@@ -212,7 +218,9 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
           return;
 
         // 需要启动一个新trace
-        std::string span_name = std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" + std::string(msg_type);
+        std::string span_name =
+            std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" +
+            std::string(hook_data.msg_type);
         auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
 
         // 将当前span的context打包
@@ -224,6 +232,10 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
         for (auto& itr : keys) {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
+
+        // 序列化包成json
+        auto s = hook_data.type_support_ref.SimpleSerialize("json", msg);
+        if (!s.empty()) span->SetAttribute("msg_data", s);
 
         span->End();
       });
@@ -239,11 +251,12 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
   rpc_manager.RegisterClientFilter(
       "otp_trace",
-      [this](aimrt::rpc::ContextRef ctx_ref,
+      [this](const aimrt::runtime::core::rpc::FrameworkFilterData& filter_data,
+             aimrt::rpc::ContextRef ctx_ref,
              const void* req,
              void* rsp,
              std::function<void(aimrt::rpc::Status)>&& callback,
-             const aimrt::rpc::AsyncRpcHandle& h) {
+             const aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle& h) {
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
         std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
         bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
@@ -269,7 +282,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
         // 不需要启动一个新trace
         if (!start_new_trace) {
-          h(ctx_ref, req, rsp, std::move(callback));
+          h(filter_data, ctx_ref, req, rsp, std::move(callback));
           return;
         }
 
@@ -286,13 +299,20 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
-        h(ctx_ref, req, rsp,
-          [span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) mutable {
+        h(filter_data, ctx_ref, req, rsp,
+          [&filter_data, req, rsp, span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) mutable {
             if (status.OK()) {
               span->SetStatus(trace_api::StatusCode::kOk);
             } else {
               span->SetStatus(trace_api::StatusCode::kError, status.ToString());
             }
+
+            // 序列化req/rsp为json
+            auto req_json = filter_data.req_type_support_ref.SimpleSerialize("json", req);
+            if (!req_json.empty()) span->SetAttribute("req_data", req_json);
+
+            auto rsp_json = filter_data.rsp_type_support_ref.SimpleSerialize("json", rsp);
+            if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
 
             span->End();
 
@@ -302,11 +322,12 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
   rpc_manager.RegisterServerFilter(
       "otp_trace",
-      [this](aimrt::rpc::ContextRef ctx_ref,
+      [this](const aimrt::runtime::core::rpc::FrameworkFilterData& filter_data,
+             aimrt::rpc::ContextRef ctx_ref,
              const void* req,
              void* rsp,
              std::function<void(aimrt::rpc::Status)>&& callback,
-             const aimrt::rpc::AsyncRpcHandle& h) {
+             const aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle& h) {
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
         std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
         bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
@@ -332,7 +353,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
         // 不需要启动一个新trace
         if (!start_new_trace) {
-          h(ctx_ref, req, rsp, std::move(callback));
+          h(filter_data, ctx_ref, req, rsp, std::move(callback));
           return;
         }
 
@@ -349,13 +370,20 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
-        h(ctx_ref, req, rsp,
-          [span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) mutable {
+        h(filter_data, ctx_ref, req, rsp,
+          [&filter_data, req, rsp, span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) mutable {
             if (status.OK()) {
               span->SetStatus(trace_api::StatusCode::kOk);
             } else {
               span->SetStatus(trace_api::StatusCode::kError, status.ToString());
             }
+
+            // 序列化req/rsp为json
+            auto req_json = filter_data.req_type_support_ref.SimpleSerialize("json", req);
+            if (!req_json.empty()) span->SetAttribute("req_data", req_json);
+
+            auto rsp_json = filter_data.rsp_type_support_ref.SimpleSerialize("json", rsp);
+            if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
 
             span->End();
 
