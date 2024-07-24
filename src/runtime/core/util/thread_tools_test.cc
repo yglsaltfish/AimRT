@@ -65,12 +65,11 @@ TEST(ThreadToolsTest, BindCpuForCurrentThread) {
   EXPECT_NO_THROW(BindCpuForCurrentThread(empty_cpu_set));
 
   // 测试无效的CPU索引
-  std::vector<uint32_t> invalid_cpu_set = {1000};
-  EXPECT_ANY_THROW(BindCpuForCurrentThread(invalid_cpu_set));
+  EXPECT_ANY_THROW(BindCpuForCurrentThread());
 
 #else
   // 测试Windows平台不支持的情况
-  EXPECT_ANY_THROW(BindCpuForCurrentThread(invalid_cpu_set));
+  EXPECT_ANY_THROW(BindCpuForCurrentThread({10000}));
 #endif
 }
 
@@ -123,7 +122,7 @@ TEST(ThreadToolsTest, SetCpuSchedForCurrentThread) {
 
 #else
   // 测试Windows平台不支持的情况
-  EXPECT_NO_THROW(SetCpuSchedForCurrentThread("SCHED_OTHER"));
+  EXPECT_THROW(SetCpuSchedForCurrentThread("SCHED_OTHER"), aimrt::common::util::AimRTException);
 #endif
 }
 

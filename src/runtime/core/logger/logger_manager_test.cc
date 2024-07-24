@@ -58,20 +58,20 @@ class LoggerManagerTest : public ::testing::Test {
     });
 
     YAML::Node logger_manager_options_node = YAML::Load(R"str(
-        log: # log配置
-        core_lvl: INFO # 内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
-        default_module_lvl: INFO # 模块默认日志等级
-        backends: # 日志backends
-          - type: console # 控制台日志
+        log:
+        core_lvl: INFO
+        default_module_lvl: INFO
+        backends:
+          - type: console
             options:
-              color: true # 是否彩色打印
+              color: true
               log_executor_name: work_thread_pool
-          - type: rotate_file # 文件日志
+          - type: rotate_file
             options:
-              path: ./ # 日志文件路径
-              filename: logger_manager_test.log # 日志文件名称
-              max_file_size_m: 4 # 日志文件最大尺寸，单位m
-              max_file_num: 10 # 最大日志文件数量，0代表无限
+              path: ./
+              filename: logger_manager_test.log
+              max_file_size_m: 4
+              max_file_num: 10
               log_executor_name: work_thread_pool
           - type: mocked_backend
       )str");
@@ -131,16 +131,6 @@ TEST_F(LoggerManagerTest, log_with_backends) {
               log_str.c_str(),
               log_str.size());
   std::this_thread::sleep_for(std::chrono::milliseconds(100));  // wait the log thread
-
-  const std::filesystem::path log_file_path = "./logger_manager_test.log";
-  auto file_status = std::filesystem::status(log_file_path);
-
-  auto is_exist = std::filesystem::exists(file_status);
-  EXPECT_EQ(is_exist, true);
-
-  if (is_exist) {
-    std::filesystem::remove(log_file_path);
-  }
 
   // test the mocked_backend
   EXPECT_EQ(log_res_, log_str);

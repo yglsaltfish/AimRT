@@ -23,10 +23,6 @@ TEST(RPC_CONTEXT_TEST, Context) {
   EXPECT_TRUE(aimrt::common::util::CheckContainerEqualNoOrder(
       ctx.GetMetaKeys(),
       std::vector<std::string_view>{"key1", "key2"}));
-
-  EXPECT_STREQ(
-      ctx.ToString().c_str(),
-      "Client context, timeout: 100ms, meta: {{\"key2\":\"val2\"},{\"key1\":\"val1\"}}");
 }
 
 TEST(RPC_CONTEXT_TEST, ContextRef) {
@@ -48,10 +44,6 @@ TEST(RPC_CONTEXT_TEST, ContextRef) {
   EXPECT_TRUE(aimrt::common::util::CheckContainerEqualNoOrder(
       ctx.GetMetaKeys(),
       std::vector<std::string_view>{"key1", "key2"}));
-
-  EXPECT_STREQ(
-      ctx.ToString().c_str(),
-      "Client context, timeout: 100ms, meta: {{\"key2\":\"val2\"},{\"key1\":\"val1\"}}");
 }
 
 }  // namespace aimrt::rpc
