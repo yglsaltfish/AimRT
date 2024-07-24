@@ -31,4 +31,4 @@ cmake -B build \
 
 cmake --build build --config Release --parallel $(nproc)
 
-cmake --build build --target test
+cmake --build build --config Release --target test
