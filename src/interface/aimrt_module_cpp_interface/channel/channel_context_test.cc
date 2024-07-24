@@ -8,10 +8,6 @@ namespace aimrt::channel {
 TEST(RPC_CONTEXT_TEST, Context) {
   Context ctx;
 
-  auto tp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(1718975718352594780));
-  ctx.SetMsgTimestamp(tp);
-  EXPECT_EQ(ctx.GetMsgTimestamp(), tp);
-
   EXPECT_EQ(ctx.GetMetaKeys().size(), 0);
 
   ctx.SetMetaValue("key1", "val1");
@@ -27,17 +23,13 @@ TEST(RPC_CONTEXT_TEST, Context) {
 
   EXPECT_STREQ(
       ctx.ToString().c_str(),
-      "Publisher context, timestamp: 1718975718352594780, meta: {{key2,val2},{key1,val1}}");
+      "Publisher context, meta: {{\"key2\":\"val2\"},{\"key1\":\"val1\"}}");
 }
 
 TEST(RPC_CONTEXT_TEST, ContextRef) {
   Context real_ctx;
   ContextRef ctx(real_ctx);
 
-  auto tp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(1718975718352594780));
-  ctx.SetMsgTimestamp(tp);
-  EXPECT_EQ(ctx.GetMsgTimestamp(), tp);
-
   EXPECT_EQ(ctx.GetMetaKeys().size(), 0);
 
   ctx.SetMetaValue("key1", "val1");
@@ -53,7 +45,7 @@ TEST(RPC_CONTEXT_TEST, ContextRef) {
 
   EXPECT_STREQ(
       ctx.ToString().c_str(),
-      "Publisher context, timestamp: 1718975718352594780, meta: {{key2,val2},{key1,val1}}");
+      "Publisher context, meta: {{\"key2\":\"val2\"},{\"key1\":\"val1\"}}");
 }
 
 }  // namespace aimrt::channel
