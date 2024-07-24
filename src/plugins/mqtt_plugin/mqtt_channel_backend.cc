@@ -167,15 +167,26 @@ bool MqttChannelBackend::Subscribe(
 
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
-  auto handle = [this, subscribe_wrapper_vec_ptr](MQTTAsync_message* message) {
+  auto handle = [this, topic_name, subscribe_wrapper_vec_ptr](MQTTAsync_message* message) {
     try {
       auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+      ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
+      ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
       util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 
       std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
       ctx_ptr->SetSerializationType(serialization_type);
 
+      // 获取context
+      size_t ctx_num = buf_oper.GetUint8();
+      for (size_t ii = 0; ii < ctx_num; ++ii) {
+        auto key = buf_oper.GetString(util::BufferLenType::UINT16);
+        auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+        ctx_ptr->SetMetaValue(key, val);
+      }
+
+      // 获取消息buf
       auto remaining_buf = buf_oper.GetRemainingBuffer();
       aimrt_buffer_view_t buffer_view{
           .data = remaining_buf.data(),
@@ -209,8 +220,7 @@ bool MqttChannelBackend::Subscribe(
       for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
         auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
         std::shared_ptr<void> msg_ptr = finditr->second;
-        aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
-        subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
+        subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
       }
     } catch (const std::exception& e) {
       AIMRT_WARN("Handle mqtt rpc msg failed, exception info: {}", e.what());
@@ -296,7 +306,25 @@ void MqttChannelBackend::Publish(
   const size_t buffer_array_len = buffer_array->Size();
   size_t msg_size = buffer_array->BufferSize();
 
-  size_t mqtt_pkg_size = 1 + serialization_type.size() + msg_size;
+  // context
+  const auto& keys = publish_wrapper.ctx_ref.GetMetaKeys();
+  if (keys.size() > 255) [[unlikely]] {
+    AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
+    return;
+  }
+
+  std::vector<std::string_view> context_meta_kv;
+  size_t context_meta_kv_size = 1;
+  for (const auto& key : keys) {
+    context_meta_kv_size += (2 + key.size());
+    context_meta_kv.emplace_back(key);
+
+    auto val = publish_wrapper.ctx_ref.GetMetaValue(key);
+    context_meta_kv_size += (2 + val.size());
+    context_meta_kv.emplace_back(val);
+  }
+
+  size_t mqtt_pkg_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
 
   if (mqtt_pkg_size > max_pkg_size_) [[unlikely]] {
     AIMRT_WARN("Mqtt publish failed, pkg is too large, limit {}k, actual {}k",
@@ -310,6 +338,12 @@ void MqttChannelBackend::Publish(
 
   buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
 
+  buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
+  for (const auto& s : context_meta_kv) {
+    buf_oper.SetString(s, util::BufferLenType::UINT16);
+  }
+
+  // data
   for (size_t ii = 0; ii < buffer_array_len; ++ii) {
     buf_oper.SetBuffer(
         static_cast<const char*>(buffer_array_data[ii].data),

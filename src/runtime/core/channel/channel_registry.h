@@ -11,6 +11,9 @@
 
 namespace aimrt::runtime::core::channel {
 
+using SubscriberCallback =
+    std::function<void(aimrt::channel::ContextRef, const void*, std::function<void()>&&)>;
+
 struct PublishTypeWrapper {
   std::string_view msg_type;
   std::string_view pkg_path;
@@ -25,7 +28,7 @@ struct SubscribeWrapper {
   std::string_view module_name;
   std::string_view topic_name;
   const aimrt_type_support_base_t* msg_type_support = nullptr;
-  aimrt::channel::SubscriberCallback callback;
+  SubscriberCallback callback;
 };
 
 class ChannelRegistry {

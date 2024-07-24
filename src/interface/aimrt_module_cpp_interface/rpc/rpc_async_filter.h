@@ -57,7 +57,7 @@ class AsyncFilterManager {
       ContextRef ctx_ref,
       const void* req,
       void* rsp,
-      std::function<void(Status)>&& callback) {
+      std::function<void(Status)>&& callback) const {
     return final_filter_(ctx_ref, req, rsp, std::move(callback), h);
   }
 

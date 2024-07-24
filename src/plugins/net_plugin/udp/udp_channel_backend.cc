@@ -5,6 +5,7 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "net_plugin/global.h"
+#include "util/buffer_util.h"
 #include "util/url_encode.h"
 
 namespace YAML {
@@ -96,6 +97,8 @@ bool UdpChannelBackend::Subscribe(
 
   namespace util = aimrt::common::util;
 
+  std::string_view topic_name = subscribe_wrapper.topic_name;
+
   std::string pattern = std::string("/channel/") +
                         util::UrlEncode(subscribe_wrapper.topic_name) + "/" +
                         util::UrlEncode(subscribe_wrapper.msg_type);
@@ -113,33 +116,34 @@ bool UdpChannelBackend::Subscribe(
 
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
-  auto handle = [subscribe_wrapper_vec_ptr](
+  auto handle = [this, topic_name, subscribe_wrapper_vec_ptr](
                     const std::shared_ptr<boost::asio::streambuf>& msg_buf_ptr) {
-    // 1 byte uri len : n byte uri : 1 byte serialization type len : m byte
-    // serialization type : buf.len-2-n-m byte data
-
-    const void* buf_data = msg_buf_ptr->data().data();
-    size_t buf_size = msg_buf_ptr->size();
-    uint8_t uri_size = static_cast<const uint8_t*>(buf_data)[0];
-
-    // 获取序列化类型
-    uint8_t serialization_type_size = static_cast<const uint8_t*>(buf_data)[1 + uri_size];
-    std::string serialization_type =
-        std::string(static_cast<const char*>(buf_data) + 2 + uri_size, serialization_type_size);
-
-    // context
     auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
+    util::ConstBufferOperator buf_oper(
+        static_cast<const char*>(msg_buf_ptr->data().data()),
+        msg_buf_ptr->size());
+
+    auto pattern = buf_oper.GetString(util::BufferLenType::UINT8);
+
+    std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
     ctx_ptr->SetSerializationType(serialization_type);
 
-    // 获取消息buf
-    uint32_t offset = 2 + uri_size + serialization_type_size;
-    const uint8_t* msg_buf = static_cast<const uint8_t*>(buf_data) + offset;
-    uint32_t msg_buf_size = buf_size - offset;
+    // 获取context
+    size_t ctx_num = buf_oper.GetUint8();
+    for (size_t ii = 0; ii < ctx_num; ++ii) {
+      auto key = buf_oper.GetString(util::BufferLenType::UINT16);
+      auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+      ctx_ptr->SetMetaValue(key, val);
+    }
 
+    // 获取消息buf
+    auto remaining_buf = buf_oper.GetRemainingBuffer();
     aimrt_buffer_view_t buffer_view{
-        .data = msg_buf,
-        .len = msg_buf_size};
+        .data = remaining_buf.data(),
+        .len = remaining_buf.size()};
 
     aimrt_buffer_array_view_t buffer_array_view{
         .data = &buffer_view,
@@ -169,8 +173,7 @@ bool UdpChannelBackend::Subscribe(
     for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
       auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
       std::shared_ptr<void> msg_ptr = finditr->second;
-      aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
-      subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
+      subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
     }
   };
 
@@ -248,30 +251,55 @@ void UdpChannelBackend::Publish(
     buffer_array = find_serialization_cache_itr->second;
   }
 
-  // 填内容，直接复制过去
-  auto msg_buf_ptr = std::make_shared<boost::asio::streambuf>();
-  size_t msg_size = buffer_array->BufferSize();
-
-  uint32_t head_size = 1 + pattern.size() + 1 + serialization_type.size();
-  auto buf = msg_buf_ptr->prepare(head_size + msg_size);
-  uint8_t* msg_buf = static_cast<uint8_t*>(buf.data());
-
-  msg_buf[0] = static_cast<uint8_t>(pattern.size());
-  memcpy(msg_buf + 1, pattern.c_str(), pattern.size());
-
-  msg_buf[1 + pattern.size()] = static_cast<uint8_t>(serialization_type.size());
-  memcpy(msg_buf + 2 + pattern.size(),
-         serialization_type.c_str(), serialization_type.size());
-
-  auto buffer_array_data = buffer_array->BufferArrayNativeHandle()->data;
-  const size_t buffer_array_len = buffer_array->BufferArrayNativeHandle()->len;
-  size_t cur_pos = 0;
-  for (size_t ii = 0; ii < buffer_array_len; ++ii) {
-    memcpy(msg_buf + head_size + cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
-    cur_pos += buffer_array_data[ii].len;
+  // context
+  const auto& keys = publish_wrapper.ctx_ref.GetMetaKeys();
+  if (keys.size() > 255) [[unlikely]] {
+    AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
+    return;
   }
 
-  msg_buf_ptr->commit(head_size + msg_size);
+  std::vector<std::string_view> context_meta_kv;
+  size_t context_meta_kv_size = 1;
+  for (const auto& key : keys) {
+    context_meta_kv_size += (2 + key.size());
+    context_meta_kv.emplace_back(key);
+
+    auto val = publish_wrapper.ctx_ref.GetMetaValue(key);
+    context_meta_kv_size += (2 + val.size());
+    context_meta_kv.emplace_back(val);
+  }
+
+  // 填内容，直接复制过去
+  auto msg_buf_ptr = std::make_shared<boost::asio::streambuf>();
+
+  auto buffer_array_data = buffer_array->Data();
+  const size_t buffer_array_len = buffer_array->Size();
+  size_t msg_size = buffer_array->BufferSize();
+
+  uint32_t pkg_size = 1 + pattern.size() +
+                      1 + serialization_type.size() +
+                      context_meta_kv_size +
+                      msg_size;
+
+  auto buf = msg_buf_ptr->prepare(pkg_size);
+  util::BufferOperator buf_oper(static_cast<char*>(buf.data()), buf.size());
+
+  buf_oper.SetString(pattern, util::BufferLenType::UINT8);
+  buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+
+  buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
+  for (const auto& s : context_meta_kv) {
+    buf_oper.SetString(s, util::BufferLenType::UINT16);
+  }
+
+  // data
+  for (size_t ii = 0; ii < buffer_array_len; ++ii) {
+    buf_oper.SetBuffer(
+        static_cast<const char*>(buffer_array_data[ii].data),
+        buffer_array_data[ii].len);
+  }
+
+  msg_buf_ptr->commit(pkg_size);
 
   for (const auto& publish_add : *server_url_list) {
     boost::asio::co_spawn(

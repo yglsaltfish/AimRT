@@ -12,9 +12,9 @@ class RpcHandleProxy {
       std::string_view pkg_path,
       std::string_view module_name,
       RpcBackendManager& rpc_backend_manager,
-      std::unordered_set<std::string>& passed_context_meta_keys,
-      aimrt::rpc::AsyncFilterManager& client_filter_manager,
-      aimrt::rpc::AsyncFilterManager& server_filter_manager)
+      const std::unordered_set<std::string>& passed_context_meta_keys,
+      const aimrt::rpc::AsyncFilterManager& client_filter_manager,
+      const aimrt::rpc::AsyncFilterManager& server_filter_manager)
       : pkg_path_(pkg_path),
         module_name_(module_name),
         rpc_backend_manager_(rpc_backend_manager),
@@ -198,8 +198,8 @@ class RpcHandleProxy {
 
   const std::unordered_set<std::string>& passed_context_meta_keys_;
 
-  aimrt::rpc::AsyncFilterManager& client_filter_manager_;
-  aimrt::rpc::AsyncFilterManager& server_filter_manager_;
+  const aimrt::rpc::AsyncFilterManager& client_filter_manager_;
+  const aimrt::rpc::AsyncFilterManager& server_filter_manager_;
 
   const aimrt_rpc_handle_base_t base_;
 };

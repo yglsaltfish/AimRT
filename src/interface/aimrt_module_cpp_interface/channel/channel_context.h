@@ -25,18 +25,15 @@ class Context {
 
   bool CheckUsed() const { return used_; }
   void SetUsed() { used_ = true; }
-  void ResetUsed() { used_ = false; }
+
+  void Reset() {
+    used_ = false;
+
+    meta_data_map_.clear();
+    meta_keys_vec_.clear();
+  }
 
   aimrt_channel_context_type_t GetType() const { return type_; }
-
-  // Timestamp
-  std::chrono::system_clock::time_point GetMsgTimestamp() const {
-    return aimrt::common::util::GetTimePointFromTimestampNs(t_);
-  }
-
-  void SetMsgTimestamp(std::chrono::system_clock::time_point deadline) {
-    t_ = aimrt::common::util::GetTimestampNs(deadline);
-  }
 
   // Some frame fields
   std::string_view GetMetaValue(std::string_view key) const {
@@ -48,11 +45,16 @@ class Context {
   void SetMetaValue(std::string_view key, std::string_view val) {
     auto finditr = meta_data_map_.find(key);
     if (finditr != meta_data_map_.end()) {
-      finditr->second = std::string(val);
+      if (!val.empty()) {
+        finditr->second = std::string(val);
+      } else {
+        meta_data_map_.erase(finditr);
+      }
       return;
     }
 
-    meta_data_map_.emplace(key, val);
+    if (!val.empty())
+      meta_data_map_.emplace(key, val);
   }
 
   std::vector<std::string_view> GetMetaKeys() const {
@@ -77,7 +79,7 @@ class Context {
     } else {
       ss << "Unknown context, ";
     }
-    ss << "timestamp: " << t_ << ", meta: {";
+    ss << "meta: {";
     bool flag = true;
     for (const auto& itr : meta_data_map_) {
       if (flag)
@@ -85,7 +87,7 @@ class Context {
       else
         ss << ",";
 
-      ss << "{" << itr.first << "," << itr.second << "}";
+      ss << "{\"" << itr.first << "\":\"" << itr.second << "\"}";
     }
 
     ss << "}";
@@ -104,12 +106,6 @@ class Context {
         },
         .get_type = [](void* impl) -> aimrt_channel_context_type_t {
           return static_cast<Context*>(impl)->type_;
-        },
-        .get_msg_timestamp_ns = [](void* impl) -> uint64_t {
-          return static_cast<Context*>(impl)->t_;
-        },
-        .set_msg_timestamp_ns = [](void* impl, uint64_t ddl) {
-          static_cast<Context*>(impl)->t_ = ddl;  //
         },
         .get_meta_val = [](void* impl, aimrt_string_view_t key) -> aimrt_string_view_t {
           return aimrt::util::ToAimRTStringView(
@@ -139,7 +135,6 @@ class Context {
   }
 
  private:
-  uint64_t t_ = 0;
   bool used_ = false;
 
   std::unordered_map<
@@ -189,19 +184,6 @@ class ContextRef {
     return base_ptr_->ops->get_type(base_ptr_->impl);
   }
 
-  // Timestamp
-  std::chrono::system_clock::time_point GetMsgTimestamp() const {
-    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
-    return aimrt::common::util::GetTimePointFromTimestampNs(
-        base_ptr_->ops->get_msg_timestamp_ns(base_ptr_->impl));
-  }
-
-  void SetMsgTimestamp(std::chrono::system_clock::time_point deadline) {
-    AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
-    base_ptr_->ops->set_msg_timestamp_ns(
-        base_ptr_->impl, aimrt::common::util::GetTimestampNs(deadline));
-  }
-
   // Some frame fields
   std::string_view GetMetaValue(std::string_view key) const {
     AIMRT_ASSERT(base_ptr_ && base_ptr_->ops, "Reference is null.");
@@ -248,15 +230,14 @@ class ContextRef {
       ss << "Unknown context, ";
     }
 
-    auto timestamp = base_ptr_->ops->get_msg_timestamp_ns(base_ptr_->impl);
-    ss << "timestamp: " << timestamp << ", meta: {";
+    ss << "meta: {";
 
     aimrt_string_view_array_t keys = base_ptr_->ops->get_meta_keys(base_ptr_->impl);
     for (size_t ii = 0; ii < keys.len; ++ii) {
       if (ii != 0) ss << ",";
       auto val = base_ptr_->ops->get_meta_val(base_ptr_->impl, keys.str_array[ii]);
-      ss << "{" << aimrt::util::ToStdStringView(keys.str_array[ii])
-         << "," << aimrt::util::ToStdStringView(val) << "}";
+      ss << "{\"" << aimrt::util::ToStdStringView(keys.str_array[ii])
+         << "\":\"" << aimrt::util::ToStdStringView(val) << "\"}";
     }
 
     ss << "}";

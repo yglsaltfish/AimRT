@@ -1,8 +1,8 @@
 #include "opentelemetry_plugin/opentelemetry_plugin.h"
 
 #include "core/aimrt_core.h"
+#include "opentelemetry_plugin/context_carrier.h"
 #include "opentelemetry_plugin/global.h"
-#include "opentelemetry_plugin/rpc_context_carrier.h"
 #include "opentelemetry_plugin/util.h"
 
 namespace YAML {
@@ -90,6 +90,9 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
                                 [this] { SetPluginLogger(); });
 
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitChannel,
+                                [this] { RegisterChannelHook(); });
+
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
                                 [this] { RegisterRpcFilter(); });
 
@@ -119,6 +122,113 @@ void OpenTelemetryPlugin::SetPluginLogger() {
       core_ptr_->GetLoggerManager().GetLoggerProxy().NativeHandle()));
 }
 
+void OpenTelemetryPlugin::RegisterChannelHook() {
+  auto& channel_manager = core_ptr_->GetChannelManager();
+
+  channel_manager.SetPassedContextMetaKeys(
+      {std::string(kCtxKeyStartNewTrace),
+       std::string(kCtxKeyTraceParent),
+       std::string(kCtxKeyTraceState)});
+
+  channel_manager.RegisterPublishHook(
+      "otp_trace",
+      [this](std::string_view msg_type,
+             aimrt::channel::ContextRef ctx_ref,
+             const void* msg) {
+        // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
+        std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
+        bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
+
+        auto tracer = provider_->GetTracer(options_.node_name);
+        ContextCarrier carrier(ctx_ref);
+
+        // 解压传进来的context，得到父span
+        trace_api::StartSpanOptions op{
+            .kind = trace_api::SpanKind::kProducer,
+        };
+
+        opentelemetry::context::Context input_ot_ctx;
+        auto extract_ctx = propagator_->Extract(carrier, input_ot_ctx);
+
+        auto extract_ctx_val = extract_ctx.GetValue(trace_api::kSpanKey);
+        if (!::opentelemetry::nostd::holds_alternative<::opentelemetry::nostd::monostate>(extract_ctx_val)) {
+          auto parent_span =
+              ::opentelemetry::nostd::get<::opentelemetry::nostd::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
+          op.parent = parent_span->GetContext();
+          start_new_trace = true;
+        }
+
+        // 不需要启动一个新trace
+        if (!start_new_trace)
+          return;
+
+        // 需要启动一个新trace
+        std::string span_name = std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" + std::string(msg_type);
+        auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
+
+        // 将当前span的context打包
+        opentelemetry::context::Context output_ot_ctx(trace_api::kSpanKey, span);
+        propagator_->Inject(carrier, output_ot_ctx);
+
+        // 添加context中的属性
+        auto keys = ctx_ref.GetMetaKeys();
+        for (auto& itr : keys) {
+          span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
+        }
+
+        span->End();
+      });
+
+  channel_manager.RegisterSubscribeHook(
+      "otp_trace",
+      [this](std::string_view msg_type,
+             aimrt::channel::ContextRef ctx_ref,
+             const void* msg) {
+        // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
+        std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
+        bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
+
+        auto tracer = provider_->GetTracer(options_.node_name);
+        ContextCarrier carrier(ctx_ref);
+
+        // 解压传进来的context，得到父span
+        trace_api::StartSpanOptions op{
+            .kind = trace_api::SpanKind::kConsumer,
+        };
+
+        opentelemetry::context::Context input_ot_ctx;
+        auto extract_ctx = propagator_->Extract(carrier, input_ot_ctx);
+
+        auto extract_ctx_val = extract_ctx.GetValue(trace_api::kSpanKey);
+        if (!::opentelemetry::nostd::holds_alternative<::opentelemetry::nostd::monostate>(extract_ctx_val)) {
+          auto parent_span =
+              ::opentelemetry::nostd::get<::opentelemetry::nostd::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
+          op.parent = parent_span->GetContext();
+          start_new_trace = true;
+        }
+
+        // 不需要启动一个新trace
+        if (!start_new_trace)
+          return;
+
+        // 需要启动一个新trace
+        std::string span_name = std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" + std::string(msg_type);
+        auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
+
+        // 将当前span的context打包
+        opentelemetry::context::Context output_ot_ctx(trace_api::kSpanKey, span);
+        propagator_->Inject(carrier, output_ot_ctx);
+
+        // 添加context中的属性
+        auto keys = ctx_ref.GetMetaKeys();
+        for (auto& itr : keys) {
+          span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
+        }
+
+        span->End();
+      });
+}
+
 void OpenTelemetryPlugin::RegisterRpcFilter() {
   auto& rpc_manager = core_ptr_->GetRpcManager();
 
@@ -139,7 +249,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
         bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
 
         auto tracer = provider_->GetTracer(options_.node_name);
-        RpcContextCarrier carrier(ctx_ref);
+        ContextCarrier carrier(ctx_ref);
 
         // 解压传进来的context，得到父span
         trace_api::StartSpanOptions op{
@@ -202,7 +312,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
         bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
 
         auto tracer = provider_->GetTracer(options_.node_name);
-        RpcContextCarrier carrier(ctx_ref);
+        ContextCarrier carrier(ctx_ref);
 
         // 解压传进来的context，得到父span
         trace_api::StartSpanOptions op{
