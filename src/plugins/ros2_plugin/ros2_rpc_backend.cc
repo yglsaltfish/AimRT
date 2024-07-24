@@ -420,7 +420,6 @@ bool Ros2RpcBackend::TryInvoke(
   }
 
   // 前缀不是ros2类型的消息
-
   auto finditr = ros2_adapter_wrapper_client_map_.find(client_invoke_wrapper_ptr->func_name);
   if (finditr == ros2_adapter_wrapper_client_map_.end()) {
     AIMRT_TRACE(

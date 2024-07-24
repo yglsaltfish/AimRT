@@ -16,9 +16,9 @@ void Ros2AdapterSubscription::handle_message(
     std::shared_ptr<void>& message, const rclcpp::MessageInfo& message_info) {
   if (!run_flag.load()) return;
 
-  aimrt::channel::SubscriberReleaseCallback release_callback([message]() {});
-  // TODO: context
-  subscribe_wrapper_.callback(nullptr, message.get(), release_callback.NativeHandle());
+  auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+
+  subscribe_wrapper_.callback(ctx_ptr, message.get(), [message, ctx_ptr]() {});
 }
 
 void Ros2AdapterSubscription::handle_serialized_message(

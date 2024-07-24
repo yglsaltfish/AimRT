@@ -107,7 +107,6 @@ bool HttpRpcBackend::RegisterServiceFunc(
       -> asio::awaitable<runtime::common::net::AsioHttpServer::HttpHandleStatus> {
     // ctx 创建
     auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
-    ctx_ptr->SetUsed();
     ctx_ptr->SetFunctionName(service_func_wrapper.func_name);
     ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
 
@@ -122,19 +121,18 @@ bool HttpRpcBackend::RegisterServiceFunc(
     if (req_content_type == "application/json" ||
         req_content_type == "application/json charset=utf-8") {
       serialization_type = "json";
-      ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
       rsp.set(http::field::content_type, "application/json");
     } else if (req_content_type == "application/protobuf") {
       serialization_type = "pb";
-      ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
       rsp.set(http::field::content_type, "application/protobuf");
     } else if (req_content_type == "application/ros2") {
       serialization_type = "ros2";
-      ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
       rsp.set(http::field::content_type, "application/ros2");
     } else {
       AIMRT_ERROR_THROW("Http req has invalid content type {}.", req_content_type);
     }
+
+    ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
 
     // 从http header中读取其他字段到context中
     for (auto const& field : req) {

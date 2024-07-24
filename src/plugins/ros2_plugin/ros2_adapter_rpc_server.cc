@@ -81,7 +81,6 @@ void Ros2AdapterServer::handle_request(
 
   // ctx 创建
   auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
-  ctx_ptr->SetUsed();
   ctx_ptr->SetFunctionName(service_func_wrapper_.func_name);
   ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, "ros2");
 
@@ -177,12 +176,18 @@ void Ros2AdapterWrapperServer::handle_request(
 
   // ctx 创建
   auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
-  ctx_ptr->SetUsed();
   ctx_ptr->SetFunctionName(service_func_wrapper_.func_name);
   ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, "ros2");
 
   // service req 创建、序列化
   auto& wrapper_req = *(static_cast<ros2_plugin_proto::srv::RosRpcWrapper::Request*>(request.get()));
+
+  size_t context_size = wrapper_req.context.size() / 2;
+  for (size_t ii = 0; ii < context_size; ++ii) {
+    const auto& key = wrapper_req.context[ii * 2];
+    const auto& val = wrapper_req.context[ii * 2 + 1];
+    ctx_ptr->SetMetaValue(key, val);
+  }
 
   ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, wrapper_req.serialization_type);
 

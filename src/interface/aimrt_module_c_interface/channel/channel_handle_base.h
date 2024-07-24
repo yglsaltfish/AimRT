@@ -28,7 +28,7 @@ typedef struct {
  *     const aimrt_channel_context_base_t* ctx_ptr,
  *     const void* msg,
  *     aimrt_function_base_t* release_callback)
- * Input 1: Const pointer to channel context
+ * Input 1: Const pointer to channel subscribe context
  * Input 2: Const pointer to msg
  * Input 3: Release callback, which ops type is 'aimrt_function_subscriber_release_callback_ops_t'
  */
@@ -62,7 +62,7 @@ typedef struct {
    * @note
    * Input 1: Implement pointer to publisher handle
    * Input 2: Msg type name
-   * Input 3: Const pointer to channel context
+   * Input 3: Const pointer to channel publish context
    * Input 4: Const pointer to msg
    */
   void (*publish)(
@@ -78,6 +78,18 @@ typedef struct {
    * Return: Topic for current publisher
    */
   aimrt_string_view_t (*get_topic)(void* impl);
+
+  /**
+   * @brief Function to merge subscribe context to publish context
+   * @note
+   * Input 1: Implement pointer to channel handle
+   * Input 2: Channel subscribe context
+   * Input 3: Channel publish context, for output
+   */
+  void (*merge_subscribe_context_to_publish_context)(
+      void* impl,
+      const aimrt_channel_context_base_t* subscribe_ctx_ptr,
+      const aimrt_channel_context_base_t* publish_ctx_ptr);
 
   /// Implement pointer
   void* impl;

@@ -16,6 +16,9 @@ extern "C" {
 #define AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE "aimrt-serialization_type"
 
 /// eg: local/mqtt/http
+#define AIMRT_CHANNEL_CONTEXT_TOPIC_NAME "aimrt-topic"
+
+/// eg: local/mqtt/http
 #define AIMRT_CHANNEL_CONTEXT_KEY_BACKEND "aimrt-backend"
 
 typedef enum {
@@ -45,20 +48,6 @@ typedef struct {
    *
    */
   aimrt_channel_context_type_t (*get_type)(void* impl);
-
-  /**
-   * @brief Function to get the msg timestamp(ns)
-   * @note Nanosecond since 1970-01-01 00:00:00 UTC
-   *
-   */
-  uint64_t (*get_msg_timestamp_ns)(void* impl);
-
-  /**
-   * @brief Function to set the msg timestamp(ns)
-   * @note Nanosecond since 1970-01-01 00:00:00 UTC
-   *
-   */
-  void (*set_msg_timestamp_ns)(void* impl, uint64_t t);
 
   /**
    * @brief Function to get kv meta data

@@ -165,7 +165,10 @@ endif()
 
 if(AIMRT_BUILD_WITH_ROS2)
   # fix cmake policy for using FindPythonInterp and FindPythonLibs (ros2)
-  cmake_policy(SET CMP0148 OLD)
+  if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 OLD)
+  endif()
+
   # fix gflag
   set(BUILD_TESTING
       OFF

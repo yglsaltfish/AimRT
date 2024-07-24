@@ -4,7 +4,7 @@ aimrt:
       - name: opentelemetry_plugin
         path: ./libaimrt_opentelemetry_plugin.so
         options:
-          node_name: example_node
+          node_name: example_channel_node
           otlp_http_exporter_url: http://localhost:4318/v1/traces
           attributes:
             - key: sn
@@ -19,35 +19,36 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 4
-      - name: timeout_handle
-        type: time_wheel
-        options:
-          bind_executor: work_thread_pool
-  rpc:
+  channel:
     backends:
       - type: local
         options:
-          timeout_executor: timeout_handle
-    clients_options:
-      - func_name: "(.*)"
+          subscriber_use_inline_executor: false
+          subscriber_executor: work_thread_pool
+    pub_topics_options:
+      - topic_name: "(.*)"
         enable_backends: [local]
-    servers_options:
-      - func_name: "(.*)"
+    sub_topics_options:
+      - topic_name: "(.*)"
         enable_backends: [local]
-    client_filters: [otp_trace]
-    server_filters: [otp_trace]
+    pub_hooks: [otp_trace]
+    sub_hooks: [otp_trace]
   module:
     pkgs:
-      - path: ./libprotobuf_rpc_client_pkg.so
-      - path: ./libprotobuf_rpc_server_pkg.so
+      - path: ./libprotobuf_channel_pub_pkg.so
+        enable_modules: [NormalPublisherModule]
+      - path: ./libprotobuf_channel_sub_pkg.so
+        enable_modules: [NormalSubscriberModule]
     modules:
-      - name: NormalRpcCoClientModule
+      - name: NormalPublisherModule
         log_lvl: INFO
-      - name: NormalRpcCoServerModule
+      - name: NormalSubscriberModule
         log_lvl: INFO
 
 # Module custom configuration
-NormalRpcCoClientModule:
-  rpc_frq: 0.5
+NormalPublisherModule:
+  topic_name: test_topic
+  channel_frq: 0.5
 
-NormalRpcCoServerModule:
+NormalSubscriberModule:
+  topic_name: test_topic

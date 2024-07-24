@@ -300,6 +300,8 @@ bool Ros2ChannelBackend::Subscribe(
     return false;
   }
 
+  std::string_view topic_name = subscribe_wrapper.topic_name;
+
   // 前缀是ros2类型的消息
   if (CheckRosMsg(subscribe_wrapper.msg_type)) {
     ChannelTypeKey type_key{
@@ -389,11 +391,20 @@ bool Ros2ChannelBackend::Subscribe(
       ros2_node_ptr_->create_subscription<ros2_plugin_proto::msg::RosMsgWrapper>(
           real_ros2_topic_name,
           10,
-          [subscribe_wrapper_vec_ptr](ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
+          [this, topic_name, subscribe_wrapper_vec_ptr](ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
             auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+            ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
+            ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
             const std::string& serialization_type = wrapper_msg->serialization_type;
             ctx_ptr->SetSerializationType(serialization_type);
+
+            size_t context_size = wrapper_msg->context.size() / 2;
+            for (size_t ii = 0; ii < context_size; ++ii) {
+              const auto& key = wrapper_msg->context[ii * 2];
+              const auto& val = wrapper_msg->context[ii * 2 + 1];
+              ctx_ptr->SetMetaValue(key, val);
+            }
 
             aimrt_buffer_view_t buffer_view{
                 .data = wrapper_msg->data.data(),
@@ -427,8 +438,7 @@ bool Ros2ChannelBackend::Subscribe(
             for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
               auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
               std::shared_ptr<void> msg_ptr = finditr->second;
-              aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
-              subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
+              subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
             }
           }));
 
@@ -534,6 +544,14 @@ void Ros2ChannelBackend::Publish(
 
   ros2_plugin_proto::msg::RosMsgWrapper wrapper_msg;
   wrapper_msg.serialization_type = serialization_type;
+
+  const auto& keys = publish_wrapper.ctx_ref.GetMetaKeys();
+  wrapper_msg.context.reserve(2 * keys.size());
+  for (const auto& key : keys) {
+    wrapper_msg.context.emplace_back(key);
+    wrapper_msg.context.emplace_back(publish_wrapper.ctx_ref.GetMetaValue(key));
+  }
+
   wrapper_msg.data.resize(msg_size);
 
   auto cur_pos = wrapper_msg.data.data();

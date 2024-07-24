@@ -141,6 +141,13 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
 
     // context
     auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
+
+    const auto& meta_keys = publish_wrapper.ctx_ref.GetMetaKeys();
+    for (const auto& item : meta_keys) {
+      ctx_ptr->SetMetaValue(item, publish_wrapper.ctx_ref.GetMetaValue(item));
+    }
 
     if (subscribe_pkg_path == pkg_path) {
       // 在同一个pkg中，直接复制
@@ -228,12 +235,10 @@ void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcep
       if (subscribe_executor_ref_) {
         subscribe_executor_ref_.Execute(
             [subscribe_wrapper_ptr, msg_ptr, ctx_ptr]() {
-              aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
-              subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
+              subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
             });
       } else {
-        aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
-        subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
+        subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
       }
     }
   }

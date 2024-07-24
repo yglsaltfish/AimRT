@@ -33,6 +33,9 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
       node["sub_topics_options"].push_back(sub_topic_options_node);
     }
 
+    node["pub_hooks"] = rhs.pub_hooks;
+    node["sub_hooks"] = rhs.sub_hooks;
+
     return node;
   }
 
@@ -71,6 +74,12 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
       }
     }
 
+    if (node["pub_hooks"])
+      rhs.pub_hooks = node["pub_hooks"].as<std::vector<std::string>>();
+
+    if (node["sub_hooks"])
+      rhs.sub_hooks = node["sub_hooks"].as<std::vector<std::string>>();
+
     return true;
   }
 };
@@ -87,6 +96,23 @@ void ChannelManager::Initialize(YAML::Node options_node) {
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
+
+  // 根据配置初始化hook
+  for (const auto& item : options_.pub_hooks) {
+    auto finditr = publish_hook_map_.find(item);
+    AIMRT_CHECK_ERROR_THROW(finditr != publish_hook_map_.end(),
+                            "Invalid publish hook '{}'", item);
+
+    publish_hook_vec_.emplace_back(std::move(finditr->second));
+  }
+
+  for (const auto& item : options_.sub_hooks) {
+    auto finditr = subscribe_hook_map_.find(item);
+    AIMRT_CHECK_ERROR_THROW(finditr != subscribe_hook_map_.end(),
+                            "Invalid subscribe hook '{}'", item);
+
+    subscribe_hook_vec_.emplace_back(std::move(finditr->second));
+  }
 
   channel_registry_ptr_ = std::make_unique<ChannelRegistry>();
   channel_registry_ptr_->SetLogger(logger_ptr_);
@@ -172,6 +198,12 @@ void ChannelManager::Shutdown() {
 
   channel_registry_ptr_.reset();
 
+  subscribe_hook_vec_.clear();
+  publish_hook_vec_.clear();
+
+  subscribe_hook_map_.clear();
+  publish_hook_map_.clear();
+
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
 
@@ -209,9 +241,19 @@ const ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
           module_info.name,
           *logger_ptr_,
           channel_backend_manager_,
+          passed_context_meta_keys_,
+          publish_hook_vec_,
+          subscribe_hook_vec_,
           channel_handle_proxy_start_flag_));
 
   return emplace_ret.first->second->channel_handle_proxy;
+}
+
+void ChannelManager::SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  passed_context_meta_keys_.insert(keys.begin(), keys.end());
 }
 
 const ChannelRegistry* ChannelManager::GetChannelRegistry() const {

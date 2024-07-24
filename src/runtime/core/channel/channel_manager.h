@@ -33,6 +33,9 @@ class ChannelManager {
       std::vector<std::string> enable_backends;
     };
     std::vector<SubTopicOptions> sub_topics_options;
+
+    std::vector<std::string> pub_hooks;
+    std::vector<std::string> sub_hooks;
   };
 
   enum class State : uint32_t {
@@ -66,6 +69,26 @@ class ChannelManager {
         util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});
   }
 
+  template <typename... Args>
+    requires std::constructible_from<aimrt::channel::HookFunc, Args...>
+  void RegisterPublishHook(std::string_view name, Args&&... args) {
+    AIMRT_CHECK_ERROR_THROW(
+        state_.load() == State::PreInit,
+        "Method can only be called when state is 'PreInit'.");
+    publish_hook_map_.emplace(name, std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+    requires std::constructible_from<aimrt::channel::HookFunc, Args...>
+  void RegisterSubscribeHook(std::string_view name, Args&&... args) {
+    AIMRT_CHECK_ERROR_THROW(
+        state_.load() == State::PreInit,
+        "Method can only be called when state is 'PreInit'.");
+    subscribe_hook_map_.emplace(name, std::forward<Args>(args)...);
+  }
+
+  void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
+
   // 信息查询类接口
   const ChannelRegistry* GetChannelRegistry() const;
   const std::vector<std::string>& GetChannelBackendNameList() const;
@@ -87,6 +110,14 @@ class ChannelManager {
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
 
+  std::unordered_set<std::string> passed_context_meta_keys_;
+
+  std::unordered_map<std::string, aimrt::channel::HookFunc> publish_hook_map_;
+  std::unordered_map<std::string, aimrt::channel::HookFunc> subscribe_hook_map_;
+
+  std::vector<aimrt::channel::HookFunc> publish_hook_vec_;
+  std::vector<aimrt::channel::HookFunc> subscribe_hook_vec_;
+
   std::unique_ptr<ChannelRegistry> channel_registry_ptr_;
 
   std::vector<std::unique_ptr<ChannelBackendBase>> channel_backend_vec_;
@@ -100,6 +131,9 @@ class ChannelManager {
         std::string_view input_module_name,
         aimrt::common::util::LoggerWrapper& logger,
         ChannelBackendManager& channel_backend_manager,
+        const std::unordered_set<std::string>& passed_context_meta_keys,
+        const std::vector<aimrt::channel::HookFunc>& publish_hook_vec,
+        const std::vector<aimrt::channel::HookFunc>& subscribe_hook_vec,
         std::atomic_bool& channel_handle_proxy_start_flag)
         : pkg_path(input_pkg_path),
           module_name(input_module_name),
@@ -108,6 +142,9 @@ class ChannelManager {
               module_name,
               logger,
               channel_backend_manager,
+              passed_context_meta_keys,
+              publish_hook_vec,
+              subscribe_hook_vec,
               channel_handle_proxy_start_flag,
               publisher_proxy_map,
               subscriber_proxy_map) {}

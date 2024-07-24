@@ -23,7 +23,7 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) {
 
     bool ret = aimrt::channel::Subscribe<aimrt::protocols::example::ExampleEventMsg>(
         subscriber_,
-        std::bind(&NormalSubscriberModule::EventHandle, this, std::placeholders::_1));
+        std::bind(&NormalSubscriberModule::EventHandle, this, std::placeholders::_1, std::placeholders::_2));
     AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed.");
 
   } catch (const std::exception& e) {
@@ -41,8 +41,9 @@ bool NormalSubscriberModule::Start() { return true; }
 void NormalSubscriberModule::Shutdown() {}
 
 void NormalSubscriberModule::EventHandle(
+    aimrt::channel::ContextRef ctx,
     const std::shared_ptr<const aimrt::protocols::example::ExampleEventMsg>& data) {
-  AIMRT_INFO("Receive new pb event, data: {}", aimrt::Pb2CompactJson(*data));
+  AIMRT_INFO("Receive new pb event, ctx: {}, data: {}", ctx.ToString(), aimrt::Pb2CompactJson(*data));
 }
 
 }  // namespace aimrt::examples::cpp::protobuf_channel::normal_subscriber_module

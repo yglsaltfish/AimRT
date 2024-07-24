@@ -1,17 +1,17 @@
 #pragma once
 
-#include "aimrt_module_cpp_interface/rpc/rpc_context.h"
 #include "opentelemetry_plugin/util.h"
 
 #include "opentelemetry/context/propagation/text_map_propagator.h"
 
 namespace aimrt::plugins::opentelemetry_plugin {
 
-class RpcContextCarrier : public opentelemetry::context::propagation::TextMapCarrier {
+template <typename ContetxRefType>
+class ContextCarrier : public opentelemetry::context::propagation::TextMapCarrier {
  public:
-  explicit RpcContextCarrier(aimrt::rpc::ContextRef ctx_ref)
+  explicit ContextCarrier(ContetxRefType ctx_ref)
       : ctx_ref_(ctx_ref) {}
-  RpcContextCarrier() = default;
+  ContextCarrier() = default;
 
   virtual opentelemetry::nostd::string_view Get(
       opentelemetry::nostd::string_view key) const noexcept override {
@@ -25,6 +25,6 @@ class RpcContextCarrier : public opentelemetry::context::propagation::TextMapCar
     ctx_ref_.SetMetaValue(real_key, ToStdStringView(value));
   }
 
-  aimrt::rpc::ContextRef ctx_ref_;
+  ContetxRefType ctx_ref_;
 };
 }  // namespace aimrt::plugins::opentelemetry_plugin

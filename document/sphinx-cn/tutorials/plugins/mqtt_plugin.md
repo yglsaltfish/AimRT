@@ -244,10 +244,22 @@ aimrt:
 例如，AimRT Topic名称为`test_topic`，消息类型为`pb:aimrt.protocols.example.ExampleEventMsg`，则最终Mqtt的topic名称为：`/channel/test_topic/pb%3Aaimrt.protocols.example.ExampleEventMsg`。
 
 
-在AimRT发布端发布数据到订阅端这个链路上，Mqtt数据包格式整体分两段：
+在AimRT发布端发布数据到订阅端这个链路上，Mqtt数据包格式整体分3段：
 - 序列化类型，一般是`pb`或`json`
+- context区
+  - context数量，1字节，最大255个context
+  - context_1 key, 2字节长度 + 数据区
+  - context_2 key, 2字节长度 + 数据区
+  - ...
 - 数据
 
 ```
-| n(0~255) [1 byte] | content type [n byte] | msg data [len - 1 - n byte] |
+| n(0~255) [1 byte] | content type [n byte]
+| context num [1 byte]
+| context_1 key size [2 byte] | context_1 key data [key_1_size byte]
+| context_1 val size [2 byte] | context_1 val data [val_1_size byte]
+| context_2 key size [2 byte] | context_2 key data [key_2_size byte]
+| context_2 val size [2 byte] | context_2 val data [val_2_size byte]
+| ...
+| msg data [len - 1 - n byte] |
 ```

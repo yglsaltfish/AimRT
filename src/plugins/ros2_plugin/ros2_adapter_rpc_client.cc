@@ -221,6 +221,14 @@ void Ros2AdapterWrapperClient::Invoke(
 
   ros2_plugin_proto::srv::RosRpcWrapper::Request wrapper_req;
   wrapper_req.serialization_type = serialization_type;
+
+  const auto& keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
+  wrapper_req.context.reserve(2 * keys.size());
+  for (const auto& key : keys) {
+    wrapper_req.context.emplace_back(key);
+    wrapper_req.context.emplace_back(client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(key));
+  }
+
   wrapper_req.data.resize(req_size);
 
   auto cur_pos = wrapper_req.data.data();

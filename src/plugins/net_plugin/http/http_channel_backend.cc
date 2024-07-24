@@ -100,6 +100,8 @@ bool HttpChannelBackend::Subscribe(
   namespace http = boost::beast::http;
   namespace util = aimrt::common::util;
 
+  std::string_view topic_name = subscribe_wrapper.topic_name;
+
   std::string pattern = std::string("/channel/") +
                         util::UrlEncode(subscribe_wrapper.topic_name) + "/" +
                         util::UrlEncode(subscribe_wrapper.msg_type);
@@ -118,7 +120,7 @@ bool HttpChannelBackend::Subscribe(
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
   runtime::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
-      [this, subscribe_wrapper_vec_ptr](
+      [this, topic_name, subscribe_wrapper_vec_ptr](
           const http::request<http::dynamic_body>& req,
           http::response<http::dynamic_body>& rsp,
           std::chrono::nanoseconds timeout)
@@ -150,8 +152,17 @@ bool HttpChannelBackend::Subscribe(
 
     // context
     auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
     ctx_ptr->SetSerializationType(serialization_type);
+
+    // 从http header中读取其他字段到context中
+    for (auto const& field : req) {
+      ctx_ptr->SetMetaValue(
+          aimrt::common::util::HttpHeaderDecode(field.name_string()),
+          aimrt::common::util::HttpHeaderDecode(field.value()));
+    }
 
     // 获取消息buf
     const auto& req_beast_buf = req.body().data();
@@ -191,8 +202,7 @@ bool HttpChannelBackend::Subscribe(
     for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
       auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
       std::shared_ptr<void> msg_ptr = finditr->second;
-      aimrt::channel::SubscriberReleaseCallback release_callback([msg_ptr, ctx_ptr]() {});
-      subscribe_wrapper_ptr->callback(ctx_ptr->NativeHandle(), msg_ptr.get(), release_callback.NativeHandle());
+      subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
     }
 
     co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::OK;
@@ -266,6 +276,14 @@ void HttpChannelBackend::Publish(
   } else {
     AIMRT_WARN("Unsupport serialization type '{}'", serialization_type);
     return;
+  }
+
+  // 向http header中设置其他context meta字段
+  std::vector<std::string_view> meta_keys = publish_wrapper.ctx_ref.GetMetaKeys();
+  for (const auto& item : meta_keys) {
+    req_ptr->set(
+        aimrt::common::util::HttpHeaderEncode(item),
+        aimrt::common::util::HttpHeaderEncode(publish_wrapper.ctx_ref.GetMetaValue(item)));
   }
 
   // msg序列化

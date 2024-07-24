@@ -13,6 +13,8 @@ namespace aimrt::channel {
 using SubscriberReleaseCallback = aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>;
 using SubscriberCallback = aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>;
 
+using HookFunc = std::function<void(std::string_view, ContextRef, const void*)>;
+
 class PublisherRef {
  public:
   PublisherRef() = default;
@@ -56,6 +58,15 @@ class PublisherRef {
   std::string_view GetTopic() const {
     AIMRT_ASSERT(base_ptr_, "Reference is null.");
     return aimrt::util::ToStdStringView(base_ptr_->get_topic(base_ptr_->impl));
+  }
+
+  void MergeSubscribeContextToPublishContext(
+      const ContextRef subscribe_ctx_ref, ContextRef publish_ctx_ref) const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
+    base_ptr_->merge_subscribe_context_to_publish_context(
+        base_ptr_->impl,
+        subscribe_ctx_ref.NativeHandle(),
+        publish_ctx_ref.NativeHandle());
   }
 
  private:
@@ -132,9 +143,6 @@ class ChannelHandleRef {
 
 class PublisherProxyBase {
  public:
-  using HookFunc = std::function<void(std::string_view, ContextRef, const void*)>;
-
- public:
   explicit PublisherProxyBase(PublisherRef publisher, std::string_view msg_type_name)
       : publisher_(publisher), msg_type_name_(msg_type_name) {}
   virtual ~PublisherProxyBase() = default;
@@ -148,10 +156,15 @@ class PublisherProxyBase {
     publish_hook_vec.emplace_back(std::forward<Args>(args)...);
   }
 
-  std::shared_ptr<Context> NewContextSharedPtr() const {
-    return default_ctx_ptr_
-               ? std::make_shared<Context>(*default_ctx_ptr_)
-               : std::make_shared<Context>();
+  std::shared_ptr<Context> NewContextSharedPtr(ContextRef ctx_ref = ContextRef()) const {
+    auto result_ctx = default_ctx_ptr_
+                          ? std::make_shared<Context>(*default_ctx_ptr_)
+                          : std::make_shared<Context>();
+    if (ctx_ref) {
+      publisher_.MergeSubscribeContextToPublishContext(ctx_ref, result_ctx);
+    }
+
+    return result_ctx;
   }
 
   void SetDefaultContextSharedPtr(const std::shared_ptr<Context>& ctx_ptr) {
@@ -185,9 +198,6 @@ template <typename>
 class PublisherProxy;
 
 class SubscriberProxyBase {
- public:
-  using HookFunc = std::function<void(std::string_view, ContextRef, const void*)>;
-
  public:
   explicit SubscriberProxyBase(SubscriberRef subscriber, std::string_view msg_type_name)
       : subscriber_(subscriber), msg_type_name_(msg_type_name) {}

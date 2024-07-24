@@ -35,7 +35,7 @@ class CoFilterManager {
     };
   }
 
-  aimrt::co::Task<Status> InvokeRpc(const CoRpcHandle& h, ContextRef ctx_ref, const void* req, void* rsp) {
+  aimrt::co::Task<Status> InvokeRpc(const CoRpcHandle& h, ContextRef ctx_ref, const void* req, void* rsp) const {
     return final_filter_(ctx_ref, req, rsp, h);
   }
 
