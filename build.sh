@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# cmake
+# exit on error and print each command
+set -ex
+
 cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DAIMRT_INSTALL=ON \
@@ -27,23 +29,8 @@ cmake -B build \
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON \
     $@
 
-if [ $? -ne 0 ]; then
-    echo "cmake failed"
-    exit 1
-fi
-
-# make
-cd build
-make -j$(nproc)
-
-if [ $? -ne 0 ]; then
-    echo "make failed"
-    exit 1
-fi
-
-# install
 if [ -d install ]; then
     rm -rf install
 fi
 
-make install
+cmake --build build --config Release --target install --parallel $(nproc)

@@ -1,8 +1,10 @@
+@echo off
+setlocal
 
 cmake -B build ^
     -DCMAKE_BUILD_TYPE=Release ^
     -DAIMRT_INSTALL=ON ^
-    -DCMAKE_INSTALL_PREFIX=./build/install ^
+    -DCMAKE_INSTALL_PREFIX="./build/install" ^
     -DAIMRT_BUILD_TESTS=OFF ^
     -DAIMRT_BUILD_EXAMPLES=ON ^
     -DAIMRT_BUILD_DOCUMENT=ON ^
@@ -22,4 +24,21 @@ cmake -B build ^
     -DAIMRT_BUILD_PARAMETER_PLUGIN=ON ^
     -DAIMRT_BUILD_LOG_CONTROL_PLUGIN=ON ^
     -DAIMRT_BUILD_OPENTELEMETRY_PLUGIN=OFF ^
-    -DAIMRT_BUILD_PYTHON_PACKAGE=ON
+    -DAIMRT_BUILD_PYTHON_PACKAGE=ON ^
+    %*
+
+if %errorlevel% neq 0 (
+    echo cmake failed
+    exit /b 1
+)
+
+if exist install (
+    rmdir /s /q install
+)
+
+REM 获取处理器数量
+for /f %%a in ('powershell -command "(Get-WmiObject -Class Win32_Processor | Measure-Object -Property NumberOfLogicalProcessors -Sum).Sum"') do set NUM_CPUS=%%a
+
+cmake --build build --config Release --target install --parallel %NUM_CPUS%
+
+endlocal
