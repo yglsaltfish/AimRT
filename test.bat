@@ -5,7 +5,7 @@ cmake -B build ^
     -DCMAKE_BUILD_TYPE=Release ^
     -DAIMRT_INSTALL=ON ^
     -DCMAKE_INSTALL_PREFIX="./build/install" ^
-    -DAIMRT_BUILD_TESTS=OFF ^
+    -DAIMRT_BUILD_TESTS=ON ^
     -DAIMRT_BUILD_EXAMPLES=ON ^
     -DAIMRT_BUILD_DOCUMENT=ON ^
     -DAIMRT_BUILD_RUNTIME=ON ^
@@ -27,15 +27,7 @@ cmake -B build ^
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON ^
     %*
 
-if %errorlevel% neq 0 (
-    echo cmake failed
-    exit /b 1
-)
+cmake --build build --config Release --parallel %NUMBER_OF_PROCESSORS%
 
-if exist install (
-    rmdir /s /q install
-)
-
-cmake --build build --config Release --target install --parallel %NUMBER_OF_PROCESSORS%
-
-endlocal
+cd build
+ctest -C Release
