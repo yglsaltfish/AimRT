@@ -100,8 +100,9 @@ TEST_F(ConfiguratorManagerTest, get_configuratorProxy_with_configured_module_nam
 
   auto h = configurator_manager_.GetConfiguratorProxy(detail_info).NativeHandle();
   ASSERT_NE(h, nullptr);
-  EXPECT_EQ(aimrt::util::ToStdStringView(h->config_file_path(h->impl)),
-            "./cfg/tmp/temp_cfg_file_for_ConfiguratorManagerTest.yaml");
+  EXPECT_EQ(
+      std::filesystem::path(aimrt::util::ToStdStringView(h->config_file_path(h->impl))),
+      std::filesystem::path("./cfg/tmp/temp_cfg_file_for_ConfiguratorManagerTest.yaml"));
 }
 
 }  // namespace aimrt::runtime::core::configurator
