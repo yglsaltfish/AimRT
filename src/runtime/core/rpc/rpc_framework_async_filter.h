@@ -20,7 +20,7 @@ struct FrameworkFilterData {
 using FrameworkAsyncRpcHandle =
     std::function<void(const FrameworkFilterData&, aimrt::rpc::ContextRef, const void*, void*, std::function<void(aimrt::rpc::Status)>&&)>;
 using FrameworkAsyncRpcFilter =
-    std::function<void(const FrameworkFilterData&, aimrt::rpc::ContextRef, const void*, void*, std::function<void(aimrt::rpc::Status)>&&, const FrameworkAsyncRpcHandle&)>;
+    std::function<void(const FrameworkFilterData&, aimrt::rpc::ContextRef, const void*, void*, std::function<void(aimrt::rpc::Status)>&&, FrameworkAsyncRpcHandle&&)>;
 
 class FrameworkAsyncFilterManager {
  public:
@@ -31,7 +31,7 @@ class FrameworkAsyncFilterManager {
                const void* req,
                void* rsp,
                std::function<void(aimrt::rpc::Status)>&& callback,
-               const FrameworkAsyncRpcHandle& h) {
+               FrameworkAsyncRpcHandle&& h) {
               h(filter_data, ctx_ref, req, rsp, std::move(callback));
             }) {}
   ~FrameworkAsyncFilterManager() = default;
@@ -48,32 +48,32 @@ class FrameworkAsyncFilterManager {
             const void* req,
             void* rsp,
             std::function<void(aimrt::rpc::Status)>&& callback,
-            const FrameworkAsyncRpcHandle& h) {
+            FrameworkAsyncRpcHandle&& h) {
           cur_filter(
               filter_data,
               ctx_ref,
               req,
               rsp,
               std::move(callback),
-              [final_filter{std::move(final_filter)}, &h](
+              [final_filter{std::move(final_filter)}, h{std::move(h)}](
                   const FrameworkFilterData& filter_data,
                   aimrt::rpc::ContextRef ctx_ref,
                   const void* req,
                   void* rsp,
-                  std::function<void(aimrt::rpc::Status)>&& callback) {
-                final_filter(filter_data, ctx_ref, req, rsp, std::move(callback), h);
+                  std::function<void(aimrt::rpc::Status)>&& callback) mutable {
+                final_filter(filter_data, ctx_ref, req, rsp, std::move(callback), std::move(h));
               });
         };
   }
 
   void InvokeRpc(
-      const FrameworkAsyncRpcHandle& h,
+      FrameworkAsyncRpcHandle&& h,
       const FrameworkFilterData& filter_data,
       aimrt::rpc::ContextRef ctx_ref,
       const void* req,
       void* rsp,
       std::function<void(aimrt::rpc::Status)>&& callback) const {
-    return final_filter_(filter_data, ctx_ref, req, rsp, std::move(callback), h);
+    return final_filter_(filter_data, ctx_ref, req, rsp, std::move(callback), std::move(h));
   }
 
   void Clear() {

@@ -50,7 +50,7 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
 
  private:
   void SetPluginLogger();
-  void RegisterChannelHook();
+  void RegisterChannelFilter();
   void RegisterRpcFilter();
 
  private:

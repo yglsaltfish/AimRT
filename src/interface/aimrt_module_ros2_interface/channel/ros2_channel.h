@@ -162,9 +162,6 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
             aimrt_function_base_t* release_callback_base) {
           ContextRef ctx_ref(ctx_ptr);
 
-          for (const auto& item : subscribe_hook_vec)
-            item(msg_type_name_, ctx_ref, msg_ptr);
-
           SubscriberReleaseCallback release_callback(release_callback_base);
           callback(ctx_ref,
                    std::shared_ptr<const MsgType>(
@@ -183,9 +180,6 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
             aimrt_function_base_t* release_callback_base) {
           ContextRef ctx_ref(ctx_ptr);
 
-          for (const auto& item : subscribe_hook_vec)
-            item(msg_type_name_, ctx_ref, msg_ptr);
-
           SubscriberReleaseCallback release_callback(release_callback_base);
           callback(std::shared_ptr<const MsgType>(
               static_cast<const MsgType*>(msg_ptr),
@@ -202,9 +196,6 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) {
           ContextRef ctx_ref(ctx_ptr);
-
-          for (const auto& item : subscribe_hook_vec)
-            item(msg_type_name_, ctx_ref, msg_ptr);
 
           aimrt::co::StartDetached(
               aimrt::co::On(
@@ -223,9 +214,6 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) {
           ContextRef ctx_ref(ctx_ptr);
-
-          for (const auto& item : subscribe_hook_vec)
-            item(msg_type_name_, ctx_ref, msg_ptr);
 
           aimrt::co::StartDetached(
               aimrt::co::On(

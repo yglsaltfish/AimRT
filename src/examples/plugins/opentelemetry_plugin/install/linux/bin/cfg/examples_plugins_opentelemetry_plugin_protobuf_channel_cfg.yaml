@@ -31,8 +31,8 @@ aimrt:
     sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
-    pub_hooks: [otp_trace]
-    sub_hooks: [otp_trace]
+    pub_filters: [otp_trace]
+    sub_filters: [otp_trace]
   module:
     pkgs:
       - path: ./libprotobuf_channel_pub_pkg.so

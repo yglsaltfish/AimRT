@@ -134,7 +134,7 @@ Client端向Server端发起调用时，遵循的格式如下：
   - `content-type:application/protobuf`
 - URL的编码方式：`http://{IP:PORT}/rpc/{FUNC_NAME}`：
   - `{IP:PORT}`：对端的网络地址；
-  - `{MSG_TYPE}`：URL编码后的RPC func名称，以注册RPC时的TypeSupport类中定义的为准；
+  - `{FUNC_NAME}`：URL编码后的RPC func名称，以注册RPC时的TypeSupport类中定义的为准；
 
 
 

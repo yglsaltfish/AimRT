@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 
 #include "aimrt_module_cpp_interface/co/task.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"

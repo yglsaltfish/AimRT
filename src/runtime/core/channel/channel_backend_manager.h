@@ -6,20 +6,11 @@
 
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/channel/channel_backend_base.h"
+#include "core/channel/channel_framework_async_filter.h"
 #include "core/channel/channel_registry.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::channel {
-
-struct FrameworkHookData {
-  std::string_view topic_name;
-  std::string_view msg_type;
-  std::string_view pkg_path;
-  std::string_view module_name;
-  aimrt::util::TypeSupportRef type_support_ref;
-};
-
-using FrameworkHookFunc = std::function<void(const FrameworkHookData&, aimrt::channel::ContextRef, const void*)>;
 
 class ChannelBackendManager {
  public:
@@ -42,8 +33,8 @@ class ChannelBackendManager {
   void Start();
   void Shutdown();
 
-  void RegisterPublishHook(FrameworkHookFunc&& hook);
-  void RegisterSubscribeHook(FrameworkHookFunc&& hook);
+  void RegisterPublishFilter(FrameworkAsyncChannelFilter&& filter);
+  void RegisterSubscribeFilter(FrameworkAsyncChannelFilter&& filter);
 
   void SetPubTopicsBackendsRules(
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
@@ -73,8 +64,8 @@ class ChannelBackendManager {
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  std::vector<FrameworkHookFunc> publish_hook_vec_;
-  std::vector<FrameworkHookFunc> subscribe_hook_vec_;
+  FrameworkAsyncFilterManager publish_filter_manager_;
+  FrameworkAsyncFilterManager subscribe_filter_manager_;
 
   ChannelRegistry* channel_registry_ptr_;
 
