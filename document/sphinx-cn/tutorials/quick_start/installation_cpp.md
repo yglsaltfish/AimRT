@@ -15,22 +15,14 @@ AimRT比较轻量，推荐用户直接基于源码进行引用。如果要使用
 AimRT兼容linux、windows等主流操作系统，编译器需要能够支持c++20，CMake版本需要3.24或以上。我们已经在以下操作系统和编译器上测试过：
 - Ubuntu22.04
   - gcc-11.4
-  - gcc-13.3
-- Windows11
-  - MSVC-19.40
-
-<!-- - Ubuntu22.04
-  - gcc-11.4
   - gcc-12.4
   - gcc-13.3
-  - gcc-14.1
   - clang-15.0.7
   - clang-16.0.6
   - clang-17.0.6
   - clang-18.1.8
 - Windows11
-  - MSVC-19.40 -->
-
+  - MSVC-19.40
 
 请注意：
 - 在编译构建时，AimRT可能通过源码方式引用一些第三方依赖，如果出现网络问题，可以参考[CMake](../concepts/cmake.md)文档进行处理。
