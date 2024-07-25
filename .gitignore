@@ -19,3 +19,8 @@ src/tools/aimrt_cli/build
 
 dist/
 *.egg-info/
+
+__pycache__/
+*_pb2.py
+log/
+tmp/
