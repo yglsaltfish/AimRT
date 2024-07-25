@@ -34,8 +34,8 @@ class ChannelManager {
     };
     std::vector<SubTopicOptions> sub_topics_options;
 
-    std::vector<std::string> pub_hooks;
-    std::vector<std::string> sub_hooks;
+    std::vector<std::string> pub_filters;
+    std::vector<std::string> sub_filters;
   };
 
   enum class State : uint32_t {
@@ -70,21 +70,21 @@ class ChannelManager {
   }
 
   template <typename... Args>
-    requires std::constructible_from<FrameworkHookFunc, Args...>
-  void RegisterPublishHook(std::string_view name, Args&&... args) {
+    requires std::constructible_from<FrameworkAsyncChannelFilter, Args...>
+  void RegisterPublishFilter(std::string_view name, Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Method can only be called when state is 'PreInit'.");
-    publish_hook_map_.emplace(name, std::forward<Args>(args)...);
+    publish_filter_map_.emplace(name, std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-    requires std::constructible_from<FrameworkHookFunc, Args...>
-  void RegisterSubscribeHook(std::string_view name, Args&&... args) {
+    requires std::constructible_from<FrameworkAsyncChannelFilter, Args...>
+  void RegisterSubscribeFilter(std::string_view name, Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
         state_.load() == State::PreInit,
         "Method can only be called when state is 'PreInit'.");
-    subscribe_hook_map_.emplace(name, std::forward<Args>(args)...);
+    subscribe_filter_map_.emplace(name, std::forward<Args>(args)...);
   }
 
   void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
@@ -112,8 +112,8 @@ class ChannelManager {
 
   std::unordered_set<std::string> passed_context_meta_keys_;
 
-  std::unordered_map<std::string, FrameworkHookFunc> publish_hook_map_;
-  std::unordered_map<std::string, FrameworkHookFunc> subscribe_hook_map_;
+  std::unordered_map<std::string, FrameworkAsyncChannelFilter> publish_filter_map_;
+  std::unordered_map<std::string, FrameworkAsyncChannelFilter> subscribe_filter_map_;
 
   std::unique_ptr<ChannelRegistry> channel_registry_ptr_;
 

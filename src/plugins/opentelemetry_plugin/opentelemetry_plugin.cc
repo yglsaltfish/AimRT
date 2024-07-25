@@ -91,7 +91,7 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
                                 [this] { SetPluginLogger(); });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitChannel,
-                                [this] { RegisterChannelHook(); });
+                                [this] { RegisterChannelFilter(); });
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
                                 [this] { RegisterRpcFilter(); });
@@ -122,7 +122,7 @@ void OpenTelemetryPlugin::SetPluginLogger() {
       core_ptr_->GetLoggerManager().GetLoggerProxy().NativeHandle()));
 }
 
-void OpenTelemetryPlugin::RegisterChannelHook() {
+void OpenTelemetryPlugin::RegisterChannelFilter() {
   auto& channel_manager = core_ptr_->GetChannelManager();
 
   channel_manager.SetPassedContextMetaKeys(
@@ -130,11 +130,12 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
        std::string(kCtxKeyTraceParent),
        std::string(kCtxKeyTraceState)});
 
-  channel_manager.RegisterPublishHook(
+  channel_manager.RegisterPublishFilter(
       "otp_trace",
-      [this](const aimrt::runtime::core::channel::FrameworkHookData& hook_data,
+      [this](const aimrt::runtime::core::channel::FrameworkFilterData& filter_data,
              aimrt::channel::ContextRef ctx_ref,
-             const void* msg) {
+             const void* msg,
+             aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
         std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
         bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
@@ -159,13 +160,15 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
         }
 
         // 不需要启动一个新trace
-        if (!start_new_trace)
+        if (!start_new_trace) {
+          h(filter_data, ctx_ref, msg);
           return;
+        }
 
         // 需要启动一个新trace
         std::string span_name =
             std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" +
-            std::string(hook_data.msg_type);
+            std::string(filter_data.msg_type);
         auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
 
         // 将当前span的context打包
@@ -178,18 +181,21 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
+        h(filter_data, ctx_ref, msg);
+
         // 序列化包成json
-        auto s = hook_data.type_support_ref.SimpleSerialize("json", msg);
+        auto s = filter_data.type_support_ref.SimpleSerialize("json", msg);
         if (!s.empty()) span->SetAttribute("msg_data", s);
 
         span->End();
       });
 
-  channel_manager.RegisterSubscribeHook(
+  channel_manager.RegisterSubscribeFilter(
       "otp_trace",
-      [this](const aimrt::runtime::core::channel::FrameworkHookData& hook_data,
+      [this](const aimrt::runtime::core::channel::FrameworkFilterData& filter_data,
              aimrt::channel::ContextRef ctx_ref,
-             const void* msg) {
+             const void* msg,
+             aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
         std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
         bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
@@ -214,13 +220,15 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
         }
 
         // 不需要启动一个新trace
-        if (!start_new_trace)
+        if (!start_new_trace) {
+          h(filter_data, ctx_ref, msg);
           return;
+        }
 
         // 需要启动一个新trace
         std::string span_name =
             std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" +
-            std::string(hook_data.msg_type);
+            std::string(filter_data.msg_type);
         auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
 
         // 将当前span的context打包
@@ -233,8 +241,10 @@ void OpenTelemetryPlugin::RegisterChannelHook() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
+        h(filter_data, ctx_ref, msg);
+
         // 序列化包成json
-        auto s = hook_data.type_support_ref.SimpleSerialize("json", msg);
+        auto s = filter_data.type_support_ref.SimpleSerialize("json", msg);
         if (!s.empty()) span->SetAttribute("msg_data", s);
 
         span->End();
@@ -300,7 +310,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
         }
 
         h(filter_data, ctx_ref, req, rsp,
-          [&filter_data, req, rsp, span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) mutable {
+          [&filter_data, req, rsp, span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) {
             if (status.OK()) {
               span->SetStatus(trace_api::StatusCode::kOk);
             } else {
@@ -371,7 +381,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
         }
 
         h(filter_data, ctx_ref, req, rsp,
-          [&filter_data, req, rsp, span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) mutable {
+          [&filter_data, req, rsp, span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) {
             if (status.OK()) {
               span->SetStatus(trace_api::StatusCode::kOk);
             } else {

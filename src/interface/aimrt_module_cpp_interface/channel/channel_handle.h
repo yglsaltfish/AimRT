@@ -13,8 +13,6 @@ namespace aimrt::channel {
 using SubscriberReleaseCallback = aimrt::util::Function<aimrt_function_subscriber_release_callback_ops_t>;
 using SubscriberCallback = aimrt::util::Function<aimrt_function_subscriber_callback_ops_t>;
 
-using HookFunc = std::function<void(std::string_view, ContextRef, const void*)>;
-
 class PublisherRef {
  public:
   PublisherRef() = default;
@@ -150,12 +148,6 @@ class PublisherProxyBase {
   PublisherProxyBase(const PublisherProxyBase&) = delete;
   PublisherProxyBase& operator=(const PublisherProxyBase&) = delete;
 
-  template <typename... Args>
-    requires std::constructible_from<HookFunc, Args...>
-  void RegisterHook(Args&&... args) {
-    publish_hook_vec.emplace_back(std::forward<Args>(args)...);
-  }
-
   std::shared_ptr<Context> NewContextSharedPtr(ContextRef ctx_ref = ContextRef()) const {
     auto result_ctx = default_ctx_ptr_
                           ? std::make_shared<Context>(*default_ctx_ptr_)
@@ -181,9 +173,6 @@ class PublisherProxyBase {
 
  protected:
   void PublishImpl(ContextRef ctx_ref, const void* msg_ptr) {
-    for (const auto& item : publish_hook_vec)
-      item(msg_type_name_, ctx_ref, msg_ptr);
-
     publisher_.Publish(msg_type_name_, ctx_ref, msg_ptr);
   }
 
@@ -191,7 +180,6 @@ class PublisherProxyBase {
   PublisherRef publisher_;
   const std::string msg_type_name_;
   std::shared_ptr<Context> default_ctx_ptr_;
-  std::vector<HookFunc> publish_hook_vec;
 };
 
 template <typename>
@@ -206,20 +194,14 @@ class SubscriberProxyBase {
   SubscriberProxyBase(const SubscriberProxyBase&) = delete;
   SubscriberProxyBase& operator=(const SubscriberProxyBase&) = delete;
 
-  template <typename... Args>
-    requires std::constructible_from<HookFunc, Args...>
-  void RegisterHook(Args&&... args) {
-    subscribe_hook_vec.emplace_back(std::forward<Args>(args)...);
-  }
-
   std::string_view GetTopic() const {
     return subscriber_.GetTopic();
   }
 
  protected:
+ protected:
   SubscriberRef subscriber_;
   const std::string msg_type_name_;
-  std::vector<HookFunc> subscribe_hook_vec;
 };
 
 template <typename>

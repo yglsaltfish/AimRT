@@ -33,8 +33,8 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
       node["sub_topics_options"].push_back(sub_topic_options_node);
     }
 
-    node["pub_hooks"] = rhs.pub_hooks;
-    node["sub_hooks"] = rhs.sub_hooks;
+    node["pub_filters"] = rhs.pub_filters;
+    node["sub_filters"] = rhs.sub_filters;
 
     return node;
   }
@@ -74,11 +74,11 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
       }
     }
 
-    if (node["pub_hooks"])
-      rhs.pub_hooks = node["pub_hooks"].as<std::vector<std::string>>();
+    if (node["pub_filters"])
+      rhs.pub_filters = node["pub_filters"].as<std::vector<std::string>>();
 
-    if (node["sub_hooks"])
-      rhs.sub_hooks = node["sub_hooks"].as<std::vector<std::string>>();
+    if (node["sub_filters"])
+      rhs.sub_filters = node["sub_filters"].as<std::vector<std::string>>();
 
     return true;
   }
@@ -102,19 +102,19 @@ void ChannelManager::Initialize(YAML::Node options_node) {
 
   channel_backend_manager_.SetLogger(logger_ptr_);
 
-  // 根据配置初始化hook
-  for (const auto& item : options_.pub_hooks) {
-    auto finditr = publish_hook_map_.find(item);
-    AIMRT_CHECK_ERROR_THROW(finditr != publish_hook_map_.end(),
-                            "Invalid publish hook '{}'", item);
-    channel_backend_manager_.RegisterPublishHook(std::move(finditr->second));
+  // 根据配置初始化filter
+  for (const auto& item : options_.pub_filters) {
+    auto finditr = publish_filter_map_.find(item);
+    AIMRT_CHECK_ERROR_THROW(finditr != publish_filter_map_.end(),
+                            "Invalid publish filter '{}'", item);
+    channel_backend_manager_.RegisterPublishFilter(std::move(finditr->second));
   }
 
-  for (const auto& item : options_.sub_hooks) {
-    auto finditr = subscribe_hook_map_.find(item);
-    AIMRT_CHECK_ERROR_THROW(finditr != subscribe_hook_map_.end(),
-                            "Invalid subscribe hook '{}'", item);
-    channel_backend_manager_.RegisterSubscribeHook(std::move(finditr->second));
+  for (const auto& item : options_.sub_filters) {
+    auto finditr = subscribe_filter_map_.find(item);
+    AIMRT_CHECK_ERROR_THROW(finditr != subscribe_filter_map_.end(),
+                            "Invalid subscribe filter '{}'", item);
+    channel_backend_manager_.RegisterSubscribeFilter(std::move(finditr->second));
   }
 
   // 根据配置初始化指定的backend
@@ -196,8 +196,8 @@ void ChannelManager::Shutdown() {
 
   channel_registry_ptr_.reset();
 
-  subscribe_hook_map_.clear();
-  publish_hook_map_.clear();
+  subscribe_filter_map_.clear();
+  publish_filter_map_.clear();
 
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
@@ -332,9 +332,25 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
     channel_backend_name_list = "[ " + aimrt::common::util::JoinVec(channel_backend_name_vec_, " , ") + " ]";
   }
 
+  std::string channel_pub_filter_name_list;
+  if (options_.pub_filters.empty()) {
+    channel_pub_filter_name_list = "<empty>";
+  } else {
+    channel_pub_filter_name_list = "[ " + aimrt::common::util::JoinVec(options_.pub_filters, " , ") + " ]";
+  }
+
+  std::string channel_sub_filter_name_list;
+  if (options_.sub_filters.empty()) {
+    channel_sub_filter_name_list = "<empty>";
+  } else {
+    channel_sub_filter_name_list = "[ " + aimrt::common::util::JoinVec(options_.sub_filters, " , ") + " ]";
+  }
+
   return {{"Channel Backend List", channel_backend_name_list},
           {"Channel Pub Topic Info", aimrt::common::util::DrawTable(pub_topic_info_table)},
-          {"Channel Sub Topic Info", aimrt::common::util::DrawTable(sub_topic_info_table)}};
+          {"Channel Sub Topic Info", aimrt::common::util::DrawTable(sub_topic_info_table)},
+          {"Channel Pub Filter List", channel_pub_filter_name_list},
+          {"Channel Sub Filter List", channel_sub_filter_name_list}};
 }
 
 }  // namespace aimrt::runtime::core::channel

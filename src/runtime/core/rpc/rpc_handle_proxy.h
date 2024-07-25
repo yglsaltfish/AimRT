@@ -1,7 +1,6 @@
 #pragma once
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_async_filter.h"
 #include "core/rpc/rpc_backend_manager.h"
 
 namespace aimrt::runtime::core::rpc {

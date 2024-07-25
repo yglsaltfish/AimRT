@@ -5,7 +5,6 @@
 #include <unordered_map>
 
 #include "aimrt_module_c_interface/rpc/rpc_handle_base.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_async_filter.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_co_filter.h"
 #include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
@@ -67,23 +66,6 @@ class CoServiceBase : public ServiceBase {
 
  protected:
   CoFilterManager filter_mgr_;
-};
-
-class AsyncFilterServiceBase : public ServiceBase {
- public:
-  AsyncFilterServiceBase() = default;
-  virtual ~AsyncFilterServiceBase() = default;
-
-  template <typename T>
-    requires std::constructible_from<AsyncRpcFilter, T>
-  void RegisterFilter(T&& filter) {
-    filter_mgr_.RegisterFilter((T &&) filter);
-  }
-
-  auto& GetFilterManager() { return filter_mgr_; }
-
- protected:
-  AsyncFilterManager filter_mgr_;
 };
 
 class RpcHandleRef {
@@ -230,24 +212,6 @@ class CoProxyBase : public ProxyBase {
 
  protected:
   CoFilterManager filter_mgr_;
-};
-
-class AsyncFilterProxyBase : public ProxyBase {
- public:
-  explicit AsyncFilterProxyBase(RpcHandleRef rpc_handle_ref)
-      : ProxyBase(rpc_handle_ref) {}
-  virtual ~AsyncFilterProxyBase() = default;
-
-  template <typename T>
-    requires std::constructible_from<AsyncRpcFilter, T>
-  void RegisterFilter(T&& filter) {
-    filter_mgr_.RegisterFilter((T &&) filter);
-  }
-
-  auto& GetFilterManager() { return filter_mgr_; }
-
- protected:
-  AsyncFilterManager filter_mgr_;
 };
 
 template <class ProxyType>

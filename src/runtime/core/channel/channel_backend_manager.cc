@@ -37,22 +37,22 @@ void ChannelBackendManager::Shutdown() {
 
   channel_backend_index_vec_.clear();
 
-  subscribe_hook_vec_.clear();
-  publish_hook_vec_.clear();
+  subscribe_filter_manager_.Clear();
+  publish_filter_manager_.Clear();
 }
 
-void ChannelBackendManager::RegisterPublishHook(FrameworkHookFunc&& hook) {
+void ChannelBackendManager::RegisterPublishFilter(FrameworkAsyncChannelFilter&& filter) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
-  publish_hook_vec_.emplace_back(std::move(hook));
+  publish_filter_manager_.RegisterFilter(std::move(filter));
 }
 
-void ChannelBackendManager::RegisterSubscribeHook(FrameworkHookFunc&& hook) {
+void ChannelBackendManager::RegisterSubscribeFilter(FrameworkAsyncChannelFilter&& filter) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
-  subscribe_hook_vec_.emplace_back(std::move(hook));
+  subscribe_filter_manager_.RegisterFilter(std::move(filter));
 }
 
 void ChannelBackendManager::SetPubTopicsBackendsRules(
@@ -118,7 +118,7 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
     return false;
   }
 
-  FrameworkHookData hook_data{
+  FrameworkFilterData filter_data{
       .topic_name = subscribe_wrapper.topic_name,
       .msg_type = subscribe_wrapper.msg_type,
       .pkg_path = subscribe_wrapper.pkg_path,
@@ -127,15 +127,28 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& subscribe_wrapper) {
 
   subscribe_wrapper.callback =
       [this,
-       hook_data{std::move(hook_data)},
+       filter_data{std::move(filter_data)},
        callback{std::move(subscribe_wrapper.callback)}](
           aimrt::channel::ContextRef ctx_ref,
           const void* msg_ptr,
-          std::function<void()>&& release_callback) mutable {
-        for (const auto& item : subscribe_hook_vec_)
-          item(hook_data, ctx_ref, msg_ptr);
+          std::function<void()>&& release_callback) {
+        auto release_callback_ptr = std::shared_ptr<std::function<void()>>(
+            new std::function<void()>(std::move(release_callback)),
+            [](std::function<void()>* f) {
+              (*f)();
+              delete f;
+            });
 
-        callback(ctx_ref, msg_ptr, std::move(release_callback));
+        subscribe_filter_manager_.InvokeChannel(
+            [&callback, release_callback_ptr](
+                const FrameworkFilterData& filter_data,
+                aimrt::channel::ContextRef ctx_ref,
+                const void* msg) {
+              callback(ctx_ref, msg, [release_callback_ptr]() {});
+            },
+            filter_data,
+            ctx_ref,
+            msg_ptr);
       };
 
   auto subscribe_wrapper_ptr =
@@ -188,32 +201,38 @@ void ChannelBackendManager::Publish(const PublishWrapper& publish_wrapper) {
 
   publish_wrapper.ctx_ref.SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, publish_wrapper.topic_name);
 
-  FrameworkHookData hook_data{
+  FrameworkFilterData filter_data{
       .topic_name = publish_wrapper.topic_name,
       .msg_type = publish_wrapper.msg_type,
       .pkg_path = publish_wrapper.pkg_path,
       .module_name = publish_wrapper.module_name,
       .type_support_ref = aimrt::util::TypeSupportRef(publish_type_wrapper_ptr->msg_type_support)};
 
-  for (const auto& item : publish_hook_vec_)
-    item(hook_data, publish_wrapper.ctx_ref, publish_wrapper.msg_ptr);
+  publish_filter_manager_.InvokeChannel(
+      [this, &publish_wrapper, publish_type_wrapper_ptr](
+          const FrameworkFilterData& filter_data,
+          aimrt::channel::ContextRef ctx_ref,
+          const void* msg) {
+        std::string_view topic_name = publish_wrapper.topic_name;
 
-  std::string_view topic_name = publish_wrapper.topic_name;
+        publish_wrapper.msg_type_support = publish_type_wrapper_ptr->msg_type_support;
 
-  publish_wrapper.msg_type_support = publish_type_wrapper_ptr->msg_type_support;
+        auto find_itr = pub_topics_backend_index_map_.find(topic_name);
 
-  auto find_itr = pub_topics_backend_index_map_.find(topic_name);
+        if (find_itr == pub_topics_backend_index_map_.end()) [[unlikely]] {
+          AIMRT_WARN("Topic '{}' has no backend.", topic_name);
+          return;
+        }
 
-  if (find_itr == pub_topics_backend_index_map_.end()) [[unlikely]] {
-    AIMRT_WARN("Topic '{}' has no backend.", topic_name);
-    return;
-  }
-
-  for (auto& itr : find_itr->second) {
-    AIMRT_TRACE("Publish msg '{}' to channel backend '{}'",
-                publish_wrapper.msg_type, itr->Name());
-    itr->Publish(publish_wrapper);
-  }
+        for (auto& itr : find_itr->second) {
+          AIMRT_TRACE("Publish msg '{}' to channel backend '{}'",
+                      publish_wrapper.msg_type, itr->Name());
+          itr->Publish(publish_wrapper);
+        }
+      },
+      filter_data,
+      publish_wrapper.ctx_ref,
+      publish_wrapper.msg_ptr);
 }
 
 std::vector<ChannelBackendBase*> ChannelBackendManager::GetBackendsByRules(
