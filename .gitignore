@@ -5,6 +5,7 @@ build/
 
 document/doxygen/html
 document/doxygen/doxygen.log
+document/doxygen/dockerfile/html.tar.gz
 
 document/sphinx-cn/_build
 document/sphinx-cn/_static

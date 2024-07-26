@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(AimRT LANGUAGES C CXX)
+project(aimrt LANGUAGES C CXX)
 
 # Set cmake path
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -188,8 +188,8 @@ if(AIMRT_BUILD_RUNTIME)
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
     set(PYBIND11_PYTHON_VERSION ${Python3_VERSION})
     include(GetPybind11)
+
     if(AIMRT_BUILD_PYTHON_PACKAGE)
-      message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
       execute_process(
         COMMAND ${Python3_EXECUTABLE} -m pip show build
         RESULT_VARIABLE BUILD_RESULT
