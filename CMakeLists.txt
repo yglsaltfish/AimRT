@@ -43,6 +43,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Set default build type as Release
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 set(INSTALL_CONFIG_NAME ${PROJECT_NAME}-config)
 
 # Master project configuration
@@ -235,5 +240,5 @@ endif()
 if(AIMRT_INSTALL
    AND AIMRT_BUILD_PYTHON_RUNTIME
    AND AIMRT_BUILD_PYTHON_PACKAGE)
-  install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target create_python_pkg)")
+  install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --config ${CMAKE_BUILD_TYPE} --target create_python_pkg)")
 endif()
