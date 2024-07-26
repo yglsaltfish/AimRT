@@ -1,6 +1,7 @@
 set_namespace()
 
 add_subdirectory(helloworld)
+add_subdirectory(logger)
 add_subdirectory(executor)
 add_subdirectory(parameter)
 

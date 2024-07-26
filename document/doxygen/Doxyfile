@@ -38,7 +38,7 @@ PROJECT_NAME           = AimRT
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.1.0
+PROJECT_NUMBER         = 0.7.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -864,7 +864,9 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../src
+INPUT                  = ../../src/common \
+                         ../../src/interface \ 
+                         ../../src/runtime/core 
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -972,7 +974,8 @@ EXCLUDE_PATTERNS       = */test/* \
                          */gen/* \
                          */*_test/* \
                          */*_test.cc \
-                         */*_benchmark.cc
+                         */*_benchmark.cc \
+                         */*.cc
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the

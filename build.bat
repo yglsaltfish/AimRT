@@ -32,8 +32,8 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-if exist install (
-    rmdir /s /q install
+if exist .\build\install (
+    rmdir /s /q .\build\install
 )
 
 cmake --build build --config Release --target install --parallel %NUMBER_OF_PROCESSORS%

@@ -15,10 +15,6 @@ if(AIMRT_BUILD_WITH_PROTOBUF)
   add_subdirectory(visualization)
 endif()
 
-if(AIMRT_BUILD_WITH_ROS2)
-  add_subdirectory(sensor_ros2)
-endif()
-
 if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN)
   add_subdirectory(plugins/time_manipulator_plugin)
 endif()

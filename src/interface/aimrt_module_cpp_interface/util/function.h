@@ -33,13 +33,16 @@ concept FunctionCStyleOps =
     std::is_same_v<void (*)(void*), decltype(T::destroyer)> &&
     DecayedType<typename InvokerTraitsHelper<decltype(T::invoker)>::ReturnType>;
 
+/*
+TODO:
+1. noexcept类型
+2. operator()方法在加上Args的类型限制
+*/
+
 /**
  * @brief Function
  * @note 由定义好的C Style类型ops构造，可以直接使用NativeHandle与C互调
- * @todo
- * 1. noexcept类型
- * 2. 增加内存池/alloctor等参数，减少内存开销
- * 3. operator()方法在加上Args的类型限制
+ *
  * @tparam Ops
  */
 template <FunctionCStyleOps Ops>

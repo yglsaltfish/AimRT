@@ -8,4 +8,4 @@
 ## Document
 
 - [AimRT-Docs](https://aimrt-docs.infra.agibot.com/)
-- [AimRT-Api](https://aimrt-api.infra.agibot.com/) (In preparation)
+- [AimRT-Api](https://aimrt-api.infra.agibot.com/)

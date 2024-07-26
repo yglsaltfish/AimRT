@@ -29,8 +29,8 @@ cmake -B build \
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON \
     $@
 
-if [ -d install ]; then
-    rm -rf install
+if [ -d ./build/install ]; then
+    rm -rf ./build/install
 fi
 
 cmake --build build --config Release --target install --parallel $(nproc)

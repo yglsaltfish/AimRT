@@ -1,15 +1,18 @@
 
 # HelloWorld CPP
 
-本章将以一个简单的Demo来介绍如何建立一个最基本的AimRT CPP工程。
+本章将以一个简单的 Demo 来介绍如何建立一个最基本的 AimRT CPP 工程。
 
-本Demo将演示以下几项基本功能：
-- 基于CMake FetchContent通过源码引用AimRT；
-- 编写一个基础的基于AimRT CPP接口的`Module`；
+本 Demo 将演示以下几项基本功能：
+- 基于 CMake FetchContent 通过源码引用 AimRT；
+- 编写一个基础的基于 AimRT CPP 接口的`Module`；
 - 使用基础的日志功能；
 - 使用基础的配置功能；
-- 以App模式集成`Module`；
+- 以 App 模式集成`Module`；
 - 编译项目，并运行进程以执行`Module`中的逻辑。
+
+
+请注意：本文档演示的 APP 模式，仅能在源码引用 AimRT 这种方式下构建，无法在二进制安装、find_package 引用方式下构建。
 
 
 ## STEP1: 确保本地环境符合要求
@@ -17,7 +20,7 @@
 请先确保本地的编译环境、网络环境符合要求，具体请参考[引用与安装（CPP）](installation_cpp.md)中的要求。
 
 
-注意，示例本身是跨平台的，但本文档基于linux进行演示。
+注意，示例本身是跨平台的，但本文档基于 linux 进行演示。
 
 
 ## STEP2: 创建目录结构，添加基本文件
@@ -46,12 +49,12 @@
 请注意，此处仅是一个供参考的路径结构，并非强制要求。但推荐您在搭建自己的工程时，为以下几个领域单独建立文件夹：
 - install：存放部署时的一些配置、启动脚本等；
 - module：存放业务逻辑代码；
-- app：app模式下，main函数存放处，在main函数中注册业务module；
-- pkg：pkg模式下，pkg动态库入口方法存放处，在pkg中注册业务module；
+- app：app 模式下，main 函数存放处，在 main 函数中注册业务 module；
+- pkg：pkg 模式下，pkg 动态库入口方法存放处，在 pkg 中注册业务 module；
 
 
 ### File 1 : /CMakeLists.txt
-根CMake，用于构建工程。
+根 CMake ，用于构建工程。
 ```cmake
 cmake_minimum_required(VERSION 3.24)
 
@@ -67,7 +70,7 @@ add_subdirectory(src)
 ```
 
 ### File 2 : /cmake/GetAimRT.cmake
-此文件用于获取AimRT。
+此文件用于获取 AimRT。
 ```cmake
 include(FetchContent)
 
@@ -84,7 +87,7 @@ endif()
 ```
 
 ### File 3 : /src/CMakeLists.txt
-引用src下的各个子目录。
+引用 src 下的各个子目录。
 ```cmake
 add_subdirectory(module/helloworld_module)
 add_subdirectory(app/helloworld_app)
@@ -132,7 +135,7 @@ target_link_libraries(
 
 ## STEP3: 编写业务代码
 
-业务逻辑主要通过`Module`来承载，参考以下代码实现一个简单的`Module`，解析传入的配置文件并打印一些简单的日志。
+业务逻辑主要通过 Module 来承载，参考以下代码实现一个简单的 Module，解析传入的配置文件并打印一些简单的日志。
 
 ### File 6 : /src/module/helloworld_module/helloworld_module.h
 ```cpp
@@ -205,10 +208,10 @@ void HelloWorldModule::Shutdown() {
 
 ## STEP4: 确定部署方案和配置
 
-我们使用App模式，手动编写Main函数，将HelloWorldModule通过硬编码的方式注册到AimRT框架中。然后编写一份配置，以确定一些运行时细节。
+我们使用 App 模式，手动编写 Main 函数，将 HelloWorldModule 通过硬编码的方式注册到 AimRT 框架中。然后编写一份配置，以确定一些运行时细节。
 
 ### File 8 : /src/app/helloworld_app/main.cc
-在以下示例main函数中，我们捕获了kill信号，以完成优雅退出。
+在以下示例 main 函数中，我们捕获了 kill 信号，以完成优雅退出。
 ```cpp
 #include <csignal>
 #include <iostream>
@@ -289,9 +292,9 @@ HelloWorldModule:
 
 ## STEP5: 启动并测试
 
-完善代码之后，在linux上执行以下命令完成编译：
+完善代码之后，在 linux 上执行以下命令完成编译：
 ```shell
-# cd to root path of aimrt
+# cd to root path of project
 cmake -B build
 cd build
 make -j

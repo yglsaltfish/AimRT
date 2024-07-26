@@ -25,14 +25,5 @@ target_link_libraries(
   PRIVATE aimrt::interface::aimrt_pkg_c_interface
           ${CUR_SUPERIOR_NAMESPACE}::normal_subscriber_module)
 
-# Set installation of target
-if(AIMRT_INSTALL)
-  set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
-  install(
-    TARGETS ${CUR_TARGET_NAME}
-    EXPORT ${INSTALL_CONFIG_NAME}
-    LIBRARY DESTINATION bin)
-endif()
-
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})
