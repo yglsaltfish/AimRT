@@ -1,6 +1,5 @@
 include:
   - project: "agibot_aima/aimrt_ci"
-    ref: ygl_aimrtci
     file: "aimrt-ci/main.gitlab-ci.yml"
 
 variables:
