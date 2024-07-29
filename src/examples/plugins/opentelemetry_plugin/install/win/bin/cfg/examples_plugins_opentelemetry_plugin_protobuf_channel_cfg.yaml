@@ -2,7 +2,7 @@ aimrt:
   plugin:
     plugins:
       - name: opentelemetry_plugin
-        path: ./libaimrt_opentelemetry_plugin.so
+        path: ./aimrt_opentelemetry_plugin.dll
         options:
           node_name: example_channel_node
           otlp_http_exporter_url: http://localhost:4318
@@ -35,9 +35,9 @@ aimrt:
     sub_filters: [otp_trace]
   module:
     pkgs:
-      - path: ./libprotobuf_channel_pub_pkg.so
+      - path: ./protobuf_channel_pub_pkg.dll
         enable_modules: [NormalPublisherModule]
-      - path: ./libprotobuf_channel_sub_pkg.so
+      - path: ./protobuf_channel_sub_pkg.dll
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule

@@ -4,8 +4,8 @@ aimrt:
       - name: opentelemetry_plugin
         path: ./aimrt_opentelemetry_plugin.dll
         options:
-          node_name: example_node
-          otlp_http_exporter_url: http://localhost:4318/v1/traces
+          node_name: example_rpc_node
+          otlp_http_exporter_url: http://localhost:4318
           attributes:
             - key: sn
               val: 123456
@@ -39,7 +39,9 @@ aimrt:
   module:
     pkgs:
       - path: ./protobuf_rpc_client_pkg.dll
+        enable_modules: [NormalRpcCoClientModule]
       - path: ./protobuf_rpc_server_pkg.dll
+        enable_modules: [NormalRpcCoServerModule]
     modules:
       - name: NormalRpcCoClientModule
         log_lvl: INFO

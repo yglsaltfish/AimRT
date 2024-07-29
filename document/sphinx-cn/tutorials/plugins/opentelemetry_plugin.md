@@ -123,11 +123,50 @@ aimrt:
 
 OpenTelemetry 的自身定位很明确：数据采集和标准规范的统一，对于数据如何去使用、存储、展示、告警，官方是不涉及的，我们目前推荐使用 Prometheus + Grafana 做 Metrics 存储、展示，使用 Jaeger 做分布式跟踪的存储和展示。
 
-此外，如果每一个服务都单独去上报，会造成性能上的浪费，在生产实践中一般是用一个本地的 collector ，收集本地所有的上报信息，然后再统一上报到远端平台。
+
 
 ### collector
 
-***TODO待完善***
+一般来说，如果一台机器上的每一个服务都单独去上报，会造成性能上的浪费，在生产实践中一般是用一个本地的 collector ，收集本地所有的上报信息，然后再统一上报到远端平台。OpenTelemetry 官方提供了一个 collector，可以在[opentelemetry-collector官网地址](https://github.com/open-telemetry/opentelemetry-collector)下载二进制可执行文件，或者通过 docker 安装。
+
+
+在启动 collector 之前，还需要一个配置文件，参考如下：
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317 # 本地收集地址
+      http:
+        endpoint: 0.0.0.0:4318 # 本地收集地址
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+exporters:
+  otlphttp:
+    endpoint: http://xx.xx.xx.xx:4318 # 远端上报地址
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp]
+```
+
+在创建好配置文件之后，即可启动 collector：
+```shell
+otelcol --config=my-otel-collector-config.yaml
+```
+
+或者通过 docker 启动：
+```shell
+docker run -itd -p 4317:4317 -p 4318:4318 -v /path/to/my-otel-collector-config.yaml:/etc/otelcol/config.yaml otel/opentelemetry-collector
+```
+
 
 ### Jaeger
 
@@ -142,5 +181,5 @@ docker run -d \
   jaegertracing/all-in-one:latest
 ```
 
-启动之后，即可将 opentelemetry 插件的 otlp_http_exporter_url 配置指向 Jaeger 所开的 4318 端口，从而将 trace 信息上报到 Jaeger 平台上。可以访问 Jaeger 在 16686 端口上的 web 页面查看 trace 信息。
+启动之后，即可将 opentelemetry 插件的 otlp_http_exporter_url 配置、或者是 collector 的 exporters 配置指向 Jaeger 所开的 4318 端口，从而将 trace 信息上报到 Jaeger 平台上。可以访问 Jaeger 在 16686 端口上的 web 页面查看 trace 信息。
 
