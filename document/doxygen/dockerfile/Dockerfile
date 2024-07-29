@@ -1,4 +1,5 @@
-FROM registry.agibot.com/agibot-tech/nginx:alpine
+FROM nginx:latest
+
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
