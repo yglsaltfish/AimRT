@@ -8,13 +8,13 @@
 namespace aimrt::runtime::core::rpc {
 
 using FrameworkAsyncRpcHandle = std::function<void(const std::shared_ptr<InvokeWrapper>&)>;
-using FrameworkAsyncRpcFilter = std::function<void(const std::shared_ptr<InvokeWrapper>&, const FrameworkAsyncRpcHandle&)>;
+using FrameworkAsyncRpcFilter = std::function<void(const std::shared_ptr<InvokeWrapper>&, FrameworkAsyncRpcHandle&&)>;
 
 class FrameworkAsyncFilterCollector {
  public:
   FrameworkAsyncFilterCollector()
       : final_filter_(
-            [](const std::shared_ptr<InvokeWrapper>& invoke_wrapper, const FrameworkAsyncRpcHandle& h) {
+            [](const std::shared_ptr<InvokeWrapper>& invoke_wrapper, FrameworkAsyncRpcHandle&& h) {
               h(invoke_wrapper);
             }) {}
   ~FrameworkAsyncFilterCollector() = default;
@@ -25,18 +25,18 @@ class FrameworkAsyncFilterCollector {
   void RegisterFilter(const FrameworkAsyncRpcFilter& filter) {
     final_filter_ =
         [final_filter{std::move(final_filter_)}, &filter](
-            const std::shared_ptr<InvokeWrapper>& invoke_wrapper, const FrameworkAsyncRpcHandle& h) {
+            const std::shared_ptr<InvokeWrapper>& invoke_wrapper, FrameworkAsyncRpcHandle&& h) {
           filter(
               invoke_wrapper,
-              [&final_filter, &h](const std::shared_ptr<InvokeWrapper>& invoke_wrapper) {
-                final_filter(invoke_wrapper, h);
+              [&final_filter, h{std::move(h)}](const std::shared_ptr<InvokeWrapper>& invoke_wrapper) mutable {
+                final_filter(invoke_wrapper, std::move(h));
               });
         };
   }
 
   void InvokeRpc(
-      const FrameworkAsyncRpcHandle& h, const std::shared_ptr<InvokeWrapper>& invoke_wrapper) const {
-    return final_filter_(invoke_wrapper, h);
+      FrameworkAsyncRpcHandle&& h, const std::shared_ptr<InvokeWrapper>& invoke_wrapper) const {
+    return final_filter_(invoke_wrapper, std::move(h));
   }
 
   void Clear() {

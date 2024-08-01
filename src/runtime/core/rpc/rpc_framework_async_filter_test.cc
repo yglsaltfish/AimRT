@@ -32,7 +32,7 @@ TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncFilterCollector_base) {
         status_promise.set_value(status);
       };
 
-  filter_collector.InvokeRpc(rpc_handle, invoke_wrapper_ptr);
+  filter_collector.InvokeRpc(std::move(rpc_handle), invoke_wrapper_ptr);
 
   auto status = status_promise.get_future().get();
   EXPECT_TRUE(status);
@@ -45,36 +45,40 @@ TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncFilterCollector_multiple_fil
 
   // 先注册的在内层
   auto filter_1 = [](const std::shared_ptr<InvokeWrapper> &invoke_wrapper_ptr,
-                     const FrameworkAsyncRpcHandle &h) {
-    auto ctx_ref = invoke_wrapper_ptr->ctx_ref;
-    ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> f1 begin");
+                     FrameworkAsyncRpcHandle &&h) {
+    std::thread([invoke_wrapper_ptr, h{std::move(h)}]() {
+      auto ctx_ref = invoke_wrapper_ptr->ctx_ref;
+      ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> f1 begin");
 
-    invoke_wrapper_ptr->callback =
-        [ctx_ref, callback{std::move(invoke_wrapper_ptr->callback)}](aimrt::rpc::Status status) mutable {
-          ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> f1 end");
+      invoke_wrapper_ptr->callback =
+          [ctx_ref, callback{std::move(invoke_wrapper_ptr->callback)}](aimrt::rpc::Status status) mutable {
+            ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> f1 end");
 
-          callback(status);
-        };
+            callback(status);
+          };
 
-    h(invoke_wrapper_ptr);
+      h(invoke_wrapper_ptr);
+    }).detach();
   };
 
   filter_collector.RegisterFilter(filter_1);
 
   // 后注册的在外层
   auto filter_2 = [](const std::shared_ptr<InvokeWrapper> &invoke_wrapper_ptr,
-                     const FrameworkAsyncRpcHandle &h) {
-    auto ctx_ref = invoke_wrapper_ptr->ctx_ref;
-    ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> f2 begin");
+                     FrameworkAsyncRpcHandle &&h) {
+    std::thread([invoke_wrapper_ptr, h{std::move(h)}]() {
+      auto ctx_ref = invoke_wrapper_ptr->ctx_ref;
+      ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> f2 begin");
 
-    invoke_wrapper_ptr->callback =
-        [ctx_ref, callback{std::move(invoke_wrapper_ptr->callback)}](aimrt::rpc::Status status) mutable {
-          ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> f2 end");
+      invoke_wrapper_ptr->callback =
+          [ctx_ref, callback{std::move(invoke_wrapper_ptr->callback)}](aimrt::rpc::Status status) mutable {
+            ctx_ref.SetMetaValue("order", std::string(ctx_ref.GetMetaValue("order")) + " -> f2 end");
 
-          callback(status);
-        };
+            callback(status);
+          };
 
-    h(invoke_wrapper_ptr);
+      h(invoke_wrapper_ptr);
+    }).detach();
   };
   filter_collector.RegisterFilter(filter_2);
 
@@ -106,7 +110,7 @@ TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncFilterCollector_multiple_fil
 
   ctx.SetMetaValue("order", "begin");
 
-  filter_collector.InvokeRpc(rpc_handle, invoke_wrapper_ptr);
+  filter_collector.InvokeRpc(std::move(rpc_handle), invoke_wrapper_ptr);
 
   auto status = status_promise.get_future().get();
   EXPECT_TRUE(status);

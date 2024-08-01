@@ -361,7 +361,7 @@ void RpcManager::RegisterLocalRpcBackend() {
 void RpcManager::RegisterDebugLogFilter() {
   RegisterClientFilter(
       "debug_log",
-      [this](const std::shared_ptr<InvokeWrapper>& ptr, const FrameworkAsyncRpcHandle& h) {
+      [this](const std::shared_ptr<InvokeWrapper>& ptr, FrameworkAsyncRpcHandle&& h) {
         auto req_str = ptr->SerializeReqWithCache("json")->JoinToString();
 
         AIMRT_INFO("RPC client start new rpc call. func name: {}, context: {}, req: {}",
@@ -387,7 +387,7 @@ void RpcManager::RegisterDebugLogFilter() {
 
   RegisterServerFilter(
       "debug_log",
-      [this](const std::shared_ptr<InvokeWrapper>& ptr, const FrameworkAsyncRpcHandle& h) {
+      [this](const std::shared_ptr<InvokeWrapper>& ptr, FrameworkAsyncRpcHandle&& h) {
         auto req_str = ptr->SerializeReqWithCache("json")->JoinToString();
 
         AIMRT_INFO("RPC server get new rpc call. func name: {}, context: {}, req: {}",

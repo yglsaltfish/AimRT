@@ -262,7 +262,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
   rpc_manager.RegisterClientFilter(
       "otp_trace",
       [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
-             const aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle& h) {
+             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
         auto ctx_ref = wrapper_ptr->ctx_ref;
 
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
@@ -335,7 +335,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
   rpc_manager.RegisterServerFilter(
       "otp_trace",
       [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
-             const aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle& h) {
+             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
         auto ctx_ref = wrapper_ptr->ctx_ref;
 
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
