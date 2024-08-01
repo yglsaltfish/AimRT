@@ -11,7 +11,7 @@ bool CheckBufferEqual(const aimrt_buffer_t& lhs, const aimrt_buffer_t& rhs) {
 
 TEST(BUFFER_TEST, Base) {
   // init
-  aimrt::util::BufferArray buffer_array(SimpleBufferArrayAllocator::NativeHandle());
+  BufferArray buffer_array(SimpleBufferArrayAllocator::NativeHandle());
   EXPECT_EQ(buffer_array.Data(), nullptr);
   EXPECT_EQ(buffer_array.Size(), 0);
   EXPECT_EQ(buffer_array.Capacity(), 0);
@@ -45,6 +45,12 @@ TEST(BUFFER_TEST, Base) {
   EXPECT_TRUE(CheckBufferEqual(buffer_array_data[0], buffer));
   EXPECT_TRUE(CheckBufferEqual(buffer_array_data[1], buffer2));
   EXPECT_TRUE(CheckBufferEqual(buffer_array_data[2], buffer3));
+
+  // buffer array view
+  BufferArrayView buffer_array_view(buffer_array);
+  EXPECT_EQ(buffer_array_view.Size(), 3);
+
+  EXPECT_EQ(buffer_array_view.BufferSize(), buffer_array.BufferSize());
 }
 
 }  // namespace aimrt::util

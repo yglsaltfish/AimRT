@@ -5,7 +5,7 @@ aimrt:
         path: ./libaimrt_opentelemetry_plugin.so
         options:
           node_name: example_rpc_node
-          otlp_http_exporter_url: http://localhost:4318
+          trace_otlp_http_exporter_url: http://localhost:4318/v1/traces
           attributes:
             - key: sn
               val: 123456
@@ -31,11 +31,11 @@ aimrt:
     clients_options:
       - func_name: "(.*)"
         enable_backends: [local]
+        enable_filters: [otp_trace]
     servers_options:
       - func_name: "(.*)"
         enable_backends: [local]
-    client_filters: [otp_trace]
-    server_filters: [otp_trace]
+        enable_filters: [otp_trace]
   module:
     pkgs:
       - path: ./libprotobuf_rpc_client_pkg.so

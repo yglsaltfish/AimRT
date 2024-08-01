@@ -113,7 +113,7 @@ void TimeManipulatorExecutor::Start() {
       std::atomic_exchange(&state_, State::Start) == State::Init,
       "Method can only be called when state is 'Init'.");
 
-  timer_thread_ = std::make_unique<std::thread>(std::bind(&TimeManipulatorExecutor::TimerLoop, this));
+  timer_thread_ptr_ = std::make_unique<std::thread>(std::bind(&TimeManipulatorExecutor::TimerLoop, this));
 
   start_flag_.wait(false);
 }
@@ -122,9 +122,10 @@ void TimeManipulatorExecutor::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  if (timer_thread_ && timer_thread_->joinable()) timer_thread_->join();
+  if (timer_thread_ptr_ && timer_thread_ptr_->joinable())
+    timer_thread_ptr_->join();
 
-  timer_thread_.reset();
+  timer_thread_ptr_.reset();
   timing_task_map_.clear();
   timing_wheel_vec_.clear();
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();

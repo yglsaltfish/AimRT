@@ -27,76 +27,59 @@ class RpcHandleProxy {
 
  private:
   bool RegisterServiceFunc(
-      std::string_view func_name,
+      aimrt_string_view_t func_name,
       const void* custom_type_support_ptr,
       const aimrt_type_support_base_t* req_type_support,
       const aimrt_type_support_base_t* rsp_type_support,
-      aimrt::rpc::ServiceFunc&& service_func) noexcept {
+      aimrt_function_base_t* service_func) noexcept {
     return rpc_backend_manager_.RegisterServiceFunc(
-        ServiceFuncWrapper{
-            .func_name = func_name,
+        RegisterServiceFuncProxyInfoWrapper{
             .pkg_path = pkg_path_,
             .module_name = module_name_,
+            .func_name = func_name,
             .custom_type_support_ptr = custom_type_support_ptr,
             .req_type_support = req_type_support,
             .rsp_type_support = rsp_type_support,
-            .service_func =
-                [this, service_func_ptr{std::make_shared<aimrt::rpc::ServiceFunc>(std::move(service_func))}](
-                    aimrt::rpc::ContextRef ctx_ref,
-                    const void* req_ptr,
-                    void* rsp_ptr,
-                    std::function<void(aimrt::rpc::Status)>&& callback) {
-                  aimrt::rpc::ServiceCallback service_callback(
-                      [callback{std::move(callback)}](uint32_t status) {
-                        callback(aimrt::rpc::Status(status));
-                      });
-
-                  (*service_func_ptr)(
-                      ctx_ref.NativeHandle(),
-                      req_ptr,
-                      rsp_ptr,
-                      service_callback.NativeHandle());
-                }});
+            .service_func = service_func});
   }
 
   bool RegisterClientFunc(
-      std::string_view func_name,
+      aimrt_string_view_t func_name,
       const void* custom_type_support_ptr,
       const aimrt_type_support_base_t* req_type_support,
       const aimrt_type_support_base_t* rsp_type_support) noexcept {
     return rpc_backend_manager_.RegisterClientFunc(
-        ClientFuncWrapper{
-            .func_name = func_name,
+        RegisterClientFuncProxyInfoWrapper{
             .pkg_path = pkg_path_,
             .module_name = module_name_,
+            .func_name = func_name,
             .custom_type_support_ptr = custom_type_support_ptr,
             .req_type_support = req_type_support,
             .rsp_type_support = rsp_type_support});
   }
 
   void Invoke(
-      std::string_view func_name,
-      aimrt::rpc::ContextRef ctx_ref,
+      aimrt_string_view_t func_name,
+      const aimrt_rpc_context_base_t* ctx_ptr,
       const void* req_ptr,
       void* rsp_ptr,
-      aimrt::rpc::ClientCallback&& callback) noexcept {
+      aimrt_function_base_t* callback) noexcept {
     rpc_backend_manager_.Invoke(
-        ClientInvokeWrapper{
-            .func_name = func_name,
+        InvokeProxyInfoWrapper{
             .pkg_path = pkg_path_,
             .module_name = module_name_,
-            .ctx_ref = ctx_ref,
+            .func_name = func_name,
+            .ctx_ptr = ctx_ptr,
             .req_ptr = req_ptr,
             .rsp_ptr = rsp_ptr,
-            .callback =
-                [callback_ptr{std::make_shared<aimrt::rpc::ClientCallback>(std::move(callback))}](
-                    aimrt::rpc::Status status) {
-                  (*callback_ptr)(status.Code());
-                }});
+            .callback = callback});
   }
 
   void MergeServerContextToClientContext(
-      aimrt::rpc::ContextRef server_ctx_ref, aimrt::rpc::ContextRef client_ctx_ref) {
+      const aimrt_rpc_context_base_t* server_ctx_ptr, const aimrt_rpc_context_base_t* client_ctx_ptr) {
+    aimrt::rpc::ContextRef server_ctx_ref(server_ctx_ptr);
+    aimrt::rpc::ContextRef client_ctx_ref(client_ctx_ptr);
+
     if (server_ctx_ref.GetType() != aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT ||
         client_ctx_ref.GetType() != aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT) [[unlikely]] {
       // TODO warn log
@@ -118,11 +101,7 @@ class RpcHandleProxy {
                                     const aimrt_type_support_base_t* rsp_type_support,
                                     aimrt_function_base_t* service_func) -> bool {
           return static_cast<RpcHandleProxy*>(impl)->RegisterServiceFunc(
-              aimrt::util::ToStdStringView(func_name),
-              custom_type_support_ptr,
-              req_type_support,
-              rsp_type_support,
-              aimrt::rpc::ServiceFunc(service_func));
+              func_name, custom_type_support_ptr, req_type_support, rsp_type_support, service_func);
         },
         .register_client_func = [](void* impl,
                                    aimrt_string_view_t func_name,
@@ -130,29 +109,20 @@ class RpcHandleProxy {
                                    const aimrt_type_support_base_t* req_type_support,
                                    const aimrt_type_support_base_t* rsp_type_support) -> bool {
           return static_cast<RpcHandleProxy*>(impl)->RegisterClientFunc(
-              aimrt::util::ToStdStringView(func_name),
-              custom_type_support_ptr,
-              req_type_support,
-              rsp_type_support);
+              func_name, custom_type_support_ptr, req_type_support, rsp_type_support);
         },
         .invoke = [](void* impl,
                      aimrt_string_view_t func_name,
                      const aimrt_rpc_context_base_t* ctx_ptr,
                      const void* req_ptr,
                      void* rsp_ptr,
-                     aimrt_function_base_t* callback) {  //
-          static_cast<RpcHandleProxy*>(impl)->Invoke(
-              aimrt::util::ToStdStringView(func_name),
-              aimrt::rpc::ContextRef(ctx_ptr),
-              req_ptr,
-              rsp_ptr,
-              aimrt::rpc::ClientCallback(callback));
+                     aimrt_function_base_t* callback) {
+          static_cast<RpcHandleProxy*>(impl)->Invoke(func_name, ctx_ptr, req_ptr, rsp_ptr, callback);  //
         },
         .merge_server_context_to_client_context = [](void* impl,                                        //
                                                      const aimrt_rpc_context_base_t* server_ctx_ptr,    //
                                                      const aimrt_rpc_context_base_t* client_ctx_ptr) {  //
-          static_cast<RpcHandleProxy*>(impl)->MergeServerContextToClientContext(
-              aimrt::rpc::ContextRef(server_ctx_ptr), aimrt::rpc::ContextRef(client_ctx_ptr));
+          static_cast<RpcHandleProxy*>(impl)->MergeServerContextToClientContext(server_ctx_ptr, client_ctx_ptr);
         },
         .impl = impl};
   }

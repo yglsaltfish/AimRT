@@ -61,16 +61,13 @@ struct convert<aimrt::plugins::net_plugin::HttpRpcBackend::Options> {
 
 namespace aimrt::plugins::net_plugin {
 
-void HttpRpcBackend::Initialize(YAML::Node options_node,
-                                const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) {
+void HttpRpcBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Http Rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
-
-  rpc_registry_ptr_ = rpc_registry_ptr;
 
   options_node = options_;
 }
@@ -97,7 +94,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
   namespace http = boost::beast::http;
 
   std::string pattern =
-      std::string("/rpc") + std::string(GetRealFuncName(service_func_wrapper.func_name));
+      std::string("/rpc") + std::string(GetRealFuncName(service_func_wrapper.info.func_name));
 
   runtime::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
       [this, &service_func_wrapper](
@@ -105,10 +102,14 @@ bool HttpRpcBackend::RegisterServiceFunc(
           http::response<http::dynamic_body>& rsp,
           std::chrono::nanoseconds timeout)
       -> asio::awaitable<runtime::common::net::AsioHttpServer::HttpHandleStatus> {
-    // ctx 创建
+    // 创建 service invoke wrapper
+    auto service_invoke_wrapper_ptr = std::make_shared<runtime::core::rpc::InvokeWrapper>(
+        runtime::core::rpc::InvokeWrapper{.info = service_func_wrapper.info});
+    const auto& info = service_invoke_wrapper_ptr->info;
+
+    // 创建 service ctx
     auto ctx_ptr = std::make_shared<aimrt::rpc::Context>(aimrt_rpc_context_type_t::AIMRT_RPC_SERVER_CONTEXT);
-    ctx_ptr->SetFunctionName(service_func_wrapper.func_name);
-    ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
+    service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
     // 序列化类型
     std::string serialization_type;
@@ -141,7 +142,9 @@ bool HttpRpcBackend::RegisterServiceFunc(
           aimrt::common::util::HttpHeaderDecode(field.value()));
     }
 
-    // 超时
+    ctx_ptr->SetFunctionName(info.func_name);
+    ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
+
     ctx_ptr->SetTimeout(timeout);
 
     // service req反序列化
@@ -158,30 +161,25 @@ bool HttpRpcBackend::RegisterServiceFunc(
         .data = buffer_view_vec.data(),
         .len = buffer_view_vec.size()};
 
-    auto service_req_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.req_type_support);
+    std::shared_ptr<void> service_req_ptr = info.req_type_support_ref.CreateSharedPtr();
+    service_invoke_wrapper_ptr->req_ptr = service_req_ptr.get();
 
-    std::shared_ptr<void> service_req_ptr = service_req_type_support_ref.CreateSharedPtr();
-
-    bool deserialize_ret = service_req_type_support_ref.Deserialize(
+    bool deserialize_ret = info.req_type_support_ref.Deserialize(
         serialization_type, buffer_array_view, service_req_ptr.get());
 
     AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Http req deserialize failed.");
 
     // service rsp创建
-    auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
+    std::shared_ptr<void> service_rsp_ptr = info.rsp_type_support_ref.CreateSharedPtr();
+    service_invoke_wrapper_ptr->rsp_ptr = service_rsp_ptr.get();
 
-    std::shared_ptr<void> service_rsp_ptr = service_rsp_type_support_ref.CreateSharedPtr();
-
-    // service rpc调用
+    // 设置回调
     uint32_t ret_code = 0;
     auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, timeout);
     std::atomic_bool handle_flag = false;
 
-    service_func_wrapper.service_func(
-        ctx_ptr,
-        service_req_ptr.get(),
-        service_rsp_ptr.get(),
-        [&service_func_wrapper,
+    service_invoke_wrapper_ptr->callback =
+        [service_invoke_wrapper_ptr,
          ctx_ptr,
          &req,
          &rsp,
@@ -195,22 +193,17 @@ bool HttpRpcBackend::RegisterServiceFunc(
             ret_code = status.Code();
 
           } else {
-            aimrt::util::BufferArray buffer_array;
-
-            auto service_rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support);
-
             // service rsp序列化
-            bool serialize_ret = service_rsp_type_support_ref.Serialize(
-                serialization_type, service_rsp_ptr.get(), buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
+            auto buffer_array_view_ptr = service_invoke_wrapper_ptr->SerializeRspWithCache(serialization_type);
 
-            if (!serialize_ret) [[unlikely]] {
+            if (!buffer_array_view_ptr) [[unlikely]] {
               ret_code = AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED;
             } else {
               // 填http rsp包，直接复制过去
-              size_t rsp_size = buffer_array.BufferSize();
+              size_t rsp_size = buffer_array_view_ptr->BufferSize();
               auto rsp_beast_buf = rsp.body().prepare(rsp_size);
 
-              auto data = buffer_array.BufferArrayNativeHandle()->data;
+              auto data = buffer_array_view_ptr->Data();
               auto buffer_array_pos = 0;
               size_t buffer_pos = 0;
 
@@ -223,7 +216,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
                   size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
 
                   memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
-                         static_cast<char*>(data[buffer_array_pos].data) + buffer_pos,
+                         static_cast<const char*>(data[buffer_array_pos].data) + buffer_pos,
                          cur_copy_size);
 
                   buffer_pos += cur_copy_size;
@@ -246,7 +239,10 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
           // TODO: 这里可能会有提前cancel的风险。可能的解决方案：多cancel几次？
           sig_timer_ptr->cancel();
-        });
+        };
+
+    // service rpc调用
+    service_func_wrapper.service_func(service_invoke_wrapper_ptr);
 
     bool finish_flag = true;
     if (!handle_flag.load()) {
@@ -278,96 +274,83 @@ bool HttpRpcBackend::RegisterClientFunc(
     return false;
   }
 
+  const auto& info = client_func_wrapper.info;
+
+  auto find_client_option = std::find_if(
+      options_.clients_options.begin(), options_.clients_options.end(),
+      [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
+        try {
+          return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+        } catch (const std::exception& e) {
+          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                     client_option.func_name, func_name, e.what());
+          return false;
+        }
+      });
+
+  if (find_client_option != options_.clients_options.end()) {
+    client_server_url_map_.emplace(GetRealFuncName(info.func_name), find_client_option->server_url);
+  }
+
   return true;
 }
 
-bool HttpRpcBackend::TryInvoke(
-    const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
+void HttpRpcBackend::Invoke(
+    const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
   if (state_.load() != State::Start) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
-    return false;
+    client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+    return;
   }
 
   namespace asio = boost::asio;
   namespace http = boost::beast::http;
+  namespace util = aimrt::common::util;
 
-  std::string_view pkg_path = client_invoke_wrapper_ptr->pkg_path;
-  std::string_view module_name = client_invoke_wrapper_ptr->module_name;
-  std::string_view func_name = client_invoke_wrapper_ptr->func_name;
+  const auto& info = client_invoke_wrapper_ptr->info;
 
-  auto real_func_name = GetRealFuncName(func_name);
+  auto real_func_name = GetRealFuncName(info.func_name);
 
   // 检查ctx，to_addr优先级：ctx > server_url
-  std::string_view to_addr =
-      client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
-
+  auto to_addr = client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
   if (to_addr.empty()) {
-    for (auto& client_options : options_.clients_options) {
-      try {
-        if (std::regex_match(real_func_name.begin(), real_func_name.end(),
-                             std::regex(client_options.func_name, std::regex::ECMAScript))) {
-          to_addr = client_options.server_url;
-          break;
-        }
-      } catch (const std::exception& e) {
-        AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                   client_options.func_name, real_func_name, e.what());
-      }
+    auto find_itr = client_server_url_map_.find(real_func_name);
+    if (find_itr != client_server_url_map_.end()) {
+      to_addr = find_itr->second;
+    } else {
+      AIMRT_WARN("Server url is not set for func: {}", info.func_name);
+      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+      return;
     }
   }
 
-  if (to_addr.empty()) return false;
-
-  auto pos = to_addr.find("://");
-  if (pos == std::string_view::npos) return false;
-  if (to_addr.substr(0, pos) != Name()) return false;
-
-  // 协议为http，需要由http后端处理。之后只能使用callback报错，不能返回false
-  auto url_op = aimrt::common::util::ParseUrl(to_addr);
-  if (!url_op) {
+  auto url = util::ParseUrl<std::string_view>(to_addr);
+  if (!url) {
     client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
-    return true;
+    return;
   }
-
-  std::string url_path(url_op->path);
-  if (url_path.empty()) {
-    url_path = "/rpc" + std::string(real_func_name);
-  }
-
-  const auto& client_func_wrapper_map = rpc_registry_ptr_->GetClientFuncWrapperMap();
-
-  // 找注册的client方法
-  auto get_client_func_wrapper_ptr_func = [&]() -> const runtime::core::rpc::ClientFuncWrapper* {
-    auto find_lib_itr = client_func_wrapper_map.find(pkg_path);
-    if (find_lib_itr == client_func_wrapper_map.end()) return nullptr;
-
-    auto find_module_itr = find_lib_itr->second.find(module_name);
-    if (find_module_itr == find_lib_itr->second.end()) return nullptr;
-
-    auto find_func_itr = find_module_itr->second.find(func_name);
-    if (find_func_itr == find_module_itr->second.end()) return nullptr;
-
-    return find_func_itr->second.get();
-  };
-  const auto* client_func_wrapper_ptr = get_client_func_wrapper_ptr_func();
 
   asio::co_spawn(
       *io_ptr_,
       [http_cli_pool_ptr{http_cli_pool_ptr_},
        client_invoke_wrapper_ptr,
-       client_func_wrapper_ptr,
-       url_op{std::move(url_op)},
-       url_path{std::move(url_path)}]() -> asio::awaitable<void> {
+       url{std::move(url)}]() -> asio::awaitable<void> {
+        const auto& info = client_invoke_wrapper_ptr->info;
+
+        std::string url_path(url->path);
+        if (url_path.empty()) {
+          url_path = "/rpc" + std::string(GetRealFuncName(info.func_name));
+        }
+
         try {
           runtime::common::net::AsioHttpClient::Options cli_options{
-              .host = std::string(url_op->host),
-              .service = std::string(url_op->service)};
+              .host = std::string(url->host),
+              .service = std::string(url->service)};
 
           auto client_ptr = co_await http_cli_pool_ptr->GetClient(cli_options);
 
-          http::request<http::dynamic_body> req{
-              http::verb::post, url_path, 11};
-          req.set(http::field::host, url_op->host);
+          http::request<http::dynamic_body> req{http::verb::post, url_path, 11};
+          req.set(http::field::host, url->host);
           req.set(http::field::user_agent, "aimrt");
 
           auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
@@ -397,24 +380,19 @@ bool HttpRpcBackend::TryInvoke(
                 aimrt::common::util::HttpHeaderEncode(client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(item)));
           }
 
-          aimrt::util::BufferArray buffer_array;
-
-          auto client_req_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_ptr->req_type_support);
-
           // client req序列化
-          bool serialize_ret = client_req_type_support_ref.Serialize(
-              serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
-
-          if (!serialize_ret) [[unlikely]] {
+          auto buffer_array_view_ptr = client_invoke_wrapper_ptr->SerializeReqWithCache(serialization_type);
+          if (!buffer_array_view_ptr) [[unlikely]] {
+            // 序列化失败
             client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
             co_return;
           }
 
           // 填http req包，直接复制过去
-          size_t req_size = buffer_array.BufferSize();
+          size_t req_size = buffer_array_view_ptr->BufferSize();
           auto req_beast_buf = req.body().prepare(req_size);
 
-          auto data = buffer_array.BufferArrayNativeHandle()->data;
+          auto data = buffer_array_view_ptr->Data();
           auto buffer_array_pos = 0;
           size_t buffer_pos = 0;
 
@@ -427,7 +405,7 @@ bool HttpRpcBackend::TryInvoke(
               size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
 
               memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
-                     static_cast<char*>(data[buffer_array_pos].data) + buffer_pos,
+                     static_cast<const char*>(data[buffer_array_pos].data) + buffer_pos,
                      cur_copy_size);
 
               buffer_pos += cur_copy_size;
@@ -462,13 +440,11 @@ bool HttpRpcBackend::TryInvoke(
               .data = buffer_view_vec.data(),
               .len = buffer_view_vec.size()};
 
-          auto client_rsp_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_ptr->rsp_type_support);
-
-          bool deserialize_ret = client_rsp_type_support_ref.Deserialize(
+          bool deserialize_ret = info.rsp_type_support_ref.Deserialize(
               serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
 
           if (!deserialize_ret) {
-            // 调用回调
+            // 反序列化失败
             client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
             co_return;
           }
@@ -480,13 +456,10 @@ bool HttpRpcBackend::TryInvoke(
           AIMRT_WARN("Http call get exception, info: {}", e.what());
         }
 
-        // TODO
         client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
         co_return;
       },
       asio::detached);
-
-  return true;
 }
 
 }  // namespace aimrt::plugins::net_plugin

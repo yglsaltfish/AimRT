@@ -111,7 +111,7 @@ class TimeWheelExecutor : public ExecutorBase {
   mutable std::mutex imd_mutex_;
   std::queue<aimrt::executor::Task> imd_queue_;
 
-  std::unique_ptr<std::thread> timer_thread_;
+  std::unique_ptr<std::thread> timer_thread_ptr_;
   std::thread::id tid_;
 };
 

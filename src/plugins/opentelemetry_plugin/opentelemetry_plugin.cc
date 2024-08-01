@@ -14,7 +14,7 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
     Node node;
 
     node["node_name"] = rhs.node_name;
-    node["otlp_http_exporter_url"] = rhs.otlp_http_exporter_url;
+    node["trace_otlp_http_exporter_url"] = rhs.trace_otlp_http_exporter_url;
 
     node["attributes"] = YAML::Node();
     for (const auto& attribute : rhs.attributes) {
@@ -31,7 +31,7 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
     if (!node.IsMap()) return false;
 
     rhs.node_name = node["node_name"].as<std::string>();
-    rhs.otlp_http_exporter_url = node["otlp_http_exporter_url"].as<std::string>();
+    rhs.trace_otlp_http_exporter_url = node["trace_otlp_http_exporter_url"].as<std::string>();
 
     for (auto& attribute_node : node["attributes"]) {
       auto attribute = Options::Attribute{
@@ -76,7 +76,7 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
     auto resource = resource::Resource::Create(resource_attributes);
 
     otlp::OtlpHttpExporterOptions opts;
-    opts.url = options_.otlp_http_exporter_url;
+    opts.url = options_.trace_otlp_http_exporter_url;
     auto exporter = otlp::OtlpHttpExporterFactory::Create(opts);
 
     trace_sdk::BatchSpanProcessorOptions bspOpts{};
@@ -261,12 +261,10 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
   rpc_manager.RegisterClientFilter(
       "otp_trace",
-      [this](const aimrt::runtime::core::rpc::FrameworkFilterData& filter_data,
-             aimrt::rpc::ContextRef ctx_ref,
-             const void* req,
-             void* rsp,
-             std::function<void(aimrt::rpc::Status)>&& callback,
-             const aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle& h) {
+      [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+        auto ctx_ref = wrapper_ptr->ctx_ref;
+
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
         std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
         bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
@@ -292,7 +290,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
         // 不需要启动一个新trace
         if (!start_new_trace) {
-          h(filter_data, ctx_ref, req, rsp, std::move(callback));
+          h(wrapper_ptr);
           return;
         }
 
@@ -309,35 +307,37 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
-        h(filter_data, ctx_ref, req, rsp,
-          [&filter_data, req, rsp, span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) {
-            if (status.OK()) {
-              span->SetStatus(trace_api::StatusCode::kOk);
-            } else {
-              span->SetStatus(trace_api::StatusCode::kError, status.ToString());
-            }
+        wrapper_ptr->callback =
+            [wrapper_ptr,
+             span{std::move(span)},
+             callback{std::move(wrapper_ptr->callback)}](aimrt::rpc::Status status) {
+              if (status.OK()) {
+                span->SetStatus(trace_api::StatusCode::kOk);
+              } else {
+                span->SetStatus(trace_api::StatusCode::kError, status.ToString());
+              }
 
-            // 序列化req/rsp为json
-            auto req_json = filter_data.req_type_support_ref.SimpleSerialize("json", req);
-            if (!req_json.empty()) span->SetAttribute("req_data", req_json);
+              // 序列化req/rsp为json
+              auto req_json = wrapper_ptr->SerializeReqWithCache("json")->JoinToString();
+              if (!req_json.empty()) span->SetAttribute("req_data", req_json);
 
-            auto rsp_json = filter_data.rsp_type_support_ref.SimpleSerialize("json", rsp);
-            if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
+              auto rsp_json = wrapper_ptr->SerializeRspWithCache("json")->JoinToString();
+              if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
 
-            span->End();
+              span->End();
 
-            callback(status);
-          });
+              callback(status);
+            };
+
+        h(wrapper_ptr);
       });
 
   rpc_manager.RegisterServerFilter(
       "otp_trace",
-      [this](const aimrt::runtime::core::rpc::FrameworkFilterData& filter_data,
-             aimrt::rpc::ContextRef ctx_ref,
-             const void* req,
-             void* rsp,
-             std::function<void(aimrt::rpc::Status)>&& callback,
-             const aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle& h) {
+      [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+        auto ctx_ref = wrapper_ptr->ctx_ref;
+
         // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
         std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
         bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
@@ -363,7 +363,7 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
         // 不需要启动一个新trace
         if (!start_new_trace) {
-          h(filter_data, ctx_ref, req, rsp, std::move(callback));
+          h(wrapper_ptr);
           return;
         }
 
@@ -380,25 +380,29 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
-        h(filter_data, ctx_ref, req, rsp,
-          [&filter_data, req, rsp, span{std::move(span)}, callback{std::move(callback)}](aimrt::rpc::Status status) {
-            if (status.OK()) {
-              span->SetStatus(trace_api::StatusCode::kOk);
-            } else {
-              span->SetStatus(trace_api::StatusCode::kError, status.ToString());
-            }
+        wrapper_ptr->callback =
+            [wrapper_ptr,
+             span{std::move(span)},
+             callback{std::move(wrapper_ptr->callback)}](aimrt::rpc::Status status) {
+              if (status.OK()) {
+                span->SetStatus(trace_api::StatusCode::kOk);
+              } else {
+                span->SetStatus(trace_api::StatusCode::kError, status.ToString());
+              }
 
-            // 序列化req/rsp为json
-            auto req_json = filter_data.req_type_support_ref.SimpleSerialize("json", req);
-            if (!req_json.empty()) span->SetAttribute("req_data", req_json);
+              // 序列化req/rsp为json
+              auto req_json = wrapper_ptr->SerializeReqWithCache("json")->JoinToString();
+              if (!req_json.empty()) span->SetAttribute("req_data", req_json);
 
-            auto rsp_json = filter_data.rsp_type_support_ref.SimpleSerialize("json", rsp);
-            if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
+              auto rsp_json = wrapper_ptr->SerializeRspWithCache("json")->JoinToString();
+              if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
 
-            span->End();
+              span->End();
 
-            callback(status);
-          });
+              callback(status);
+            };
+
+        h(wrapper_ptr);
       });
 }
 

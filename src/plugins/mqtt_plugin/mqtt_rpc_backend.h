@@ -41,17 +41,20 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::string_view Name() const override { return "mqtt"; }
 
-  void Initialize(YAML::Node options_node,
-                  const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override;
+  void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
+
+  void SetRpcRegistry(const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override {
+    rpc_registry_ptr_ = rpc_registry_ptr;
+  }
 
   bool RegisterServiceFunc(
       const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept override;
   bool RegisterClientFunc(
       const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper) noexcept override;
-  bool TryInvoke(
-      const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
+  void Invoke(
+      const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
 
   void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
 
@@ -107,11 +110,8 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
   };
   std::unordered_map<std::string_view, ClientCfgInfo> client_cfg_info_map_;
 
-  struct MsgRecorder {
-    const runtime::core::rpc::ClientFuncWrapper* client_func_wrapper_ptr;
-    std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper> client_invoke_wrapper_ptr;
-  };
-  aimrt::runtime::core::util::RpcClientTool<MsgRecorder> client_tool_;
+  std::unique_ptr<runtime::core::util::RpcClientTool<std::shared_ptr<runtime::core::rpc::InvokeWrapper>>>
+      client_tool_ptr_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

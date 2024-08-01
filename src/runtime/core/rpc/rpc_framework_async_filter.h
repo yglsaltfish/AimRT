@@ -2,78 +2,41 @@
 
 #include <functional>
 
-#include "aimrt_module_cpp_interface/rpc/rpc_context.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "aimrt_module_cpp_interface/util/type_support.h"
+#include "core/rpc/rpc_invoke_wrapper.h"
+#include "util/exception.h"
 
 namespace aimrt::runtime::core::rpc {
 
-struct FrameworkFilterData {
-  std::string_view func_name;
-  std::string_view pkg_path;
-  std::string_view module_name;
-  const void* custom_type_support_ptr;
-  aimrt::util::TypeSupportRef req_type_support_ref;
-  aimrt::util::TypeSupportRef rsp_type_support_ref;
-};
+using FrameworkAsyncRpcHandle = std::function<void(const std::shared_ptr<InvokeWrapper>&)>;
+using FrameworkAsyncRpcFilter = std::function<void(const std::shared_ptr<InvokeWrapper>&, FrameworkAsyncRpcHandle&&)>;
 
-using FrameworkAsyncRpcHandle =
-    std::function<void(const FrameworkFilterData&, aimrt::rpc::ContextRef, const void*, void*, std::function<void(aimrt::rpc::Status)>&&)>;
-using FrameworkAsyncRpcFilter =
-    std::function<void(const FrameworkFilterData&, aimrt::rpc::ContextRef, const void*, void*, std::function<void(aimrt::rpc::Status)>&&, FrameworkAsyncRpcHandle&&)>;
-
-class FrameworkAsyncFilterManager {
+class FrameworkAsyncFilterCollector {
  public:
-  FrameworkAsyncFilterManager()
+  FrameworkAsyncFilterCollector()
       : final_filter_(
-            [](const FrameworkFilterData& filter_data,
-               aimrt::rpc::ContextRef ctx_ref,
-               const void* req,
-               void* rsp,
-               std::function<void(aimrt::rpc::Status)>&& callback,
-               FrameworkAsyncRpcHandle&& h) {
-              h(filter_data, ctx_ref, req, rsp, std::move(callback));
+            [](const std::shared_ptr<InvokeWrapper>& invoke_wrapper, FrameworkAsyncRpcHandle&& h) {
+              h(invoke_wrapper);
             }) {}
-  ~FrameworkAsyncFilterManager() = default;
+  ~FrameworkAsyncFilterCollector() = default;
 
-  FrameworkAsyncFilterManager(const FrameworkAsyncFilterManager&) = delete;
-  FrameworkAsyncFilterManager& operator=(const FrameworkAsyncFilterManager&) = delete;
+  FrameworkAsyncFilterCollector(const FrameworkAsyncFilterCollector&) = delete;
+  FrameworkAsyncFilterCollector& operator=(const FrameworkAsyncFilterCollector&) = delete;
 
-  void RegisterFilter(FrameworkAsyncRpcFilter&& filter) {
+  void RegisterFilter(const FrameworkAsyncRpcFilter& filter) {
     final_filter_ =
-        [final_filter{std::move(final_filter_)},
-         cur_filter{std::move(filter)}](
-            const FrameworkFilterData& filter_data,
-            aimrt::rpc::ContextRef ctx_ref,
-            const void* req,
-            void* rsp,
-            std::function<void(aimrt::rpc::Status)>&& callback,
-            FrameworkAsyncRpcHandle&& h) {
-          cur_filter(
-              filter_data,
-              ctx_ref,
-              req,
-              rsp,
-              std::move(callback),
-              [final_filter{std::move(final_filter)}, h{std::move(h)}](
-                  const FrameworkFilterData& filter_data,
-                  aimrt::rpc::ContextRef ctx_ref,
-                  const void* req,
-                  void* rsp,
-                  std::function<void(aimrt::rpc::Status)>&& callback) mutable {
-                final_filter(filter_data, ctx_ref, req, rsp, std::move(callback), std::move(h));
+        [final_filter{std::move(final_filter_)}, &filter](
+            const std::shared_ptr<InvokeWrapper>& invoke_wrapper, FrameworkAsyncRpcHandle&& h) {
+          filter(
+              invoke_wrapper,
+              [&final_filter, h{std::move(h)}](const std::shared_ptr<InvokeWrapper>& invoke_wrapper) mutable {
+                final_filter(invoke_wrapper, std::move(h));
               });
         };
   }
 
   void InvokeRpc(
-      FrameworkAsyncRpcHandle&& h,
-      const FrameworkFilterData& filter_data,
-      aimrt::rpc::ContextRef ctx_ref,
-      const void* req,
-      void* rsp,
-      std::function<void(aimrt::rpc::Status)>&& callback) const {
-    return final_filter_(filter_data, ctx_ref, req, rsp, std::move(callback), std::move(h));
+      FrameworkAsyncRpcHandle&& h, const std::shared_ptr<InvokeWrapper>& invoke_wrapper) const {
+    return final_filter_(invoke_wrapper, std::move(h));
   }
 
   void Clear() {
@@ -82,6 +45,94 @@ class FrameworkAsyncFilterManager {
 
  private:
   FrameworkAsyncRpcFilter final_filter_;
+};
+
+class FrameworkAsyncFilterManager {
+ public:
+  FrameworkAsyncFilterManager() = default;
+  ~FrameworkAsyncFilterManager() = default;
+
+  FrameworkAsyncFilterManager(const FrameworkAsyncFilterManager&) = delete;
+  FrameworkAsyncFilterManager& operator=(const FrameworkAsyncFilterManager&) = delete;
+
+  void RegisterFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter) {
+    auto emplace_ret = filter_map_.emplace(name, std::move(filter));
+    AIMRT_ASSERT(emplace_ret.second, "Register filter {} failed.", name);
+  }
+
+  std::vector<std::string> GetAllFiltersName() const {
+    std::vector<std::string> result;
+    for (const auto& itr : filter_map_)
+      result.emplace_back(itr.first);
+
+    return result;
+  }
+
+  void CreateFilterCollector(
+      std::string_view func_name, const std::vector<std::string>& filter_name_vec) {
+    if (filter_name_vec.empty()) [[unlikely]]
+      return;
+
+    auto collector_ptr = std::make_unique<FrameworkAsyncFilterCollector>();
+
+    for (auto& name : filter_name_vec) {
+      auto find_itr = filter_map_.find(name);
+      AIMRT_ASSERT(find_itr != filter_map_.end(), "Can not find filter: {}", name);
+
+      collector_ptr->RegisterFilter(find_itr->second);
+    }
+
+    auto emplace_ret = filter_collector_map_.emplace(func_name, std::move(collector_ptr));
+
+    AIMRT_ASSERT(emplace_ret.second, "Func {} set filter collector failed.", func_name);
+
+    filter_names_map_.emplace(func_name, filter_name_vec);
+  }
+
+  const FrameworkAsyncFilterCollector& GetFilterCollector(std::string_view func_name) const {
+    auto find_itr = filter_collector_map_.find(func_name);
+    if (find_itr != filter_collector_map_.end()) {
+      return *(find_itr->second);
+    }
+
+    return default_filter_collector_;
+  }
+
+  std::vector<std::string> GetFilterNameVec(std::string_view func_name) const {
+    auto find_itr = filter_names_map_.find(func_name);
+    if (find_itr != filter_names_map_.end()) {
+      return find_itr->second;
+    }
+
+    return {};
+  }
+
+  void Clear() {
+    filter_collector_map_.clear();
+    filter_map_.clear();
+  }
+
+ private:
+  // filter name - filter
+  std::unordered_map<std::string, FrameworkAsyncRpcFilter> filter_map_;
+
+  // func name - filter collector
+  using FilterCollectorMap = std::unordered_map<
+      std::string,
+      std::unique_ptr<FrameworkAsyncFilterCollector>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>;
+  FilterCollectorMap filter_collector_map_;
+
+  // func name - filter name vec
+  using FilterNameMap = std::unordered_map<
+      std::string,
+      std::vector<std::string>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>;
+  FilterNameMap filter_names_map_;
+
+  FrameworkAsyncFilterCollector default_filter_collector_;
 };
 
 }  // namespace aimrt::runtime::core::rpc
