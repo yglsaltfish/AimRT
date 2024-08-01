@@ -56,7 +56,8 @@ class Status {
         {AIMRT_RPC_STATUS_CLI_INVALID_DESERIALIZATION_TYPE, "Client side invalid deserialization type"},
         {AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED, "Client side deserialization failed"},
         {AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE, "Client side no backend to handle"},
-        {AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED, "Client side send req failed"}};
+        {AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED, "Client side send req failed"},
+        {AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED, "Client side function not registered"}};
 
     auto finditr = code_msg_map.find(code);
     return (finditr != code_msg_map.end()) ? finditr->second : "Unknown code";

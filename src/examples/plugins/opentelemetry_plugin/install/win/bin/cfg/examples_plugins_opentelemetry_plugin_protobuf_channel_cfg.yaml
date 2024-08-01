@@ -5,7 +5,7 @@ aimrt:
         path: ./aimrt_opentelemetry_plugin.dll
         options:
           node_name: example_channel_node
-          otlp_http_exporter_url: http://localhost:4318
+          trace_otlp_http_exporter_url: http://localhost:4318/v1/traces
           attributes:
             - key: sn
               val: 123456

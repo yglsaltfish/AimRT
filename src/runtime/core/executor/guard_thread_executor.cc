@@ -116,7 +116,7 @@ void GuardThreadExecutor::Shutdown() {
     cond_.notify_one();
   }
 
-  if (thread_ptr_->joinable())
+  if (thread_ptr_ && thread_ptr_->joinable())
     thread_ptr_->join();
 
   thread_ptr_.reset();

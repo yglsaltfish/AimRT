@@ -25,14 +25,14 @@ class Ros2AdapterClient : public rclcpp::ClientBase {
                        std::shared_ptr<void> response) override;
 
   void Invoke(
-      const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr);
+      const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr);
 
   void Start() { run_flag.store(true); }
   void Shutdown() { run_flag.store(false); }
 
  private:
   struct CallBackWrapper {
-    std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper> client_invoke_wrapper_ptr;
+    std::shared_ptr<runtime::core::rpc::InvokeWrapper> client_invoke_wrapper_ptr;
   };
 
   std::optional<CallBackWrapper> GetAndErasePendingRequest(int64_t request_number) {
@@ -69,14 +69,14 @@ class Ros2AdapterWrapperClient : public rclcpp::ClientBase {
                        std::shared_ptr<void> response) override;
 
   void Invoke(
-      const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr);
+      const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr);
 
   void Start() { run_flag.store(true); }
   void Shutdown() { run_flag.store(false); }
 
  private:
   struct CallBackWrapper {
-    std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper> client_invoke_wrapper_ptr;
+    std::shared_ptr<runtime::core::rpc::InvokeWrapper> client_invoke_wrapper_ptr;
   };
 
   std::optional<CallBackWrapper> GetAndErasePendingRequest(int64_t request_number) {

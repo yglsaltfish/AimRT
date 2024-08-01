@@ -23,7 +23,7 @@ Ros2AdapterClient::Ros2AdapterClient(
   rcl_ret_t ret = rcl_client_init(
       this->get_client_handle().get(),
       this->get_rcl_node_handle(),
-      static_cast<const rosidl_service_type_support_t*>(client_func_wrapper_.custom_type_support_ptr),
+      static_cast<const rosidl_service_type_support_t*>(client_func_wrapper_.info.custom_type_support_ptr),
       real_ros2_func_name_.c_str(),
       &client_options);
   if (ret != RCL_RET_OK) {
@@ -39,21 +39,21 @@ Ros2AdapterClient::Ros2AdapterClient(
     }
 
     AIMRT_WARN("Create ros2 client failed, func name '{}', err info: {}",
-               client_func_wrapper_.func_name, rcl_get_error_string().str);
+               client_func_wrapper_.info.func_name, rcl_get_error_string().str);
     rcl_reset_error();
   } else {
     AIMRT_TRACE("Create ros2 client successfully, func name '{}'",
-                client_func_wrapper_.func_name);
+                client_func_wrapper_.info.func_name);
   }
 }
 
 std::shared_ptr<void> Ros2AdapterClient::create_response() {
-  AIMRT_TRACE("Create ros2 rsp, func name '{}'", client_func_wrapper_.func_name);
-  return aimrt::util::TypeSupportRef(client_func_wrapper_.rsp_type_support).CreateSharedPtr();
+  AIMRT_TRACE("Create ros2 rsp, func name '{}'", client_func_wrapper_.info.func_name);
+  return client_func_wrapper_.info.rsp_type_support_ref.CreateSharedPtr();
 }
 
 std::shared_ptr<rmw_request_id_t> Ros2AdapterClient::create_request_header() {
-  AIMRT_TRACE("Create ros2 req header, func name '{}'", client_func_wrapper_.func_name);
+  AIMRT_TRACE("Create ros2 req header, func name '{}'", client_func_wrapper_.info.func_name);
   return std::make_shared<rmw_request_id_t>();
 }
 
@@ -62,7 +62,7 @@ void Ros2AdapterClient::handle_response(
   if (!run_flag.load()) return;
 
   AIMRT_TRACE("Handle ros2 rsp, func name '{}', seq num '{}'",
-              client_func_wrapper_.func_name, request_header->sequence_number);
+              client_func_wrapper_.info.func_name, request_header->sequence_number);
 
   auto cb_wrapper = GetAndErasePendingRequest(request_header->sequence_number);
   if (!cb_wrapper) {
@@ -70,15 +70,14 @@ void Ros2AdapterClient::handle_response(
   }
 
   auto client_invoke_wrapper_ptr = cb_wrapper->client_invoke_wrapper_ptr;
-  aimrt::util::TypeSupportRef(client_func_wrapper_.rsp_type_support)
-      .Move(response.get(), client_invoke_wrapper_ptr->rsp_ptr);
+  client_func_wrapper_.info.rsp_type_support_ref.Move(response.get(), client_invoke_wrapper_ptr->rsp_ptr);
   client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 }
 
 void Ros2AdapterClient::Invoke(
-    const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) {
+    const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) {
   AIMRT_TRACE("Invoke ros2 req, func name '{}'",
-              client_invoke_wrapper_ptr->func_name);
+              client_invoke_wrapper_ptr->info.func_name);
 
   int64_t sequence_number;
   std::lock_guard<std::mutex> lock(pending_requests_mutex_);
@@ -87,7 +86,7 @@ void Ros2AdapterClient::Invoke(
 
   if (RCL_RET_OK != ret) {
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
-               client_invoke_wrapper_ptr->func_name, rcl_get_error_string().str);
+               client_invoke_wrapper_ptr->info.func_name, rcl_get_error_string().str);
     rcl_reset_error();
     client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED));
     return;
@@ -131,21 +130,21 @@ Ros2AdapterWrapperClient::Ros2AdapterWrapperClient(
     }
 
     AIMRT_WARN("Create ros2 client failed, func name '{}', err info: {}",
-               client_func_wrapper_.func_name, rcl_get_error_string().str);
+               client_func_wrapper_.info.func_name, rcl_get_error_string().str);
     rcl_reset_error();
   } else {
     AIMRT_TRACE("Create ros2 client successfully, func name '{}'",
-                client_func_wrapper_.func_name);
+                client_func_wrapper_.info.func_name);
   }
 }
 
 std::shared_ptr<void> Ros2AdapterWrapperClient::create_response() {
-  AIMRT_TRACE("Create ros2 rsp, func name '{}'", client_func_wrapper_.func_name);
+  AIMRT_TRACE("Create ros2 rsp, func name '{}'", client_func_wrapper_.info.func_name);
   return std::make_shared<ros2_plugin_proto::srv::RosRpcWrapper::Response>();
 }
 
 std::shared_ptr<rmw_request_id_t> Ros2AdapterWrapperClient::create_request_header() {
-  AIMRT_TRACE("Create ros2 req header, func name '{}'", client_func_wrapper_.func_name);
+  AIMRT_TRACE("Create ros2 req header, func name '{}'", client_func_wrapper_.info.func_name);
   return std::make_shared<rmw_request_id_t>();
 }
 
@@ -154,7 +153,7 @@ void Ros2AdapterWrapperClient::handle_response(
   if (!run_flag.load()) return;
 
   AIMRT_TRACE("Handle ros2 rsp, func name '{}', seq num '{}'",
-              client_func_wrapper_.func_name, request_header->sequence_number);
+              client_func_wrapper_.info.func_name, request_header->sequence_number);
 
   auto cb_wrapper = GetAndErasePendingRequest(request_header->sequence_number);
   if (!cb_wrapper) {
@@ -179,9 +178,7 @@ void Ros2AdapterWrapperClient::handle_response(
       .data = &buffer_view,
       .len = 1};
 
-  auto client_rsp_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_.rsp_type_support);
-
-  bool deserialize_ret = client_rsp_type_support_ref.Deserialize(
+  bool deserialize_ret = client_func_wrapper_.info.rsp_type_support_ref.Deserialize(
       wrapper_rsp.serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
 
   if (!deserialize_ret) {
@@ -194,30 +191,23 @@ void Ros2AdapterWrapperClient::handle_response(
 }
 
 void Ros2AdapterWrapperClient::Invoke(
-    const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) {
-  AIMRT_TRACE("Invoke ros2 req, func name '{}'", client_invoke_wrapper_ptr->func_name);
+    const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) {
+  AIMRT_TRACE("Invoke ros2 req, func name '{}'", client_invoke_wrapper_ptr->info.func_name);
 
   // 序列化 client req
   auto serialization_type =
       client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
 
-  // msg buf
-  aimrt::util::BufferArray buffer_array;
-  auto client_req_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_.req_type_support);
-
-  // client req序列化
-  bool serialize_ret = client_req_type_support_ref.Serialize(
-      serialization_type, client_invoke_wrapper_ptr->req_ptr, buffer_array.AllocatorNativeHandle(), buffer_array.BufferArrayNativeHandle());
-
-  if (!serialize_ret) [[unlikely]] {
+  auto buffer_array_view_ptr = client_invoke_wrapper_ptr->SerializeReqWithCache(serialization_type);
+  if (!buffer_array_view_ptr) [[unlikely]] {
     client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
     return;
   }
 
   // 填wrapper_req
-  auto buffer_array_data = buffer_array.Data();
-  const size_t buffer_array_len = buffer_array.Size();
-  size_t req_size = buffer_array.BufferSize();
+  auto buffer_array_data = buffer_array_view_ptr->Data();
+  const size_t buffer_array_len = buffer_array_view_ptr->Size();
+  size_t req_size = buffer_array_view_ptr->BufferSize();
 
   ros2_plugin_proto::srv::RosRpcWrapper::Request wrapper_req;
   wrapper_req.serialization_type = serialization_type;
@@ -244,7 +234,7 @@ void Ros2AdapterWrapperClient::Invoke(
 
   if (RCL_RET_OK != ret) {
     AIMRT_WARN("Ros2 client send req failed, func name '{}', err info: {}",
-               client_invoke_wrapper_ptr->func_name, rcl_get_error_string().str);
+               client_invoke_wrapper_ptr->info.func_name, rcl_get_error_string().str);
     rcl_reset_error();
     client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED));
     return;

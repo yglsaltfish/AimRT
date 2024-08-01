@@ -3,17 +3,16 @@
 #include <regex>
 #include <vector>
 
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "util/stl_tool.h"
 
 namespace aimrt::runtime::core::rpc {
 
-void RpcBackendManager::Initialize(RpcRegistry* rpc_registry_ptr) {
+void RpcBackendManager::Initialize() {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Rpc backend manager can only be initialized once.");
-
-  rpc_registry_ptr_ = rpc_registry_ptr;
 }
 
 void RpcBackendManager::Start() {
@@ -35,26 +34,43 @@ void RpcBackendManager::Shutdown() {
     AIMRT_TRACE("Shutdown rpc backend '{}'.", backend->Name());
     backend->Shutdown();
   }
-
-  rpc_backend_index_map_.clear();
-  rpc_backend_index_vec_.clear();
-
-  server_filter_manager_.Clear();
-  client_filter_manager_.Clear();
 }
 
-void RpcBackendManager::RegisterClientFilter(FrameworkAsyncRpcFilter&& filter) {
+void RpcBackendManager::SetRpcRegistry(RpcRegistry* rpc_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
-  client_filter_manager_.RegisterFilter(std::move(filter));
+  rpc_registry_ptr_ = rpc_registry_ptr;
 }
 
-void RpcBackendManager::RegisterServerFilter(FrameworkAsyncRpcFilter&& filter) {
+void RpcBackendManager::SetClientFrameworkAsyncFilterManager(FrameworkAsyncFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
-  server_filter_manager_.RegisterFilter(std::move(filter));
+  client_filter_manager_ptr_ = ptr;
+}
+
+void RpcBackendManager::SetServerFrameworkAsyncFilterManager(FrameworkAsyncFilterManager* ptr) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  server_filter_manager_ptr_ = ptr;
+}
+
+void RpcBackendManager::SetClientsFiltersRules(
+    const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  clients_filters_rules_ = rules;
+}
+
+void RpcBackendManager::SetServersFiltersRules(
+    const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  servers_filters_rules_ = rules;
 }
 
 void RpcBackendManager::SetClientsBackendsRules(
@@ -62,7 +78,6 @@ void RpcBackendManager::SetClientsBackendsRules(
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
-
   clients_backends_rules_ = rules;
 }
 
@@ -71,7 +86,6 @@ void RpcBackendManager::SetServersBackendsRules(
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
-
   servers_backends_rules_ = rules;
 }
 
@@ -84,79 +98,99 @@ void RpcBackendManager::RegisterRpcBackend(RpcBackendBase* rpc_backend_ptr) {
   rpc_backend_index_map_.emplace(rpc_backend_ptr->Name(), rpc_backend_ptr);
 }
 
-bool RpcBackendManager::RegisterServiceFunc(ServiceFuncWrapper&& service_func_wrapper) {
+bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&& wrapper) {
   if (state_.load() != State::Init) {
     AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
     return false;
   }
 
-  auto filter_data_ptr = std::make_shared<FrameworkFilterData>(FrameworkFilterData{
-      .func_name = service_func_wrapper.func_name,
-      .pkg_path = service_func_wrapper.pkg_path,
-      .module_name = service_func_wrapper.module_name,
-      .custom_type_support_ptr = service_func_wrapper.custom_type_support_ptr,
-      .req_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.req_type_support),
-      .rsp_type_support_ref = aimrt::util::TypeSupportRef(service_func_wrapper.rsp_type_support)});
+  auto func_name = aimrt::util::ToStdStringView(wrapper.func_name);
 
-  service_func_wrapper.service_func =
-      [this,
-       filter_data_ptr,
-       service_func{std::move(service_func_wrapper.service_func)}](
-          aimrt::rpc::ContextRef ctx_ref,
-          const void* req_ptr,
-          void* rsp_ptr,
-          std::function<void(aimrt::rpc::Status)>&& callback) {
-        server_filter_manager_.InvokeRpc(
-            [service_func{std::move(service_func)}](
-                const FrameworkFilterData& filter_data,
-                aimrt::rpc::ContextRef ctx_ref,
-                const void* req_ptr,
-                void* rsp_ptr,
-                std::function<void(aimrt::rpc::Status)>&& callback) {
-              service_func(ctx_ref, req_ptr, rsp_ptr, std::move(callback));
+  // 创建 func wrapper
+  auto service_func_wrapper_ptr = std::make_unique<ServiceFuncWrapper>();
+  service_func_wrapper_ptr->info = FuncInfo{
+      .func_name = func_name,
+      .pkg_path = wrapper.pkg_path,
+      .module_name = wrapper.module_name,
+      .custom_type_support_ptr = wrapper.custom_type_support_ptr,
+      .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
+      .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
+
+  // 创建 filter
+  auto filter_name_vec = GetFilterRules(func_name, servers_filters_rules_);
+  server_filter_manager_ptr_->CreateFilterCollector(func_name, filter_name_vec);
+
+  // 注册 func wrapper
+  const auto& filter_collector = server_filter_manager_ptr_->GetFilterCollector(func_name);
+
+  auto service_func_ptr = std::make_shared<aimrt::rpc::ServiceFunc>(wrapper.service_func);
+
+  service_func_wrapper_ptr->service_func =
+      [this, &filter_collector, service_func_ptr](
+          const std::shared_ptr<InvokeWrapper>& invoke_wrapper_ptr) {
+        filter_collector.InvokeRpc(
+            [&service_func_ptr](const std::shared_ptr<InvokeWrapper>& invoke_wrapper_ptr) {
+              aimrt::rpc::ServiceCallback service_callback(
+                  [callback{std::move(invoke_wrapper_ptr->callback)}](uint32_t status) {
+                    callback(aimrt::rpc::Status(status));
+                  });
+
+              (*service_func_ptr)(
+                  invoke_wrapper_ptr->ctx_ref.NativeHandle(),
+                  invoke_wrapper_ptr->req_ptr,
+                  invoke_wrapper_ptr->rsp_ptr,
+                  service_callback.NativeHandle());
             },
-            *filter_data_ptr,
-            ctx_ref,
-            req_ptr,
-            rsp_ptr,
-            std::move(callback));
+            invoke_wrapper_ptr);
       };
 
-  auto service_func_wrapper_ptr =
-      std::make_unique<ServiceFuncWrapper>(std::move(service_func_wrapper));
   const auto& service_func_wrapper_ref = *service_func_wrapper_ptr;
 
   if (!rpc_registry_ptr_->RegisterServiceFunc(std::move(service_func_wrapper_ptr)))
     return false;
 
-  std::string_view func_name = service_func_wrapper_ref.func_name;
-
-  auto backend_ptr_vec = GetBackendsByRules(func_name, servers_backends_rules_);
-
-  bool ret = true;
-  for (auto& itr : backend_ptr_vec) {
-    ret &= itr->RegisterServiceFunc(service_func_wrapper_ref);
+  auto backend_itr = servers_backend_index_map_.find(func_name);
+  if (backend_itr == servers_backend_index_map_.end()) {
+    auto backend_ptr_vec = GetBackendsByRules(func_name, servers_backends_rules_);
+    auto emplace_ret = servers_backend_index_map_.emplace(func_name, std::move(backend_ptr_vec));
+    backend_itr = emplace_ret.first;
   }
 
-  servers_backend_index_map_.emplace(func_name, std::move(backend_ptr_vec));
-
+  bool ret = true;
+  for (auto& itr : backend_itr->second) {
+    AIMRT_TRACE("Register service func '{}' to backend '{}'.", func_name, itr->Name());
+    ret &= itr->RegisterServiceFunc(service_func_wrapper_ref);
+  }
   return ret;
 }
 
-bool RpcBackendManager::RegisterClientFunc(ClientFuncWrapper&& client_func_wrapper) {
+bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& wrapper) {
   if (state_.load() != State::Init) {
     AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
     return false;
   }
 
-  auto client_func_wrapper_ptr =
-      std::make_unique<ClientFuncWrapper>(std::move(client_func_wrapper));
+  auto func_name = aimrt::util::ToStdStringView(wrapper.func_name);
+
+  // 创建 func wrapper
+  auto client_func_wrapper_ptr = std::make_unique<ClientFuncWrapper>();
+  client_func_wrapper_ptr->info = FuncInfo{
+      .func_name = func_name,
+      .pkg_path = wrapper.pkg_path,
+      .module_name = wrapper.module_name,
+      .custom_type_support_ptr = wrapper.custom_type_support_ptr,
+      .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
+      .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
+
+  // 创建 filter
+  auto filter_name_vec = GetFilterRules(func_name, clients_filters_rules_);
+  client_filter_manager_ptr_->CreateFilterCollector(func_name, filter_name_vec);
+
+  // 注册 func wrapper
   const auto& client_func_wrapper_ref = *client_func_wrapper_ptr;
 
   if (!rpc_registry_ptr_->RegisterClientFunc(std::move(client_func_wrapper_ptr)))
     return false;
-
-  std::string_view func_name = client_func_wrapper_ref.func_name;
 
   auto backend_itr = clients_backend_index_map_.find(func_name);
   if (backend_itr == clients_backend_index_map_.end()) {
@@ -173,76 +207,69 @@ bool RpcBackendManager::RegisterClientFunc(ClientFuncWrapper&& client_func_wrapp
   return ret;
 }
 
-void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
+void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& client_invoke_wrapper) {
   if (state_.load() != State::Start) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
     return;
   }
 
-  if (client_invoke_wrapper.ctx_ref.GetType() != aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT ||
-      client_invoke_wrapper.ctx_ref.CheckUsed()) {
-    client_invoke_wrapper.callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT));
-    return;
-  }
+  auto func_name = util::ToStdStringView(client_invoke_wrapper.func_name);
+  auto client_callback_ptr = std::make_shared<aimrt::rpc::ClientCallback>(client_invoke_wrapper.callback);
+  auto& client_callback = *client_callback_ptr;
+  aimrt::rpc::ContextRef ctx_ref(client_invoke_wrapper.ctx_ptr);
 
-  client_invoke_wrapper.ctx_ref.SetUsed();
+  // 找注册的func
+  const auto* client_func_wrapper_ptr = rpc_registry_ptr_->GetClientFuncWrapperPtr(
+      func_name, client_invoke_wrapper.pkg_path, client_invoke_wrapper.module_name);
 
-  auto client_invoke_wrapper_ptr =
-      std::make_shared<ClientInvokeWrapper>(std::move(client_invoke_wrapper));
-
-  // TODO，这段find逻辑做到registry里
-  // 需要由本后端处理。此行之后只能使用callback报错，不能返回false
-  const auto& client_func_wrapper_map = rpc_registry_ptr_->GetClientFuncWrapperMap();
-
-  // 找注册的client方法
-  auto get_client_func_wrapper_ptr_func = [&]() -> const runtime::core::rpc::ClientFuncWrapper* {
-    auto find_lib_itr = client_func_wrapper_map.find(client_invoke_wrapper_ptr->pkg_path);
-    if (find_lib_itr == client_func_wrapper_map.end()) return nullptr;
-
-    auto find_module_itr = find_lib_itr->second.find(client_invoke_wrapper_ptr->module_name);
-    if (find_module_itr == find_lib_itr->second.end()) return nullptr;
-
-    auto find_func_itr = find_module_itr->second.find(client_invoke_wrapper_ptr->func_name);
-    if (find_func_itr == find_module_itr->second.end()) return nullptr;
-
-    return find_func_itr->second.get();
-  };
-  const auto* client_func_wrapper_ptr = get_client_func_wrapper_ptr_func();
-
+  // func未注册
   if (client_func_wrapper_ptr == nullptr) [[unlikely]] {
-    client_invoke_wrapper.callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
+    AIMRT_WARN("Func is not registered, func: {}, pkg: {}, module: {}",
+               func_name, client_invoke_wrapper.pkg_path, client_invoke_wrapper.module_name);
+
+    client_callback(AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED);
     return;
   }
 
-  auto filter_data_ptr = std::make_shared<FrameworkFilterData>(FrameworkFilterData{
-      .func_name = client_invoke_wrapper_ptr->func_name,
-      .pkg_path = client_invoke_wrapper_ptr->pkg_path,
-      .module_name = client_invoke_wrapper_ptr->module_name,
-      .custom_type_support_ptr = client_func_wrapper_ptr->custom_type_support_ptr,
-      .req_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_ptr->req_type_support),
-      .rsp_type_support_ref = aimrt::util::TypeSupportRef(client_func_wrapper_ptr->rsp_type_support)});
+  // 检查ctx
+  if (ctx_ref.GetType() != aimrt_rpc_context_type_t::AIMRT_RPC_CLIENT_CONTEXT ||
+      ctx_ref.CheckUsed()) {
+    client_callback(AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT);
+    return;
+  }
 
-  client_filter_manager_.InvokeRpc(
-      [this, client_invoke_wrapper_ptr, filter_data_ptr](
-          const FrameworkFilterData& filter_data,
-          aimrt::rpc::ContextRef ctx_ref,
-          const void* req_ptr,
-          void* rsp_ptr,
-          std::function<void(aimrt::rpc::Status)>&& callback) {
-        client_invoke_wrapper_ptr->callback = std::move(callback);
+  ctx_ref.SetUsed();
 
+  // 找到filter
+  const auto& filter_collector = client_filter_manager_ptr_->GetFilterCollector(func_name);
+
+  // 创建wrapper
+  auto client_invoke_wrapper_ptr = std::make_shared<InvokeWrapper>(
+      InvokeWrapper{
+          .info = client_func_wrapper_ptr->info,
+          .req_ptr = client_invoke_wrapper.req_ptr,
+          .rsp_ptr = client_invoke_wrapper.rsp_ptr,
+          .ctx_ref = ctx_ref});
+
+  client_invoke_wrapper_ptr->callback =
+      [client_callback_ptr{std::move(client_callback_ptr)}](aimrt::rpc::Status status) {
+        (*client_callback_ptr)(status.Code());
+      };
+
+  // 发起调用
+  filter_collector.InvokeRpc(
+      [this](const std::shared_ptr<InvokeWrapper>& client_invoke_wrapper_ptr) {
         // 未设置timeout时，默认60s超时
         if (client_invoke_wrapper_ptr->ctx_ref.Timeout().count() == 0) {
           client_invoke_wrapper_ptr->ctx_ref.SetTimeout(std::chrono::seconds(60));
         }
 
-        std::string_view func_name = client_invoke_wrapper_ptr->func_name;
+        std::string_view func_name = client_invoke_wrapper_ptr->info.func_name;
 
         auto find_itr = clients_backend_index_map_.find(func_name);
 
         if (find_itr == clients_backend_index_map_.end()) [[unlikely]] {
-          AIMRT_ERROR("Rpc call found no backend to handle, func name '{}'.",
-                      client_invoke_wrapper_ptr->func_name);
+          AIMRT_ERROR("Rpc call found no backend to handle, func name '{}'.", func_name);
           client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE));
           return;
         }
@@ -253,8 +280,7 @@ void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
         std::string_view to_addr(client_invoke_wrapper_ptr->ctx_ref.GetToAddr());
         if (!to_addr.empty()) {
           // to_addr格式：backend_name://url_str
-          AIMRT_TRACE("Rpc call use the specified address '{}', func name '{}'.",
-                      to_addr, client_invoke_wrapper_ptr->func_name);
+          AIMRT_TRACE("Rpc call use the specified address '{}', func name '{}'.", to_addr, func_name);
           auto pos = to_addr.find("://");
           if (pos != std::string_view::npos) {
             auto addr_backend = to_addr.substr(0, pos);
@@ -264,36 +290,48 @@ void RpcBackendManager::Invoke(ClientInvokeWrapper&& client_invoke_wrapper) {
               auto backend_ptr = backend_itr->second;
 
               if (std::find(backend_ptr_vec.begin(), backend_ptr_vec.end(), backend_ptr) != backend_ptr_vec.end()) {
-                if (backend_ptr->TryInvoke(client_invoke_wrapper_ptr)) {
-                  return;
-                }
+                backend_ptr->Invoke(client_invoke_wrapper_ptr);
+                return;
               }
             }
           }
-          AIMRT_ERROR("Rpc call address '{}' is invalid, func name '{}'.", to_addr,
-                      client_invoke_wrapper_ptr->func_name);
+          AIMRT_ERROR("Rpc call address '{}' is invalid, func name '{}'.", to_addr, func_name);
           client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
           return;
         }
 
-        // 根据配置的顺序进行尝试
-        for (auto& backend : backend_ptr_vec) {
-          AIMRT_TRACE("Rpc call try backend '{}', func name '{}'.",
-                      backend->Name(), client_invoke_wrapper_ptr->func_name);
-          if (backend->TryInvoke(client_invoke_wrapper_ptr)) {
-            return;
-          }
-        }
-
-        AIMRT_ERROR("Rpc call found no backend to handle, func name '{}'.",
-                    client_invoke_wrapper_ptr->func_name);
-        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE));
+        // 使用配置的第一个backend
+        auto& backend = *(backend_ptr_vec.back());
+        AIMRT_TRACE("Rpc call use backend '{}', func name '{}'.", backend.Name(), func_name);
+        backend.Invoke(client_invoke_wrapper_ptr);
       },
-      *filter_data_ptr,
-      client_invoke_wrapper_ptr->ctx_ref,
-      client_invoke_wrapper_ptr->req_ptr,
-      client_invoke_wrapper_ptr->rsp_ptr,
-      std::move(client_invoke_wrapper_ptr->callback));
+      client_invoke_wrapper_ptr);
+}
+
+RpcBackendManager::FuncBackendInfoMap RpcBackendManager::GetClientsBackendInfo() const {
+  std::unordered_map<std::string_view, std::vector<std::string_view>> result;
+  for (auto& itr : clients_backend_index_map_) {
+    std::vector<std::string_view> backends_name;
+    for (auto& item : itr.second)
+      backends_name.emplace_back(item->Name());
+
+    result.emplace(itr.first, std::move(backends_name));
+  }
+
+  return result;
+}
+
+RpcBackendManager::FuncBackendInfoMap RpcBackendManager::GetServersBackendInfo() const {
+  std::unordered_map<std::string_view, std::vector<std::string_view>> result;
+  for (auto& itr : servers_backend_index_map_) {
+    std::vector<std::string_view> backends_name;
+    for (auto& item : itr.second)
+      backends_name.emplace_back(item->Name());
+
+    result.emplace(itr.first, std::move(backends_name));
+  }
+
+  return result;
 }
 
 std::vector<RpcBackendBase*> RpcBackendManager::GetBackendsByRules(
@@ -333,32 +371,24 @@ std::vector<RpcBackendBase*> RpcBackendManager::GetBackendsByRules(
   return {};
 }
 
-std::unordered_map<std::string_view, std::vector<std::string_view>>
-RpcBackendManager::GetClientsBackendInfo() const {
-  std::unordered_map<std::string_view, std::vector<std::string_view>> result;
-  for (auto& itr : clients_backend_index_map_) {
-    std::vector<std::string_view> backends_name;
-    for (auto& item : itr.second)
-      backends_name.emplace_back(item->Name());
+std::vector<std::string> RpcBackendManager::GetFilterRules(
+    std::string_view func_name,
+    const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
+  for (const auto& item : rules) {
+    const auto& func_regex = item.first;
+    const auto& filters = item.second;
 
-    result.emplace(itr.first, std::move(backends_name));
+    try {
+      if (std::regex_match(func_name.begin(), func_name.end(), std::regex(func_regex, std::regex::ECMAScript))) {
+        return filters;
+      }
+    } catch (const std::exception& e) {
+      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                 func_regex, func_name, e.what());
+    }
   }
 
-  return result;
-}
-
-std::unordered_map<std::string_view, std::vector<std::string_view>>
-RpcBackendManager::GetServersBackendInfo() const {
-  std::unordered_map<std::string_view, std::vector<std::string_view>> result;
-  for (auto& itr : servers_backend_index_map_) {
-    std::vector<std::string_view> backends_name;
-    for (auto& item : itr.second)
-      backends_name.emplace_back(item->Name());
-
-    result.emplace(itr.first, std::move(backends_name));
-  }
-
-  return result;
+  return {};
 }
 
 }  // namespace aimrt::runtime::core::rpc

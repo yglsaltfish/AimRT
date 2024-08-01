@@ -253,7 +253,7 @@ void AimRTCore::CheckCfgFile() const {
       "aimrt");
 
   if (!msg.empty())
-    AIMRT_WARN("ConfigurationName Warning in \"{}\":\n{}", configurator_manager_.GetConfigureFilePath(), msg);
+    AIMRT_WARN("Configuration Name Warning in \"{}\":\n{}", configurator_manager_.GetConfigureFilePath(), msg);
 }
 
 void AimRTCore::DumpCfgFile() const {
@@ -280,32 +280,15 @@ std::string AimRTCore::GenInitializationReport() const {
 
   std::list<std::pair<std::string, std::string>> report;
 
-  auto configurator_manager_report = configurator_manager_.GenInitializationReport();
-  report.splice(report.end(), configurator_manager_report);
-
-  auto plugin_manager_report = plugin_manager_.GenInitializationReport();
-  report.splice(report.end(), plugin_manager_report);
-
-  auto allocator_manager_report = allocator_manager_.GenInitializationReport();
-  report.splice(report.end(), allocator_manager_report);
-
-  auto executor_manager_report = executor_manager_.GenInitializationReport();
-  report.splice(report.end(), executor_manager_report);
-
-  auto logger_manager_report = logger_manager_.GenInitializationReport();
-  report.splice(report.end(), logger_manager_report);
-
-  auto rpc_manager_report = rpc_manager_.GenInitializationReport();
-  report.splice(report.end(), rpc_manager_report);
-
-  auto channel_manager_report = channel_manager_.GenInitializationReport();
-  report.splice(report.end(), channel_manager_report);
-
-  auto parameter_manager_report = parameter_manager_.GenInitializationReport();
-  report.splice(report.end(), parameter_manager_report);
-
-  auto module_manager_report = module_manager_.GenInitializationReport();
-  report.splice(report.end(), module_manager_report);
+  report.splice(report.end(), configurator_manager_.GenInitializationReport());
+  report.splice(report.end(), plugin_manager_.GenInitializationReport());
+  report.splice(report.end(), allocator_manager_.GenInitializationReport());
+  report.splice(report.end(), executor_manager_.GenInitializationReport());
+  report.splice(report.end(), logger_manager_.GenInitializationReport());
+  report.splice(report.end(), rpc_manager_.GenInitializationReport());
+  report.splice(report.end(), channel_manager_.GenInitializationReport());
+  report.splice(report.end(), parameter_manager_.GenInitializationReport());
+  report.splice(report.end(), module_manager_.GenInitializationReport());
 
   std::stringstream result;
   result << "\n----------------------- AimRT Initialization Report Begin ----------------------\n\n";

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "aimrt_module_c_interface/util/buffer_base.h"
 #include "aimrt_module_cpp_interface/util/simple_buffer_array_allocator.h"
 #include "util/exception.h"
@@ -91,6 +93,84 @@ class BufferArray {
  private:
   aimrt_buffer_array_t buffer_array_;
   const aimrt_buffer_array_allocator_t* allocator_ptr_;
+};
+
+class BufferArrayView {
+ public:
+  explicit BufferArrayView(aimrt_buffer_array_view_t buffer_array_view) {
+    buffer_array_view_vec_.reserve(buffer_array_view.len);
+    for (size_t ii = 0; ii < buffer_array_view.len; ++ii) {
+      buffer_array_view_vec_.emplace_back(buffer_array_view.data[ii]);
+    }
+
+    SyncCType();
+  }
+
+  explicit BufferArrayView(aimrt_buffer_array_t buffer_array) {
+    buffer_array_view_vec_.reserve(buffer_array.len);
+    for (size_t ii = 0; ii < buffer_array.len; ++ii) {
+      aimrt_buffer_t buffer = buffer_array.data[ii];
+      buffer_array_view_vec_.emplace_back(
+          aimrt_buffer_view_t{.data = buffer.data, .len = buffer.len});
+    }
+
+    SyncCType();
+  }
+
+  explicit BufferArrayView(const BufferArray& buffer_array) {
+    size_t len = buffer_array.Size();
+    aimrt_buffer_t* data = buffer_array.Data();
+
+    buffer_array_view_vec_.reserve(len);
+    for (size_t ii = 0; ii < len; ++ii) {
+      aimrt_buffer_t buffer = data[ii];
+      buffer_array_view_vec_.emplace_back(
+          aimrt_buffer_view_t{.data = buffer.data, .len = buffer.len});
+    }
+
+    SyncCType();
+  }
+
+  ~BufferArrayView() = default;
+
+  BufferArrayView(const BufferArrayView&) = delete;
+  BufferArrayView& operator=(const BufferArrayView&) = delete;
+
+  const aimrt_buffer_array_view_t* NativeHandle() const { return &buffer_array_view_; }
+  aimrt_buffer_array_view_t* NativeHandle() { return &buffer_array_view_; }
+
+  size_t Size() const { return buffer_array_view_.len; }
+
+  const aimrt_buffer_view_t* Data() const { return buffer_array_view_.data; }
+
+  size_t BufferSize() const {
+    size_t result = 0;
+    for (size_t ii = 0; ii < buffer_array_view_.len; ++ii) {
+      result += buffer_array_view_.data[ii].len;
+    }
+    return result;
+  }
+
+  std::string JoinToString() const {
+    std::string result;
+    for (size_t ii = 0; ii < buffer_array_view_.len; ++ii) {
+      result += std::string_view(
+          static_cast<const char*>(buffer_array_view_.data[ii].data),
+          buffer_array_view_.data[ii].len);
+    }
+    return result;
+  }
+
+ private:
+  void SyncCType() {
+    buffer_array_view_.data = buffer_array_view_vec_.data();
+    buffer_array_view_.len = buffer_array_view_vec_.size();
+  }
+
+ private:
+  std::vector<aimrt_buffer_view_t> buffer_array_view_vec_;
+
+  aimrt_buffer_array_view_t buffer_array_view_;
 };
 
 }  // namespace aimrt::util

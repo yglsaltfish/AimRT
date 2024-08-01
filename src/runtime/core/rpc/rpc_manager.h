@@ -28,17 +28,16 @@ class RpcManager {
     struct ClientOptions {
       std::string func_name;
       std::vector<std::string> enable_backends;
+      std::vector<std::string> enable_filters;
     };
     std::vector<ClientOptions> clients_options;
 
     struct ServerOptions {
       std::string func_name;
       std::vector<std::string> enable_backends;
+      std::vector<std::string> enable_filters;
     };
     std::vector<ServerOptions> servers_options;
-
-    std::vector<std::string> client_filters;
-    std::vector<std::string> server_filters;
   };
 
   enum class State : uint32_t {
@@ -60,6 +59,14 @@ class RpcManager {
   void Start();
   void Shutdown();
 
+  const Options& GetOptions() const { return options_; }
+  State GetState() const { return state_.load(); }
+
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
+  std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
+
   void RegisterRpcBackend(std::unique_ptr<RpcBackendBase>&& rpc_backend_ptr);
 
   void RegisterGetExecutorFunc(
@@ -67,43 +74,17 @@ class RpcManager {
 
   const RpcHandleProxy& GetRpcHandleProxy(const util::ModuleDetailInfo& module_info);
   const RpcHandleProxy& GetRpcHandleProxy(std::string_view module_name = "core") {
-    return GetRpcHandleProxy(
-        util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});
+    return GetRpcHandleProxy(util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});
   }
 
-  template <typename T>
-    requires std::constructible_from<FrameworkAsyncRpcFilter, T>
-  void RegisterClientFilter(std::string_view name, T&& filter) {
-    AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
-        "Method can only be called when state is 'PreInit'.");
-    client_filter_map_.emplace(name, (T &&) filter);
-  }
-
-  template <typename T>
-    requires std::constructible_from<FrameworkAsyncRpcFilter, T>
-  void RegisterServerFilter(std::string_view name, T&& filter) {
-    AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
-        "Method can only be called when state is 'PreInit'.");
-    server_filter_map_.emplace(name, (T &&) filter);
-  }
+  void RegisterClientFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter);
+  void RegisterServerFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter);
 
   void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
-  // 信息查询类接口
-  const RpcRegistry* GetRpcRegistry() const;
-  const std::vector<std::string>& GetRpcBackendNameList() const;
-
-  State GetState() const { return state_.load(); }
-
-  std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
-
-  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
-
  private:
   void RegisterLocalRpcBackend();
+  void RegisterDebugLogFilter();
 
  private:
   Options options_;
@@ -114,8 +95,8 @@ class RpcManager {
 
   std::unordered_set<std::string> passed_context_meta_keys_;
 
-  std::unordered_map<std::string, FrameworkAsyncRpcFilter> client_filter_map_;
-  std::unordered_map<std::string, FrameworkAsyncRpcFilter> server_filter_map_;
+  FrameworkAsyncFilterManager client_filter_manager_;
+  FrameworkAsyncFilterManager server_filter_manager_;
 
   std::unique_ptr<RpcRegistry> rpc_registry_ptr_;
 
@@ -124,9 +105,6 @@ class RpcManager {
   RpcBackendManager rpc_backend_manager_;
 
   std::unordered_map<std::string, std::unique_ptr<RpcHandleProxy>> rpc_handle_proxy_map_;
-
-  // 信息查询类变量
-  std::vector<std::string> rpc_backend_name_vec_;
 };
 
 }  // namespace aimrt::runtime::core::rpc

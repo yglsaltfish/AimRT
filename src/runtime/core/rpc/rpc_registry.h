@@ -5,33 +5,20 @@
 #include <string>
 #include <unordered_map>
 
-#include "aimrt_module_cpp_interface/rpc/rpc_context.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
-#include "aimrt_module_cpp_interface/util/function.h"
+#include "core/rpc/rpc_invoke_wrapper.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::rpc {
 
-using ServiceFunc =
-    std::function<void(aimrt::rpc::ContextRef, const void*, void*, std::function<void(aimrt::rpc::Status)>&&)>;
+using ServiceFunc = std::function<void(const std::shared_ptr<InvokeWrapper>&)>;
 
 struct ServiceFuncWrapper {
-  std::string_view func_name;
-  std::string_view pkg_path;
-  std::string_view module_name;
-  const void* custom_type_support_ptr = nullptr;
-  const aimrt_type_support_base_t* req_type_support = nullptr;
-  const aimrt_type_support_base_t* rsp_type_support = nullptr;
+  FuncInfo info;
   ServiceFunc service_func;
 };
 
 struct ClientFuncWrapper {
-  std::string_view func_name;
-  std::string_view pkg_path;
-  std::string_view module_name;
-  const void* custom_type_support_ptr = nullptr;
-  const aimrt_type_support_base_t* req_type_support = nullptr;
-  const aimrt_type_support_base_t* rsp_type_support = nullptr;
+  FuncInfo info;
 };
 
 class RpcRegistry {
@@ -52,6 +39,12 @@ class RpcRegistry {
   bool RegisterClientFunc(
       std::unique_ptr<ClientFuncWrapper>&& client_func_wrapper_ptr);
 
+  const ServiceFuncWrapper* GetServiceFuncWrapperPtr(
+      std::string_view func_name, std::string_view pkg_path, std::string_view module_name) const;
+
+  const ClientFuncWrapper* GetClientFuncWrapperPtr(
+      std::string_view func_name, std::string_view pkg_path, std::string_view module_name) const;
+
   const auto& GetServiceFuncWrapperMap() const { return service_func_wrapper_map_; }
   const auto& GetClientFuncWrapperMap() const { return client_func_wrapper_map_; }
 
@@ -61,22 +54,38 @@ class RpcRegistry {
  private:
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // pkg_path:module_name:func_name:wrapper
-  using ServiceFuncMap = std::unordered_map<std::string_view, std::unique_ptr<ServiceFuncWrapper>>;
-  using ServiceModuleMap = std::unordered_map<std::string_view, ServiceFuncMap>;
-  using ServicePkgMap = std::unordered_map<std::string_view, ServiceModuleMap>;
-  ServicePkgMap service_func_wrapper_map_;
+  struct Key {
+    std::string_view func_name;
+    std::string_view pkg_path;
+    std::string_view module_name;
+
+    bool operator==(const Key& rhs) const {
+      return func_name == rhs.func_name &&
+             pkg_path == rhs.pkg_path &&
+             module_name == rhs.module_name;
+    }
+
+    struct Hash {
+      std::size_t operator()(const Key& k) const {
+        return std::hash<std::string_view>()(k.func_name) ^
+               (std::hash<std::string_view>()(k.pkg_path)) ^
+               (std::hash<std::string_view>()(k.module_name));
+      }
+    };
+  };
+
+  std::unordered_map<Key, std::unique_ptr<ServiceFuncWrapper>, Key::Hash>
+      service_func_wrapper_map_;
 
   // 索引表，func_name:wrapper
-  std::unordered_map<std::string_view, std::vector<ServiceFuncWrapper*>> service_index_map_;
+  std::unordered_map<std::string_view, std::vector<ServiceFuncWrapper*>>
+      service_index_map_;
 
-  // pkg_path:module_name:func_name:wrapper
-  using ClientFuncMap = std::unordered_map<std::string_view, std::unique_ptr<ClientFuncWrapper>>;
-  using ClientModuleMap = std::unordered_map<std::string_view, ClientFuncMap>;
-  using ClientPkgMap = std::unordered_map<std::string_view, ClientModuleMap>;
-  ClientPkgMap client_func_wrapper_map_;
+  std::unordered_map<Key, std::unique_ptr<ClientFuncWrapper>, Key::Hash>
+      client_func_wrapper_map_;
 
   // 索引表，func_name:wrapper
-  std::unordered_map<std::string_view, std::vector<ClientFuncWrapper*>> client_index_map_;
+  std::unordered_map<std::string_view, std::vector<ClientFuncWrapper*>>
+      client_index_map_;
 };
 }  // namespace aimrt::runtime::core::rpc

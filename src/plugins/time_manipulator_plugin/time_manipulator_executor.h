@@ -111,7 +111,7 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   uint64_t timing_task_map_pos_ = 0;
   std::map<uint64_t, TaskList> timing_task_map_;
 
-  std::unique_ptr<std::thread> timer_thread_;
+  std::unique_ptr<std::thread> timer_thread_ptr_;
 };
 
 }  // namespace aimrt::plugins::time_manipulator_plugin

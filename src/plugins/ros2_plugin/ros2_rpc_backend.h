@@ -88,16 +88,20 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   std::string_view Name() const override { return "ros2"; }
 
-  void Initialize(YAML::Node options_node, const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override;
+  void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
+
+  void SetRpcRegistry(const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override {
+    rpc_registry_ptr_ = rpc_registry_ptr;
+  }
 
   bool RegisterServiceFunc(
       const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept override;
   bool RegisterClientFunc(
       const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper) noexcept override;
-  bool TryInvoke(
-      const std::shared_ptr<runtime::core::rpc::ClientInvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
+  void Invoke(
+      const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
 
   void SetNodePtr(const std::shared_ptr<rclcpp::Node>& ros2_node_ptr) {
     ros2_node_ptr_ = ros2_node_ptr;

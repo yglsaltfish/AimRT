@@ -22,6 +22,7 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
       Node client_options_node;
       client_options_node["func_name"] = client_options.func_name;
       client_options_node["enable_backends"] = client_options.enable_backends;
+      client_options_node["enable_filters"] = client_options.enable_filters;
       node["clients_options"].push_back(client_options_node);
     }
 
@@ -30,11 +31,9 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
       Node server_options_node;
       server_options_node["func_name"] = server_options.func_name;
       server_options_node["enable_backends"] = server_options.enable_backends;
+      server_options_node["enable_filters"] = server_options.enable_filters;
       node["servers_options"].push_back(server_options_node);
     }
-
-    node["client_filters"] = rhs.client_filters;
-    node["server_filters"] = rhs.server_filters;
 
     return node;
   }
@@ -57,8 +56,13 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
       for (auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
-            .func_name = client_options_node["func_name"].as<std::string>(),
-            .enable_backends = client_options_node["enable_backends"].as<std::vector<std::string>>()};
+            .func_name = client_options_node["func_name"].as<std::string>()};
+
+        if (client_options_node["enable_backends"])
+          client_options.enable_backends = client_options_node["enable_backends"].as<std::vector<std::string>>();
+
+        if (client_options_node["enable_filters"])
+          client_options.enable_filters = client_options_node["enable_filters"].as<std::vector<std::string>>();
 
         rhs.clients_options.emplace_back(std::move(client_options));
       }
@@ -67,18 +71,17 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
     if (node["servers_options"] && node["servers_options"].IsSequence()) {
       for (auto& server_options_node : node["servers_options"]) {
         auto server_options = Options::ServerOptions{
-            .func_name = server_options_node["func_name"].as<std::string>(),
-            .enable_backends = server_options_node["enable_backends"].as<std::vector<std::string>>()};
+            .func_name = server_options_node["func_name"].as<std::string>()};
+
+        if (server_options_node["enable_backends"])
+          server_options.enable_backends = server_options_node["enable_backends"].as<std::vector<std::string>>();
+
+        if (server_options_node["enable_filters"])
+          server_options.enable_filters = server_options_node["enable_filters"].as<std::vector<std::string>>();
 
         rhs.servers_options.emplace_back(std::move(server_options));
       }
     }
-
-    if (node["client_filters"])
-      rhs.client_filters = node["client_filters"].as<std::vector<std::string>>();
-
-    if (node["server_filters"])
-      rhs.server_filters = node["server_filters"].as<std::vector<std::string>>();
 
     return true;
   }
@@ -89,6 +92,7 @@ namespace aimrt::runtime::core::rpc {
 
 void RpcManager::Initialize(YAML::Node options_node) {
   RegisterLocalRpcBackend();
+  RegisterDebugLogFilter();
 
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
@@ -101,71 +105,67 @@ void RpcManager::Initialize(YAML::Node options_node) {
   rpc_registry_ptr_->SetLogger(logger_ptr_);
 
   rpc_backend_manager_.SetLogger(logger_ptr_);
+  rpc_backend_manager_.SetRpcRegistry(rpc_registry_ptr_.get());
+  rpc_backend_manager_.SetClientFrameworkAsyncFilterManager(&client_filter_manager_);
+  rpc_backend_manager_.SetServerFrameworkAsyncFilterManager(&server_filter_manager_);
 
-  // 根据配置初始化filter
-  for (const auto& item : options_.client_filters) {
-    auto finditr = client_filter_map_.find(item);
-    AIMRT_CHECK_ERROR_THROW(finditr != client_filter_map_.end(),
-                            "Invalid client filter '{}'", item);
-    rpc_backend_manager_.RegisterClientFilter(std::move(finditr->second));
-  }
-
-  for (const auto& item : options_.server_filters) {
-    auto finditr = server_filter_map_.find(item);
-    AIMRT_CHECK_ERROR_THROW(finditr != server_filter_map_.end(),
-                            "Invalid server filter '{}'", item);
-    rpc_backend_manager_.RegisterServerFilter(std::move(finditr->second));
-  }
+  std::vector<std::string> rpc_backend_name_vec;
 
   // 根据配置初始化指定的backend
   for (auto& backend_options : options_.backends_options) {
-    auto finditr =
-        std::find_if(rpc_backend_vec_.begin(), rpc_backend_vec_.end(),
-                     [&backend_options](const auto& ptr) {
-                       return ptr->Name() == backend_options.type;
-                     });
+    auto finditr = std::find_if(
+        rpc_backend_vec_.begin(), rpc_backend_vec_.end(),
+        [&backend_options](const auto& ptr) {
+          return ptr->Name() == backend_options.type;
+        });
 
     AIMRT_CHECK_ERROR_THROW(finditr != rpc_backend_vec_.end(),
                             "Invalid rpc backend type '{}'",
                             backend_options.type);
 
-    (*finditr)->Initialize(backend_options.options,
-                           rpc_registry_ptr_.get());
+    (*finditr)->SetRpcRegistry(rpc_registry_ptr_.get());
+    (*finditr)->Initialize(backend_options.options);
 
     rpc_backend_manager_.RegisterRpcBackend(finditr->get());
 
-    rpc_backend_name_vec_.emplace_back((*finditr)->Name());
+    rpc_backend_name_vec.emplace_back((*finditr)->Name());
   }
 
-  // 设置backends rules
+  // 设置rules
   std::vector<std::pair<std::string, std::vector<std::string>>> client_backends_rules;
+  std::vector<std::pair<std::string, std::vector<std::string>>> client_filters_rules;
   for (auto& item : options_.clients_options) {
     for (auto& backend_name : item.enable_backends) {
       AIMRT_CHECK_ERROR_THROW(
-          std::find(rpc_backend_name_vec_.begin(), rpc_backend_name_vec_.end(), backend_name) != rpc_backend_name_vec_.end(),
+          std::find(rpc_backend_name_vec.begin(), rpc_backend_name_vec.end(), backend_name) != rpc_backend_name_vec.end(),
           "Invalid rpc backend type '{}' for func '{}'",
           backend_name, item.func_name);
     }
 
     client_backends_rules.emplace_back(item.func_name, item.enable_backends);
+    client_filters_rules.emplace_back(item.func_name, item.enable_filters);
   }
   rpc_backend_manager_.SetClientsBackendsRules(client_backends_rules);
+  rpc_backend_manager_.SetClientsFiltersRules(client_filters_rules);
 
   std::vector<std::pair<std::string, std::vector<std::string>>> server_backends_rules;
+  std::vector<std::pair<std::string, std::vector<std::string>>> server_filters_rules;
   for (auto& item : options_.servers_options) {
     for (auto& backend_name : item.enable_backends) {
       AIMRT_CHECK_ERROR_THROW(
-          std::find(rpc_backend_name_vec_.begin(), rpc_backend_name_vec_.end(), backend_name) != rpc_backend_name_vec_.end(),
+          std::find(rpc_backend_name_vec.begin(), rpc_backend_name_vec.end(), backend_name) != rpc_backend_name_vec.end(),
           "Invalid rpc backend type '{}' for func '{}'",
           backend_name, item.func_name);
     }
 
     server_backends_rules.emplace_back(item.func_name, item.enable_backends);
+    server_filters_rules.emplace_back(item.func_name, item.enable_filters);
   }
   rpc_backend_manager_.SetServersBackendsRules(server_backends_rules);
+  rpc_backend_manager_.SetServersFiltersRules(server_filters_rules);
 
   // 初始化backend manager
-  rpc_backend_manager_.Initialize(rpc_registry_ptr_.get());
+  rpc_backend_manager_.Initialize();
 
   options_node = options_;
 
@@ -196,10 +196,97 @@ void RpcManager::Shutdown() {
 
   rpc_registry_ptr_.reset();
 
-  server_filter_map_.clear();
-  client_filter_map_.clear();
+  server_filter_manager_.Clear();
+  client_filter_manager_.Clear();
 
   get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
+}
+
+std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationReport() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Method can only be called when state is 'Init'.");
+
+  std::vector<std::vector<std::string>> client_info_table =
+      {{"func", "module", "backends", "filters"}};
+
+  const auto& client_backend_info = rpc_backend_manager_.GetClientsBackendInfo();
+  const auto& client_index_map = rpc_registry_ptr_->GetClientIndexMap();
+
+  for (const auto& client_index_itr : client_index_map) {
+    auto func_name = client_index_itr.first;
+    auto client_backend_itr = client_backend_info.find(func_name);
+    AIMRT_CHECK_ERROR_THROW(client_backend_itr != client_backend_info.end(),
+                            "Invalid rpc registry info.");
+
+    auto filter_name_vec = client_filter_manager_.GetFilterNameVec(func_name);
+
+    for (const auto& item : client_index_itr.second) {
+      std::vector<std::string> cur_client_info(4);
+      cur_client_info[0] = func_name;
+      cur_client_info[1] = item->info.module_name;
+      cur_client_info[2] = aimrt::common::util::JoinVec(client_backend_itr->second, ",");
+      cur_client_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
+      client_info_table.emplace_back(std::move(cur_client_info));
+    }
+  }
+
+  std::vector<std::vector<std::string>> server_info_table =
+      {{"func", "module", "backends", "filters"}};
+
+  const auto& server_backend_info = rpc_backend_manager_.GetServersBackendInfo();
+  const auto& server_index_map = rpc_registry_ptr_->GetServiceIndexMap();
+
+  for (const auto& server_index_itr : server_index_map) {
+    auto func_name = server_index_itr.first;
+    auto server_backend_itr = server_backend_info.find(func_name);
+    AIMRT_CHECK_ERROR_THROW(server_backend_itr != server_backend_info.end(),
+                            "Invalid rpc registry info.");
+
+    auto filter_name_vec = server_filter_manager_.GetFilterNameVec(func_name);
+
+    for (const auto& item : server_index_itr.second) {
+      std::vector<std::string> cur_server_info(4);
+      cur_server_info[0] = func_name;
+      cur_server_info[1] = item->info.module_name;
+      cur_server_info[2] = aimrt::common::util::JoinVec(server_backend_itr->second, ",");
+      cur_server_info[3] = aimrt::common::util::JoinVec(filter_name_vec, ",");
+      server_info_table.emplace_back(std::move(cur_server_info));
+    }
+  }
+
+  std::vector<std::string> rpc_backend_name_vec;
+  for (const auto& item : rpc_backend_vec_)
+    rpc_backend_name_vec.emplace_back(item->Name());
+
+  std::string rpc_backend_name_vec_str;
+  if (rpc_backend_name_vec.empty()) {
+    rpc_backend_name_vec_str = "<empty>";
+  } else {
+    rpc_backend_name_vec_str = "[ " + aimrt::common::util::JoinVec(rpc_backend_name_vec, " , ") + " ]";
+  }
+
+  auto rpc_client_filter_name_vec = client_filter_manager_.GetAllFiltersName();
+  std::string rpc_client_filter_name_vec_str;
+  if (rpc_client_filter_name_vec.empty()) {
+    rpc_client_filter_name_vec_str = "<empty>";
+  } else {
+    rpc_client_filter_name_vec_str = "[ " + aimrt::common::util::JoinVec(rpc_client_filter_name_vec, " , ") + " ]";
+  }
+
+  auto rpc_server_filter_name_vec = server_filter_manager_.GetAllFiltersName();
+  std::string rpc_server_filter_name_vec_str;
+  if (rpc_server_filter_name_vec.empty()) {
+    rpc_server_filter_name_vec_str = "<empty>";
+  } else {
+    rpc_server_filter_name_vec_str = "[ " + aimrt::common::util::JoinVec(rpc_server_filter_name_vec, " , ") + " ]";
+  }
+
+  return {{"Rpc Backend List", rpc_backend_name_vec_str},
+          {"Rpc Client Filter List", rpc_client_filter_name_vec_str},
+          {"Rpc Server Filter List", rpc_server_filter_name_vec_str},
+          {"Rpc Client Info", aimrt::common::util::DrawTable(client_info_table)},
+          {"Rpc Server Info", aimrt::common::util::DrawTable(server_info_table)}};
 }
 
 void RpcManager::RegisterRpcBackend(
@@ -237,27 +324,25 @@ const RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo
   return *(emplace_ret.first->second);
 }
 
+void RpcManager::RegisterClientFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  client_filter_manager_.RegisterFilter(name, std::move(filter));
+}
+
+void RpcManager::RegisterServerFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter) {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::PreInit,
+      "Method can only be called when state is 'PreInit'.");
+  server_filter_manager_.RegisterFilter(name, std::move(filter));
+}
+
 void RpcManager::SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
   passed_context_meta_keys_.insert(keys.begin(), keys.end());
-}
-
-const RpcRegistry* RpcManager::GetRpcRegistry() const {
-  AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Method can only be called when state is 'Init'.");
-
-  return rpc_registry_ptr_.get();
-}
-
-const std::vector<std::string>& RpcManager::GetRpcBackendNameList() const {
-  AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Method can only be called when state is 'Init'.");
-
-  return rpc_backend_name_vec_;
 }
 
 void RpcManager::RegisterLocalRpcBackend() {
@@ -273,77 +358,58 @@ void RpcManager::RegisterLocalRpcBackend() {
   RegisterRpcBackend(std::move(local_rpc_backend_ptr));
 }
 
-std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationReport() const {
-  AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
-      "Method can only be called when state is 'Init'.");
+void RpcManager::RegisterDebugLogFilter() {
+  RegisterClientFilter(
+      "debug_log",
+      [this](const std::shared_ptr<InvokeWrapper>& ptr, const FrameworkAsyncRpcHandle& h) {
+        auto req_str = ptr->SerializeReqWithCache("json")->JoinToString();
 
-  std::vector<std::vector<std::string>> client_info_table =
-      {{"func", "module", "backends"}};
+        AIMRT_INFO("RPC client start new rpc call. func name: {}, context: {}, req: {}",
+                   ptr->info.func_name, ptr->ctx_ref.ToString(), req_str);
 
-  const auto& client_backend_info = rpc_backend_manager_.GetClientsBackendInfo();
-  const auto& client_index_map = rpc_registry_ptr_->GetClientIndexMap();
+        ptr->callback =
+            [this, ptr, callback{std::move(ptr->callback)}](aimrt::rpc::Status status) {
+              auto rsp_str = ptr->SerializeRspWithCache("json")->JoinToString();
 
-  for (const auto& client_index_itr : client_index_map) {
-    auto client_backend_itr = client_backend_info.find(client_index_itr.first);
-    AIMRT_CHECK_ERROR_THROW(client_backend_itr != client_backend_info.end(),
-                            "Invalid rpc registry info.");
+              if (status.OK()) {
+                AIMRT_INFO("RPC client get rpc ret. func name: {}, status: {}, rsp: {}",
+                           ptr->info.func_name, status.ToString(), rsp_str);
+              } else {
+                AIMRT_WARN("RPC client get rpc error ret. func name: {}, status: {}",
+                           ptr->info.func_name, status.ToString());
+              }
 
-    for (const auto& item : client_index_itr.second) {
-      std::vector<std::string> cur_client_info(3);
-      cur_client_info[0] = client_index_itr.first;
-      cur_client_info[1] = item->module_name;
-      cur_client_info[2] = aimrt::common::util::JoinVec(client_backend_itr->second, ",");
-      client_info_table.emplace_back(std::move(cur_client_info));
-    }
-  }
+              callback(status);
+            };
 
-  std::vector<std::vector<std::string>> server_info_table =
-      {{"func", "module", "backends"}};
+        h(ptr);
+      });
 
-  const auto& server_backend_info = rpc_backend_manager_.GetServersBackendInfo();
-  const auto& server_index_map = rpc_registry_ptr_->GetServiceIndexMap();
+  RegisterServerFilter(
+      "debug_log",
+      [this](const std::shared_ptr<InvokeWrapper>& ptr, const FrameworkAsyncRpcHandle& h) {
+        auto req_str = ptr->SerializeReqWithCache("json")->JoinToString();
 
-  for (const auto& server_index_itr : server_index_map) {
-    auto server_backend_itr = server_backend_info.find(server_index_itr.first);
-    AIMRT_CHECK_ERROR_THROW(server_backend_itr != server_backend_info.end(),
-                            "Invalid rpc registry info.");
+        AIMRT_INFO("RPC server get new rpc call. func name: {}, context: {}, req: {}",
+                   ptr->info.func_name, ptr->ctx_ref.ToString(), req_str);
 
-    for (const auto& item : server_index_itr.second) {
-      std::vector<std::string> cur_server_info(3);
-      cur_server_info[0] = server_index_itr.first;
-      cur_server_info[1] = item->module_name;
-      cur_server_info[2] = aimrt::common::util::JoinVec(server_backend_itr->second, ",");
-      server_info_table.emplace_back(std::move(cur_server_info));
-    }
-  }
+        ptr->callback =
+            [this, ptr, callback{std::move(ptr->callback)}](aimrt::rpc::Status status) {
+              auto rsp_str = ptr->SerializeRspWithCache("json")->JoinToString();
 
-  std::string rpc_backend_name_list;
-  if (rpc_backend_name_vec_.empty()) {
-    rpc_backend_name_list = "<empty>";
-  } else {
-    rpc_backend_name_list = "[ " + aimrt::common::util::JoinVec(rpc_backend_name_vec_, " , ") + " ]";
-  }
+              if (status.OK()) {
+                AIMRT_INFO("RPC server return rpc ret. func name: {}, status: {}, rsp: {}",
+                           ptr->info.func_name, status.ToString(), rsp_str);
+              } else {
+                AIMRT_WARN("RPC server return rpc error ret. func name: {}, status: {}",
+                           ptr->info.func_name, status.ToString());
+              }
 
-  std::string rpc_client_filter_name_list;
-  if (options_.client_filters.empty()) {
-    rpc_client_filter_name_list = "<empty>";
-  } else {
-    rpc_client_filter_name_list = "[ " + aimrt::common::util::JoinVec(options_.client_filters, " , ") + " ]";
-  }
+              callback(status);
+            };
 
-  std::string rpc_server_filter_name_list;
-  if (options_.server_filters.empty()) {
-    rpc_server_filter_name_list = "<empty>";
-  } else {
-    rpc_server_filter_name_list = "[ " + aimrt::common::util::JoinVec(options_.server_filters, " , ") + " ]";
-  }
-
-  return {{"Rpc Backend List", rpc_backend_name_list},
-          {"Rpc Client Info", aimrt::common::util::DrawTable(client_info_table)},
-          {"Rpc Server Info", aimrt::common::util::DrawTable(server_info_table)},
-          {"Rpc Client Filter List", rpc_client_filter_name_list},
-          {"Rpc Server Filter List", rpc_server_filter_name_list}};
+        h(ptr);
+      });
 }
 
 }  // namespace aimrt::runtime::core::rpc
