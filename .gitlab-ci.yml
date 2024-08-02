@@ -26,11 +26,7 @@ variables:
 
   TEST_CMD:
     value: |
-      source /opt/ros/humble/setup.bash &&
-      pip install pyinstaller &&
-      pip install jinja2 &&
-      pip install setuptools &&
-      pip install pyyaml &&
+      source /opt/ros/humble/setup.bash && 
       ./test.sh \
       -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz \
       -Dfmt_DOWNLOAD_URL=https://file.agibot.com/third_party/fmt-10.2.1.tar.gz \
