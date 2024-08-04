@@ -6,6 +6,7 @@ aimrt:
         options:
           node_name: example_channel_node
           trace_otlp_http_exporter_url: http://localhost:4318/v1/traces
+          force_trace: true
           attributes:
             - key: sn
               val: 123456
@@ -28,11 +29,11 @@ aimrt:
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
+        enable_filters: [otp_trace]
     sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
-    pub_filters: [otp_trace]
-    sub_filters: [otp_trace]
+        enable_filters: [otp_trace]
   module:
     pkgs:
       - path: ./libprotobuf_channel_pub_pkg.so

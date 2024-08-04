@@ -1,30 +1,10 @@
 #pragma once
 
-#include <memory>
-#include <string_view>
-#include <unordered_map>
-
-#include "aimrt_module_cpp_interface/channel/channel_context.h"
-#include "aimrt_module_cpp_interface/util/buffer.h"
 #include "core/channel/channel_registry.h"
 
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::runtime::core::channel {
-
-struct PublishWrapper {
-  std::string_view msg_type;
-  std::string_view pkg_path;
-  std::string_view module_name;
-  std::string_view topic_name;
-
-  mutable aimrt::channel::ContextRef ctx_ref;
-  const void* msg_ptr = nullptr;
-
-  // cache
-  mutable const aimrt_type_support_base_t* msg_type_support = nullptr;
-  mutable std::unordered_map<std::string_view, std::shared_ptr<aimrt::util::BufferArray>> serialization_cache;
-};
 
 class ChannelBackendBase {
  public:
@@ -36,10 +16,18 @@ class ChannelBackendBase {
 
   virtual std::string_view Name() const = 0;  // It should always return the same value
 
-  virtual void Initialize(YAML::Node options_node,
-                          const ChannelRegistry* channel_registry_ptr) = 0;
+  virtual void Initialize(YAML::Node options_node) = 0;
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
+
+  /**
+   * @brief Set the Channel Registry to backend
+   * @note
+   * 1. This method will only be called once before 'Initialize'.
+   *
+   * @param rpc_registry_ptr
+   */
+  virtual void SetChannelRegistry(const ChannelRegistry* rpc_registry_ptr) {}
 
   /**
    * @brief Register publish type
@@ -69,7 +57,7 @@ class ChannelBackendBase {
    *
    * @param publish_wrapper
    */
-  virtual void Publish(const PublishWrapper& publish_wrapper) noexcept = 0;
+  virtual void Publish(MsgWrapper& msg_wrapper) noexcept = 0;
 };
 
 }  // namespace aimrt::runtime::core::channel

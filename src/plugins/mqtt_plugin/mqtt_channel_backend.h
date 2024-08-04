@@ -39,15 +39,18 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   std::string_view Name() const override { return "mqtt"; }
 
-  void Initialize(YAML::Node options_node,
-                  const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override;
+  void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
+
+  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override {
+    channel_registry_ptr_ = channel_registry_ptr;
+  }
 
   bool RegisterPublishType(
       const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept override;
   bool Subscribe(const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept override;
-  void Publish(const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept override;
+  void Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept override;
 
   void SubscribeMqttTopic();
   void UnSubscribeMqttTopic();
@@ -75,9 +78,15 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
   };
   std::vector<MqttSubInfo> sub_info_vec_;
 
-  std::unordered_map<std::string,
-                     std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
+  std::unordered_map<
+      std::string,
+      std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
       subscribe_wrapper_map_;
+
+  struct PubCfgInfo {
+    int qos;
+  };
+  std::unordered_map<std::string_view, PubCfgInfo> pub_cfg_info_map_;
 };
 
 }  // namespace aimrt::plugins::mqtt_plugin

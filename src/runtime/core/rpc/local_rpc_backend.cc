@@ -1,8 +1,4 @@
 #include "core/rpc/local_rpc_backend.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "aimrt_module_cpp_interface/util/buffer.h"
-#include "aimrt_module_cpp_interface/util/type_support.h"
-#include "core/util/thread_tools.h"
 #include "util/string_util.h"
 #include "util/url_parser.h"
 
@@ -80,6 +76,8 @@ void LocalRpcBackend::Shutdown() {
   service_func_register_index_.clear();
 
   client_tool_ptr_.reset();
+
+  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
 
 bool LocalRpcBackend::RegisterServiceFunc(

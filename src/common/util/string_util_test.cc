@@ -1438,6 +1438,43 @@ TEST(STRING_UTIL_TEST, StrToUpper_test) {
   }
 }
 
+TEST(STRING_UTIL_TEST, CheckIEqual_test) {
+  struct TestCase {
+    std::string name;
+
+    std::string str1;
+    std::string str2;
+
+    bool want_result;
+  };
+  std::vector<TestCase> test_cases;
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 1",
+          .str1 = "",
+          .str2 = "",
+          .want_result = true});
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 2",
+          .str1 = "a",
+          .str2 = "",
+          .want_result = false});
+  test_cases.emplace_back(
+      TestCase{
+          .name = "case 3",
+          .str1 = "abc",
+          .str2 = "AbC",
+          .want_result = true});
+
+  for (size_t ii = 0; ii < test_cases.size(); ++ii) {
+    TestCase& cur_test_case = test_cases[ii];
+    auto ret = CheckIEqual(cur_test_case.str1, cur_test_case.str2);
+    EXPECT_EQ(ret, cur_test_case.want_result)
+        << "Test " << cur_test_case.name << " failed, index " << ii;
+  }
+}
+
 TEST(STRING_UTIL_TEST, StrToTitleCase_test) {
   struct TestCase {
     std::string name;

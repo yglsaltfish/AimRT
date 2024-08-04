@@ -15,6 +15,7 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
 
     node["node_name"] = rhs.node_name;
     node["trace_otlp_http_exporter_url"] = rhs.trace_otlp_http_exporter_url;
+    node["force_trace"] = rhs.force_trace;
 
     node["attributes"] = YAML::Node();
     for (const auto& attribute : rhs.attributes) {
@@ -32,6 +33,9 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
 
     rhs.node_name = node["node_name"].as<std::string>();
     rhs.trace_otlp_http_exporter_url = node["trace_otlp_http_exporter_url"].as<std::string>();
+
+    if (node["force_trace"])
+      rhs.force_trace = node["force_trace"].as<bool>();
 
     for (auto& attribute_node : node["attributes"]) {
       auto attribute = Options::Attribute{
@@ -132,13 +136,19 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
 
   channel_manager.RegisterPublishFilter(
       "otp_trace",
-      [this](const aimrt::runtime::core::channel::FrameworkFilterData& filter_data,
-             aimrt::channel::ContextRef ctx_ref,
-             const void* msg,
-             aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
-        // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
-        std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
-        bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
+      [this, forec_trace = options_.force_trace](
+          aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
+          aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
+        auto ctx_ref = msg_wrapper.ctx_ref;
+
+        // 如果设置了全局强制trace，或者context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
+        bool start_new_trace = forec_trace;
+
+        if (!start_new_trace) {
+          start_new_trace = common::util::CheckIEqual(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace), "true");
+        } else {
+          ctx_ref.SetMetaValue(kCtxKeyStartNewTrace, "true");
+        }
 
         auto tracer = provider_->GetTracer(options_.node_name);
         ContextCarrier carrier(ctx_ref);
@@ -161,14 +171,14 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
 
         // 不需要启动一个新trace
         if (!start_new_trace) {
-          h(filter_data, ctx_ref, msg);
+          h(msg_wrapper);
           return;
         }
 
         // 需要启动一个新trace
         std::string span_name =
             std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" +
-            std::string(filter_data.msg_type);
+            std::string(msg_wrapper.info.msg_type);
         auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
 
         // 将当前span的context打包
@@ -181,24 +191,30 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
-        h(filter_data, ctx_ref, msg);
+        h(msg_wrapper);
 
         // 序列化包成json
-        auto s = filter_data.type_support_ref.SimpleSerialize("json", msg);
-        if (!s.empty()) span->SetAttribute("msg_data", s);
+        auto msg_str = msg_wrapper.SerializeMsgWithCache("json")->JoinToString();
+        if (!msg_str.empty()) span->SetAttribute("msg_data", msg_str);
 
         span->End();
       });
 
   channel_manager.RegisterSubscribeFilter(
       "otp_trace",
-      [this](const aimrt::runtime::core::channel::FrameworkFilterData& filter_data,
-             aimrt::channel::ContextRef ctx_ref,
-             const void* msg,
-             aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
-        // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
-        std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
-        bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
+      [this, forec_trace = options_.force_trace](
+          aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
+          aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
+        auto ctx_ref = msg_wrapper.ctx_ref;
+
+        // 如果设置了全局强制trace，或者context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
+        bool start_new_trace = forec_trace;
+
+        if (!start_new_trace) {
+          start_new_trace = common::util::CheckIEqual(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace), "true");
+        } else {
+          ctx_ref.SetMetaValue(kCtxKeyStartNewTrace, "true");
+        }
 
         auto tracer = provider_->GetTracer(options_.node_name);
         ContextCarrier carrier(ctx_ref);
@@ -221,14 +237,14 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
 
         // 不需要启动一个新trace
         if (!start_new_trace) {
-          h(filter_data, ctx_ref, msg);
+          h(msg_wrapper);
           return;
         }
 
         // 需要启动一个新trace
         std::string span_name =
             std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" +
-            std::string(filter_data.msg_type);
+            std::string(msg_wrapper.info.msg_type);
         auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
 
         // 将当前span的context打包
@@ -241,11 +257,11 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
           span->SetAttribute(ToNoStdStringView(itr), ToNoStdStringView(ctx_ref.GetMetaValue(itr)));
         }
 
-        h(filter_data, ctx_ref, msg);
+        h(msg_wrapper);
 
         // 序列化包成json
-        auto s = filter_data.type_support_ref.SimpleSerialize("json", msg);
-        if (!s.empty()) span->SetAttribute("msg_data", s);
+        auto msg_str = msg_wrapper.SerializeMsgWithCache("json")->JoinToString();
+        if (!msg_str.empty()) span->SetAttribute("msg_data", msg_str);
 
         span->End();
       });
@@ -261,13 +277,19 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
   rpc_manager.RegisterClientFilter(
       "otp_trace",
-      [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
-             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+      [this, forec_trace = options_.force_trace](
+          const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+          aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
         auto ctx_ref = wrapper_ptr->ctx_ref;
 
-        // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
-        std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
-        bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
+        // 如果设置了全局强制trace，或者context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
+        bool start_new_trace = forec_trace;
+
+        if (!start_new_trace) {
+          start_new_trace = common::util::CheckIEqual(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace), "true");
+        } else {
+          ctx_ref.SetMetaValue(kCtxKeyStartNewTrace, "true");
+        }
 
         auto tracer = provider_->GetTracer(options_.node_name);
         ContextCarrier carrier(ctx_ref);
@@ -334,13 +356,19 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
 
   rpc_manager.RegisterServerFilter(
       "otp_trace",
-      [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
-             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+      [this, forec_trace = options_.force_trace](
+          const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+          aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
         auto ctx_ref = wrapper_ptr->ctx_ref;
 
-        // 如果context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
-        std::string start_new_trace_meta_val(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace));
-        bool start_new_trace = (common::util::StrToLower(start_new_trace_meta_val) == "true");
+        // 如果设置了全局强制trace，或者context强制设置了start_new_trace，或者上层传递了span，则新启动一个span
+        bool start_new_trace = forec_trace;
+
+        if (!start_new_trace) {
+          start_new_trace = common::util::CheckIEqual(ctx_ref.GetMetaValue(kCtxKeyStartNewTrace), "true");
+        } else {
+          ctx_ref.SetMetaValue(kCtxKeyStartNewTrace, "true");
+        }
 
         auto tracer = provider_->GetTracer(options_.node_name);
         ContextCarrier carrier(ctx_ref);

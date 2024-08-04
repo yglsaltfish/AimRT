@@ -74,8 +74,8 @@ class RpcBackendManager {
   void SetServersFiltersRules(
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
 
-  void SetClientFrameworkAsyncFilterManager(FrameworkAsyncFilterManager* ptr);
-  void SetServerFrameworkAsyncFilterManager(FrameworkAsyncFilterManager* ptr);
+  void SetClientFrameworkAsyncRpcFilterManager(FrameworkAsyncRpcFilterManager* ptr);
+  void SetServerFrameworkAsyncRpcFilterManager(FrameworkAsyncRpcFilterManager* ptr);
 
   void SetClientsBackendsRules(
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
@@ -111,8 +111,8 @@ class RpcBackendManager {
   std::vector<std::pair<std::string, std::vector<std::string>>> clients_filters_rules_;
   std::vector<std::pair<std::string, std::vector<std::string>>> servers_filters_rules_;
 
-  FrameworkAsyncFilterManager* client_filter_manager_ptr_ = nullptr;
-  FrameworkAsyncFilterManager* server_filter_manager_ptr_ = nullptr;
+  FrameworkAsyncRpcFilterManager* client_filter_manager_ptr_ = nullptr;
+  FrameworkAsyncRpcFilterManager* server_filter_manager_ptr_ = nullptr;
 
   // backend
   std::vector<RpcBackendBase*> rpc_backend_index_vec_;

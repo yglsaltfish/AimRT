@@ -6,6 +6,7 @@ aimrt:
         options:
           node_name: example_rpc_node
           trace_otlp_http_exporter_url: http://localhost:4318/v1/traces
+          force_trace: true
           attributes:
             - key: sn
               val: 123456

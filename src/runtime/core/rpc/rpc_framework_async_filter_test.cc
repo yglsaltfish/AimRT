@@ -6,8 +6,8 @@
 
 namespace aimrt::runtime::core::rpc {
 
-TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncFilterCollector_base) {
-  FrameworkAsyncFilterCollector filter_collector;
+TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncRpcFilterCollector_base) {
+  FrameworkAsyncRpcFilterCollector filter_collector;
 
   auto rpc_handle = [](const std::shared_ptr<InvokeWrapper> &invoke_wrapper_ptr) {
     *static_cast<std::string *>(invoke_wrapper_ptr->rsp_ptr) =
@@ -40,8 +40,8 @@ TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncFilterCollector_base) {
   EXPECT_EQ(rsp, req);
 }
 
-TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncFilterCollector_multiple_filters) {
-  FrameworkAsyncFilterCollector filter_collector;
+TEST(RPC_FRAMEWORK_ASYNC_FILTER_TEST, FrameworkAsyncRpcFilterCollector_multiple_filters) {
+  FrameworkAsyncRpcFilterCollector filter_collector;
 
   // 先注册的在内层
   FrameworkAsyncRpcFilter filter_1 =

@@ -156,7 +156,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
   bool allow_share = true;
   int qos = 2;
 
-  auto find_server_option = std::find_if(
+  auto find_option_itr = std::find_if(
       options_.servers_options.begin(), options_.servers_options.end(),
       [func_name = GetRealFuncName(info.func_name)](const Options::ServerOptions& server_option) {
         try {
@@ -168,9 +168,9 @@ bool MqttRpcBackend::RegisterServiceFunc(
         }
       });
 
-  if (find_server_option != options_.servers_options.end()) {
-    allow_share = find_server_option->allow_share;
-    qos = find_server_option->qos;
+  if (find_option_itr != options_.servers_options.end()) {
+    allow_share = find_option_itr->allow_share;
+    qos = find_option_itr->qos;
   }
 
   auto handle = [this, qos, &service_func_wrapper](MQTTAsync_message* message) {
@@ -346,7 +346,7 @@ bool MqttRpcBackend::RegisterClientFunc(
   std::string server_mqtt_id;
   int qos = 2;
 
-  auto find_client_option = std::find_if(
+  auto find_option_itr = std::find_if(
       options_.clients_options.begin(), options_.clients_options.end(),
       [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
         try {
@@ -358,9 +358,9 @@ bool MqttRpcBackend::RegisterClientFunc(
         }
       });
 
-  if (find_client_option != options_.clients_options.end()) {
-    server_mqtt_id = find_client_option->server_mqtt_id;
-    qos = find_client_option->qos;
+  if (find_option_itr != options_.clients_options.end()) {
+    server_mqtt_id = find_option_itr->server_mqtt_id;
+    qos = find_option_itr->qos;
   }
 
   client_cfg_info_map_.emplace(

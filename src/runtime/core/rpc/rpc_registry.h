@@ -67,7 +67,7 @@ class RpcRegistry {
 
     struct Hash {
       std::size_t operator()(const Key& k) const {
-        return std::hash<std::string_view>()(k.func_name) ^
+        return (std::hash<std::string_view>()(k.func_name)) ^
                (std::hash<std::string_view>()(k.pkg_path)) ^
                (std::hash<std::string_view>()(k.module_name));
       }

@@ -633,6 +633,21 @@ inline std::string& StrToUpper(std::string& str) {
 }
 
 /**
+ * @brief 比较两个字符串忽略大小写后是否相等
+ *
+ * @param str1
+ * @param str2
+ * @return true
+ * @return false
+ */
+inline bool CheckIEqual(std::string_view str1, std::string_view str2) {
+  if (str1.size() != str2.size()) return false;
+
+  return std::equal(str1.begin(), str1.end(), str2.begin(),
+                    [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+}
+
+/**
  * @brief 字符串转为标题形式，单词首字符大写
  *
  * @param str 字符串

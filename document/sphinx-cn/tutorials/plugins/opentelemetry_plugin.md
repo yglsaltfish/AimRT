@@ -20,13 +20,14 @@
 | 节点                      | 类型      | 是否可选| 默认值      | 作用 |
 | ----                      | ----      | ----  | ----        | ---- |
 | node_name                 | string    | 必选  | ""          | 上报时的节点名称，不可为空 |
-| otlp_http_exporter_url    | string    | 必选  | ""          | 基于 otlp http exporter 上报时的 url |
+| trace_otlp_http_exporter_url  | string    | 必选  | ""          | 基于 otlp http exporter 上报 trace 时的 url |
+| force_trace               | bool      | 可选  | false       | 是否强制上报 trace |
 | attributes                | array     | 可选  | []          | kv 属性数组 |
 | attributes[i].key         | string    | 必选  | ""          | 属性的 key 值 |
 | attributes[i].val         | string    | 必选  | ""          | 属性的 val 值 |
 
 
-在配置了插件后，还需要在`rpc`/`channel`节点下的的 filter 配置中注册`otp_trace`类型的过滤器，才能在rpc/channel调用前后进行trace跟踪。以下是一个简单的示例：
+在配置了插件后，还需要在`rpc`/`channel`节点下的的 filter 配置中注册`otp_trace`类型的过滤器，才能在 rpc/channel 调用前后进行 trace 跟踪。以下是一个简单的示例：
 ```yaml
 aimrt:
   plugin:
@@ -35,7 +36,8 @@ aimrt:
         path: ./libaimrt_opentelemetry_plugin.so
         options:
           node_name: example_node # 【必选】上报时的节点名称，不可为空
-          otlp_http_exporter_url: http://localhost:4318/v1/traces # 【必选】基于otlp http exporter上报时的url
+          trace_otlp_http_exporter_url: http://localhost:4318/v1/traces # 【必选】基于otlp http exporter上报时的url
+          force_trace: true # 【可选】是否强制上报 trace
           attributes: # 【可选】kv属性数组
             - key: sn # 【必选】属性的key值
               val: 123456 # 【必选】属性的val值
@@ -45,11 +47,11 @@ aimrt:
     clients_options:
       - func_name: "(.*)"
         enable_backends: [local]
+        enable_filters: [otp_trace]
     servers_options:
       - func_name: "(.*)"
         enable_backends: [local]
-    client_filters: [otp_trace] # 注册client端的otp_trace过滤器
-    server_filters: [otp_trace] # 注册server端的otp_trace过滤器
+        enable_filters: [otp_trace]
   channel:
     backends:
       - type: local # 此处以local后端为例
@@ -59,19 +61,21 @@ aimrt:
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
+        enable_filters: [otp_trace]
     sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
-    pub_filters: [otp_trace] # 注册pub端的otp_trace过滤器
-    sub_filters: [otp_trace] # 注册sub端的otp_trace过滤器
+        enable_filters: [otp_trace]
   module:
     # ...
 ```
 
 
-在完成配置后，使用者还需要在希望进行链路追踪的地方设置 RPC/Channel 的 Context，分为两种情况：
+在完成配置后，使用者还需要在希望进行链路追踪的地方设置 RPC/Channel 的 Context，分为几种情况：
 
-1. 从一个 RPC Clinet 或一个 Channel Publish 强制开启链路追踪，此时需要向 Context 的 Meta 信息中设置`aimrt_otp-start_new_trace`为`True`，例如：
+1. 强制让开启一个节点下所有 client/server 的 trace，此时可以将插件配置中的 `force_trace` 选项设置为 `true`。
+
+2. 从一个 RPC Clinet 或一个 Channel Publish 强制开启链路追踪，此时需要向 Context 的 Meta 信息中设置`aimrt_otp-start_new_trace`为`True`，例如：
   - RPC:
   ```cpp
   auto ctx_ptr = client_proxy->NewContextSharedPtr();
@@ -89,7 +93,7 @@ aimrt:
   // ...
   ```
 
-2. 从一个 RPC Clinet 或一个 Channel Publish 跟随上层 RPC Server/Channel Subscribe 继续追踪一个链路，此时需要继承上游的 RPC Server/Channel Subscribe 的 Context，例如：
+3. 从一个 RPC Clinet 或一个 Channel Publish 跟随上层 RPC Server/Channel Subscribe 继续追踪一个链路，此时需要继承上游的 RPC Server/Channel Subscribe 的 Context，例如：
   - RPC:
   ```cpp
   // RPC Server Handle
@@ -181,5 +185,5 @@ docker run -d \
   jaegertracing/all-in-one:latest
 ```
 
-启动之后，即可将 opentelemetry 插件的 otlp_http_exporter_url 配置、或者是 collector 的 exporters 配置指向 Jaeger 所开的 4318 端口，从而将 trace 信息上报到 Jaeger 平台上。可以访问 Jaeger 在 16686 端口上的 web 页面查看 trace 信息。
+启动之后，即可将 opentelemetry 插件的 trace_otlp_http_exporter_url 配置、或者是 collector 的 exporters 配置指向 Jaeger 所开的 4318 端口，从而将 trace 信息上报到 Jaeger 平台上。可以访问 Jaeger 在 16686 端口上的 web 页面查看 trace 信息。
 

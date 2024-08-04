@@ -25,17 +25,16 @@ class ChannelManager {
     struct PubTopicOptions {
       std::string topic_name;
       std::vector<std::string> enable_backends;
+      std::vector<std::string> enable_filters;
     };
     std::vector<PubTopicOptions> pub_topics_options;
 
     struct SubTopicOptions {
       std::string topic_name;
       std::vector<std::string> enable_backends;
+      std::vector<std::string> enable_filters;
     };
     std::vector<SubTopicOptions> sub_topics_options;
-
-    std::vector<std::string> pub_filters;
-    std::vector<std::string> sub_filters;
   };
 
   enum class State : uint32_t {
@@ -57,51 +56,32 @@ class ChannelManager {
   void Start();
   void Shutdown();
 
-  void RegisterChannelBackend(
-      std::unique_ptr<ChannelBackendBase>&& channel_backend_ptr);
+  const Options& GetOptions() const { return options_; }
+  State GetState() const { return state_.load(); }
+
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
+  std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
+
+  void RegisterChannelBackend(std::unique_ptr<ChannelBackendBase>&& channel_backend_ptr);
 
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);
 
   const ChannelHandleProxy& GetChannelHandleProxy(const util::ModuleDetailInfo& module_info);
   const ChannelHandleProxy& GetChannelHandleProxy(std::string_view module_name = "core") {
-    return GetChannelHandleProxy(
-        util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});
+    return GetChannelHandleProxy(util::ModuleDetailInfo{.name = std::string(module_name), .pkg_path = "core"});
   }
 
-  template <typename... Args>
-    requires std::constructible_from<FrameworkAsyncChannelFilter, Args...>
-  void RegisterPublishFilter(std::string_view name, Args&&... args) {
-    AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
-        "Method can only be called when state is 'PreInit'.");
-    publish_filter_map_.emplace(name, std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-    requires std::constructible_from<FrameworkAsyncChannelFilter, Args...>
-  void RegisterSubscribeFilter(std::string_view name, Args&&... args) {
-    AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
-        "Method can only be called when state is 'PreInit'.");
-    subscribe_filter_map_.emplace(name, std::forward<Args>(args)...);
-  }
+  void RegisterPublishFilter(std::string_view name, FrameworkAsyncChannelFilter&& filter);
+  void RegisterSubscribeFilter(std::string_view name, FrameworkAsyncChannelFilter&& filter);
 
   void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
-  // 信息查询类接口
-  const ChannelRegistry* GetChannelRegistry() const;
-  const std::vector<std::string>& GetChannelBackendNameList() const;
-
-  State GetState() const { return state_.load(); }
-
-  std::list<std::pair<std::string, std::string>> GenInitializationReport() const;
-
-  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
-
  private:
   void RegisterLocalChannelBackend();
+  void RegisterDebugLogFilter();
 
  private:
   Options options_;
@@ -112,8 +92,8 @@ class ChannelManager {
 
   std::unordered_set<std::string> passed_context_meta_keys_;
 
-  std::unordered_map<std::string, FrameworkAsyncChannelFilter> publish_filter_map_;
-  std::unordered_map<std::string, FrameworkAsyncChannelFilter> subscribe_filter_map_;
+  FrameworkAsyncChannelFilterManager publish_filter_manager_;
+  FrameworkAsyncChannelFilterManager subscribe_filter_manager_;
 
   std::unique_ptr<ChannelRegistry> channel_registry_ptr_;
 
@@ -152,9 +132,6 @@ class ChannelManager {
 
   std::atomic_bool channel_handle_proxy_start_flag_ = false;
   std::unordered_map<std::string, std::unique_ptr<ChannelHandleProxyWrap>> channel_handle_proxy_wrap_map_;
-
-  // 信息查询类变量
-  std::vector<std::string> channel_backend_name_vec_;
 };
 
 }  // namespace aimrt::runtime::core::channel

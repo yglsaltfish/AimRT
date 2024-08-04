@@ -8,7 +8,7 @@ class MockChannelBackend : public ChannelBackendBase {
  public:
   std::string_view Name() const override { return "mock_backend"; }
 
-  void Initialize(YAML::Node options_node, const ChannelRegistry* channel_registry_ptr) noexcept override {
+  void Initialize(YAML::Node options_node) noexcept override {
     is_initialized_ = true;
   }
   void Start() override { is_statrted_ = true; }
@@ -25,7 +25,7 @@ class MockChannelBackend : public ChannelBackendBase {
     return true;
   }
 
-  void Publish(const PublishWrapper& publish_wrapper) noexcept override {
+  void Publish(MsgWrapper& msg_wrapper) noexcept override {
     is_published = true;
   }
 
@@ -51,7 +51,8 @@ class ChannelBackendManagerTest : public ::testing::Test {
         {"(.*)", {"mock_backend"}},
     });
 
-    channel_backend_manager_.Initialize(channel_registry_test_ptr_.get());
+    channel_backend_manager_.SetChannelRegistry(channel_registry_test_ptr_.get());
+    channel_backend_manager_.Initialize();
     EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::Init);
   }
 
@@ -72,60 +73,6 @@ TEST_F(ChannelBackendManagerTest, RegisterChannelBackend_Start) {
   EXPECT_EQ(mock_backend_ptr_->is_statrted_, false);
   channel_backend_manager_.Start();
   EXPECT_EQ(mock_backend_ptr_->is_statrted_, true);
-}
-
-// 测试 RegisterPublishType
-TEST_F(ChannelBackendManagerTest, RegisterPublishType) {
-  EXPECT_EQ(mock_backend_ptr_->is_registered_publish_type_, false);
-  EXPECT_EQ(channel_registry_test_ptr_->GetPubTopicIndexMap().size(), 0);
-
-  EXPECT_TRUE(channel_backend_manager_.RegisterPublishType(PublishTypeWrapper{
-      .msg_type = "publish_msg_type_test",
-      .pkg_path = "publish_pkg_path_test",
-      .module_name = "publish_module_name_test",
-      .topic_name = "publish_topic_name_test",
-  }));
-  EXPECT_EQ(mock_backend_ptr_->is_registered_publish_type_, true);
-  EXPECT_EQ(channel_registry_test_ptr_->GetPubTopicIndexMap().find("publish_topic_name_test")->second.size(), 1);
-}
-
-// 测试 Subscribe
-TEST_F(ChannelBackendManagerTest, Subscribe) {
-  EXPECT_EQ(mock_backend_ptr_->is_subscribed, false);
-  EXPECT_EQ(channel_registry_test_ptr_->GetSubTopicIndexMap().size(), 0);
-
-  EXPECT_TRUE(channel_backend_manager_.Subscribe(SubscribeWrapper{
-      .msg_type = "subscribe_msg_type_test",
-      .pkg_path = "subscribe_pkg_path_test",
-      .module_name = "subscribe_module_name_test",
-      .topic_name = "subscribe_topic_name_test",
-  }));
-  EXPECT_EQ(mock_backend_ptr_->is_subscribed, true);
-  EXPECT_EQ(channel_registry_test_ptr_->GetSubTopicIndexMap().find("subscribe_topic_name_test")->second.size(), 1);
-}
-
-// 测试 Publish
-TEST_F(ChannelBackendManagerTest, Publish) {
-  EXPECT_EQ(mock_backend_ptr_->is_published, false);
-
-  EXPECT_TRUE(channel_backend_manager_.RegisterPublishType(PublishTypeWrapper{
-      .msg_type = "publish_msg_type_test",
-      .pkg_path = "publish_pkg_path_test",
-      .module_name = "publish_module_name_test",
-      .topic_name = "publish_topic_name_test",
-  }));
-
-  channel_backend_manager_.Start();
-
-  aimrt::channel::Context ctx;
-  channel_backend_manager_.Publish(PublishWrapper{
-      .msg_type = "publish_msg_type_test",
-      .pkg_path = "publish_pkg_path_test",
-      .module_name = "publish_module_name_test",
-      .topic_name = "publish_topic_name_test",
-      .ctx_ref = ctx,
-  });
-  EXPECT_EQ(mock_backend_ptr_->is_published, true);
 }
 
 }  // namespace aimrt::runtime::core::channel

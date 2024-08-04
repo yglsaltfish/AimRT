@@ -43,14 +43,14 @@ void RpcBackendManager::SetRpcRegistry(RpcRegistry* rpc_registry_ptr) {
   rpc_registry_ptr_ = rpc_registry_ptr;
 }
 
-void RpcBackendManager::SetClientFrameworkAsyncFilterManager(FrameworkAsyncFilterManager* ptr) {
+void RpcBackendManager::SetClientFrameworkAsyncRpcFilterManager(FrameworkAsyncRpcFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
   client_filter_manager_ptr_ = ptr;
 }
 
-void RpcBackendManager::SetServerFrameworkAsyncFilterManager(FrameworkAsyncFilterManager* ptr) {
+void RpcBackendManager::SetServerFrameworkAsyncRpcFilterManager(FrameworkAsyncRpcFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
@@ -123,13 +123,14 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
   // 注册 func wrapper
   const auto& filter_collector = server_filter_manager_ptr_->GetFilterCollector(func_name);
 
-  auto service_func_ptr = std::make_shared<aimrt::rpc::ServiceFunc>(wrapper.service_func);
+  auto service_func_shared_ptr = std::make_shared<aimrt::rpc::ServiceFunc>(wrapper.service_func);
 
   service_func_wrapper_ptr->service_func =
-      [this, &filter_collector, service_func_ptr](
+      [this, &filter_collector, service_func_shared_ptr](
           const std::shared_ptr<InvokeWrapper>& invoke_wrapper_ptr) {
         filter_collector.InvokeRpc(
-            [&service_func_ptr](const std::shared_ptr<InvokeWrapper>& invoke_wrapper_ptr) {
+            [service_func_ptr = service_func_shared_ptr.get()](
+                const std::shared_ptr<InvokeWrapper>& invoke_wrapper_ptr) {
               aimrt::rpc::ServiceCallback service_callback(
                   [callback{std::move(invoke_wrapper_ptr->callback)}](uint32_t status) {
                     callback(aimrt::rpc::Status(status));
@@ -207,25 +208,25 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
   return ret;
 }
 
-void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& client_invoke_wrapper) {
+void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
   if (state_.load() != State::Start) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
     return;
   }
 
-  auto func_name = util::ToStdStringView(client_invoke_wrapper.func_name);
-  auto client_callback_ptr = std::make_shared<aimrt::rpc::ClientCallback>(client_invoke_wrapper.callback);
+  auto func_name = util::ToStdStringView(wrapper.func_name);
+  auto client_callback_ptr = std::make_shared<aimrt::rpc::ClientCallback>(wrapper.callback);
   auto& client_callback = *client_callback_ptr;
-  aimrt::rpc::ContextRef ctx_ref(client_invoke_wrapper.ctx_ptr);
+  aimrt::rpc::ContextRef ctx_ref(wrapper.ctx_ptr);
 
   // 找注册的func
   const auto* client_func_wrapper_ptr = rpc_registry_ptr_->GetClientFuncWrapperPtr(
-      func_name, client_invoke_wrapper.pkg_path, client_invoke_wrapper.module_name);
+      func_name, wrapper.pkg_path, wrapper.module_name);
 
   // func未注册
   if (client_func_wrapper_ptr == nullptr) [[unlikely]] {
     AIMRT_WARN("Func is not registered, func: {}, pkg: {}, module: {}",
-               func_name, client_invoke_wrapper.pkg_path, client_invoke_wrapper.module_name);
+               func_name, wrapper.pkg_path, wrapper.module_name);
 
     client_callback(AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED);
     return;
@@ -247,8 +248,8 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& client_invoke_wrapper) {
   auto client_invoke_wrapper_ptr = std::make_shared<InvokeWrapper>(
       InvokeWrapper{
           .info = client_func_wrapper_ptr->info,
-          .req_ptr = client_invoke_wrapper.req_ptr,
-          .rsp_ptr = client_invoke_wrapper.rsp_ptr,
+          .req_ptr = wrapper.req_ptr,
+          .rsp_ptr = wrapper.rsp_ptr,
           .ctx_ref = ctx_ref});
 
   client_invoke_wrapper_ptr->callback =
