@@ -27,13 +27,10 @@ class LoggerBackendBase {
    * @note
    * 1. This method will only be called after 'Initialize' and before 'Shutdown'.
    * 2. Backend can define the actual behavior.
-   * 3. 'format_log_str_ptr' is used to reuse the format result of the previous backend, It may be empty.
    *
    * @param log_data_wrapper Log data
-   * @param format_log_str_ptr Reuse the format result of the previous backend
    */
-  virtual void Log(const LogDataWrapper& log_data_wrapper,
-                   const std::shared_ptr<std::string>& format_log_str_ptr) = 0;
+  virtual void Log(const LogDataWrapper& log_data_wrapper) = 0;
 };
 
 }  // namespace aimrt::runtime::core::logger

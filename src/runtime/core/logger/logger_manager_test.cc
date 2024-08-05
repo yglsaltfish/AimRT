@@ -19,7 +19,7 @@ class LoggerBackendMock : public LoggerBackendBase {
   MOCK_METHOD0(Start, void());
   MOCK_METHOD0(Shutdown, void());
   MOCK_CONST_METHOD0(AllowDuplicates, bool());
-  MOCK_METHOD2(Log, void(const LogDataWrapper&, const std::shared_ptr<std::string>&));
+  MOCK_METHOD1(Log, void(const LogDataWrapper&));
 };
 
 class LoggerManagerTest : public ::testing::Test {
@@ -46,7 +46,7 @@ class LoggerManagerTest : public ::testing::Test {
       EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Type)
           .WillRepeatedly(testing::Return("mocked_backend"));
       EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Log)
-          .WillRepeatedly([this](const LogDataWrapper& logger_wrapper, const std::shared_ptr<std::string>&) {  //
+          .WillRepeatedly([this](const LogDataWrapper& logger_wrapper) {  //
             this->log_res_ = std::string(logger_wrapper.log_data, logger_wrapper.log_data_size);
           });
       EXPECT_CALL(*(static_cast<LoggerBackendMock*>(mocked_backend_ptr.get())), Initialize)

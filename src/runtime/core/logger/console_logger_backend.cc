@@ -136,28 +136,30 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
   run_flag_.store(true);
 }
 
-void ConsoleLoggerBackend::Log(
-    const LogDataWrapper& log_data_wrapper,
-    const std::shared_ptr<std::string>& format_log_str_ptr) {
+void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) {
   if (!run_flag_.load()) [[unlikely]]
     return;
 
   if (!CheckLog(log_data_wrapper)) [[unlikely]]
     return;
 
-  if (format_log_str_ptr->empty()) {
-    *format_log_str_ptr = ::aimrt_fmt::format(
-        "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]{}",
+  std::string log_data_str(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
+
+  auto log_work = [this, log_data_wrapper, log_data_str{std::move(log_data_str)}]() {
+    auto lvl = log_data_wrapper.lvl;
+
+    auto format_log_prefix_str = ::aimrt_fmt::format(
+        "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]",
         aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
         (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
         LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
-        log_data_wrapper.thread_id, log_data_wrapper.module_name,
-        log_data_wrapper.file_name, log_data_wrapper.line,
-        log_data_wrapper.column, log_data_wrapper.function_name,
-        std::string_view(log_data_wrapper.log_data, log_data_wrapper.log_data_size));
-  }
+        log_data_wrapper.thread_id,
+        log_data_wrapper.module_name,
+        log_data_wrapper.file_name,
+        log_data_wrapper.line,
+        log_data_wrapper.column,
+        log_data_wrapper.function_name);
 
-  auto log_work = [this, lvl = log_data_wrapper.lvl, format_log_str_ptr]() {
     if (options_.print_color) {
 #if defined(_WIN32)
       static constexpr WORD
@@ -165,10 +167,10 @@ void ConsoleLoggerBackend::Log(
               0, CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
       if (color_array[lvl] == 0) {
-        std::cout << *format_log_str_ptr;
+        std::cout << format_log_prefix_str << log_data_str;
       } else {
         SetConsoleTextAttribute(g_hConsole, color_array[lvl]);
-        std::cout << *format_log_str_ptr;
+        std::cout << format_log_prefix_str << log_data_str;
         SetConsoleTextAttribute(g_hConsole, CC_DEFAULT);
       }
 
@@ -178,13 +180,13 @@ void ConsoleLoggerBackend::Log(
               "", CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
       if (color_array[lvl].empty()) {
-        std::cout << *format_log_str_ptr;
+        std::cout << format_log_prefix_str << log_data_str;
       } else {
-        std::cout << color_array[lvl] << *format_log_str_ptr << CC_NONE;
+        std::cout << color_array[lvl] << format_log_prefix_str << log_data_str << CC_NONE;
       }
 #endif
     } else {
-      std::cout << *format_log_str_ptr;
+      std::cout << format_log_prefix_str << log_data_str;
     }
     std::cout << std::endl;
   };
