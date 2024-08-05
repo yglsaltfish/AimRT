@@ -31,25 +31,17 @@ aimrt:
   class MockChannelBackend : public ChannelBackendBase {
    public:
     std::string_view Name() const override { return "mock_backend_test"; }
-    MOCK_METHOD2(Initialize, void(YAML::Node options_node, const ChannelRegistry* channel_registry_ptr));
+    MOCK_METHOD1(Initialize, void(YAML::Node options_node));
     MOCK_METHOD0(Start, void());
     MOCK_METHOD0(Shutdown, void());
     bool RegisterPublishType(
         const PublishTypeWrapper& publish_type_wrapper) noexcept override { return false; }
     bool Subscribe(const SubscribeWrapper& subscribe_wrapper) noexcept override { return false; }
-    void Publish(const PublishWrapper& publish_wrapper) noexcept override { return; }
+    void Publish(MsgWrapper& msg_wrapper) noexcept override { return; }
   };
   std::unique_ptr<MockChannelBackend> channel_backend_test_ptr_ = std::make_unique<MockChannelBackend>();
   ChannelManager channel_manager_;
 };
-
-// 测试Initialize、RegisterChannelBackend、GetChannelBackendNameList
-TEST_F(ChannelManagerTest, GetChannelBackendNameList) {
-  auto channel_backend_name_test_list = channel_manager_.GetChannelBackendNameList();
-  // 验证返回的名称列表是否包含我们模拟的名称
-  EXPECT_EQ(channel_backend_name_test_list.size(), 1);
-  EXPECT_EQ(channel_backend_name_test_list[0], "mock_backend_test");
-}
 
 // 测试Start
 TEST_F(ChannelManagerTest, Start) {

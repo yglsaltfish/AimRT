@@ -56,10 +56,8 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
       for (auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
-            .func_name = client_options_node["func_name"].as<std::string>()};
-
-        if (client_options_node["enable_backends"])
-          client_options.enable_backends = client_options_node["enable_backends"].as<std::vector<std::string>>();
+            .func_name = client_options_node["func_name"].as<std::string>(),
+            .enable_backends = client_options_node["enable_backends"].as<std::vector<std::string>>()};
 
         if (client_options_node["enable_filters"])
           client_options.enable_filters = client_options_node["enable_filters"].as<std::vector<std::string>>();
@@ -71,10 +69,8 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
     if (node["servers_options"] && node["servers_options"].IsSequence()) {
       for (auto& server_options_node : node["servers_options"]) {
         auto server_options = Options::ServerOptions{
-            .func_name = server_options_node["func_name"].as<std::string>()};
-
-        if (server_options_node["enable_backends"])
-          server_options.enable_backends = server_options_node["enable_backends"].as<std::vector<std::string>>();
+            .func_name = server_options_node["func_name"].as<std::string>(),
+            .enable_backends = server_options_node["enable_backends"].as<std::vector<std::string>>()};
 
         if (server_options_node["enable_filters"])
           server_options.enable_filters = server_options_node["enable_filters"].as<std::vector<std::string>>();
@@ -106,8 +102,8 @@ void RpcManager::Initialize(YAML::Node options_node) {
 
   rpc_backend_manager_.SetLogger(logger_ptr_);
   rpc_backend_manager_.SetRpcRegistry(rpc_registry_ptr_.get());
-  rpc_backend_manager_.SetClientFrameworkAsyncFilterManager(&client_filter_manager_);
-  rpc_backend_manager_.SetServerFrameworkAsyncFilterManager(&server_filter_manager_);
+  rpc_backend_manager_.SetClientFrameworkAsyncRpcFilterManager(&client_filter_manager_);
+  rpc_backend_manager_.SetServerFrameworkAsyncRpcFilterManager(&server_filter_manager_);
 
   std::vector<std::string> rpc_backend_name_vec;
 
@@ -134,7 +130,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
   // 设置rules
   std::vector<std::pair<std::string, std::vector<std::string>>> client_backends_rules;
   std::vector<std::pair<std::string, std::vector<std::string>>> client_filters_rules;
-  for (auto& item : options_.clients_options) {
+  for (const auto& item : options_.clients_options) {
     for (auto& backend_name : item.enable_backends) {
       AIMRT_CHECK_ERROR_THROW(
           std::find(rpc_backend_name_vec.begin(), rpc_backend_name_vec.end(), backend_name) != rpc_backend_name_vec.end(),
@@ -150,7 +146,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
 
   std::vector<std::pair<std::string, std::vector<std::string>>> server_backends_rules;
   std::vector<std::pair<std::string, std::vector<std::string>>> server_filters_rules;
-  for (auto& item : options_.servers_options) {
+  for (const auto& item : options_.servers_options) {
     for (auto& backend_name : item.enable_backends) {
       AIMRT_CHECK_ERROR_THROW(
           std::find(rpc_backend_name_vec.begin(), rpc_backend_name_vec.end(), backend_name) != rpc_backend_name_vec.end(),

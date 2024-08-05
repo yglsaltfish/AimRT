@@ -97,6 +97,10 @@ class TypeSupportRef {
     return base_ptr_->custom_type_support_ptr(base_ptr_->impl);
   }
 
+  std::string_view DefaultSerializationType() const {
+    return ToStdStringView(base_ptr_->serialization_types_supported_list(base_ptr_->impl)[0]);
+  }
+
   std::string SimpleSerialize(std::string_view serialization_type, const void* msg) const {
     aimrt::util::BufferArray buffer_array;
 

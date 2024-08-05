@@ -13,11 +13,11 @@
 | pub_topics_options                    | array       | 可选  | ""    | Channel Pub Topic 配置 |
 | pub_topics_options[i].topic_name      | string      | 必选  | ""    | Channel Pub Topic 名称，支持正则表达式 |
 | pub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Pub Topic 允许使用的 Channel 后端列表 |
+| pub_topics_options[i].enable_filters  | string array | 可选  | [] | Channel Pub Topic 需要加载的框架侧过滤器列表 |
 | sub_topics_options                    | array       | 可选  | ""    | Channel Sub Topic 配置 |
 | sub_topics_options[i].topic_name      | string      | 必选  | ""    | Channel Sub Topic 名称，支持正则表达式 |
 | sub_topics_options[i].enable_backends | string array | 必选  | [] | Channel Sub Topic 允许使用的 Channel 后端列表 |
-| pub_filters                           | string array | 可选  | [] | Channel Pub 端需要加载的框架侧过滤器列表 |
-| sub_filters                           | string array | 可选  | [] | Channel Sub 端需要加载的框架侧过滤器列表 |
+| sub_topics_options[i].enable_filters  | string array | 可选  | [] | Channel Sub Topic 需要加载的框架侧过滤器列表 |
 
 以下是一个简单的示例：
 ```yaml
@@ -29,9 +29,11 @@ aimrt:
     pub_topics_options: # 【可选】Channel Pub Topic配置
       - topic_name: "(.*)" # 【必选】Channel Pub Topic名称，支持正则表达式
         enable_backends: [local] # 【必选】Channel Pub Topic允许使用的Channel后端列表
+        enable_filters: [] # 【可选】Channel Pub Topic 需要加载的框架侧过滤器列表
     sub_topics_options: # 【可选】Channel Sub Topic配置
       - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
         enable_backends: [local] # 【必选】Channel Sub Topic允许使用的Channel后端列表
+        enable_filters: [] # 【可选】Channel Sub Topic 需要加载的框架侧过滤器列表
 ```
 
 `aimrt.channel`的详细配置说明如下：
@@ -43,8 +45,9 @@ aimrt:
   - `enable_backends`是一个字符串数组，表示如果`Topic`名称命中了本条规则，则将该`Topic`下发布的所有消息投递到这个列表中的所有 Channel 后端进行处理。注意：
     - 该数组中出现的名称都必须要在`backends`中配置过。
     - 该数组配置的 Channel 后端顺序决定了消息投递到各个 Channel 后端进行处理的顺序。
+  - `enable_filters`是一个字符串数组，表示需要注册的 pub/sub 端框架侧过滤器列表，数组中的顺序为过滤器注册的顺序。一些插件会提供一些框架侧过滤器，用于在 channel 调用时做一些前置/后置操作。
   - 采用由上往下的顺序检查命中的规则，当某个`Topic`命中某条规则后，则不会针对此`Topic`再检查后面的规则。
-- `pub_filters`和`sub_filters`是一个字符串数组，表示需要注册的 pub/sub 端框架侧过滤器列表，数组中的顺序为过滤器注册的顺序。一些插件会提供一些框架侧过滤器，用于在 channel 调用时做一些前置/后置操作。
+
 
 在 AimRT 中，Channel 的前端接口和后端实现是解耦的，在接口中`Publish`一个消息后最终是要 Channel 后端来进行正真的发布动作，消息通常会在调用`Publish`之后，在当前线程里顺序的投递到各个 Channel 后端中进行处理。大部分 Channel 后端是异步处理消息的，但有些特殊的后端-例如`local`后端，可以配置成阻塞的调用订阅端回调。因此，`Publish`方法到底会阻塞多久是未定义的，与具体的后端配置相关。
 

@@ -95,8 +95,8 @@ class RpcManager {
 
   std::unordered_set<std::string> passed_context_meta_keys_;
 
-  FrameworkAsyncFilterManager client_filter_manager_;
-  FrameworkAsyncFilterManager server_filter_manager_;
+  FrameworkAsyncRpcFilterManager client_filter_manager_;
+  FrameworkAsyncRpcFilterManager server_filter_manager_;
 
   std::unique_ptr<RpcRegistry> rpc_registry_ptr_;
 

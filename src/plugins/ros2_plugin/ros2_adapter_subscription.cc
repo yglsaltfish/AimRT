@@ -4,7 +4,7 @@
 
 namespace aimrt::plugins::ros2_plugin {
 std::shared_ptr<void> Ros2AdapterSubscription::create_message() {
-  return aimrt::util::TypeSupportRef(subscribe_wrapper_.msg_type_support).CreateSharedPtr();
+  return subscribe_wrapper_.info.msg_type_support_ref.CreateSharedPtr();
 }
 
 std::shared_ptr<rclcpp::SerializedMessage>
@@ -18,7 +18,13 @@ void Ros2AdapterSubscription::handle_message(
 
   auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
 
-  subscribe_wrapper_.callback(ctx_ptr, message.get(), [message, ctx_ptr]() {});
+  // 创建 sub msg wrapper
+  runtime::core::channel::MsgWrapper sub_msg_wrapper{
+      .info = subscribe_wrapper_.info,
+      .msg_ptr = message.get(),
+      .ctx_ref = ctx_ptr};
+
+  subscribe_wrapper_.callback(sub_msg_wrapper, [message, ctx_ptr]() {});
 }
 
 void Ros2AdapterSubscription::handle_serialized_message(

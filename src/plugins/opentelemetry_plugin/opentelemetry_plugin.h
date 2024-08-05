@@ -31,6 +31,7 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   struct Options {
     std::string node_name;
     std::string trace_otlp_http_exporter_url;
+    bool force_trace = false;
 
     struct Attribute {
       std::string key;

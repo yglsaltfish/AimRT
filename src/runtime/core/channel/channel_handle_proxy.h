@@ -1,14 +1,11 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
-#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "aimrt_module_c_interface/channel/channel_handle_base.h"
-#include "aimrt_module_cpp_interface/util/function.h"
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/channel/channel_backend_manager.h"
@@ -39,28 +36,32 @@ class PublisherProxy {
 
  private:
   bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) {
-    return channel_backend_manager_.RegisterPublishType(PublishTypeWrapper{
-        .msg_type = aimrt::util::TypeSupportRef(msg_type_support).TypeName(),
-        .pkg_path = pkg_path_,
-        .module_name = module_name_,
-        .topic_name = topic_name_,
-        .msg_type_support = msg_type_support});
+    return channel_backend_manager_.RegisterPublishType(
+        RegisterPublishTypeProxyInfoWrapper{
+            .pkg_path = pkg_path_,
+            .module_name = module_name_,
+            .topic_name = topic_name_,
+            .msg_type_support = msg_type_support});
   }
 
-  void Publish(std::string_view msg_type,
-               aimrt::channel::ContextRef ctx_ref,
+  void Publish(aimrt_string_view_t msg_type,
+               const aimrt_channel_context_base_t* ctx_ptr,
                const void* msg_ptr) {
-    channel_backend_manager_.Publish(PublishWrapper{
-        .msg_type = msg_type,
-        .pkg_path = pkg_path_,
-        .module_name = module_name_,
-        .topic_name = topic_name_,
-        .ctx_ref = ctx_ref,
-        .msg_ptr = msg_ptr});
+    channel_backend_manager_.Publish(
+        PublishProxyInfoWrapper{
+            .pkg_path = pkg_path_,
+            .module_name = module_name_,
+            .topic_name = topic_name_,
+            .msg_type = msg_type,
+            .ctx_ptr = ctx_ptr,
+            .msg_ptr = msg_ptr});
   }
 
   void MergeSubscribeContextToPublishContext(
-      aimrt::channel::ContextRef subscribe_ctx_ref, aimrt::channel::ContextRef publish_ctx_ref) {
+      const aimrt_channel_context_base_t* subscribe_ctx_ptr, const aimrt_channel_context_base_t* publish_ctx_ptr) {
+    aimrt::channel::ContextRef subscribe_ctx_ref(subscribe_ctx_ptr);
+    aimrt::channel::ContextRef publish_ctx_ref(publish_ctx_ptr);
+
     if (subscribe_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT ||
         publish_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT) [[unlikely]] {
       // TODO warn log
@@ -78,9 +79,11 @@ class PublisherProxy {
         .register_publish_type = [](void* impl, const aimrt_type_support_base_t* msg_type_support) -> bool {
           return static_cast<PublisherProxy*>(impl)->RegisterPublishType(msg_type_support);
         },
-        .publish = [](void* impl, aimrt_string_view_t msg_type, const aimrt_channel_context_base_t* ctx_ptr, const void* msg) {
-          static_cast<PublisherProxy*>(impl)->Publish(
-              aimrt::util::ToStdStringView(msg_type), aimrt::channel::ContextRef(ctx_ptr), msg);  //
+        .publish = [](void* impl,
+                      aimrt_string_view_t msg_type,
+                      const aimrt_channel_context_base_t* ctx_ptr,
+                      const void* msg_ptr) {
+          static_cast<PublisherProxy*>(impl)->Publish(msg_type, ctx_ptr, msg_ptr);  //
         },
         .get_topic = [](void* impl) -> aimrt_string_view_t {
           return aimrt::util::ToAimRTStringView(static_cast<PublisherProxy*>(impl)->topic_name_);
@@ -88,8 +91,7 @@ class PublisherProxy {
         .merge_subscribe_context_to_publish_context = [](void* impl,                                             //
                                                          const aimrt_channel_context_base_t* subscribe_ctx_ptr,  //
                                                          const aimrt_channel_context_base_t* publish_ctx_ptr) {  //
-          static_cast<PublisherProxy*>(impl)->MergeSubscribeContextToPublishContext(
-              aimrt::channel::ContextRef(subscribe_ctx_ptr), aimrt::channel::ContextRef(publish_ctx_ptr));
+          static_cast<PublisherProxy*>(impl)->MergeSubscribeContextToPublishContext(subscribe_ctx_ptr, publish_ctx_ptr);
         },
         .impl = impl};
   }
@@ -126,30 +128,22 @@ class SubscriberProxy {
 
  private:
   bool Subscribe(const aimrt_type_support_base_t* msg_type_support,
-                 aimrt::channel::SubscriberCallback&& callback) {
-    auto msg_type = aimrt::util::TypeSupportRef(msg_type_support).TypeName();
-
-    return channel_backend_manager_.Subscribe(SubscribeWrapper{
-        .msg_type = msg_type,
-        .pkg_path = pkg_path_,
-        .module_name = module_name_,
-        .topic_name = topic_name_,
-        .msg_type_support = msg_type_support,
-        .callback =
-            [callback_ptr{std::make_shared<aimrt::channel::SubscriberCallback>(std::move(callback))}](
-                aimrt::channel::ContextRef ctx_ref,
-                const void* msg_ptr,
-                std::function<void()>&& input_release_callback) {
-              aimrt::channel::SubscriberReleaseCallback release_callback(std::move(input_release_callback));
-              (*callback_ptr)(ctx_ref.NativeHandle(), msg_ptr, release_callback.NativeHandle());
-            }});
+                 aimrt_function_base_t* callback) {
+    return channel_backend_manager_.Subscribe(
+        SubscribeProxyInfoWrapper{
+            .pkg_path = pkg_path_,
+            .module_name = module_name_,
+            .topic_name = topic_name_,
+            .msg_type_support = msg_type_support,
+            .callback = callback});
   }
 
   static aimrt_channel_subscriber_base_t GenBase(void* impl) {
     return aimrt_channel_subscriber_base_t{
-        .subscribe = [](void* impl, const aimrt_type_support_base_t* msg_type_support, aimrt_function_base_t* callback) -> bool {
-          return static_cast<SubscriberProxy*>(impl)->Subscribe(
-              msg_type_support, aimrt::channel::SubscriberCallback(callback));
+        .subscribe = [](void* impl,
+                        const aimrt_type_support_base_t* msg_type_support,
+                        aimrt_function_base_t* callback) -> bool {
+          return static_cast<SubscriberProxy*>(impl)->Subscribe(msg_type_support, callback);
         },
         .get_topic = [](void* impl) -> aimrt_string_view_t {
           return aimrt::util::ToAimRTStringView(static_cast<SubscriberProxy*>(impl)->topic_name_);
@@ -161,6 +155,7 @@ class SubscriberProxy {
   const std::string_view pkg_path_;
   const std::string_view module_name_;
   const std::string topic_name_;
+
   ChannelBackendManager& channel_backend_manager_;
 
   const aimrt_channel_subscriber_base_t base_;
@@ -208,10 +203,12 @@ class ChannelHandleProxy {
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return logger_; }
 
  private:
-  PublisherProxy* GetPublisher(std::string_view topic) {
+  const aimrt_channel_publisher_base_t* GetPublisher(aimrt_string_view_t input_topic) {
+    auto topic = aimrt::util::ToStdStringView(input_topic);
+
     auto find_itr = publisher_proxy_map_.find(topic);
     if (find_itr != publisher_proxy_map_.end()) {
-      return find_itr->second.get();
+      return find_itr->second->NativeHandle();
     }
 
     if (start_flag_.load()) {
@@ -228,13 +225,15 @@ class ChannelHandleProxy {
             channel_backend_manager_,
             passed_context_meta_keys_));
 
-    return emplace_ret.first->second.get();
+    return emplace_ret.first->second->NativeHandle();
   }
 
-  SubscriberProxy* GetSubscriber(std::string_view topic) {
+  const aimrt_channel_subscriber_base_t* GetSubscriber(aimrt_string_view_t input_topic) {
+    auto topic = aimrt::util::ToStdStringView(input_topic);
+
     auto find_itr = subscriber_proxy_map_.find(topic);
     if (find_itr != subscriber_proxy_map_.end()) {
-      return find_itr->second.get();
+      return find_itr->second->NativeHandle();
     }
 
     if (start_flag_.load()) {
@@ -250,18 +249,16 @@ class ChannelHandleProxy {
             topic,
             channel_backend_manager_));
 
-    return emplace_ret.first->second.get();
+    return emplace_ret.first->second->NativeHandle();
   }
 
   static aimrt_channel_handle_base_t GenBase(void* impl) {
     return aimrt_channel_handle_base_t{
         .get_publisher = [](void* impl, aimrt_string_view_t topic) -> const aimrt_channel_publisher_base_t* {
-          auto publisher_ptr = static_cast<ChannelHandleProxy*>(impl)->GetPublisher(aimrt::util::ToStdStringView(topic));
-          return publisher_ptr ? publisher_ptr->NativeHandle() : nullptr;
+          return static_cast<ChannelHandleProxy*>(impl)->GetPublisher(topic);
         },
         .get_subscriber = [](void* impl, aimrt_string_view_t topic) -> const aimrt_channel_subscriber_base_t* {
-          auto subscriber_ptr = static_cast<ChannelHandleProxy*>(impl)->GetSubscriber(aimrt::util::ToStdStringView(topic));
-          return subscriber_ptr ? subscriber_ptr->NativeHandle() : nullptr;
+          return static_cast<ChannelHandleProxy*>(impl)->GetSubscriber(topic);
         },
         .impl = impl};
   }

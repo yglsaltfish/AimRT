@@ -75,17 +75,13 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttChannelBackend::Options> {
 
 namespace aimrt::plugins::mqtt_plugin {
 
-void MqttChannelBackend::Initialize(
-    YAML::Node options_node,
-    const runtime::core::channel::ChannelRegistry* channel_registry_ptr) {
+void MqttChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Mqtt channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
-
-  channel_registry_ptr_ = channel_registry_ptr;
 
   options_node = options_;
 }
@@ -107,12 +103,42 @@ void MqttChannelBackend::Shutdown() {
 
 bool MqttChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
+    return false;
+  }
+
   namespace util = aimrt::common::util;
+
+  const auto& info = publish_type_wrapper.info;
+
+  int qos = 2;
+
+  auto find_option_itr = std::find_if(
+      options_.pub_topics_options.begin(), options_.pub_topics_options.end(),
+      [topic_name = info.topic_name](const Options::PubTopicOptions& pub_option) {
+        try {
+          return std::regex_match(topic_name.begin(), topic_name.end(), std::regex(pub_option.topic_name, std::regex::ECMAScript));
+        } catch (const std::exception& e) {
+          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                     pub_option.topic_name, topic_name, e.what());
+          return false;
+        }
+      });
+
+  if (find_option_itr != options_.pub_topics_options.end()) {
+    qos = find_option_itr->qos;
+  }
+
+  pub_cfg_info_map_.emplace(
+      info.topic_name,
+      PubCfgInfo{
+          .qos = qos});
 
   // 检查path
   std::string pattern = std::string("/channel/") +
-                        util::UrlEncode(publish_type_wrapper.topic_name) + "/" +
-                        util::UrlEncode(publish_type_wrapper.msg_type);
+                        util::UrlEncode(info.topic_name) + "/" +
+                        util::UrlEncode(info.msg_type);
 
   if (pattern.size() > 255) {
     AIMRT_ERROR("Too long uri: {}", pattern);
@@ -133,26 +159,29 @@ bool MqttChannelBackend::Subscribe(
 
   namespace util = aimrt::common::util;
 
-  std::string_view topic_name = subscribe_wrapper.topic_name;
+  const auto& info = subscribe_wrapper.info;
 
   int qos = 2;
 
-  for (auto& sub_topic_options : options_.sub_topics_options) {
-    try {
-      if (std::regex_match(topic_name.begin(), topic_name.end(),
-                           std::regex(sub_topic_options.topic_name, std::regex::ECMAScript))) {
-        qos = sub_topic_options.qos;
-        break;
-      }
-    } catch (const std::exception& e) {
-      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                 sub_topic_options.topic_name, topic_name, e.what());
-    }
+  auto find_option_itr = std::find_if(
+      options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
+      [topic_name = info.topic_name](const Options::SubTopicOptions& sub_option) {
+        try {
+          return std::regex_match(topic_name.begin(), topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
+        } catch (const std::exception& e) {
+          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                     sub_option.topic_name, topic_name, e.what());
+          return false;
+        }
+      });
+
+  if (find_option_itr != options_.sub_topics_options.end()) {
+    qos = find_option_itr->qos;
   }
 
   std::string pattern = std::string("/channel/") +
-                        util::UrlEncode(subscribe_wrapper.topic_name) + "/" +
-                        util::UrlEncode(subscribe_wrapper.msg_type);
+                        util::UrlEncode(info.topic_name) + "/" +
+                        util::UrlEncode(info.msg_type);
 
   auto find_itr = subscribe_wrapper_map_.find(pattern);
   if (find_itr != subscribe_wrapper_map_.end()) {
@@ -167,65 +196,75 @@ bool MqttChannelBackend::Subscribe(
 
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
 
-  auto handle = [this, topic_name, subscribe_wrapper_vec_ptr](MQTTAsync_message* message) {
-    try {
-      auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
-      ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
-      ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
+  auto handle =
+      [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](MQTTAsync_message* message) {
+        try {
+          auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
 
-      util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
+          // 解析mqtt包
+          util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 
-      std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
-      ctx_ptr->SetSerializationType(serialization_type);
+          std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+          ctx_ptr->SetSerializationType(serialization_type);
 
-      // 获取context
-      size_t ctx_num = buf_oper.GetUint8();
-      for (size_t ii = 0; ii < ctx_num; ++ii) {
-        auto key = buf_oper.GetString(util::BufferLenType::UINT16);
-        auto val = buf_oper.GetString(util::BufferLenType::UINT16);
-        ctx_ptr->SetMetaValue(key, val);
-      }
+          // 获取context
+          size_t ctx_num = buf_oper.GetUint8();
+          for (size_t ii = 0; ii < ctx_num; ++ii) {
+            auto key = buf_oper.GetString(util::BufferLenType::UINT16);
+            auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+            ctx_ptr->SetMetaValue(key, val);
+          }
 
-      // 获取消息buf
-      auto remaining_buf = buf_oper.GetRemainingBuffer();
-      aimrt_buffer_view_t buffer_view{
-          .data = remaining_buf.data(),
-          .len = remaining_buf.size()};
+          ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
+          ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
-      aimrt_buffer_array_view_t buffer_array_view{
-          .data = &buffer_view,
-          .len = 1};
+          // 获取消息buf
+          auto remaining_buf = buf_oper.GetRemainingBuffer();
+          aimrt_buffer_view_t buffer_view{
+              .data = remaining_buf.data(),
+              .len = remaining_buf.size()};
 
-      // 每个lib统一一次性发布。lib_name:msg_ptr
-      std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
-      for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-        if (msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path) != msg_ptr_map.end())
-          continue;
+          aimrt_buffer_array_view_t buffer_array_view{
+              .data = &buffer_view,
+              .len = 1};
 
-        auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
+          // 每个pkg统一一次性发布。key=pkg_path
+          std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
+          for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
+            if (msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path) != msg_ptr_map.end())
+              continue;
 
-        // 创建消息
-        std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
+            auto subscribe_type_support_ref = subscribe_wrapper_ptr->info.msg_type_support_ref;
 
-        // 消息反序列化
-        bool deserialize_ret = subscribe_type_support_ref.Deserialize(
-            serialization_type, buffer_array_view, msg_ptr.get());
+            // 创建消息
+            std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
 
-        AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Mqtt msg deserialize failed.");
+            // 消息反序列化
+            bool deserialize_ret = subscribe_type_support_ref.Deserialize(
+                serialization_type, buffer_array_view, msg_ptr.get());
 
-        msg_ptr_map.emplace(subscribe_wrapper_ptr->pkg_path, msg_ptr);
-      }
+            AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Mqtt msg deserialize failed.");
 
-      // 调用注册的subscribe方法
-      for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-        auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->pkg_path);
-        std::shared_ptr<void> msg_ptr = finditr->second;
-        subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
-      }
-    } catch (const std::exception& e) {
-      AIMRT_WARN("Handle mqtt rpc msg failed, exception info: {}", e.what());
-    }
-  };
+            msg_ptr_map.emplace(subscribe_wrapper_ptr->info.pkg_path, msg_ptr);
+          }
+
+          // 调用注册的subscribe方法
+          for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
+            auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path);
+            std::shared_ptr<void> msg_ptr = finditr->second;
+
+            // 创建 sub msg wrapper
+            runtime::core::channel::MsgWrapper sub_msg_wrapper{
+                .info = subscribe_wrapper_ptr->info,
+                .msg_ptr = msg_ptr.get(),
+                .ctx_ref = ctx_ptr};
+
+            subscribe_wrapper_ptr->callback(sub_msg_wrapper, [msg_ptr, ctx_ptr]() {});
+          }
+        } catch (const std::exception& e) {
+          AIMRT_WARN("Handle mqtt rpc msg failed, exception info: {}", e.what());
+        }
+      };
 
   msg_handle_registry_ptr_->RegisterMsgHandle(pattern, std::move(handle));
 
@@ -236,8 +275,7 @@ bool MqttChannelBackend::Subscribe(
   return true;
 }
 
-void MqttChannelBackend::Publish(
-    const runtime::core::channel::PublishWrapper& publish_wrapper) noexcept {
+void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   if (state_.load() != State::Start) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
     return;
@@ -245,69 +283,39 @@ void MqttChannelBackend::Publish(
 
   namespace util = aimrt::common::util;
 
-  std::string_view msg_type = publish_wrapper.msg_type;
-  std::string_view pkg_path = publish_wrapper.pkg_path;
-  std::string_view module_name = publish_wrapper.module_name;
-  std::string_view topic_name = publish_wrapper.topic_name;
+  const auto& info = msg_wrapper.info;
 
   int qos = 2;
 
-  for (auto& pub_topic_options : options_.pub_topics_options) {
-    try {
-      if (std::regex_match(topic_name.begin(), topic_name.end(),
-                           std::regex(pub_topic_options.topic_name, std::regex::ECMAScript))) {
-        qos = pub_topic_options.qos;
-        break;
-      }
-    } catch (const std::exception& e) {
-      AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                 pub_topic_options.topic_name, topic_name, e.what());
-    }
+  auto find_itr = pub_cfg_info_map_.find(info.topic_name);
+  if (find_itr != pub_cfg_info_map_.end()) {
+    qos = find_itr->second.qos;
   }
 
-  // 确定path
-  std::string mqtt_pub_topic = std::string("/channel/") +
-                               util::UrlEncode(publish_wrapper.topic_name) + "/" +
-                               util::UrlEncode(publish_wrapper.msg_type);
-
-  auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
-
   // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
-  std::string serialization_type(publish_wrapper.ctx_ref.GetSerializationType());
-  if (serialization_type.empty() && publish_type_support_ref.SerializationTypesSupportedNum() > 0) {
+  auto publish_type_support_ref = info.msg_type_support_ref;
+
+  auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+  if (serialization_type.empty()) {
     serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
   }
 
   // msg序列化
-  std::shared_ptr<aimrt::util::BufferArray> buffer_array;
-
-  auto find_serialization_cache_itr = publish_wrapper.serialization_cache.find(serialization_type);
-  if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
-    // 没有缓存，序列化一次后放入缓存中
-    buffer_array = std::make_shared<aimrt::util::BufferArray>();
-    bool serialize_ret = publish_type_support_ref.Serialize(
-        serialization_type, publish_wrapper.msg_ptr, buffer_array->AllocatorNativeHandle(), buffer_array->BufferArrayNativeHandle());
-
-    if (!serialize_ret) {
-      AIMRT_ERROR(
-          "Msg serialization failed in local channel, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-          serialization_type, pkg_path, module_name, topic_name, msg_type);
-      return;
-    }
-
-    publish_wrapper.serialization_cache.emplace(serialization_type, buffer_array);
-  } else {
-    // 有缓存
-    buffer_array = find_serialization_cache_itr->second;
+  auto buffer_array_view_ptr = msg_wrapper.SerializeMsgWithCache(serialization_type);
+  if (!buffer_array_view_ptr) [[unlikely]] {
+    AIMRT_ERROR(
+        "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+        serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
+    return;
   }
 
-  // 填内容，直接复制过去
-  auto buffer_array_data = buffer_array->Data();
-  const size_t buffer_array_len = buffer_array->Size();
-  size_t msg_size = buffer_array->BufferSize();
+  // 填内容
+  auto buffer_array_data = buffer_array_view_ptr->Data();
+  const size_t buffer_array_len = buffer_array_view_ptr->Size();
+  size_t msg_size = buffer_array_view_ptr->BufferSize();
 
   // context
-  const auto& keys = publish_wrapper.ctx_ref.GetMetaKeys();
+  const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
   if (keys.size() > 255) [[unlikely]] {
     AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
     return;
@@ -319,7 +327,7 @@ void MqttChannelBackend::Publish(
     context_meta_kv_size += (2 + key.size());
     context_meta_kv.emplace_back(key);
 
-    auto val = publish_wrapper.ctx_ref.GetMetaValue(key);
+    auto val = msg_wrapper.ctx_ref.GetMetaValue(key);
     context_meta_kv_size += (2 + val.size());
     context_meta_kv.emplace_back(val);
   }
@@ -355,6 +363,11 @@ void MqttChannelBackend::Publish(
   pubmsg.payloadlen = msg_buf_vec.size();
   pubmsg.qos = qos;
   pubmsg.retained = 0;
+
+  // 确定path
+  std::string mqtt_pub_topic = std::string("/channel/") +
+                               util::UrlEncode(info.topic_name) + "/" +
+                               util::UrlEncode(info.msg_type);
 
   AIMRT_TRACE("Mqtt publish to '{}'", mqtt_pub_topic);
   int rc = MQTTAsync_sendMessage(client_, mqtt_pub_topic.data(), &pubmsg, NULL);

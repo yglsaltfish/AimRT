@@ -2,10 +2,6 @@
 
 #include <memory>
 
-#define TO_AIMRT_BUFFER_ARRAY_VIEW(__aimrt_buffer_array__) \
-  (static_cast<const aimrt_buffer_array_view_t*>(          \
-      static_cast<const void*>(__aimrt_buffer_array__)))
-
 namespace YAML {
 template <>
 struct convert<aimrt::runtime::core::channel::LocalChannelBackend::Options> {
@@ -35,17 +31,13 @@ struct convert<aimrt::runtime::core::channel::LocalChannelBackend::Options> {
 
 namespace aimrt::runtime::core::channel {
 
-void LocalChannelBackend::Initialize(
-    YAML::Node options_node,
-    const ChannelRegistry* channel_registry_ptr) {
+void LocalChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
       "Local channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
-
-  channel_registry_ptr_ = channel_registry_ptr;
 
   if (!options_.subscriber_use_inline_executor) {
     AIMRT_CHECK_ERROR_THROW(
@@ -72,8 +64,9 @@ void LocalChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
   subscribe_index_map_.clear();
+
+  get_executor_func_ = std::function<executor::ExecutorRef(std::string_view)>();
 }
 
 bool LocalChannelBackend::RegisterPublishType(
@@ -92,156 +85,120 @@ bool LocalChannelBackend::Subscribe(const SubscribeWrapper& subscribe_wrapper) n
     return false;
   }
 
-  std::string_view msg_type = subscribe_wrapper.msg_type;
-  std::string_view pkg_path = subscribe_wrapper.pkg_path;
-  std::string_view module_name = subscribe_wrapper.module_name;
-  std::string_view topic_name = subscribe_wrapper.topic_name;
+  const auto& info = subscribe_wrapper.info;
 
-  subscribe_index_map_[msg_type][topic_name][pkg_path].emplace(module_name);
+  subscribe_index_map_[info.msg_type][info.topic_name][info.pkg_path].emplace(info.module_name);
 
   return true;
 }
 
-void LocalChannelBackend::Publish(const PublishWrapper& publish_wrapper) noexcept {
+void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
   if (state_.load() != State::Start) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
     return;
   }
 
-  std::string_view msg_type = publish_wrapper.msg_type;
-  std::string_view pkg_path = publish_wrapper.pkg_path;
-  std::string_view module_name = publish_wrapper.module_name;
-  std::string_view topic_name = publish_wrapper.topic_name;
-
-  const auto& subscribe_wrapper_map = channel_registry_ptr_->GetSubscribeWrapperMap();
+  const auto& pub_info = msg_wrapper.info;
 
   // 没有人订阅则直接返回
-  auto subscribe_index_map_find_msg_itr = subscribe_index_map_.find(msg_type);
-  if (subscribe_index_map_find_msg_itr == subscribe_index_map_.end()) return;
+  auto subscribe_index_map_find_msg_itr = subscribe_index_map_.find(pub_info.msg_type);
+  if (subscribe_index_map_find_msg_itr == subscribe_index_map_.end()) [[unlikely]]
+    return;
 
-  auto subscribe_index_map_find_topic_itr = subscribe_index_map_find_msg_itr->second.find(topic_name);
-  if (subscribe_index_map_find_topic_itr == subscribe_index_map_find_msg_itr->second.end()) return;
+  auto subscribe_index_map_find_topic_itr = subscribe_index_map_find_msg_itr->second.find(pub_info.topic_name);
+  if (subscribe_index_map_find_topic_itr == subscribe_index_map_find_msg_itr->second.end()) [[unlikely]]
+    return;
+
+  // 确定序列化类型
+  auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+  if (serialization_type.empty())
+    serialization_type = pub_info.msg_type_support_ref.DefaultSerializationType();
 
   // 遍历每个pkg
   for (const auto& subscribe_pkg_path_itr : subscribe_index_map_find_topic_itr->second) {
-    std::string_view subscribe_pkg_path = subscribe_pkg_path_itr.first;
+    std::string_view cur_sub_pkg_path = subscribe_pkg_path_itr.first;
+
+    const auto* module_sub_wrapper_map_ptr = channel_registry_ptr_->GetModuleSubscribeWrapperMapPtr(
+        pub_info.msg_type, pub_info.topic_name, cur_sub_pkg_path);
+
+    if (module_sub_wrapper_map_ptr == nullptr ||
+        module_sub_wrapper_map_ptr->empty()) [[unlikely]] {
+      AIMRT_ERROR(
+          "Can not find registry info, pkg_path: {}, topic_name: {}, msg_type: {}",
+          cur_sub_pkg_path, pub_info.topic_name, pub_info.msg_type);
+      continue;
+    }
 
     // 同一个pkg下的各个模块，对同一个类型的创建/销毁方法应该是统一的
     // 随便选取一个模块的对该类型的创建/销毁方法作为pkg的全局选择
-    const auto* tpl_subscribe_wrapper_ptr =
-        GetTplSubscribeWrapper(subscribe_pkg_path, topic_name, msg_type);
+    const auto* tpl_sub_wrapper_ptr = module_sub_wrapper_map_ptr->begin()->second;
 
-    // 不可能选不出来
-    // assert(tpl_subscribe_wrapper_ptr != nullptr);
+    auto tpl_sub_info = tpl_sub_wrapper_ptr->info;
 
-    auto tpl_subscribe_type_support_ref = aimrt::util::TypeSupportRef(tpl_subscribe_wrapper_ptr->msg_type_support);
+    // 创建该pkg下的 sub msg
+    std::shared_ptr<void> msg_ptr = tpl_sub_info.msg_type_support_ref.CreateSharedPtr();
 
-    // 该pkg下创建的结构体的智能指针，带删除器
-    std::shared_ptr<void> msg_ptr = tpl_subscribe_type_support_ref.CreateSharedPtr();
-
-    // context
+    // 创建该pkg下的 context
     auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
-    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
-    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
-    const auto& meta_keys = publish_wrapper.ctx_ref.GetMetaKeys();
+    const auto& meta_keys = msg_wrapper.ctx_ref.GetMetaKeys();
     for (const auto& item : meta_keys) {
-      ctx_ptr->SetMetaValue(item, publish_wrapper.ctx_ref.GetMetaValue(item));
+      ctx_ptr->SetMetaValue(item, msg_wrapper.ctx_ref.GetMetaValue(item));
     }
 
-    if (subscribe_pkg_path == pkg_path) {
-      // 在同一个pkg中，直接复制
-      tpl_subscribe_type_support_ref.Copy(publish_wrapper.msg_ptr, msg_ptr.get());
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, pub_info.topic_name);
+    ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
-      ctx_ptr->SetSerializationType(publish_wrapper.ctx_ref.GetSerializationType());
+    if (cur_sub_pkg_path == pub_info.pkg_path) {
+      // pub和sub在同一个pkg中，直接复制
+      tpl_sub_info.msg_type_support_ref.Copy(msg_wrapper.msg_ptr, msg_ptr.get());
     } else {
-      // 在不同pkg中，需要进行序列化反序列化
-      // 在同一个pkg中的不同模块中，对同一个类型结构可以复用，不管它是通过哪种序列化方法/反序列化方法从发布端原始结构转过来的
-
-      auto publish_type_support_ref = aimrt::util::TypeSupportRef(publish_wrapper.msg_type_support);
-
-      // 查询订阅端和发布端是否有同一种序列化方法
-      auto [subscribe_wrapper_ptr, serialization_type] =
-          GetSubscribeSerializationType(
-              publish_type_support_ref,
-              subscribe_pkg_path,
-              topic_name,
-              msg_type);
-
-      // 本pkg中没有同一种序列化方法，应该不可能出现
-      // assert(subscribe_wrapper_ptr != nullptr && !serialization_type.empty());
+      // pub和sub在不同pkg中，需要进行序列化反序列化
+      // 在同一个pkg中的不同模块中，对同一个类型结构可以复用，不管它是通过哪种序列化方法/反序列化方法从pub端原始结构转过来的
+      // 如果指定了序列化类型，则使用指定的，否则使用pub端支持的序列化类型中的第一种
 
       ctx_ptr->SetSerializationType(serialization_type);
 
-      // msg序列化
-      std::shared_ptr<aimrt::util::BufferArray> buffer_array;
-
-      auto find_serialization_cache_itr = publish_wrapper.serialization_cache.find(serialization_type);
-      if (find_serialization_cache_itr == publish_wrapper.serialization_cache.end()) {
-        // 没有缓存，序列化一次后放入缓存中
-        buffer_array = std::make_shared<aimrt::util::BufferArray>();
-        bool serialize_ret = publish_type_support_ref.Serialize(
-            serialization_type,
-            publish_wrapper.msg_ptr,
-            buffer_array->AllocatorNativeHandle(),
-            buffer_array->BufferArrayNativeHandle());
-
-        if (!serialize_ret) {
-          AIMRT_ERROR(
-              "Msg serialization failed in local channel, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-              serialization_type, pkg_path, module_name, topic_name, msg_type);
-          return;
-        }
-
-        publish_wrapper.serialization_cache.emplace(serialization_type, buffer_array);
-      } else {
-        // 有缓存
-        buffer_array = find_serialization_cache_itr->second;
+      // pub 端 msg 序列化
+      auto buffer_array_view_ptr = msg_wrapper.SerializeMsgWithCache(serialization_type);
+      if (!buffer_array_view_ptr) {
+        AIMRT_ERROR(
+            "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+            serialization_type, pub_info.pkg_path, pub_info.module_name, pub_info.topic_name, pub_info.msg_type);
+        continue;
       }
 
-      // subscribe反序列化
-      auto subscribe_type_support_ref = aimrt::util::TypeSupportRef(subscribe_wrapper_ptr->msg_type_support);
-      bool deserialize_ret = subscribe_type_support_ref.Deserialize(
-          serialization_type, *TO_AIMRT_BUFFER_ARRAY_VIEW(buffer_array->BufferArrayNativeHandle()), msg_ptr.get());
+      // sub 端 msg 反序列化
+      bool deserialize_ret = tpl_sub_info.msg_type_support_ref.Deserialize(
+          serialization_type, *(buffer_array_view_ptr->NativeHandle()), msg_ptr.get());
       if (!deserialize_ret) {
         // 反序列化失败
         AIMRT_FATAL(
-            "Deserialization failed in local channel, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-            serialization_type, pkg_path, module_name, topic_name, msg_type);
+            "Deserialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+            serialization_type, tpl_sub_info.pkg_path, tpl_sub_info.module_name, tpl_sub_info.topic_name, tpl_sub_info.msg_type);
         continue;
       }
     }
 
     // 调用注册的subscribe方法
-    for (const auto& subscribe_module_name : subscribe_pkg_path_itr.second) {
-      auto get_subscribe_wrapper_ptr_func = [&]() -> const SubscribeWrapper* {
-        auto find_pkg_itr = subscribe_wrapper_map.find(subscribe_pkg_path);
-        if (find_pkg_itr == subscribe_wrapper_map.end()) return nullptr;
+    for (const auto& sub_wrapper_itr : *module_sub_wrapper_map_ptr) {
+      const auto* sub_wrapper_ptr = sub_wrapper_itr.second;
 
-        auto find_module_itr = find_pkg_itr->second.find(subscribe_module_name);
-        if (find_module_itr == find_pkg_itr->second.end()) return nullptr;
-
-        auto find_topic_itr = find_module_itr->second.find(topic_name);
-        if (find_topic_itr == find_module_itr->second.end()) return nullptr;
-
-        auto find_msg_itr = find_topic_itr->second.find(msg_type);
-        if (find_msg_itr == find_topic_itr->second.end()) return nullptr;
-
-        return find_msg_itr->second.get();
-      };
-
-      const auto* subscribe_wrapper_ptr = get_subscribe_wrapper_ptr_func();
-
-      // 不可能为空
-      // assert(subscribe_wrapper_ptr != nullptr);
+      // 创建该 pkg-module 下的 MsgWrapper
+      auto sub_msg_warpper_ptr = std::make_shared<MsgWrapper>(
+          MsgWrapper{
+              .info = sub_wrapper_ptr->info,
+              .msg_ptr = msg_ptr.get(),
+              .ctx_ref = ctx_ptr,
+              .serialization_cache = msg_wrapper.serialization_cache});
 
       if (subscribe_executor_ref_) {
         subscribe_executor_ref_.Execute(
-            [subscribe_wrapper_ptr, msg_ptr, ctx_ptr]() {
-              subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
+            [sub_wrapper_ptr, msg_ptr, ctx_ptr, sub_msg_warpper_ptr]() {
+              sub_wrapper_ptr->callback(*sub_msg_warpper_ptr, [msg_ptr, ctx_ptr]() {});
             });
       } else {
-        subscribe_wrapper_ptr->callback(ctx_ptr, msg_ptr.get(), [msg_ptr, ctx_ptr]() {});
+        sub_wrapper_ptr->callback(*sub_msg_warpper_ptr, [msg_ptr, ctx_ptr]() {});
       }
     }
   }
@@ -254,69 +211,6 @@ void LocalChannelBackend::RegisterGetExecutorFunc(
       "Method can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
-}
-
-const SubscribeWrapper* LocalChannelBackend::GetTplSubscribeWrapper(
-    std::string_view subscribe_pkg_path,
-    std::string_view topic_name,
-    std::string_view msg_type) const {
-  const auto& subscribe_wrapper_map = channel_registry_ptr_->GetSubscribeWrapperMap();
-
-  auto find_pkg_itr = subscribe_wrapper_map.find(subscribe_pkg_path);
-  if (find_pkg_itr == subscribe_wrapper_map.end()) return nullptr;
-
-  for (const auto& module_itr : find_pkg_itr->second) {
-    auto find_topic_itr = module_itr.second.find(topic_name);
-    if (find_topic_itr == module_itr.second.end()) continue;
-
-    auto find_msg_itr = find_topic_itr->second.find(msg_type);
-    if (find_msg_itr == find_topic_itr->second.end()) continue;
-
-    return find_msg_itr->second.get();
-  }
-  return nullptr;
-}
-
-std::tuple<const SubscribeWrapper*, std::string_view>
-LocalChannelBackend::GetSubscribeSerializationType(
-    aimrt::util::TypeSupportRef publish_msg_type_support_ref,
-    std::string_view subscribe_pkg_path,
-    std::string_view topic_name,
-    std::string_view msg_type) const {
-  const auto& subscribe_wrapper_map = channel_registry_ptr_->GetSubscribeWrapperMap();
-
-  auto find_pkg_itr = subscribe_wrapper_map.find(subscribe_pkg_path);
-  if (find_pkg_itr == subscribe_wrapper_map.end()) return {nullptr, ""};
-
-  size_t cur_pmsg_ser_type = publish_msg_type_support_ref.SerializationTypesSupportedNum();
-  const auto* cur_pmsg_ser_list = publish_msg_type_support_ref.SerializationTypesSupportedList();
-
-  for (const auto& module_itr : find_pkg_itr->second) {
-    auto find_topic_itr = module_itr.second.find(topic_name);
-    if (find_topic_itr == module_itr.second.end()) continue;
-
-    auto find_msg_itr = find_topic_itr->second.find(msg_type);
-    if (find_msg_itr == find_topic_itr->second.end()) continue;
-
-    auto* cur_subscribe_wrapper_ptr = find_msg_itr->second.get();
-    auto cur_subscribe_msg_type_support_ref = aimrt::util::TypeSupportRef(cur_subscribe_wrapper_ptr->msg_type_support);
-
-    size_t cur_smsg_ser_num = cur_subscribe_msg_type_support_ref.SerializationTypesSupportedNum();
-    const auto* cur_smsg_ser_list = cur_subscribe_msg_type_support_ref.SerializationTypesSupportedList();
-
-    for (uint32_t ii = 0; ii < cur_smsg_ser_num; ++ii) {
-      std::string_view cur_smsg_ser_type = aimrt::util::ToStdStringView(cur_smsg_ser_list[ii]);
-
-      for (uint32_t jj = 0; jj < cur_pmsg_ser_type; ++jj) {
-        std::string_view cur_pmsg_ser_type = aimrt::util::ToStdStringView(cur_pmsg_ser_list[jj]);
-
-        if (cur_smsg_ser_type == cur_pmsg_ser_type) {
-          return {cur_subscribe_wrapper_ptr, cur_pmsg_ser_type};
-        }
-      }
-    }
-  }
-  return {nullptr, ""};
 }
 
 }  // namespace aimrt::runtime::core::channel

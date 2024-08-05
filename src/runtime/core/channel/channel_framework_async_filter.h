@@ -2,66 +2,39 @@
 
 #include <functional>
 
-#include "aimrt_module_cpp_interface/channel/channel_context.h"
-#include "aimrt_module_cpp_interface/util/type_support.h"
+#include "core/channel/channel_msg_wrapper.h"
 
 namespace aimrt::runtime::core::channel {
 
-struct FrameworkFilterData {
-  std::string_view topic_name;
-  std::string_view msg_type;
-  std::string_view pkg_path;
-  std::string_view module_name;
-  aimrt::util::TypeSupportRef type_support_ref;
-};
+using FrameworkAsyncChannelHandle = std::function<void(MsgWrapper&)>;
+using FrameworkAsyncChannelFilter = std::function<void(MsgWrapper&, FrameworkAsyncChannelHandle&&)>;
 
-using FrameworkAsyncChannelHandle =
-    std::function<void(const FrameworkFilterData&, aimrt::channel::ContextRef, const void*)>;
-using FrameworkAsyncChannelFilter =
-    std::function<void(const FrameworkFilterData&, aimrt::channel::ContextRef, const void*, FrameworkAsyncChannelHandle&&)>;
-
-class FrameworkAsyncFilterManager {
+class FrameworkAsyncChannelFilterCollector {
  public:
-  FrameworkAsyncFilterManager()
+  FrameworkAsyncChannelFilterCollector()
       : final_filter_(
-            [](const FrameworkFilterData& filter_data,
-               aimrt::channel::ContextRef ctx_ref,
-               const void* msg,
-               FrameworkAsyncChannelHandle&& h) {
-              h(filter_data, ctx_ref, msg);
+            [](MsgWrapper& msg_wrapper, FrameworkAsyncChannelHandle&& h) {
+              h(msg_wrapper);
             }) {}
-  ~FrameworkAsyncFilterManager() = default;
+  ~FrameworkAsyncChannelFilterCollector() = default;
 
-  FrameworkAsyncFilterManager(const FrameworkAsyncFilterManager&) = delete;
-  FrameworkAsyncFilterManager& operator=(const FrameworkAsyncFilterManager&) = delete;
+  FrameworkAsyncChannelFilterCollector(const FrameworkAsyncChannelFilterCollector&) = delete;
+  FrameworkAsyncChannelFilterCollector& operator=(const FrameworkAsyncChannelFilterCollector&) = delete;
 
-  void RegisterFilter(FrameworkAsyncChannelFilter&& filter) {
+  void RegisterFilter(const FrameworkAsyncChannelFilter& filter) {
     final_filter_ =
-        [final_filter{std::move(final_filter_)},
-         cur_filter{std::move(filter)}](
-            const FrameworkFilterData& filter_data,
-            aimrt::channel::ContextRef ctx_ref,
-            const void* msg,
-            FrameworkAsyncChannelHandle&& h) {
-          cur_filter(
-              filter_data,
-              ctx_ref,
-              msg,
-              [final_filter{std::move(final_filter)}, h{std::move(h)}](
-                  const FrameworkFilterData& filter_data,
-                  aimrt::channel::ContextRef ctx_ref,
-                  const void* msg) mutable {
-                final_filter(filter_data, ctx_ref, msg, std::move(h));
+        [final_filter{std::move(final_filter_)}, &filter](
+            MsgWrapper& msg_wrapper, FrameworkAsyncChannelHandle&& h) {
+          filter(
+              msg_wrapper,
+              [&final_filter, h{std::move(h)}](MsgWrapper& msg_wrapper) mutable {
+                final_filter(msg_wrapper, std::move(h));
               });
         };
   }
 
-  void InvokeChannel(
-      FrameworkAsyncChannelHandle&& h,
-      const FrameworkFilterData& filter_data,
-      aimrt::channel::ContextRef ctx_ref,
-      const void* msg) const {
-    return final_filter_(filter_data, ctx_ref, msg, std::move(h));
+  void InvokeChannel(FrameworkAsyncChannelHandle&& h, MsgWrapper& msg_wrapper) const {
+    final_filter_(msg_wrapper, std::move(h));
   }
 
   void Clear() {
@@ -70,6 +43,94 @@ class FrameworkAsyncFilterManager {
 
  private:
   FrameworkAsyncChannelFilter final_filter_;
+};
+
+class FrameworkAsyncChannelFilterManager {
+ public:
+  FrameworkAsyncChannelFilterManager() = default;
+  ~FrameworkAsyncChannelFilterManager() = default;
+
+  FrameworkAsyncChannelFilterManager(const FrameworkAsyncChannelFilterManager&) = delete;
+  FrameworkAsyncChannelFilterManager& operator=(const FrameworkAsyncChannelFilterManager&) = delete;
+
+  void RegisterFilter(std::string_view name, FrameworkAsyncChannelFilter&& filter) {
+    auto emplace_ret = filter_map_.emplace(name, std::move(filter));
+    AIMRT_ASSERT(emplace_ret.second, "Register filter {} failed.", name);
+  }
+
+  std::vector<std::string> GetAllFiltersName() const {
+    std::vector<std::string> result;
+    for (const auto& itr : filter_map_)
+      result.emplace_back(itr.first);
+
+    return result;
+  }
+
+  void CreateFilterCollector(
+      std::string_view topic_name, const std::vector<std::string>& filter_name_vec) {
+    if (filter_name_vec.empty()) [[unlikely]]
+      return;
+
+    auto collector_ptr = std::make_unique<FrameworkAsyncChannelFilterCollector>();
+
+    for (auto& name : filter_name_vec) {
+      auto find_itr = filter_map_.find(name);
+      AIMRT_ASSERT(find_itr != filter_map_.end(), "Can not find filter: {}", name);
+
+      collector_ptr->RegisterFilter(find_itr->second);
+    }
+
+    auto emplace_ret = filter_collector_map_.emplace(topic_name, std::move(collector_ptr));
+
+    AIMRT_ASSERT(emplace_ret.second, "Func {} set filter collector failed.", topic_name);
+
+    filter_names_map_.emplace(topic_name, filter_name_vec);
+  }
+
+  const FrameworkAsyncChannelFilterCollector& GetFilterCollector(std::string_view topic_name) const {
+    auto find_itr = filter_collector_map_.find(topic_name);
+    if (find_itr != filter_collector_map_.end()) {
+      return *(find_itr->second);
+    }
+
+    return default_filter_collector_;
+  }
+
+  std::vector<std::string> GetFilterNameVec(std::string_view topic_name) const {
+    auto find_itr = filter_names_map_.find(topic_name);
+    if (find_itr != filter_names_map_.end()) {
+      return find_itr->second;
+    }
+
+    return {};
+  }
+
+  void Clear() {
+    filter_collector_map_.clear();
+    filter_map_.clear();
+  }
+
+ private:
+  // filter name - filter
+  std::unordered_map<std::string, FrameworkAsyncChannelFilter> filter_map_;
+
+  // topic name - filter collector
+  using FilterCollectorMap = std::unordered_map<
+      std::string,
+      std::unique_ptr<FrameworkAsyncChannelFilterCollector>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>;
+  FilterCollectorMap filter_collector_map_;
+
+  // topic name - filter name vec
+  using FilterNameMap = std::unordered_map<
+      std::string,
+      std::vector<std::string>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>;
+  FilterNameMap filter_names_map_;
+
+  FrameworkAsyncChannelFilterCollector default_filter_collector_;
 };
 
 }  // namespace aimrt::runtime::core::channel

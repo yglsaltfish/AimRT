@@ -4,13 +4,40 @@
 #include <memory>
 #include <string>
 
-#include "aimrt_module_cpp_interface/util/type_support.h"
+#include "aimrt_module_cpp_interface/util/function.h"
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_framework_async_filter.h"
 #include "core/channel/channel_registry.h"
 #include "util/log_util.h"
 
 namespace aimrt::runtime::core::channel {
+
+struct RegisterPublishTypeProxyInfoWrapper {
+  std::string_view pkg_path;
+  std::string_view module_name;
+  std::string_view topic_name;
+
+  const aimrt_type_support_base_t* msg_type_support;
+};
+
+struct PublishProxyInfoWrapper {
+  std::string_view pkg_path;
+  std::string_view module_name;
+  std::string_view topic_name;
+
+  aimrt_string_view_t msg_type;
+  const aimrt_channel_context_base_t* ctx_ptr;
+  const void* msg_ptr;
+};
+
+struct SubscribeProxyInfoWrapper {
+  std::string_view pkg_path;
+  std::string_view module_name;
+  std::string_view topic_name;
+
+  const aimrt_type_support_base_t* msg_type_support;
+  aimrt_function_base_t* callback;
+};
 
 class ChannelBackendManager {
  public:
@@ -29,12 +56,24 @@ class ChannelBackendManager {
   ChannelBackendManager(const ChannelBackendManager&) = delete;
   ChannelBackendManager& operator=(const ChannelBackendManager&) = delete;
 
-  void Initialize(ChannelRegistry* channel_registry_ptr);
+  void Initialize();
   void Start();
   void Shutdown();
 
-  void RegisterPublishFilter(FrameworkAsyncChannelFilter&& filter);
-  void RegisterSubscribeFilter(FrameworkAsyncChannelFilter&& filter);
+  State GetState() const { return state_.load(); }
+
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
+  void SetChannelRegistry(ChannelRegistry* channel_registry_ptr);
+
+  void SetPublishFiltersRules(
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+  void SetSubscribeFiltersRules(
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+
+  void SetPublishFrameworkAsyncRpcFilterManager(FrameworkAsyncChannelFilterManager* ptr);
+  void SetSubscribeFrameworkAsyncRpcFilterManager(FrameworkAsyncChannelFilterManager* ptr);
 
   void SetPubTopicsBackendsRules(
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
@@ -43,20 +82,20 @@ class ChannelBackendManager {
 
   void RegisterChannelBackend(ChannelBackendBase* channel_backend_ptr);
 
-  bool RegisterPublishType(PublishTypeWrapper&& publish_type_wrapper);
-  bool Subscribe(SubscribeWrapper&& subscribe_wrapper);
-  void Publish(const PublishWrapper& publish_wrapper);
+  bool Subscribe(SubscribeProxyInfoWrapper&& wrapper);
+  bool RegisterPublishType(RegisterPublishTypeProxyInfoWrapper&& wrapper);
+  void Publish(PublishProxyInfoWrapper&& wrapper);
 
-  State GetState() const { return state_.load(); }
-
-  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
-  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
-
-  std::unordered_map<std::string_view, std::vector<std::string_view>> GetPubTopicBackendInfo() const;
-  std::unordered_map<std::string_view, std::vector<std::string_view>> GetSubTopicBackendInfo() const;
+  using TopicBackendInfoMap = std::unordered_map<std::string_view, std::vector<std::string_view>>;
+  TopicBackendInfoMap GetPubTopicBackendInfo() const;
+  TopicBackendInfoMap GetSubTopicBackendInfo() const;
 
  private:
   std::vector<ChannelBackendBase*> GetBackendsByRules(
+      std::string_view topic_name,
+      const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
+
+  std::vector<std::string> GetFilterRules(
       std::string_view topic_name,
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
 
@@ -64,15 +103,21 @@ class ChannelBackendManager {
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  FrameworkAsyncFilterManager publish_filter_manager_;
-  FrameworkAsyncFilterManager subscribe_filter_manager_;
-
   ChannelRegistry* channel_registry_ptr_;
 
+  // filter
+  std::vector<std::pair<std::string, std::vector<std::string>>> publish_filters_rules_;
+  std::vector<std::pair<std::string, std::vector<std::string>>> subscribe_filters_rules_;
+
+  FrameworkAsyncChannelFilterManager* publish_filter_manager_ptr_ = nullptr;
+  FrameworkAsyncChannelFilterManager* subscribe_filter_manager_ptr_ = nullptr;
+
+  // backend
   std::vector<ChannelBackendBase*> channel_backend_index_vec_;
 
   std::vector<std::pair<std::string, std::vector<std::string>>> pub_topics_backends_rules_;
   std::vector<std::pair<std::string, std::vector<std::string>>> sub_topics_backends_rules_;
+
   std::unordered_map<
       std::string,
       std::vector<ChannelBackendBase*>,
@@ -82,7 +127,9 @@ class ChannelBackendManager {
 
   std::unordered_map<
       std::string,
-      std::vector<ChannelBackendBase*>>
+      std::vector<ChannelBackendBase*>,
+      aimrt::common::util::StringHash,
+      std::equal_to<>>
       sub_topics_backend_index_map_;
 };
 
