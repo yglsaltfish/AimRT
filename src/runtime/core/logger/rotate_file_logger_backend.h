@@ -39,8 +39,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
 
   bool AllowDuplicates() const override { return true; }
 
-  void Log(const LogDataWrapper& log_data_wrapper,
-           const std::shared_ptr<std::string>& format_log_str_ptr) override;
+  void Log(const LogDataWrapper& log_data_wrapper) override;
 
  private:
   bool OpenNewFile();

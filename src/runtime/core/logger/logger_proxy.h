@@ -46,14 +46,13 @@ class LoggerProxy {
            const char* log_data,
            size_t log_data_size) const {
     if (lvl >= lvl_) {
-      size_t tid;
 #if defined(_WIN32)
-      tid = std::hash<std::thread::id>{}(std::this_thread::get_id());
+      thread_local size_t tid(std::hash<std::thread::id>{}(std::this_thread::get_id()));
 #else
-      tid = gettid();
+      thread_local size_t tid(gettid());
 #endif
 
-      auto log_data_wrapper = LogDataWrapper{
+      LogDataWrapper log_data_wrapper{
           .module_name = module_name_,
           .thread_id = tid,
           .t = std::chrono::system_clock::now(),
@@ -65,9 +64,8 @@ class LoggerProxy {
           .log_data = log_data,
           .log_data_size = log_data_size};
 
-      auto format_log_str_ptr = std::make_shared<std::string>();
       for (auto& logger_backend_ptr : logger_backend_vec_) {
-        logger_backend_ptr->Log(log_data_wrapper, format_log_str_ptr);
+        logger_backend_ptr->Log(log_data_wrapper);
       }
     }
   }
