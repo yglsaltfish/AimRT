@@ -65,6 +65,10 @@ void UdpChannelBackend::Start() {
 void UdpChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  udp_svr_ptr_->Shutdown();
+  msg_handle_registry_ptr_->Shutdown();
+  udp_cli_pool_ptr_->Shutdown();
 }
 
 bool UdpChannelBackend::RegisterPublishType(

@@ -12,9 +12,11 @@
 using namespace aimrt::runtime::core;
 
 AimRTCore* global_core_ptr_ = nullptr;
+bool run_flag = true;
 
 void SignalHandler(int sig) {
   if (global_core_ptr_ && (sig == SIGINT || sig == SIGTERM)) {
+    run_flag = false;
     global_core_ptr_->Shutdown();
     return;
   }
@@ -42,8 +44,18 @@ int32_t main(int32_t argc, char** argv) {
     aimrt::CoreRef module_handle(
         core.GetModuleManager().CreateModule("NormalPublisherModule"));
 
-    // Register publish type
     std::string topic_name = "test_topic";
+    double channel_frq = 0.5;
+
+    // Read cfg
+    auto file_path = module_handle.GetConfigurator().GetConfigFilePath();
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+      topic_name = cfg_node["topic_name"].as<std::string>();
+      channel_frq = cfg_node["channel_frq"].as<double>();
+    }
+
+    // Register publish type
     auto publisher = module_handle.GetChannelHandle().GetPublisher(topic_name);
     AIMRT_HL_CHECK_ERROR_THROW(module_handle.GetLogger(),
                                publisher, "Get publisher for topic '{}' failed.", topic_name);
@@ -56,12 +68,21 @@ int32_t main(int32_t argc, char** argv) {
     auto fu = core.AsyncStart();
 
     // Publish event
-    aimrt::protocols::example::ExampleEventMsg msg;
-    msg.set_msg("example msg");
-    msg.set_num(123456);
+    uint32_t count = 0;
+    while (run_flag) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<uint32_t>(1000 / channel_frq)));
 
-    AIMRT_HL_INFO(module_handle.GetLogger(), "Publish new pb event, data: {}", aimrt::Pb2CompactJson(msg));
-    publisher_proxy.Publish(msg);
+      count++;
+      AIMRT_HL_INFO(module_handle.GetLogger(), "Loop count : {} -------------------------", count);
+
+      // publish event
+      aimrt::protocols::example::ExampleEventMsg msg;
+      msg.set_msg("count: " + std::to_string(count));
+      msg.set_num(count);
+
+      AIMRT_HL_INFO(module_handle.GetLogger(), "Publish new pb event, data: {}", aimrt::Pb2CompactJson(msg));
+      publisher_proxy.Publish(msg);
+    }
 
     // Wait
     fu.wait();

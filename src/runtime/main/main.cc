@@ -8,7 +8,10 @@
 DEFINE_string(cfg_file_path, "", "config file path");
 
 DEFINE_bool(dump_cfg_file, false, "dump config file");
-DEFINE_string(dump_cfg_file_path, "", "dump config file path");
+DEFINE_string(dump_cfg_file_path, "./dump_cfg.yaml", "dump config file path");
+
+DEFINE_bool(dump_init_report, false, "dump init report");
+DEFINE_string(dump_init_report_path, "./init_report.txt", "dump init report path");
 
 DEFINE_bool(register_signal, true, "register handle for sigint and sigterm");
 DEFINE_int32(running_duration, 0, "running duration, seconds");
@@ -42,9 +45,20 @@ int32_t main(int32_t argc, char** argv) {
 
     AimRTCore::Options options;
     options.cfg_file_path = FLAGS_cfg_file_path;
-    options.dump_cfg_file = FLAGS_dump_cfg_file;
-    options.dump_cfg_file_path = FLAGS_dump_cfg_file_path;
+
     core.Initialize(options);
+
+    if (FLAGS_dump_cfg_file) {
+      std::ofstream ofs(FLAGS_dump_cfg_file_path, std::ios::trunc);
+      ofs << core.GetConfiguratorManager().GetRootOptionsNode();
+      ofs.close();
+    }
+
+    if (FLAGS_dump_init_report) {
+      std::ofstream ofs(FLAGS_dump_init_report_path, std::ios::trunc);
+      ofs << core.GenInitializationReport();
+      ofs.close();
+    }
 
     if (FLAGS_running_duration == 0) {
       core.Start();

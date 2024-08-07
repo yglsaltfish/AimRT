@@ -82,6 +82,7 @@ typedef struct {
   /**
    * @brief Function to merge subscribe context to publish context
    * @note
+   * This method is the same as the method of aimrt_channel_rable_mase_t
    * Input 1: Implement pointer to channel handle
    * Input 2: Channel subscribe context
    * Input 3: Channel publish context, for output
@@ -147,6 +148,18 @@ typedef struct {
    */
   const aimrt_channel_subscriber_base_t* (*get_subscriber)(
       void* impl, aimrt_string_view_t topic);
+
+  /**
+   * @brief Function to merge subscribe context to publish context
+   * @note
+   * Input 1: Implement pointer to channel handle
+   * Input 2: Channel subscribe context
+   * Input 3: Channel publish context, for output
+   */
+  void (*merge_subscribe_context_to_publish_context)(
+      void* impl,
+      const aimrt_channel_context_base_t* subscribe_ctx_ptr,
+      const aimrt_channel_context_base_t* publish_ctx_ptr);
 
   /// Implement pointer
   void* impl;

@@ -82,6 +82,8 @@ class RpcManager {
 
   void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
+  const RpcRegistry* GetRpcRegistry() const;
+
  private:
   void RegisterLocalRpcBackend();
   void RegisterDebugLogFilter();

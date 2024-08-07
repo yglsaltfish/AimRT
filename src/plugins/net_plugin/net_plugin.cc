@@ -231,6 +231,37 @@ void NetPlugin::Shutdown() noexcept {
   try {
     if (!init_flag_) return;
 
+    // tcp
+    if (udp_svr_ptr_)
+      udp_svr_ptr_->Shutdown();
+
+    if (udp_msg_handle_registry_ptr_)
+      udp_msg_handle_registry_ptr_->Shutdown();
+
+    if (udp_cli_pool_ptr_)
+      udp_cli_pool_ptr_->Shutdown();
+
+    // tcp
+    if (tcp_svr_ptr_)
+      tcp_svr_ptr_->Shutdown();
+
+    if (tcp_msg_handle_registry_ptr_)
+      tcp_msg_handle_registry_ptr_->Shutdown();
+
+    if (tcp_cli_pool_ptr_)
+      tcp_cli_pool_ptr_->Shutdown();
+
+    // http
+    if (http_svr_ptr_)
+      http_svr_ptr_->Shutdown();
+
+    if (http_cli_pool_ptr_)
+      http_cli_pool_ptr_->Shutdown();
+
+    // asio
+    if (asio_executor_ptr_)
+      asio_executor_ptr_->Shutdown();
+
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
   }

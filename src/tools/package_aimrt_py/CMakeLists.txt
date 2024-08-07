@@ -13,13 +13,13 @@ add_custom_target(
   DEPENDS aimrt::runtime::python_runtime)
 
 add_custom_target(
-  copy_ros2_files
+  copy_ros2_plugin_proto_files
   COMMAND ${CMAKE_COMMAND} -E make_directory ${AIMRT_PY_PKG_DIR}/aimrt_py/
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/lib/ ${AIMRT_PY_PKG_DIR}/aimrt_py/lib/
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/local/ ${AIMRT_PY_PKG_DIR}/aimrt_py/local/
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_INSTALL_PREFIX}/share/ ${AIMRT_PY_PKG_DIR}/aimrt_py/share/
   COMMENT "Copying ROS2 files"
-  DEPENDS aimrt::plugins::ros2_plugin)
+  DEPENDS aimrt::plugins::ros2_plugin_proto)
 
 add_custom_target(
   create_python_pkg
@@ -32,7 +32,7 @@ add_custom_target(
   WORKING_DIRECTORY ${AIMRT_PY_PKG_DIR})
 
 if(AIMRT_BUILD_WITH_ROS2 AND AIMRT_BUILD_ROS2_PLUGIN)
-  add_dependencies(create_python_pkg copy_ros2_files)
+  add_dependencies(create_python_pkg copy_ros2_plugin_proto_files)
 endif()
 
 include(PluginDetectTool)

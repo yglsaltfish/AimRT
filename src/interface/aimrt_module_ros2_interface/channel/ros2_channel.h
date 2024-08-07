@@ -156,7 +156,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
       std::function<void(ContextRef, const std::shared_ptr<const MsgType>&)>&& callback) {
     return subscriber_.Subscribe(
         GetRos2MessageTypeSupport<MsgType>(),
-        [this, callback{std::move(callback)}](
+        [callback{std::move(callback)}](
             const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) {
@@ -174,7 +174,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
       std::function<void(const std::shared_ptr<const MsgType>&)>&& callback) {
     return subscriber_.Subscribe(
         GetRos2MessageTypeSupport<MsgType>(),
-        [this, callback{std::move(callback)}](
+        [callback{std::move(callback)}](
             const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) {
@@ -191,7 +191,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
       std::function<co::Task<void>(ContextRef, const MsgType&)>&& callback) {
     return subscriber_.Subscribe(
         GetRos2MessageTypeSupport<MsgType>(),
-        [this, callback{std::move(callback)}](
+        [callback{std::move(callback)}](
             const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) {
@@ -209,7 +209,7 @@ class SubscriberProxy<MsgType> : public SubscriberProxyBase {
   bool SubscribeCo(std::function<co::Task<void>(const MsgType&)>&& callback) {
     return subscriber_.Subscribe(
         GetRos2MessageTypeSupport<MsgType>(),
-        [this, callback{std::move(callback)}](
+        [callback{std::move(callback)}](
             const aimrt_channel_context_base_t* ctx_ptr,
             const void* msg_ptr,
             aimrt_function_base_t* release_callback_base) {

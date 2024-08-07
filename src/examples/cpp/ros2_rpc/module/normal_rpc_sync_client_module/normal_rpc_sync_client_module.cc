@@ -52,9 +52,8 @@ bool NormalRpcSyncClientModule::Start() {
 
 void NormalRpcSyncClientModule::Shutdown() {
   try {
-    auto stop_future = stop_sig_.get_future();
     run_flag_ = false;
-    stop_future.wait();
+    stop_sig_.get_future().wait();
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());
     return;

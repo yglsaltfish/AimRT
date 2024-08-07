@@ -65,6 +65,10 @@ void TcpChannelBackend::Start() {
 void TcpChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  tcp_svr_ptr_->Shutdown();
+  msg_handle_registry_ptr_->Shutdown();
+  tcp_cli_pool_ptr_->Shutdown();
 }
 
 bool TcpChannelBackend::RegisterPublishType(

@@ -341,6 +341,13 @@ void RpcManager::SetPassedContextMetaKeys(const std::unordered_set<std::string>&
   passed_context_meta_keys_.insert(keys.begin(), keys.end());
 }
 
+const RpcRegistry* RpcManager::GetRpcRegistry() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Method can only be called when state is 'Init'.");
+  return rpc_registry_ptr_.get();
+}
+
 void RpcManager::RegisterLocalRpcBackend() {
   std::unique_ptr<RpcBackendBase> local_rpc_backend_ptr =
       std::make_unique<LocalRpcBackend>();

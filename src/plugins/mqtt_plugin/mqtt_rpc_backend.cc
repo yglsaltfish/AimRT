@@ -140,6 +140,8 @@ void MqttRpcBackend::Shutdown() {
   UnSubscribeMqttTopic();
 
   client_tool_ptr_.reset();
+
+  msg_handle_registry_ptr_->Shutdown();
 }
 
 bool MqttRpcBackend::RegisterServiceFunc(

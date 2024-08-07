@@ -23,9 +23,6 @@ class AimRTCore {
  public:
   struct Options {
     std::string cfg_file_path;
-
-    bool dump_cfg_file = false;
-    std::string dump_cfg_file_path;
   };
 
   enum class State : uint32_t {
@@ -143,7 +140,6 @@ class AimRTCore {
   void ResetCoreLogger();
   aimrt::executor::ExecutorRef GetExecutor(std::string_view executor_name);
   void InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy);
-  void DumpCfgFile() const;
   void CheckCfgFile() const;
   void StartImpl();
   void ShutdownImpl();

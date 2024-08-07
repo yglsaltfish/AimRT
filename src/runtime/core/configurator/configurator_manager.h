@@ -62,9 +62,9 @@ class ConfiguratorManager {
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  YAML::Node* ori_root_options_node_ptr_;
-  YAML::Node* root_options_node_ptr_;
-  YAML::Node* user_root_options_node_ptr_;
+  YAML::Node* ori_root_options_node_ptr_;   // aimrt节点经过标准化、带user module节点的配置
+  YAML::Node* root_options_node_ptr_;       // 仅包含标准化的aimrt节点的配置
+  YAML::Node* user_root_options_node_ptr_;  // 原始加载的配置
 
   std::unordered_map<std::string, std::unique_ptr<ConfiguratorProxy>> cfg_proxy_map_;
   ConfiguratorProxy default_cfg_proxy;
