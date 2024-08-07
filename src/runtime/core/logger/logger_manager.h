@@ -70,6 +70,8 @@ class LoggerManager {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
+  const std::vector<std::unique_ptr<LoggerBackendBase>>& GetUsedLoggerBackend() const;
+
  private:
   void RegisterConsoleLoggerBackendGenFunc();
   void RegisterRotateFileLoggerBackendGenFunc();

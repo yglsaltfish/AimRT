@@ -245,8 +245,15 @@ std::list<std::pair<std::string, std::string>> ExecutorManager::GenInitializatio
     executor_info_table.emplace_back(std::move(cur_executor_info));
   }
 
-  return {{"Executor Type List", executor_type_name_list},
-          {"Executor List", aimrt::common::util::DrawTable(executor_info_table)}};
+  std::list<std::pair<std::string, std::string>> report{
+      {"Executor Type List", executor_type_name_list},
+      {"Executor List", aimrt::common::util::DrawTable(executor_info_table)}};
+
+  for (const auto& backend_ptr : executor_vec_) {
+    report.splice(report.end(), backend_ptr->GenInitializationReport());
+  }
+
+  return report;
 }
 
 }  // namespace aimrt::runtime::core::executor

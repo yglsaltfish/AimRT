@@ -171,7 +171,20 @@ std::list<std::pair<std::string, std::string>> ConfiguratorManager::GenInitializ
       state_.load() == State::Init,
       "Method can only be called when state is 'Init'.");
 
-  return {{"AimRT Core Option", YAML::Dump((*root_options_node_ptr_)["aimrt"])}};
+  auto check_msg = util::CheckYamlNodes(
+      GetRootOptionsNode()["aimrt"],
+      GetUserRootOptionsNode()["aimrt"],
+      "aimrt");
+
+  std::list<std::pair<std::string, std::string>> report{
+      {"AimRT Core Option", YAML::Dump((*root_options_node_ptr_)["aimrt"])}};
+
+  if (!check_msg.empty()) {
+    report.emplace_back(
+        std::pair<std::string, std::string>{"Configuration Warning", check_msg});
+  }
+
+  return report;
 }
 
 }  // namespace aimrt::runtime::core::configurator

@@ -124,6 +124,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
 
     channel_backend_manager_.RegisterChannelBackend(finditr->get());
 
+    used_channel_backend_vec_.emplace_back(finditr->get());
     channel_backend_name_vec.emplace_back((*finditr)->Name());
   }
 
@@ -281,11 +282,18 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
     channel_sub_filter_name_vec_str = "[ " + aimrt::common::util::JoinVec(channel_sub_filter_name_vec, " , ") + " ]";
   }
 
-  return {{"Channel Backend List", channel_backend_name_vec_str},
-          {"Channel Pub Filter List", channel_pub_filter_name_vec_str},
-          {"Channel Sub Filter List", channel_sub_filter_name_vec_str},
-          {"Channel Pub Topic Info", aimrt::common::util::DrawTable(pub_topic_info_table)},
-          {"Channel Sub Topic Info", aimrt::common::util::DrawTable(sub_topic_info_table)}};
+  std::list<std::pair<std::string, std::string>> report{
+      {"Channel Backend List", channel_backend_name_vec_str},
+      {"Channel Pub Filter List", channel_pub_filter_name_vec_str},
+      {"Channel Sub Filter List", channel_sub_filter_name_vec_str},
+      {"Channel Pub Topic Info", aimrt::common::util::DrawTable(pub_topic_info_table)},
+      {"Channel Sub Topic Info", aimrt::common::util::DrawTable(sub_topic_info_table)}};
+
+  for (const auto& backend_ptr : used_channel_backend_vec_) {
+    report.splice(report.end(), backend_ptr->GenInitializationReport());
+  }
+
+  return report;
 }
 
 void ChannelManager::RegisterChannelBackend(
@@ -355,6 +363,13 @@ const ChannelRegistry* ChannelManager::GetChannelRegistry() const {
       state_.load() == State::Init,
       "Method can only be called when state is 'Init'.");
   return channel_registry_ptr_.get();
+}
+
+const std::vector<ChannelBackendBase*>& ChannelManager::GetUsedChannelBackend() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Method can only be called when state is 'Init'.");
+  return used_channel_backend_vec_;
 }
 
 void ChannelManager::RegisterLocalChannelBackend() {

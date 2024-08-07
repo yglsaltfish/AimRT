@@ -22,6 +22,8 @@ class ExecutorBase {
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
 
+  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const { return {}; }
+
   virtual std::string_view Type() const = 0;  // It should always return the same value
   virtual std::string_view Name() const = 0;  // It should always return the same value
 

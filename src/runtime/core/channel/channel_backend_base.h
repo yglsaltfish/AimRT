@@ -20,6 +20,8 @@ class ChannelBackendBase {
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
 
+  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const { return {}; }
+
   /**
    * @brief Set the Channel Registry to backend
    * @note
