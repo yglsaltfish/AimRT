@@ -350,6 +350,13 @@ void ChannelManager::SetPassedContextMetaKeys(const std::unordered_set<std::stri
   passed_context_meta_keys_.insert(keys.begin(), keys.end());
 }
 
+const ChannelRegistry* ChannelManager::GetChannelRegistry() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Method can only be called when state is 'Init'.");
+  return channel_registry_ptr_.get();
+}
+
 void ChannelManager::RegisterLocalChannelBackend() {
   std::unique_ptr<ChannelBackendBase> local_channel_backend_ptr =
       std::make_unique<LocalChannelBackend>();

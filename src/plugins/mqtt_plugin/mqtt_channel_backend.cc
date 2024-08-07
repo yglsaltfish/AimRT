@@ -99,6 +99,8 @@ void MqttChannelBackend::Shutdown() {
     return;
 
   UnSubscribeMqttTopic();
+
+  msg_handle_registry_ptr_->Shutdown();
 }
 
 bool MqttChannelBackend::RegisterPublishType(

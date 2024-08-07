@@ -78,6 +78,9 @@ void HttpChannelBackend::Start() {
 void HttpChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
+
+  http_svr_ptr_->Shutdown();
+  http_cli_pool_ptr_->Shutdown();
 }
 
 bool HttpChannelBackend::RegisterPublishType(

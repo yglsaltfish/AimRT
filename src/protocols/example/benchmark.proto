@@ -3,29 +3,22 @@ syntax = "proto3";
 package aimrt.protocols.example;
 
 enum BenchmarkStatus {
-  Start = 0;
-  Stop = 1;
-}
-
-message TopicInfo {
-  BenchmarkStatus status = 1;
-  string topic_name = 2;           // 当前topic名称
-  uint32 message_size = 3;         // 每个topic的消息大小
-  uint32 expected_send_count = 4;  // 预期发送的消息数量
-  uint32 real_send_count = 5;      // 实际发送的消息数量
-  uint32 send_frequency = 6;       // 发送频率
-  uint64 id = 7;                   // topic id : hash<topic_name>
+  Begin = 0;
+  End = 1;
 }
 
 message BenchmarkSignal {
-  repeated TopicInfo topic_info = 1;
+  BenchmarkStatus status = 1;
+
+  string topic_name = 2;
+  uint32 send_num = 3;
+
+  uint32 message_size = 4;
+  uint32 send_frequency = 5;
 }
 
 message BenchmarkMessage {
-  uint64 id = 1;
-  uint64 seq = 2;
-  uint64 timestamp = 3;
-  string topic_name = 4;
-  uint32 frequency = 5;
-  bytes data = 6;
+  uint32 seq = 1;
+  uint64 timestamp = 2;
+  bytes data = 3;
 }

@@ -35,9 +35,16 @@ class MsgHandleRegistry {
     msg_handle_map_.emplace(uri, std::forward<Args>(args)...);
   }
 
+  void Shutdown() {
+    if (std::atomic_exchange(&shutdown_flag_, true)) return;
+  }
+
  private:
   void HandleServerMsg(const EndPointType& ep,
                        const std::shared_ptr<boost::asio::streambuf>& buf) const {
+    if (shutdown_flag_.load()) [[unlikely]]
+      return;
+
     // 1 byte uri len : n byte uri : buf.len-1-n byte data
     try {
       const void* buf_data = buf->data().data();
@@ -64,6 +71,9 @@ class MsgHandleRegistry {
       return;
     }
   }
+
+ private:
+  std::atomic_bool shutdown_flag_ = false;
 
   std::unordered_map<std::string, MsgHandleFunc, aimrt::common::util::StringHash, std::equal_to<>>
       msg_handle_map_;

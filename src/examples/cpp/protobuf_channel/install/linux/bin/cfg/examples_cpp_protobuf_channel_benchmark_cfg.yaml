@@ -5,7 +5,11 @@ aimrt:
       - type: console
   executor:
     executors:
-      - name: work_thread_pool
+      - name: publish_thread_pool
+        type: asio_thread
+        options:
+          thread_num: 4
+      - name: subscribe_thread_pool
         type: asio_thread
         options:
           thread_num: 4
@@ -14,7 +18,7 @@ aimrt:
       - type: local
         options:
           subscriber_use_inline_executor: false
-          subscriber_executor: work_thread_pool
+          subscriber_executor: subscribe_thread_pool
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]

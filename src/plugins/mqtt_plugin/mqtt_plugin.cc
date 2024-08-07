@@ -111,6 +111,8 @@ void MqttPlugin::Shutdown() noexcept {
 
     stop_flag_ = true;
 
+    msg_handle_registry_ptr_->Shutdown();
+
     MQTTAsync_disconnect(client_, NULL);
 
     MQTTAsync_destroy(&client_);

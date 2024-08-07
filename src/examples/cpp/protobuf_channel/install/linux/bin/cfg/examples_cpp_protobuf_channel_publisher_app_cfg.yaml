@@ -24,7 +24,7 @@ aimrt:
   module:
     pkgs:
       - path: ./libprotobuf_channel_sub_pkg.so
-        enable_modules: [NormalPublisherModule, NormalSubscriberModule]
+        enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule
         log_lvl: INFO
@@ -33,6 +33,8 @@ aimrt:
 
 # Module custom configuration
 NormalPublisherModule:
+  topic_name: test_topic
+  channel_frq: 0.5
 
 NormalSubscriberModule:
   topic_name: test_topic

@@ -252,6 +252,23 @@ class ChannelHandleProxy {
     return emplace_ret.first->second->NativeHandle();
   }
 
+  void MergeSubscribeContextToPublishContext(
+      const aimrt_channel_context_base_t* subscribe_ctx_ptr, const aimrt_channel_context_base_t* publish_ctx_ptr) {
+    aimrt::channel::ContextRef subscribe_ctx_ref(subscribe_ctx_ptr);
+    aimrt::channel::ContextRef publish_ctx_ref(publish_ctx_ptr);
+
+    if (subscribe_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT ||
+        publish_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT) [[unlikely]] {
+      // TODO warn log
+      return;
+    }
+
+    for (const auto& key : passed_context_meta_keys_) {
+      auto val = subscribe_ctx_ref.GetMetaValue(key);
+      if (!val.empty()) publish_ctx_ref.SetMetaValue(key, val);
+    }
+  }
+
   static aimrt_channel_handle_base_t GenBase(void* impl) {
     return aimrt_channel_handle_base_t{
         .get_publisher = [](void* impl, aimrt_string_view_t topic) -> const aimrt_channel_publisher_base_t* {
@@ -259,6 +276,11 @@ class ChannelHandleProxy {
         },
         .get_subscriber = [](void* impl, aimrt_string_view_t topic) -> const aimrt_channel_subscriber_base_t* {
           return static_cast<ChannelHandleProxy*>(impl)->GetSubscriber(topic);
+        },
+        .merge_subscribe_context_to_publish_context = [](void* impl,                                             //
+                                                         const aimrt_channel_context_base_t* subscribe_ctx_ptr,  //
+                                                         const aimrt_channel_context_base_t* publish_ctx_ptr) {  //
+          static_cast<ChannelHandleProxy*>(impl)->MergeSubscribeContextToPublishContext(subscribe_ctx_ptr, publish_ctx_ptr);
         },
         .impl = impl};
   }

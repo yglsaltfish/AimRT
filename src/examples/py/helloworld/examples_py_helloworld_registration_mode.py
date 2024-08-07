@@ -30,8 +30,6 @@ def run_aimrt_core(args):
 
         core_options = aimrt_py.CoreOptions()
         core_options.cfg_file_path = args.cfg_file_path
-        core_options.dump_cfg_file = args.dump_cfg_file
-        core_options.dump_cfg_file_path = args.dump_cfg_file_path
         core.Initialize(core_options)
 
         core.Start()
@@ -46,11 +44,7 @@ def run_aimrt_core(args):
 
 def main():
     parser = argparse.ArgumentParser(description='Example helloworld registration mode.')
-
     parser.add_argument('--cfg_file_path', type=str, default="", help='config file path')
-    parser.add_argument('--dump_cfg_file', type=bool, default=False, help='dump config file')
-    parser.add_argument('--dump_cfg_file_path', type=str, default="", help='dump config file path')
-
     args = parser.parse_args()
 
     signal.signal(signal.SIGINT, signal_handler)

@@ -12,9 +12,7 @@ inline void ExportCoreOptions(pybind11::object m) {
 
   pybind11::class_<AimRTCore::Options>(m, "CoreOptions")
       .def(pybind11::init<>())
-      .def_readwrite("cfg_file_path", &AimRTCore::Options::cfg_file_path)
-      .def_readwrite("dump_cfg_file", &AimRTCore::Options::dump_cfg_file)
-      .def_readwrite("dump_cfg_file_path", &AimRTCore::Options::dump_cfg_file_path);
+      .def_readwrite("cfg_file_path", &AimRTCore::Options::cfg_file_path);
 }
 
 inline void PyCoreStart(aimrt::runtime::core::AimRTCore& core) {

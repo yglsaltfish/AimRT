@@ -135,6 +135,15 @@ class ChannelHandleRef {
         base_ptr_->get_subscriber(base_ptr_->impl, aimrt::util::ToAimRTStringView(topic)));
   }
 
+  void MergeSubscribeContextToPublishContext(
+      const ContextRef subscribe_ctx_ref, ContextRef publish_ctx_ref) const {
+    AIMRT_ASSERT(base_ptr_, "Reference is null.");
+    base_ptr_->merge_subscribe_context_to_publish_context(
+        base_ptr_->impl,
+        subscribe_ctx_ref.NativeHandle(),
+        publish_ctx_ref.NativeHandle());
+  }
+
  private:
   const aimrt_channel_handle_base_t* base_ptr_ = nullptr;
 };

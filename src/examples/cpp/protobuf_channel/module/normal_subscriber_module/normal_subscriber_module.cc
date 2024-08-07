@@ -17,7 +17,7 @@ bool NormalSubscriberModule::Initialize(aimrt::CoreRef core) {
       topic_name_ = cfg_node["topic_name"].as<std::string>();
     }
 
-    // 订阅事件
+    // Subscribe
     subscriber_ = core_.GetChannelHandle().GetSubscriber(topic_name_);
     AIMRT_CHECK_ERROR_THROW(subscriber_, "Get subscriber for topic '{}' failed.", topic_name_);
 

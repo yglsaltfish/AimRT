@@ -108,9 +108,6 @@ void AimRTCore::Initialize(const Options& options) {
   // Check cfg file
   CheckCfgFile();
 
-  // Dump cfg file
-  DumpCfgFile();
-
   EnterState(State::PostInit);
 }
 
@@ -254,24 +251,6 @@ void AimRTCore::CheckCfgFile() const {
 
   if (!msg.empty())
     AIMRT_WARN("Configuration Name Warning in \"{}\":\n{}", configurator_manager_.GetConfigureFilePath(), msg);
-}
-
-void AimRTCore::DumpCfgFile() const {
-  if (!options_.dump_cfg_file) return;
-
-  std::filesystem::path path =
-      options_.dump_cfg_file_path.empty() ? "./dump_cfg.yaml" : options_.dump_cfg_file_path;
-
-  std::ofstream ofs;
-  ofs.open(path, std::ios::trunc);
-
-  YAML::Node dump_node = configurator_manager_.GetRootOptionsNode();
-  ofs << dump_node;
-  ofs.flush();
-  ofs.clear();
-  ofs.close();
-
-  AIMRT_INFO("Dump cfg to file {}", path.string());
 }
 
 std::string AimRTCore::GenInitializationReport() const {

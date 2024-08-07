@@ -65,8 +65,8 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
   std::shared_ptr<runtime::common::net::AsioTcpClientPool> tcp_cli_pool_ptr_;
-  std::shared_ptr<runtime::common::net::AsioTcpServer> tcp_svr_ptr_;
   std::shared_ptr<TcpMsgHandleRegistry> msg_handle_registry_ptr_;
+  std::shared_ptr<runtime::common::net::AsioTcpServer> tcp_svr_ptr_;
 
   std::unordered_map<
       std::string,

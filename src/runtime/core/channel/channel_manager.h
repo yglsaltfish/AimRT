@@ -79,6 +79,8 @@ class ChannelManager {
 
   void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
+  const ChannelRegistry* GetChannelRegistry() const;
+
  private:
   void RegisterLocalChannelBackend();
   void RegisterDebugLogFilter();

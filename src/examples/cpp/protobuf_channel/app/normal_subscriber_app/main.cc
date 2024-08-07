@@ -42,8 +42,16 @@ int32_t main(int32_t argc, char** argv) {
     aimrt::CoreRef module_handle(
         core.GetModuleManager().CreateModule("NormalSubscriberModule"));
 
-    // Subscribe event
     std::string topic_name = "test_topic";
+
+    // Read cfg
+    auto file_path = module_handle.GetConfigurator().GetConfigFilePath();
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+      topic_name = cfg_node["topic_name"].as<std::string>();
+    }
+
+    // Subscribe event
     auto subscriber = module_handle.GetChannelHandle().GetSubscriber(topic_name);
     AIMRT_HL_CHECK_ERROR_THROW(module_handle.GetLogger(),
                                subscriber, "Get subscriber for topic '{}' failed.", topic_name);
