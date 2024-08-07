@@ -56,6 +56,8 @@ class PluginManager {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
+  const std::vector<AimRTCorePluginBase*>& GetUsedPlugin() const;
+
  private:
   Options options_;
   std::atomic<State> state_ = State::PreInit;
@@ -68,5 +70,7 @@ class PluginManager {
 
   // 通过动态库加载的插件
   std::vector<std::unique_ptr<PluginLoader>> plugin_loader_vec_;
+
+  std::vector<AimRTCorePluginBase*> used_plugin_vec_;
 };
 }  // namespace aimrt::runtime::core::plugin

@@ -244,13 +244,14 @@ void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CorePr
 }
 
 void AimRTCore::CheckCfgFile() const {
-  std::string msg = util::CheckYamlNodes(
+  std::string check_msg = util::CheckYamlNodes(
       configurator_manager_.GetRootOptionsNode()["aimrt"],
       configurator_manager_.GetUserRootOptionsNode()["aimrt"],
       "aimrt");
 
-  if (!msg.empty())
-    AIMRT_WARN("Configuration Name Warning in \"{}\":\n{}", configurator_manager_.GetConfigureFilePath(), msg);
+  if (!check_msg.empty())
+    AIMRT_WARN("Configuration Name Warning in \"{}\":\n{}",
+               configurator_manager_.GetConfigureFilePath(), check_msg);
 }
 
 std::string AimRTCore::GenInitializationReport() const {

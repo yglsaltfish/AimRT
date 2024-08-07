@@ -20,6 +20,8 @@ class LoggerBackendBase {
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
 
+  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const { return {}; }
+
   virtual bool AllowDuplicates() const = 0;  // It should always return the same value
 
   /**

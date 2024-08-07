@@ -124,6 +124,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
 
     rpc_backend_manager_.RegisterRpcBackend(finditr->get());
 
+    used_rpc_backend_vec_.emplace_back(finditr->get());
     rpc_backend_name_vec.emplace_back((*finditr)->Name());
   }
 
@@ -278,11 +279,18 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
     rpc_server_filter_name_vec_str = "[ " + aimrt::common::util::JoinVec(rpc_server_filter_name_vec, " , ") + " ]";
   }
 
-  return {{"Rpc Backend List", rpc_backend_name_vec_str},
-          {"Rpc Client Filter List", rpc_client_filter_name_vec_str},
-          {"Rpc Server Filter List", rpc_server_filter_name_vec_str},
-          {"Rpc Client Info", aimrt::common::util::DrawTable(client_info_table)},
-          {"Rpc Server Info", aimrt::common::util::DrawTable(server_info_table)}};
+  std::list<std::pair<std::string, std::string>> report{
+      {"Rpc Backend List", rpc_backend_name_vec_str},
+      {"Rpc Client Filter List", rpc_client_filter_name_vec_str},
+      {"Rpc Server Filter List", rpc_server_filter_name_vec_str},
+      {"Rpc Client Info", aimrt::common::util::DrawTable(client_info_table)},
+      {"Rpc Server Info", aimrt::common::util::DrawTable(server_info_table)}};
+
+  for (const auto& backend_ptr : used_rpc_backend_vec_) {
+    report.splice(report.end(), backend_ptr->GenInitializationReport());
+  }
+
+  return report;
 }
 
 void RpcManager::RegisterRpcBackend(
@@ -346,6 +354,13 @@ const RpcRegistry* RpcManager::GetRpcRegistry() const {
       state_.load() == State::Init,
       "Method can only be called when state is 'Init'.");
   return rpc_registry_ptr_.get();
+}
+
+const std::vector<RpcBackendBase*>& RpcManager::GetUsedRpcBackend() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Method can only be called when state is 'Init'.");
+  return used_rpc_backend_vec_;
 }
 
 void RpcManager::RegisterLocalRpcBackend() {

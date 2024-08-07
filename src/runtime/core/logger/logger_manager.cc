@@ -243,6 +243,20 @@ std::list<std::pair<std::string, std::string>> LoggerManager::GenInitializationR
     log_backend_name_list = "[ " + aimrt::common::util::JoinVec(logger_backend_type_vec, " , ") + " ]";
   }
 
-  return {{"Log Backend List", log_backend_name_list}};
+  std::list<std::pair<std::string, std::string>> report{
+      {"Log Backend List", log_backend_name_list}};
+
+  for (const auto& backend_ptr : logger_backend_vec_) {
+    report.splice(report.end(), backend_ptr->GenInitializationReport());
+  }
+
+  return report;
+}
+
+const std::vector<std::unique_ptr<LoggerBackendBase>>& LoggerManager::GetUsedLoggerBackend() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Method can only be called when state is 'Init'.");
+  return logger_backend_vec_;
 }
 }  // namespace aimrt::runtime::core::logger

@@ -20,6 +20,8 @@ class RpcBackendBase {
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
 
+  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const { return {}; }
+
   /**
    * @brief Set the Rpc Registry to backend
    * @note

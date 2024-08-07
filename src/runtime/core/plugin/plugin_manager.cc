@@ -112,6 +112,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
     bool ret = plugin_ptr->Initialize(core_ptr_);
     AIMRT_CHECK_ERROR_THROW(ret, "Init plugin '{}' failed.", plugin_options.name);
 
+    used_plugin_vec_.emplace_back(plugin_ptr);
     AIMRT_TRACE("Load plugin '{}' succeeded.", plugin_options.name);
   }
 
@@ -201,7 +202,21 @@ std::list<std::pair<std::string, std::string>> PluginManager::GenInitializationR
     plugin_info_table.emplace_back(std::move(cur_plugin_info));
   }
 
-  return {{"Plugin List", aimrt::common::util::DrawTable(plugin_info_table)}};
+  std::list<std::pair<std::string, std::string>> report{
+      {"Plugin List", aimrt::common::util::DrawTable(plugin_info_table)}};
+
+  for (const auto& plugin_ptr : used_plugin_vec_) {
+    report.splice(report.end(), plugin_ptr->GenInitializationReport());
+  }
+
+  return report;
+}
+
+const std::vector<AimRTCorePluginBase*>& PluginManager::GetUsedPlugin() const {
+  AIMRT_CHECK_ERROR_THROW(
+      state_.load() == State::Init,
+      "Method can only be called when state is 'Init'.");
+  return used_plugin_vec_;
 }
 
 }  // namespace aimrt::runtime::core::plugin

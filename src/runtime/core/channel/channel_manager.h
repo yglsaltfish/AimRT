@@ -80,6 +80,7 @@ class ChannelManager {
   void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
   const ChannelRegistry* GetChannelRegistry() const;
+  const std::vector<ChannelBackendBase*>& GetUsedChannelBackend() const;
 
  private:
   void RegisterLocalChannelBackend();
@@ -100,6 +101,7 @@ class ChannelManager {
   std::unique_ptr<ChannelRegistry> channel_registry_ptr_;
 
   std::vector<std::unique_ptr<ChannelBackendBase>> channel_backend_vec_;
+  std::vector<ChannelBackendBase*> used_channel_backend_vec_;
 
   ChannelBackendManager channel_backend_manager_;
 

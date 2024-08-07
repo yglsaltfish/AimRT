@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list>
 #include <string_view>
 
 namespace aimrt {
@@ -20,6 +21,8 @@ class AimRTCorePluginBase {
 
   virtual bool Initialize(runtime::core::AimRTCore* core_ptr) noexcept = 0;
   virtual void Shutdown() noexcept = 0;
+
+  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const { return {}; }
 };
 
 }  // namespace aimrt

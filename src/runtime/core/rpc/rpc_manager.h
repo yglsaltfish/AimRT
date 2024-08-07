@@ -83,6 +83,7 @@ class RpcManager {
   void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
   const RpcRegistry* GetRpcRegistry() const;
+  const std::vector<RpcBackendBase*>& GetUsedRpcBackend() const;
 
  private:
   void RegisterLocalRpcBackend();
@@ -103,6 +104,7 @@ class RpcManager {
   std::unique_ptr<RpcRegistry> rpc_registry_ptr_;
 
   std::vector<std::unique_ptr<RpcBackendBase>> rpc_backend_vec_;
+  std::vector<RpcBackendBase*> used_rpc_backend_vec_;
 
   RpcBackendManager rpc_backend_manager_;
 
