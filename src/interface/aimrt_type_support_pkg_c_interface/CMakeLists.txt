@@ -10,42 +10,38 @@ set(CUR_TARGET_NAME ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR})
 set(CUR_TARGET_ALIAS_NAME ${CUR_SUPERIOR_NAMESPACE}::${CUR_DIR})
 
 # Set file collection
-file(GLOB_RECURSE src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+file(GLOB_RECURSE head_files ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 file(GLOB_RECURSE test_files ${CMAKE_CURRENT_SOURCE_DIR}/*_test.cc)
-list(REMOVE_ITEM src ${test_files})
 
 # Add target
-add_library(${CUR_TARGET_NAME} SHARED)
+add_library(${CUR_TARGET_NAME} INTERFACE)
 add_library(${CUR_TARGET_ALIAS_NAME} ALIAS ${CUR_TARGET_NAME})
-
-# Set source file of target
-target_sources(${CUR_TARGET_NAME} PRIVATE ${src})
 
 # Set include path of target
 target_include_directories(
   ${CUR_TARGET_NAME}
-  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
+  INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+            $<INSTALL_INTERFACE:include/aimrt>)
+
+# Set head files of target
+target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES ${head_files})
 
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}
-  PRIVATE aimrt::interface::aimrt_core_plugin_interface
-          aimrt::runtime::core
-          aimrt::protocols::record_playback_plugin_aimrt_rpc_gencode)
-
-# Add -Werror option
-include(AddWerror)
-add_werror(${CUR_TARGET_NAME})
+  INTERFACE aimrt::interface::aimrt_module_c_interface)
 
 # Set installation of target
 if(AIMRT_INSTALL)
-  install(TARGETS ${CUR_TARGET_NAME} LIBRARY DESTINATION bin)
+  set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
+  install(
+    TARGETS ${CUR_TARGET_NAME}
+    EXPORT ${INSTALL_CONFIG_NAME}
+    FILE_SET HEADERS
+    DESTINATION include/aimrt/${CUR_DIR})
 endif()
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)
   add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
 endif()
-
-# Set misc of target
-set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME "aimrt_${CUR_DIR}")

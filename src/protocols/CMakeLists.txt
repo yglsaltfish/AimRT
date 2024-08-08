@@ -23,6 +23,10 @@ if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_PARAMETER_PLUGIN)
   add_subdirectory(plugins/parameter_plugin)
 endif()
 
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
+  add_subdirectory(plugins/record_playback_plugin)
+endif()
+
 if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_LOG_CONTROL_PLUGIN)
   add_subdirectory(plugins/log_control_plugin)
 endif()

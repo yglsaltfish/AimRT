@@ -622,6 +622,20 @@ inline std::string& StrToLower(std::string& str) {
 }
 
 /**
+ * @brief 字符串转小写
+ *
+ * @param str 字符串
+ * @return std::string 小写字符串
+ */
+inline std::string StrToLower(std::string_view str) {
+  std::string result;
+  result.resize(str.size());
+
+  std::transform(str.begin(), str.end(), result.begin(), CharToLower);
+  return result;
+}
+
+/**
  * @brief 字符串转大写
  *
  * @param str 字符串
@@ -630,6 +644,20 @@ inline std::string& StrToLower(std::string& str) {
 inline std::string& StrToUpper(std::string& str) {
   std::transform(str.begin(), str.end(), str.begin(), CharToUpper);
   return str;
+}
+
+/**
+ * @brief 字符串转大写
+ *
+ * @param str 字符串
+ * @return std::string 大写字符串
+ */
+inline std::string StrToUpper(std::string_view str) {
+  std::string result;
+  result.resize(str.size());
+
+  std::transform(str.begin(), str.end(), result.begin(), CharToUpper);
+  return result;
 }
 
 /**

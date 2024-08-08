@@ -24,7 +24,7 @@ aimrt:
     backends:
       - type: http
     servers_options:
-      - func_name: "(.*)"
+      - func_name: "(pb:/aimrt.protocols.parameter_plugin.*)"
         enable_backends: [http]
   module:
     pkgs:
