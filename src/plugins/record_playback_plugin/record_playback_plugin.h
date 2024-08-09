@@ -4,7 +4,9 @@
 #include <vector>
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "record_playback_plugin/service.h"
+#include "record_playback_plugin/type_support_pkg_loader.h"
 
 namespace aimrt::plugins::record_playback_plugin {
 
@@ -83,6 +85,14 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
   bool init_flag_ = false;
 
   std::unique_ptr<RecordPlaybackServiceImpl> service_ptr_;
+
+  std::vector<std::unique_ptr<TypeSupportPkgLoader>> type_support_pkg_loader_vec_;
+
+  struct Wrapper {
+    aimrt::util::TypeSupportRef type_support_ref;
+    TypeSupportPkgLoader* loader_ptr;
+  };
+  std::unordered_map<std::string_view, Wrapper> type_support_map_;
 };
 
 }  // namespace aimrt::plugins::record_playback_plugin

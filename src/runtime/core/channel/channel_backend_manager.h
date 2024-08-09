@@ -82,9 +82,15 @@ class ChannelBackendManager {
 
   void RegisterChannelBackend(ChannelBackendBase* channel_backend_ptr);
 
+  // for proxy
   bool Subscribe(SubscribeProxyInfoWrapper&& wrapper);
   bool RegisterPublishType(RegisterPublishTypeProxyInfoWrapper&& wrapper);
   void Publish(PublishProxyInfoWrapper&& wrapper);
+
+  // for framework
+  bool Subscribe(SubscribeWrapper&& wrapper);
+  bool RegisterPublishType(PublishTypeWrapper&& wrapper);
+  void Publish(MsgWrapper&& wrapper);
 
   using TopicBackendInfoMap = std::unordered_map<std::string_view, std::vector<std::string_view>>;
   TopicBackendInfoMap GetPubTopicBackendInfo() const;

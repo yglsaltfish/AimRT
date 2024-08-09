@@ -118,7 +118,7 @@ bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
 
   // create filter
   auto filter_name_vec = GetFilterRules(topic_name, subscribe_filters_rules_);
-  subscribe_filter_manager_ptr_->CreateFilterCollector(topic_name, filter_name_vec);
+  subscribe_filter_manager_ptr_->CreateFilterCollectorIfNotExist(topic_name, filter_name_vec);
 
   // set callback
   const auto& filter_collector = subscribe_filter_manager_ptr_->GetFilterCollector(topic_name);
@@ -137,8 +137,7 @@ bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
 
         filter_collector.InvokeChannel(
             [sub_func_ptr = sub_func_shared_ptr.get(),
-             release_callback_shared_ptr](
-                MsgWrapper& msg_wrapper) {
+             release_callback_shared_ptr](MsgWrapper& msg_wrapper) {
               aimrt::channel::SubscriberReleaseCallback release_callback(
                   [release_callback_shared_ptr]() {});
 
@@ -194,7 +193,7 @@ bool ChannelBackendManager::RegisterPublishType(
 
   // create filter
   auto filter_name_vec = GetFilterRules(topic_name, publish_filters_rules_);
-  publish_filter_manager_ptr_->CreateFilterCollector(topic_name, filter_name_vec);
+  publish_filter_manager_ptr_->CreateFilterCollectorIfNotExist(topic_name, filter_name_vec);
 
   // register pub wrapper
   const auto& pub_type_wrapper_ref = *pub_type_wrapper_ptr;
@@ -260,7 +259,144 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
           .ctx_ref = ctx_ref});
 
   // 发起 publish
+  filter_collector.InvokeChannel(
+      [this](MsgWrapper& msg_wrapper) {
+        auto topic_name = msg_wrapper.info.topic_name;
 
+        auto find_itr = pub_topics_backend_index_map_.find(topic_name);
+
+        if (find_itr == pub_topics_backend_index_map_.end()) [[unlikely]] {
+          AIMRT_WARN("Channel msg has no backend, topic: '{}'.", topic_name);
+          return;
+        }
+
+        for (auto& itr : find_itr->second) {
+          AIMRT_TRACE("Publish msg '{}' for topic '{}' to channel backend '{}'",
+                      msg_wrapper.info.msg_type, topic_name, itr->Name());
+          itr->Publish(msg_wrapper);
+        }
+      },
+      *publish_msg_wrapper_ptr);
+}
+
+bool ChannelBackendManager::Subscribe(SubscribeWrapper&& wrapper) {
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
+    return false;
+  }
+
+  auto sub_wrapper_ptr = std::make_unique<SubscribeWrapper>(std::move(wrapper));
+
+  auto topic_name = sub_wrapper_ptr->info.topic_name;
+  auto msg_type = sub_wrapper_ptr->info.msg_type_support_ref.TypeName();
+
+  // create filter
+  auto filter_name_vec = GetFilterRules(topic_name, subscribe_filters_rules_);
+  subscribe_filter_manager_ptr_->CreateFilterCollectorIfNotExist(topic_name, filter_name_vec);
+
+  // set callback
+  const auto& filter_collector = subscribe_filter_manager_ptr_->GetFilterCollector(topic_name);
+
+  sub_wrapper_ptr->callback =
+      [this, &filter_collector, callback{std::move(sub_wrapper_ptr->callback)}](
+          MsgWrapper& msg_wrapper, std::function<void()>&& input_release_callback) {
+        auto release_callback_shared_ptr = std::shared_ptr<std::function<void()>>(
+            new std::function<void()>(std::move(input_release_callback)),
+            [](std::function<void()>* f) {
+              (*f)();
+              delete f;
+            });
+
+        filter_collector.InvokeChannel(
+            [&callback, release_callback_shared_ptr](MsgWrapper& msg_wrapper) {
+              callback(msg_wrapper, [release_callback_shared_ptr]() {});
+            },
+            msg_wrapper);
+      };
+
+  // register sub wrapper
+  const auto& sub_wrapper_ref = *sub_wrapper_ptr;
+
+  if (!channel_registry_ptr_->Subscribe(std::move(sub_wrapper_ptr)))
+    return false;
+
+  auto backend_itr = sub_topics_backend_index_map_.find(topic_name);
+  if (backend_itr == sub_topics_backend_index_map_.end()) {
+    auto backend_ptr_vec = GetBackendsByRules(topic_name, sub_topics_backends_rules_);
+    auto emplace_ret = sub_topics_backend_index_map_.emplace(topic_name, std::move(backend_ptr_vec));
+    backend_itr = emplace_ret.first;
+  }
+
+  bool ret = true;
+  for (auto& itr : backend_itr->second) {
+    AIMRT_TRACE("Subscribe type '{}' for topic '{}' to backend '{}'.",
+                msg_type, topic_name, itr->Name());
+    ret &= itr->Subscribe(sub_wrapper_ref);
+  }
+  return ret;
+}
+
+bool ChannelBackendManager::RegisterPublishType(PublishTypeWrapper&& wrapper) {
+  if (state_.load() != State::Init) {
+    AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
+    return false;
+  }
+
+  auto pub_type_wrapper_ptr = std::make_unique<PublishTypeWrapper>(std::move(wrapper));
+
+  auto topic_name = pub_type_wrapper_ptr->info.topic_name;
+  auto msg_type = pub_type_wrapper_ptr->info.msg_type_support_ref.TypeName();
+
+  // create filter
+  auto filter_name_vec = GetFilterRules(topic_name, publish_filters_rules_);
+  publish_filter_manager_ptr_->CreateFilterCollectorIfNotExist(topic_name, filter_name_vec);
+
+  // register pub wrapper
+  const auto& pub_type_wrapper_ref = *pub_type_wrapper_ptr;
+
+  if (!channel_registry_ptr_->RegisterPublishType(std::move(pub_type_wrapper_ptr)))
+    return false;
+
+  auto backend_itr = pub_topics_backend_index_map_.find(topic_name);
+  if (backend_itr == pub_topics_backend_index_map_.end()) {
+    auto backend_ptr_vec = GetBackendsByRules(topic_name, pub_topics_backends_rules_);
+    auto emplace_ret = pub_topics_backend_index_map_.emplace(topic_name, std::move(backend_ptr_vec));
+    backend_itr = emplace_ret.first;
+  }
+
+  bool ret = true;
+  for (auto& itr : backend_itr->second) {
+    AIMRT_TRACE("Register publish type '{}' for topic '{}' to backend '{}'.",
+                msg_type, topic_name, itr->Name());
+    ret &= itr->RegisterPublishType(pub_type_wrapper_ref);
+  }
+  return ret;
+}
+
+void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
+  if (state_.load() != State::Start) [[unlikely]] {
+    AIMRT_WARN("Method can only be called when state is 'Start'.");
+    return;
+  }
+
+  auto publish_msg_wrapper_ptr = std::make_shared<MsgWrapper>(std::move(wrapper));
+
+  auto ctx_ref = publish_msg_wrapper_ptr->ctx_ref;
+
+  // 检查ctx
+  if (ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT ||
+      ctx_ref.CheckUsed()) {
+    AIMRT_WARN("Publish context has been used!");
+    return;
+  }
+
+  ctx_ref.SetUsed();
+
+  // 找到filter
+  const auto& filter_collector =
+      publish_filter_manager_ptr_->GetFilterCollector(publish_msg_wrapper_ptr->info.topic_name);
+
+  // 发起 publish
   filter_collector.InvokeChannel(
       [this](MsgWrapper& msg_wrapper) {
         auto topic_name = msg_wrapper.info.topic_name;

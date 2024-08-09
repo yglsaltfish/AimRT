@@ -224,6 +224,52 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
 
     init_flag_ = true;
 
+    // type support
+    for (auto& type_support_pkg : options_.type_support_pkgs) {
+      // 检查重复pkg
+      auto finditr = std::find_if(
+          options_.type_support_pkgs.begin(), options_.type_support_pkgs.end(),
+          [&type_support_pkg](const auto& op) {
+            if (&type_support_pkg == &op) return false;
+            return op.path == type_support_pkg.path;
+          });
+      AIMRT_CHECK_ERROR_THROW(finditr == options_.type_support_pkgs.end(),
+                              "Duplicate pkg path {}", type_support_pkg.path);
+
+      auto loader_ptr = std::make_unique<TypeSupportPkgLoader>();
+      loader_ptr->LoadTypeSupportPkg(type_support_pkg.path);
+
+      type_support_pkg.path = loader_ptr->GetDynamicLib().GetLibFullPath();
+
+      auto type_support_array = loader_ptr->GetTypeSupportArray();
+
+      for (auto item : type_support_array) {
+        aimrt::util::TypeSupportRef type_support_ref(item);
+        auto type_name = type_support_ref.TypeName();
+
+        // 检查重复 type
+        auto finditr = type_support_map_.find(type_name);
+        if (finditr != type_support_map_.end()) {
+          AIMRT_WARN("Duplicate msg type '{}' in {} and {}.",
+                     type_name,
+                     loader_ptr->GetDynamicLib().GetLibFullPath(),
+                     finditr->second.loader_ptr->GetDynamicLib().GetLibFullPath());
+          continue;
+        }
+
+        type_support_map_.emplace(type_name, Wrapper{type_support_ref, loader_ptr.get()});
+      }
+
+      type_support_pkg_loader_vec_.emplace_back(std::move(loader_ptr));
+    }
+
+    AIMRT_TRACE("Load {} pkg and {} type.",
+                type_support_pkg_loader_vec_.size(), type_support_map_.size());
+
+    // record
+
+    // playback
+
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
                                 [this] { SetPluginLogger(); });
 
