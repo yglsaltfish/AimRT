@@ -12,7 +12,7 @@ if(AIMRT_BUILD_MQTT_PLUGIN)
   add_subdirectory(mqtt_plugin)
 endif()
 
-if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
   add_subdirectory(record_playback_plugin)
 endif()
 

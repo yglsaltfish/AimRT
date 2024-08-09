@@ -87,6 +87,12 @@ class FrameworkAsyncChannelFilterManager {
     filter_names_map_.emplace(topic_name, filter_name_vec);
   }
 
+  void CreateFilterCollectorIfNotExist(
+      std::string_view topic_name, const std::vector<std::string>& filter_name_vec) {
+    if (filter_collector_map_.find(topic_name) == filter_collector_map_.end())
+      CreateFilterCollector(topic_name, filter_name_vec);
+  }
+
   const FrameworkAsyncChannelFilterCollector& GetFilterCollector(std::string_view topic_name) const {
     auto find_itr = filter_collector_map_.find(topic_name);
     if (find_itr != filter_collector_map_.end()) {

@@ -32,7 +32,7 @@ aimrt:
     backends:
       - type: http
     servers_options:
-      - func_name: "(.*)"
+      - func_name: "(pb:/aimrt.protocols.log_control_plugin.*)"
         enable_backends: [http]
   module:
     pkgs:

@@ -118,7 +118,7 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
 
   // 创建 filter
   auto filter_name_vec = GetFilterRules(func_name, servers_filters_rules_);
-  server_filter_manager_ptr_->CreateFilterCollector(func_name, filter_name_vec);
+  server_filter_manager_ptr_->CreateFilterCollectorIfNotExist(func_name, filter_name_vec);
 
   // 注册 func wrapper
   const auto& filter_collector = server_filter_manager_ptr_->GetFilterCollector(func_name);
@@ -185,7 +185,7 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
 
   // 创建 filter
   auto filter_name_vec = GetFilterRules(func_name, clients_filters_rules_);
-  client_filter_manager_ptr_->CreateFilterCollector(func_name, filter_name_vec);
+  client_filter_manager_ptr_->CreateFilterCollectorIfNotExist(func_name, filter_name_vec);
 
   // 注册 func wrapper
   const auto& client_func_wrapper_ref = *client_func_wrapper_ptr;
