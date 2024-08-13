@@ -48,6 +48,10 @@ class ZenohPlugin : public AimRTCorePluginBase {
  private:
   runtime::core::AimRTCore *core_ptr_ = nullptr;
 
+  // 通过这两个结构体指针实现调用zenoh的接口
+  std::shared_ptr<z_owned_subscriber_t> sub_;
+  std::shared_ptr<z_owned_publisher_t> pub_;
+
   Options options_;
 
   bool init_flag_ = false;
