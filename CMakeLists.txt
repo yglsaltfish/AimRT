@@ -25,6 +25,7 @@ option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
 option(AIMRT_BUILD_NET_PLUGIN "AimRT build net plugin." OFF)
 option(AIMRT_BUILD_ROS2_PLUGIN "AimRT build ros2 plugin." OFF)
 option(AIMRT_BUILD_MQTT_PLUGIN "AimRT build mqtt plugin." OFF)
+option(AIMRT_BUILD_ZENOH_PLUGIN "AimRT build zenoh plugin." OFF)
 option(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN "AimRT build record playback plugin." OFF)
 option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time manipulator plugin." OFF)
 option(AIMRT_BUILD_PARAMETER_PLUGIN "AimRT build parameter plugin." OFF)
@@ -214,6 +215,10 @@ if(AIMRT_BUILD_RUNTIME)
 
   if(AIMRT_BUILD_MQTT_PLUGIN)
     include(GetPahoMqttC)
+  endif()
+
+  if(AIMRT_BUILD_ZENOH_PLUGIN)
+    include(GetZenoh)
   endif()
 
   if(AIMRT_BUILD_OPENTELEMETRY_PLUGIN)
