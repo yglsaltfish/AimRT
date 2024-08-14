@@ -3,11 +3,10 @@ string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set namespace
 set_namespace()
-add_subdirectory(assistant/native_zenoh_channel_publisher)
-add_subdirectory(assistant/native_zenoh_channel_subscriber)
+
+# assistant
 add_subdirectory(assistant/native_zenoh_protobuf_channel_publisher)
 add_subdirectory(assistant/native_zenoh_protobuf_channel_subscriber)
-# assistant
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")

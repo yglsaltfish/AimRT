@@ -218,7 +218,20 @@ if(AIMRT_BUILD_RUNTIME)
   endif()
 
   if(AIMRT_BUILD_ZENOH_PLUGIN)
-    include(GetZenoh)
+    # find Rust compiler
+    execute_process(
+      COMMAND rustc --version
+      RESULT_VARIABLE rustc_result
+      OUTPUT_VARIABLE rustc_output
+      ERROR_QUIET)
+
+    if(rustc_result EQUAL 0)
+      message(STATUS "Rust compiler (rustc) found: ${rustc_output}")
+      include(GetZenoh)
+    else()
+      message(WARNING "Rust compiler (rustc) not found, will not compile zenoh plugin. Please install Rust environment referring to https://www.rust-lang.org/tools/install.")
+      set(AIMRT_BUILD_ZENOH_PLUGIN OFF)
+    endif()
   endif()
 
   if(AIMRT_BUILD_OPENTELEMETRY_PLUGIN)
