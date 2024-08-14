@@ -69,6 +69,9 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
   };
 
   struct RecordActionWrapper {
+    RecordActionWrapper(const Options::RecordAction& input_options)
+        : options(input_options) {}
+
     const Options::RecordAction& options;
     aimrt::executor::ExecutorRef executor;
 
@@ -83,6 +86,9 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
   };
 
   struct PlaybackActionWrapper {
+    PlaybackActionWrapper(const Options::PlaybackAction& input_options)
+        : options(input_options) {}
+
     const Options::PlaybackAction& options;
     aimrt::executor::ExecutorRef executor;
 
