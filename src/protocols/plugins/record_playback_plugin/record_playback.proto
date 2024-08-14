@@ -8,23 +8,18 @@ message StartRecordReq {
   uint32 record_duration_s = 3;  // record forever if value is 0
 }
 
+message StopRecordReq {
+  string action_name = 1;
+}
+
 message StartPlaybackReq {
   string action_name = 1;
   uint32 skip_duration_s = 2;
-  uint32 playback_duration_s = 3;  // playback to end if value is 0
+  uint32 play_duration_s = 3;  // playback to end if value is 0
 }
 
-message StopActionReq {
+message StopPlaybackReq {
   string action_name = 1;
-}
-
-message StartActionsReq {
-  repeated StartRecordReq start_record_reqs = 1;
-  repeated StartPlaybackReq start_playback_reqs = 2;
-}
-
-message StopActionsReq {
-  repeated StopActionReq stop_action_reqs = 1;
 }
 
 message CommonRsp {
@@ -34,8 +29,7 @@ message CommonRsp {
 
 service RecordPlaybackService {
   rpc StartRecord(StartRecordReq) returns (CommonRsp);
+  rpc StopRecord(StopRecordReq) returns (CommonRsp);
   rpc StartPlayback(StartPlaybackReq) returns (CommonRsp);
-  rpc StopAction(StopActionReq) returns (CommonRsp);
-  rpc StartActions(StartActionsReq) returns (CommonRsp);
-  rpc StopActions(StopActionsReq) returns (CommonRsp);
+  rpc StopPlayback(StopPlaybackReq) returns (CommonRsp);
 }

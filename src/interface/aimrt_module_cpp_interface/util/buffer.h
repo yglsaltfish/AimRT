@@ -153,6 +153,8 @@ class BufferArrayView {
 
   std::string JoinToString() const {
     std::string result;
+    result.reserve(BufferSize());
+
     for (size_t ii = 0; ii < buffer_array_view_.len; ++ii) {
       result += std::string_view(
           static_cast<const char*>(buffer_array_view_.data[ii].data),

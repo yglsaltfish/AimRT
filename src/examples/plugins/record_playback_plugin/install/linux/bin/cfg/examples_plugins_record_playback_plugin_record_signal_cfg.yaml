@@ -16,8 +16,9 @@ aimrt:
           record_actions:
             - name: my_signal_record
               bag_path: ./bag
+              max_bag_size_m: 2048
               mode: signal # imd/signal
-              preparation_duration_s: 10 # Effective only in signal mode
+              max_preparation_duration_s: 10 # Effective only in signal mode
               executor: record_thread # require thread safe!
               topic_meta_list:
                 - topic_name: test_topic

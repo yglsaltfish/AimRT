@@ -15,9 +15,9 @@ aimrt:
             - path: ./libexample_event_type_support_pkg.so
           playback_actions:
             - name: my_signal_playback
-              bag_path: ./bag
+              bag_path: ./bag/aimrtbag_my_imd_record_yyyymmdd_hhmmss # replace with your bag path
               mode: signal # imd/signal
-              executor: playback_thread_pool
+              executor: playback_thread_pool # require support time schedule!
               topic_meta_list:
                 - topic_name: test_topic
                   msg_type: pb:aimrt.protocols.example.ExampleEventMsg

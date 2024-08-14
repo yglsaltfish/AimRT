@@ -101,6 +101,17 @@ class TypeSupportRef {
     return ToStdStringView(base_ptr_->serialization_types_supported_list(base_ptr_->impl)[0]);
   }
 
+  bool CheckSerializationTypeSupported(std::string_view serialization_type) const {
+    auto serialization_type_span = SerializationTypesSupportedListSpan();
+    auto finditr = std::find_if(
+        serialization_type_span.begin(), serialization_type_span.end(),
+        [serialization_type](aimrt_string_view_t s) {
+          return serialization_type == ToStdStringView(s);
+        });
+
+    return (finditr != serialization_type_span.end());
+  }
+
   std::string SimpleSerialize(std::string_view serialization_type, const void* msg) const {
     aimrt::util::BufferArray buffer_array;
 

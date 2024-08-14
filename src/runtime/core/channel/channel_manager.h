@@ -79,6 +79,16 @@ class ChannelManager {
 
   void SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys);
 
+  bool Subscribe(SubscribeWrapper&& wrapper) {
+    return channel_backend_manager_.Subscribe(std::move(wrapper));
+  }
+  bool RegisterPublishType(PublishTypeWrapper&& wrapper) {
+    return channel_backend_manager_.RegisterPublishType(std::move(wrapper));
+  }
+  void Publish(MsgWrapper&& wrapper) {
+    channel_backend_manager_.Publish(std::move(wrapper));
+  }
+
   const ChannelRegistry* GetChannelRegistry() const;
   const std::vector<ChannelBackendBase*>& GetUsedChannelBackend() const;
 

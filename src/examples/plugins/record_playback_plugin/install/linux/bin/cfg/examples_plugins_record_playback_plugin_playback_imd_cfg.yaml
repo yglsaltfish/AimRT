@@ -8,9 +8,9 @@ aimrt:
             - path: ./libexample_event_type_support_pkg.so
           playback_actions:
             - name: my_imd_playback
-              bag_path: ./bag
+              bag_path: ./bag/aimrtbag_my_imd_record_yyyymmdd_hhmmss # replace with your bag path
               mode: imd # imd/signal
-              executor: playback_thread_pool
+              executor: playback_thread_pool # require support time schedule!
               skip_duration_s: 10 # Effective only in imd mode
               play_duration_s: 10 # Effective only in imd mode
               topic_meta_list:

@@ -31,7 +31,8 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          aimrt::protocols::record_playback_plugin_aimrt_rpc_gencode)
+          aimrt::protocols::record_playback_plugin_aimrt_rpc_gencode
+          sqlite::libsqlite)
 
 # Add -Werror option
 include(AddWerror)

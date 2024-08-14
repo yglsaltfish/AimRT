@@ -151,6 +151,14 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
 
     if (cur_sub_pkg_path == pub_info.pkg_path) {
       // pub和sub在同一个pkg中，直接复制
+      bool check_ret = msg_wrapper.CheckMsg();
+      if (!check_ret) {
+        AIMRT_ERROR(
+            "Check msg failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+            serialization_type, pub_info.pkg_path, pub_info.module_name, pub_info.topic_name, pub_info.msg_type);
+        continue;
+      }
+
       tpl_sub_info.msg_type_support_ref.Copy(msg_wrapper.msg_ptr, msg_ptr.get());
     } else {
       // pub和sub在不同pkg中，需要进行序列化反序列化

@@ -2,8 +2,8 @@
 
 data='{
 	"action_name": "my_signal_playback",
-    "skip_duration_s": 10,
-    "playback_duration_s": 30
+    "skip_duration_s": 5,
+    "play_duration_s": 10
 }'
 
 curl -i \

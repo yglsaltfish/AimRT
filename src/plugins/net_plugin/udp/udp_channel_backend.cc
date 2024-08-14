@@ -201,7 +201,7 @@ bool UdpChannelBackend::Subscribe(
       bool deserialize_ret = subscribe_type_support_ref.Deserialize(
           serialization_type, buffer_array_view, msg_ptr.get());
 
-      AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Tcp msg deserialize failed.");
+      AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Msg deserialize failed.");
 
       msg_ptr_map.emplace(subscribe_wrapper_ptr->info.pkg_path, msg_ptr);
     }

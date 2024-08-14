@@ -15,9 +15,9 @@ aimrt:
             - path: ./example_event_type_support_pkg.dll
           playback_actions:
             - name: my_signal_playback
-              bag_path: ./bag
+              bag_path: ./bag # replace with your bag path
               mode: signal # imd/signal
-              executor: playback_thread_pool
+              executor: playback_thread_pool # require support time schedule!
               topic_meta_list:
                 - topic_name: test_topic
                   msg_type: pb:aimrt.protocols.example.ExampleEventMsg
