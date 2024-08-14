@@ -7,4 +7,6 @@ namespace aimrt::plugins::record_playback_plugin {
 void SetLogger(aimrt::logger::LoggerRef);
 aimrt::logger::LoggerRef GetLogger();
 
+constexpr uint32_t kVersion = 1;
+
 }  // namespace aimrt::plugins::record_playback_plugin

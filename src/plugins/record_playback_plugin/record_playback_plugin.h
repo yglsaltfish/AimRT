@@ -5,6 +5,9 @@
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
+#include "core/channel/channel_registry.h"
+#include "record_playback_plugin/playback_db_tool.h"
+#include "record_playback_plugin/record_db_tool.h"
 #include "record_playback_plugin/service.h"
 #include "record_playback_plugin/type_support_pkg_loader.h"
 
@@ -21,6 +24,7 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
     struct RecordAction {
       std::string name;
       std::string bag_path;
+      uint32_t max_bag_size_m = 2048;
 
       enum class Mode {
         IMD,
@@ -28,7 +32,7 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
       };
       Mode mode = Mode::IMD;
 
-      uint32_t preparation_duration_s = 0;
+      uint32_t max_preparation_duration_s = 0;
       std::string executor;
 
       struct TopicMeta {
@@ -64,6 +68,38 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
     std::vector<PlaybackAction> playback_actions;
   };
 
+  struct RecordActionWrapper {
+    const Options::RecordAction& options;
+    aimrt::executor::ExecutorRef executor;
+
+    RecordDbTool db_tool;
+
+    // only for signal mode
+    bool record_flag = false;
+    uint64_t stop_record_timestamp = 0;
+
+    std::deque<RecordDbTool::OneRecord> last_cache;
+    std::deque<RecordDbTool::OneRecord> cur_cache;
+  };
+
+  struct PlaybackActionWrapper {
+    const Options::PlaybackAction& options;
+    aimrt::executor::ExecutorRef executor;
+
+    PlaybackDbTool db_tool;
+
+    uint64_t start_timestamp = 0;
+
+    std::atomic_bool run_flag = false;
+
+    struct PublishMeta {
+      const aimrt::runtime::core::channel::PublishTypeWrapper* pub_type_wrapper_ptr;
+      std::string serialization_type;
+    };
+
+    std::unordered_map<uint32_t, PublishMeta> publish_meta_map;
+  };
+
  public:
   RecordPlaybackPlugin() = default;
   ~RecordPlaybackPlugin() override = default;
@@ -73,9 +109,22 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
   bool Initialize(runtime::core::AimRTCore* core_ptr) noexcept override;
   void Shutdown() noexcept override;
 
+  RecordActionWrapper* GetRecordActionWrapper(std::string_view action_name) const;
+  PlaybackActionWrapper* GetPlaybackActionWrapper(std::string_view action_name) const;
+
+  void AddPlaybackTasks(PlaybackActionWrapper& wrapper);
+
  private:
+  void InitTypeSupport(Options::TypeSupportPkg& options);
+  void InitRecordAction(Options::RecordAction& options);
+  void InitPlaybackAction(Options::PlaybackAction& options);
+
   void SetPluginLogger();
   void RegisterRpcService();
+  void RegisterRecordChannel();
+  void RegisterPlaybackChannel();
+  void StartPlayback();
+  void StopPlayback();
 
  private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;
@@ -88,11 +137,15 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
 
   std::vector<std::unique_ptr<TypeSupportPkgLoader>> type_support_pkg_loader_vec_;
 
-  struct Wrapper {
+  struct TypeSupportWrapper {
+    const Options::TypeSupportPkg& options;
     aimrt::util::TypeSupportRef type_support_ref;
     TypeSupportPkgLoader* loader_ptr;
   };
-  std::unordered_map<std::string_view, Wrapper> type_support_map_;
+  std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
+
+  std::unordered_map<std::string_view, std::unique_ptr<RecordActionWrapper>> record_action_map_;
+  std::unordered_map<std::string_view, std::unique_ptr<PlaybackActionWrapper>> playback_action_map_;
 };
 
 }  // namespace aimrt::plugins::record_playback_plugin

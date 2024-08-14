@@ -65,8 +65,7 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
   std::filesystem::path log_path(options_.path);
   base_file_name_ = (log_path / options_.filename).string();
 
-  if (!(std::filesystem::exists(log_path) &&
-        std::filesystem::is_directory(log_path))) {
+  if (!(std::filesystem::exists(log_path) && std::filesystem::is_directory(log_path))) {
     std::filesystem::create_directories(log_path);
   }
 
@@ -108,8 +107,7 @@ void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) {
         log_data_wrapper.column,
         log_data_wrapper.function_name);
 
-    if (!ofs_.is_open() ||
-        ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
+    if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
       if (!OpenNewFile()) return;
     }
     ofs_ << format_log_prefix_str << log_data_str << std::endl;
@@ -127,11 +125,9 @@ bool RotateFileLoggerBackend::OpenNewFile() {
     ofs_.close();
   }
 
-  if (rename_flag && (std::filesystem::status(base_file_name_).type() ==
-                      std::filesystem::file_type::regular)) {
+  if (rename_flag && (std::filesystem::status(base_file_name_).type() == std::filesystem::file_type::regular)) {
     std::filesystem::rename(
-        base_file_name_,
-        base_file_name_ + "_" + std::to_string(GetNextIndex()));
+        base_file_name_, base_file_name_ + "_" + std::to_string(GetNextIndex()));
   }
 
   ofs_.open(base_file_name_, std::ios::app);
@@ -148,22 +144,20 @@ bool RotateFileLoggerBackend::OpenNewFile() {
 void RotateFileLoggerBackend::CleanLogFile() {
   if (options_.max_file_num == 0) return;
 
-  std::filesystem::path log_dir =
-      std::filesystem::path(base_file_name_).parent_path();
+  std::filesystem::path log_dir = std::filesystem::path(base_file_name_).parent_path();
 
   std::map<uint32_t, std::string> log_files;
 
   const std::filesystem::directory_iterator end_itr;
-  for (std::filesystem::directory_iterator itr(log_dir); itr != end_itr;
-       ++itr) {
+  for (std::filesystem::directory_iterator itr(log_dir); itr != end_itr; ++itr) {
     const std::string& cur_log_file_name = itr->path().string();
+
     if (cur_log_file_name.size() <= base_file_name_.size() + 1) continue;
-    if (cur_log_file_name.substr(0, base_file_name_.size() + 1) !=
-        (base_file_name_ + "_"))
-      continue;
-    const std::string& cur_log_file_name_suffix =
-        cur_log_file_name.substr(base_file_name_.size() + 1);
+    if (cur_log_file_name.substr(0, base_file_name_.size() + 1) != (base_file_name_ + "_")) continue;
+
+    const std::string& cur_log_file_name_suffix = cur_log_file_name.substr(base_file_name_.size() + 1);
     if (!aimrt::common::util::IsDigitStr(cur_log_file_name_suffix)) continue;
+
     uint32_t cur_idx = atoi(cur_log_file_name_suffix.c_str());
     log_files.emplace(cur_idx, cur_log_file_name);
   }
