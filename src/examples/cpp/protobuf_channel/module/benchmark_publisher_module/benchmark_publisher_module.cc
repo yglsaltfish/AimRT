@@ -108,7 +108,6 @@ void BenchmarkPublisherModule::MainLoop() {
           AIMRT_INFO("Publish benchmark start signal, data: {}", aimrt::Pb2CompactJson(begin_signal));
           aimrt::channel::Publish(signal_publisher_, begin_signal);
         }
-
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
         // publish msg

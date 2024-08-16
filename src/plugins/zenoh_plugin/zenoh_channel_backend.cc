@@ -316,8 +316,8 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
                                 util::UrlEncode(info.msg_type);
 
   AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
-
   // pub data
+
   zenoh_util_ptr_->ZenohPublish(zenoh_pub_topic, serialized_data.data(), pkg_size);
 
   return;

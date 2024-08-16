@@ -12,7 +12,24 @@ void ZenohUtil::ZenohInitialize() {
     return;
   }
 }
-void ZenohUtil::ZenohSetCallbacks(std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_) {
+void ZenohUtil::ZenohSetCallbacks(std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr) {
+  msg_handle_registry_ptr_ = msg_handle_registry_ptr;
+}
+bool ZenohUtil::ZenohRegisterPublish(std::string keyexpr) {
+  z_owned_publisher_t z_pub_;
+  z_view_keyexpr_t key;
+  z_view_keyexpr_from_str(&key, keyexpr.c_str());
+  z_publisher_put_options_default(&z_pub_options_);
+  if (z_declare_publisher(&z_pub_, z_loan(z_session_), z_loan(key), NULL) < 0) {
+    AIMRT_ERROR("Unable to declare Publisher!");
+    return false;
+  }
+  z_pub_registry_.emplace(keyexpr, std::move(z_pub_));
+  return true;
+}
+
+bool ZenohUtil::ZenohRegisterSubscribe(std::string keyexpr) {
+  z_owned_closure_sample_t z_callback_;
   z_closure(
       &z_callback_,
       [](const z_loaned_sample_t *sample, void *arg) -> void {
@@ -27,21 +44,7 @@ void ZenohUtil::ZenohSetCallbacks(std::shared_ptr<MsgHandleRegistry> msg_handle_
       },
       NULL,
       msg_handle_registry_ptr_.get());
-}
-bool ZenohUtil::ZenohRegisterPublish(std::string keyexpr) {
-  z_owned_publisher_t z_pub_;
-  z_view_keyexpr_t key;
-  z_view_keyexpr_from_str(&key, keyexpr.c_str());
-  z_publisher_put_options_default(&z_pub_options_);
-  if (z_declare_publisher(&z_pub_, z_loan(z_session_), z_loan(key), NULL) < 0) {
-    AIMRT_ERROR("Unable to declare Publisher!");
-    return false;
-  }
-  z_pub_registry_.emplace(keyexpr, z_pub_);
-  return true;
-}
 
-bool ZenohUtil::ZenohRegisterSubscribe(std::string keyexpr) {
   z_owned_subscriber_t z_sub_;
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
@@ -50,7 +53,7 @@ bool ZenohUtil::ZenohRegisterSubscribe(std::string keyexpr) {
     AIMRT_ERROR("Unable to declare Subscriber!");
     return false;
   }
-  z_sub_registry_.emplace(keyexpr, z_sub_);
+  z_sub_registry_.emplace(keyexpr, std::move(z_sub_));
   return true;
 }
 
