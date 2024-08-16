@@ -4,7 +4,9 @@
 #include <unordered_map>
 
 #include "util/string_util.h"
+
 #include "zenoh.h"
+
 #include "zenoh_plugin/global.h"
 
 namespace aimrt::plugins::zenoh_plugin {
@@ -12,7 +14,7 @@ namespace aimrt::plugins::zenoh_plugin {
 class MsgHandleRegistry {
  public:
   // zenoh中函数回调用于处理sample（即数据单元, 包含负载、资源标识符、时间戳等资源）
-  using MsgHandleFunc = std::function<void(const z_loaned_sample_t* sample)>;
+  using MsgHandleFunc = std::function<void(const z_loaned_sample_t* message)>;
 
   MsgHandleRegistry() = default;
   ~MsgHandleRegistry() = default;
@@ -20,31 +22,31 @@ class MsgHandleRegistry {
   MsgHandleRegistry(const MsgHandleRegistry&) = delete;
   MsgHandleRegistry& operator=(const MsgHandleRegistry&) = delete;
 
-  // 确保注册的回调函数满足MshandleFunc构造要求，并与topic进行绑定 注册到map中，便于后续查询和管理
+  // 确保注册的回调函数满足MshandleFunc构造要求，并与topic(url)进行绑定 注册到map中，便于后续查询和管理
   template <typename... Args>
     requires std::constructible_from<MsgHandleFunc, Args...>
-  void RegisterMsgHandle(std::string_view topic, Args&&... args) {
-    msg_handle_map_.emplace(topic, std::forward<Args>(args)...);
+  void RegisterMsgHandle(std::string_view url, Args&&... args) {
+    msg_handle_map_.emplace(url, std::forward<Args>(args)...);
   }
 
-  // 根据主题找到对应的处理函数，用于处理受到的sample
-  void HandleServerMsg(std::string_view topic, const z_loaned_sample_t* sample) const {
+  // 根据主题找到对应的处理函数，用于处理收到的messgae
+  void HandleServerMsg(std::string_view url, const z_loaned_sample_t* message) const {
     if (shutdown_flag_.load()) [[unlikely]]
       return;
 
-    AIMRT_TRACE("Zenoh recv msg, topic: {}", topic);
+    AIMRT_TRACE("Zenoh recv msg, topic: {}", url);
 
     try {
-      auto find_topic_itr = msg_handle_map_.find(topic);
+      auto find_topic_itr = msg_handle_map_.find(url);
       if (find_topic_itr == msg_handle_map_.end()) {
-        AIMRT_WARN("Unregisted topic: {}", topic);
+        AIMRT_WARN("Unregisted topic: {}", url);
         return;
       }
 
-      find_topic_itr->second(sample);
+      find_topic_itr->second(message);
 
     } catch (const std::exception& e) {
-      AIMRT_ERROR("Handle msg failed, topic: {}, exception info: {}", topic, e.what());
+      AIMRT_ERROR("Handle msg failed, topic: {}, exception info: {}", url, e.what());
       return;
     }
   }

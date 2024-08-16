@@ -12,48 +12,10 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohChannelBackend::Options> {
   static Node encode(const Options& rhs) {
     Node node;
 
-    node["pub_topics_options"] = YAML::Node();
-    for (const auto& pub_topic_options : rhs.pub_topics_options) {
-      Node pub_topic_options_node;
-      pub_topic_options_node["topic_name"] = pub_topic_options.topic_name;
-      pub_topic_options_node["keyexpr"] = pub_topic_options.keyexpr;
-
-      node["pub_topics_options"].push_back(pub_topic_options_node);
-    }
-
-    node["sub_topics_options"] = YAML::Node();
-    for (const auto& sub_topic_options : rhs.sub_topics_options) {
-      Node sub_topic_options_node;
-      sub_topic_options_node["topic_name"] = sub_topic_options.topic_name;
-
-      node["sub_topics_options"].push_back(sub_topic_options_node);
-    }
-
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
-    if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
-      for (auto& pub_topic_options_node : node["pub_topics_options"]) {
-        auto pub_topic_options = Options::PubTopicOptions{
-            .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
-            .keyexpr = pub_topic_options_node["keyexpr"].as<std::string>(),
-        };
-
-        rhs.pub_topics_options.emplace_back(std::move(pub_topic_options));
-      }
-    }
-
-    if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
-      for (auto& sub_topic_options_node : node["sub_topics_options"]) {
-        auto sub_topic_options = Options::SubTopicOptions{
-            .topic_name = sub_topic_options_node["topic_name"].as<std::string>(),
-        };
-
-        rhs.sub_topics_options.emplace_back(std::move(sub_topic_options));
-      }
-    }
-
     return true;
   }
 };
@@ -61,7 +23,6 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohChannelBackend::Options> {
 
 namespace aimrt::plugins::zenoh_plugin {
 
-// 后端配置文件初始化
 void ZenohChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
       std::atomic_exchange(&state_, State::Init) == State::PreInit,
@@ -69,6 +30,7 @@ void ZenohChannelBackend::Initialize(YAML::Node options_node) {
 
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
+
   options_node = options_;
 }
 
@@ -78,7 +40,6 @@ void ZenohChannelBackend::Start() {
       "Method can only be called when state is 'Init'.");
 }
 
-// 释放资源
 void ZenohChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
@@ -87,53 +48,32 @@ void ZenohChannelBackend::Shutdown() {
 
   msg_handle_registry_ptr_->Shutdown();
 }
-// 根据传入的发布者，解析其类型等信息并存放到map中便于查询和管理
+
 bool ZenohChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   if (state_.load() != State::Init) {
     AIMRT_ERROR("Method can only be called when state is 'Init'.");
     return false;
   }
-  // 匹配后端主题与发布主题
+
   const auto& info = publish_type_wrapper.info;
-  std::string keyexpr = "";
-
-  auto find_option_itr = std::find_if(
-      options_.pub_topics_options.begin(), options_.pub_topics_options.end(),
-      [topic_name = info.topic_name](const Options::PubTopicOptions& pub_option) {
-        try {
-          return std::regex_match(topic_name.begin(), topic_name.end(), std::regex(pub_option.topic_name, std::regex::ECMAScript));
-        } catch (const std::exception& e) {
-          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                     pub_option.topic_name, topic_name, e.what());
-          return false;
-        }
-      });
-  if (find_option_itr != options_.pub_topics_options.end()) {
-    keyexpr = find_option_itr->keyexpr;
-  }
-
-  pub_cfg_info_map_.emplace(
-      info.topic_name,
-      PubCfgInfo{
-          .keyexpr = keyexpr});
 
   // check path
   namespace util = aimrt::common::util;
   std::string pattern = std::string("/channel/") +
                         util::UrlEncode(info.topic_name) + "/" +
                         util::UrlEncode(info.msg_type);
+
   if (pattern.size() > 255) {
     AIMRT_ERROR("Too long uri: {}", pattern);
     return false;
   }
-  zenoh_util_ptr_->ZenohRegisterRole(pattern);
+  zenoh_manager_ptr_->RegisterPublisher(pattern);
   AIMRT_INFO("Register publish type to zenoh channel, url: {}", pattern);
 
   return true;
 }
 
-// 根据传入的订阅者，解析器类型等信息并存放到map中便于查询和管理，除此之外注册与主题匹配的函数回调
 bool ZenohChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   if (state_.load() != State::Init) {
@@ -144,7 +84,6 @@ bool ZenohChannelBackend::Subscribe(
   const auto& info = subscribe_wrapper.info;
   namespace util = aimrt::common::util;
 
-  // 寻找通道类型、主题一致的订阅者
   std::string pattern = std::string("/channel/") +
                         util::UrlEncode(info.topic_name) + "/" +
                         util::UrlEncode(info.msg_type);
@@ -237,9 +176,7 @@ bool ZenohChannelBackend::Subscribe(
       };
 
   msg_handle_registry_ptr_->RegisterMsgHandle(pattern, std::move(handle));
-
-  sub_info_vec_.emplace_back(ZenohSubInfo{pattern});
-  zenoh_util_ptr_->ZenohRegisterRole(pattern);
+  zenoh_manager_ptr_->RegisterSubscriber(pattern);
   return true;
 }
 
@@ -316,9 +253,9 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
                                 util::UrlEncode(info.msg_type);
 
   AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
-  // pub data
 
-  zenoh_util_ptr_->ZenohPublish(zenoh_pub_topic, serialized_data.data(), pkg_size);
+  // pub data
+  zenoh_manager_ptr_->Publish(zenoh_pub_topic, serialized_data.data(), pkg_size);
 
   return;
 }

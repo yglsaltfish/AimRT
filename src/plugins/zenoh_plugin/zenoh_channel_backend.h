@@ -2,40 +2,25 @@
 
 #include "core/channel/channel_backend_base.h"
 #include "zenoh_plugin/msg_handle_registry.h"
-#include "zenoh_plugin/util.h"
+#include "zenoh_plugin/zenoh_manager.h"
 
 namespace aimrt::plugins::zenoh_plugin {
 
 class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
-  // 后端配置信息对应的option （topic name相同topic name双方才可以通信）
-  struct Options {
-    struct PubTopicOptions {
-      std::string topic_name;
-      std::string keyexpr;
-    };
-
-    std::vector<PubTopicOptions> pub_topics_options;
-
-    struct SubTopicOptions {
-      std::string topic_name;
-    };
-
-    std::vector<SubTopicOptions> sub_topics_options;
-  };
+  // todo 可选择一些需要用户配置的后端选项用于通信时的配置，暂时使用zenoh默认配置
+  struct Options {};
 
  public:
   ZenohChannelBackend(
-      std::shared_ptr<ZenohUtil>& zenoh_util_ptr,
+      std::shared_ptr<ZenohManager>& zenoh_util_ptr,
       std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
-      : zenoh_util_ptr_(zenoh_util_ptr),
+      : zenoh_manager_ptr_(zenoh_util_ptr),
         msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
 
   ~ZenohChannelBackend() override = default;
 
-  std::string_view Name() const override {
-    return "zenoh";
-  }
+  std::string_view Name() const override { return "zenoh"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
@@ -63,23 +48,13 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
-  std::shared_ptr<ZenohUtil>& zenoh_util_ptr_;
+  std::shared_ptr<ZenohManager>& zenoh_manager_ptr_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
-
-  struct ZenohSubInfo {
-    std::string topic;
-  };
-  std::vector<ZenohSubInfo> sub_info_vec_;
 
   std::unordered_map<
       std::string,
       std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
       subscribe_wrapper_map_;
-
-  struct PubCfgInfo {
-    std::string keyexpr;
-  };
-  std::unordered_map<std::string_view, PubCfgInfo> pub_cfg_info_map_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin

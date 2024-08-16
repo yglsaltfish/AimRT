@@ -3,21 +3,15 @@
 #include <atomic>
 #include <memory>
 
-#include "zenoh.h"
-
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "zenoh_plugin/msg_handle_registry.h"
-#include "zenoh_plugin/util.h"
 #include "zenoh_plugin/zenoh_channel_backend.h"
 
 namespace aimrt::plugins::zenoh_plugin {
 class ZenohPlugin : public AimRTCorePluginBase {
  public:
-  // 这个是plgin配置文件的选项 (keyexpr 资源标识符，相匹配的资源标识符会进行通信)
-  struct Options {
-    std::string keyexpr;
-    std::string role;
-  };
+  // 这个是plgin配置文件的选项 (该插件目前不做任何配置)
+  struct Options {};
 
  public:
   ZenohPlugin() = default;
@@ -35,7 +29,7 @@ class ZenohPlugin : public AimRTCorePluginBase {
   // 注册logger,可以使用相关宏定义
   void SetPluginLogger();
 
-  // 注册一个zenoh channel后端，并提供重链机制（注册一个重链连的回调）
+  // 注册一个zenoh channel后端
   void RegisterZenohChannelBackend();
 
   // todo rpc后端
@@ -44,17 +38,13 @@ class ZenohPlugin : public AimRTCorePluginBase {
  private:
   runtime::core::AimRTCore *core_ptr_ = nullptr;
 
-  std::shared_ptr<ZenohUtil> zenoh_util_ptr_ = std::make_shared<ZenohUtil>();
-
   Options options_;
 
   bool init_flag_ = false;
-
   std::atomic_bool stop_flag_ = false;
 
+  std::shared_ptr<ZenohManager> zenoh_manager_ptr_ = std::make_shared<ZenohManager>();
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
-
-  std::vector<std::function<void()>> reconnect_hook_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin
