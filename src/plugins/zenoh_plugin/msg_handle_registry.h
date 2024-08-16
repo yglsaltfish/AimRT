@@ -28,7 +28,7 @@ class MsgHandleRegistry {
   }
 
   // 根据主题找到对应的处理函数，用于处理受到的sample
-  void HandleServerMsg(std::string_view topic, z_loaned_sample_t* sample) const {
+  void HandleServerMsg(std::string_view topic, const z_loaned_sample_t* sample) const {
     if (shutdown_flag_.load()) [[unlikely]]
       return;
 

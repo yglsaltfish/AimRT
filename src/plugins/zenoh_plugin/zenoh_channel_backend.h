@@ -2,6 +2,7 @@
 
 #include "core/channel/channel_backend_base.h"
 #include "zenoh_plugin/msg_handle_registry.h"
+#include "zenoh_plugin/util.h"
 
 namespace aimrt::plugins::zenoh_plugin {
 
@@ -11,6 +12,7 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
   struct Options {
     struct PubTopicOptions {
       std::string topic_name;
+      std::string keyexpr;
     };
 
     std::vector<PubTopicOptions> pub_topics_options;
@@ -24,16 +26,16 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
  public:
   ZenohChannelBackend(
-      std::shared_ptr<z_owned_subscriber_t>& sub,
-      std::shared_ptr<z_owned_publisher_t>& pub,
+      std::shared_ptr<ZenohUtil>& zenoh_util_ptr,
       std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
-      : sub_(sub),
-        pub_(pub),
+      : zenoh_util_ptr_(zenoh_util_ptr),
         msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
 
   ~ZenohChannelBackend() override = default;
 
-  std::string_view Name() const override { return "zenoh"; }
+  std::string_view Name() const override {
+    return "zenoh";
+  }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
@@ -61,10 +63,7 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
-  // 通过这两个结构体指针实现调用zenoh的接口
-  const std::shared_ptr<z_owned_subscriber_t>& sub_;
-  const std::shared_ptr<z_owned_publisher_t>& pub_;
-
+  std::shared_ptr<ZenohUtil>& zenoh_util_ptr_;
   std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   struct ZenohSubInfo {
@@ -78,6 +77,7 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
       subscribe_wrapper_map_;
 
   struct PubCfgInfo {
+    std::string keyexpr;
   };
   std::unordered_map<std::string_view, PubCfgInfo> pub_cfg_info_map_;
 };

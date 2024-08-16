@@ -7,6 +7,7 @@
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "zenoh_plugin/msg_handle_registry.h"
+#include "zenoh_plugin/util.h"
 #include "zenoh_plugin/zenoh_channel_backend.h"
 
 namespace aimrt::plugins::zenoh_plugin {
@@ -15,6 +16,7 @@ class ZenohPlugin : public AimRTCorePluginBase {
   // 这个是plgin配置文件的选项 (keyexpr 资源标识符，相匹配的资源标识符会进行通信)
   struct Options {
     std::string keyexpr;
+    std::string role;
   };
 
  public:
@@ -39,18 +41,10 @@ class ZenohPlugin : public AimRTCorePluginBase {
   // todo rpc后端
   void RegisterZenohRpcBackend() {}
 
-  // 链接丢失后调用重联函数
-  void OnConnectLost(const char *cause);
-
-  // 收到消息后调用注册好的回调函数进行处理
-  int OnMsgRecv(char *topic, int topic_len, z_loaned_sample_t *sample);
-
  private:
   runtime::core::AimRTCore *core_ptr_ = nullptr;
 
-  // 通过这两个结构体指针实现调用zenoh的接口
-  std::shared_ptr<z_owned_subscriber_t> sub_;
-  std::shared_ptr<z_owned_publisher_t> pub_;
+  std::shared_ptr<ZenohUtil> zenoh_util_ptr_ = std::make_shared<ZenohUtil>();
 
   Options options_;
 
