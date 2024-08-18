@@ -109,9 +109,9 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
   // 创建 func wrapper
   auto service_func_wrapper_ptr = std::make_unique<ServiceFuncWrapper>();
   service_func_wrapper_ptr->info = FuncInfo{
-      .func_name = func_name,
-      .pkg_path = wrapper.pkg_path,
-      .module_name = wrapper.module_name,
+      .func_name = std::string(func_name),
+      .pkg_path = std::string(wrapper.pkg_path),
+      .module_name = std::string(wrapper.module_name),
       .custom_type_support_ptr = wrapper.custom_type_support_ptr,
       .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
       .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};
@@ -176,9 +176,9 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
   // 创建 func wrapper
   auto client_func_wrapper_ptr = std::make_unique<ClientFuncWrapper>();
   client_func_wrapper_ptr->info = FuncInfo{
-      .func_name = func_name,
-      .pkg_path = wrapper.pkg_path,
-      .module_name = wrapper.module_name,
+      .func_name = std::string(func_name),
+      .pkg_path = std::string(wrapper.pkg_path),
+      .module_name = std::string(wrapper.module_name),
       .custom_type_support_ptr = wrapper.custom_type_support_ptr,
       .req_type_support_ref = aimrt::util::TypeSupportRef(wrapper.req_type_support),
       .rsp_type_support_ref = aimrt::util::TypeSupportRef(wrapper.rsp_type_support)};

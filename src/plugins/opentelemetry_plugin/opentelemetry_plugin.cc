@@ -178,7 +178,7 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
         // 需要启动一个新trace
         std::string span_name =
             std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" +
-            std::string(msg_wrapper.info.msg_type);
+            msg_wrapper.info.msg_type;
         auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
 
         // 将当前span的context打包
@@ -244,7 +244,7 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
         // 需要启动一个新trace
         std::string span_name =
             std::string(ctx_ref.GetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME)) + "/" +
-            std::string(msg_wrapper.info.msg_type);
+            msg_wrapper.info.msg_type;
         auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
 
         // 将当前span的context打包

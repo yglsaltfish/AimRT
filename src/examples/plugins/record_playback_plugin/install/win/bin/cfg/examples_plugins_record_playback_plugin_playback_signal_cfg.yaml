@@ -15,12 +15,13 @@ aimrt:
             - path: ./example_event_type_support_pkg.dll
           playback_actions:
             - name: my_signal_playback
-              bag_path: ./bag # replace with your bag path
-              mode: signal # imd/signal
-              executor: playback_thread_pool # require support time schedule!
-              topic_meta_list:
-                - topic_name: test_topic
-                  msg_type: pb:aimrt.protocols.example.ExampleEventMsg
+              options:
+                bag_path: ./bag/aimrtbag_yyyymmdd_hhmmss # replace with your bag path
+                mode: signal # imd/signal
+                executor: playback_thread_pool # require support time schedule!
+                topic_meta_list:
+                  - topic_name: test_topic
+                    msg_type: pb:aimrt.protocols.example.ExampleEventMsg
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:

@@ -50,6 +50,9 @@ void ConfiguratorManager::Initialize(
   auto& user_root_options_node = *user_root_options_node_ptr_;
 
   if (!cfg_file_path_.empty()) {
+    cfg_file_path_ = std::filesystem::canonical(std::filesystem::absolute(cfg_file_path_));
+    AIMRT_INFO("Cfg file path: {}", cfg_file_path_.string());
+
     std::ifstream file_stream(cfg_file_path_);
     AIMRT_CHECK_ERROR_THROW(file_stream, "Can not open cfg file '{}'.", cfg_file_path_.string());
 
@@ -57,6 +60,8 @@ void ConfiguratorManager::Initialize(
     file_data << file_stream.rdbuf();
     ori_root_options_node = YAML::Load(aimrt::common::util::ReplaceEnvVars(file_data.str()));
     user_root_options_node = YAML::Clone(ori_root_options_node);
+  } else {
+    AIMRT_INFO("AimRT start with no cfg file.");
   }
 
   if (!ori_root_options_node["aimrt"]) {

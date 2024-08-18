@@ -4,11 +4,13 @@ namespace aimrt::runtime::core::channel {
 
 bool ChannelRegistry::RegisterPublishType(
     std::unique_ptr<PublishTypeWrapper>&& publish_type_wrapper_ptr) {
+  const auto& info = publish_type_wrapper_ptr->info;
+
   Key key{
-      .msg_type = publish_type_wrapper_ptr->info.msg_type,
-      .topic_name = publish_type_wrapper_ptr->info.topic_name,
-      .pkg_path = publish_type_wrapper_ptr->info.pkg_path,
-      .module_name = publish_type_wrapper_ptr->info.module_name};
+      .msg_type = info.msg_type,
+      .topic_name = info.topic_name,
+      .pkg_path = info.pkg_path,
+      .module_name = info.module_name};
 
   auto emplace_ret = publish_type_wrapper_map_.emplace(
       key, std::move(publish_type_wrapper_ptr));
@@ -31,11 +33,13 @@ bool ChannelRegistry::RegisterPublishType(
 
 bool ChannelRegistry::Subscribe(
     std::unique_ptr<SubscribeWrapper>&& subscribe_wrapper_ptr) {
+  const auto& info = subscribe_wrapper_ptr->info;
+
   Key key{
-      .msg_type = subscribe_wrapper_ptr->info.msg_type,
-      .topic_name = subscribe_wrapper_ptr->info.topic_name,
-      .pkg_path = subscribe_wrapper_ptr->info.pkg_path,
-      .module_name = subscribe_wrapper_ptr->info.module_name};
+      .msg_type = info.msg_type,
+      .topic_name = info.topic_name,
+      .pkg_path = info.pkg_path,
+      .module_name = info.module_name};
 
   auto emplace_ret = subscribe_wrapper_map_.emplace(
       key, std::move(subscribe_wrapper_ptr));

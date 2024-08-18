@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
+#include <string>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
@@ -10,9 +10,9 @@
 namespace aimrt::runtime::core::rpc {
 
 struct FuncInfo {
-  std::string_view func_name;
-  std::string_view pkg_path;
-  std::string_view module_name;
+  std::string func_name;
+  std::string pkg_path;
+  std::string module_name;
 
   const void* custom_type_support_ptr;
   aimrt::util::TypeSupportRef req_type_support_ref;

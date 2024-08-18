@@ -78,13 +78,11 @@ void AsioThreadExecutor::Initialize(std::string_view name,
                    Name(), e.what());
       }
 
-      while (state_.load() != State::Shutdown) {
-        try {
-          io_ptr_->run();
-        } catch (const std::exception& e) {
-          AIMRT_FATAL("Asio thread executor '{}' run loop get exception, {}",
-                      Name(), e.what());
-        }
+      try {
+        io_ptr_->run();
+      } catch (const std::exception& e) {
+        AIMRT_FATAL("Asio thread executor '{}' run loop get exception, {}",
+                    Name(), e.what());
       }
 
       thread_id_vec_[ii] = std::thread::id();
