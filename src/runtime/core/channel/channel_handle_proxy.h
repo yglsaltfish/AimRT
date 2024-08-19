@@ -97,8 +97,8 @@ class PublisherProxy {
   }
 
  private:
-  const std::string_view pkg_path_;
-  const std::string_view module_name_;
+  const std::string pkg_path_;
+  const std::string module_name_;
   const std::string topic_name_;
 
   ChannelBackendManager& channel_backend_manager_;
@@ -152,8 +152,8 @@ class SubscriberProxy {
   }
 
  private:
-  const std::string_view pkg_path_;
-  const std::string_view module_name_;
+  const std::string pkg_path_;
+  const std::string module_name_;
   const std::string topic_name_;
 
   ChannelBackendManager& channel_backend_manager_;
@@ -286,8 +286,8 @@ class ChannelHandleProxy {
   }
 
  private:
-  const std::string_view pkg_path_;
-  const std::string_view module_name_;
+  const std::string pkg_path_;
+  const std::string module_name_;
 
   aimrt::common::util::LoggerWrapper& logger_;
 

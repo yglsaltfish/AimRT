@@ -15,15 +15,16 @@ aimrt:
             - path: ./example_event_type_support_pkg.dll
           record_actions:
             - name: my_signal_record
-              bag_path: ./bag
-              max_bag_size_m: 2048
-              mode: signal # imd/signal
-              max_preparation_duration_s: 10 # Effective only in signal mode
-              executor: record_thread # require thread safe!
-              topic_meta_list:
-                - topic_name: test_topic
-                  msg_type: pb:aimrt.protocols.example.ExampleEventMsg
-                  serialization_type: pb # optional
+              options:
+                bag_path: ./bag
+                max_bag_size_m: 2048
+                mode: signal # imd/signal
+                max_preparation_duration_s: 10 # Effective only in signal mode
+                executor: record_thread # require thread safe!
+                topic_meta_list:
+                  - topic_name: test_topic
+                    msg_type: pb:aimrt.protocols.example.ExampleEventMsg
+                    serialization_type: pb # optional
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:

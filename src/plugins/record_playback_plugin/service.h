@@ -1,20 +1,26 @@
 #pragma once
 
 #include "core/logger/logger_manager.h"
+#include "record_playback_plugin/playback_action.h"
+#include "record_playback_plugin/record_action.h"
 
 #include "record_playback.aimrt_rpc.pb.h"
 
 namespace aimrt::plugins::record_playback_plugin {
-
-class RecordPlaybackPlugin;
 
 class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugin::RecordPlaybackServiceCoService {
  public:
   RecordPlaybackServiceImpl() = default;
   ~RecordPlaybackServiceImpl() override = default;
 
-  void SetPluginPtr(RecordPlaybackPlugin* ptr) {
-    plugin_ptr_ = ptr;
+  void SetRecordActionMap(
+      std::unordered_map<std::string_view, std::unique_ptr<RecordAction>>* record_action_map_ptr) {
+    record_action_map_ptr_ = record_action_map_ptr;
+  }
+
+  void SetPlaybackActionMap(
+      std::unordered_map<std::string_view, std::unique_ptr<PlaybackAction>>* playback_action_map_ptr) {
+    playback_action_map_ptr_ = playback_action_map_ptr;
   }
 
   aimrt::co::Task<aimrt::rpc::Status> StartRecord(
@@ -42,16 +48,16 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
     SUC = 0,
     INVALID_ACTION_NAME = 1,
     INVALID_ACTION_MODE = 2,
-    RECORD_IS_ALREADY_IN_PROGRESS = 3,
-    PLAYBACK_IS_ALREADY_IN_PROGRESS = 4,
+    START_RECORD_FAILED = 3,
+    START_PLAYBACK_FAILED = 4,
   };
 
   static constexpr std::string_view error_info_array[] = {
       "",
       "INVALID_ACTION_NAME",
       "INVALID_ACTION_MODE",
-      "RECORD_IS_ALREADY_IN_PROGRESS",
-      "PLAYBACK_IS_ALREADY_IN_PROGRESS"};
+      "START_RECORD_FAILED",
+      "START_PLAYBACK_FAILED"};
 
   template <typename T>
   void SetErrorCode(ErrorCode code, T& rsp) {
@@ -59,7 +65,8 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
     rsp.set_msg(std::string(error_info_array[static_cast<uint32_t>(code)]));
   }
 
-  RecordPlaybackPlugin* plugin_ptr_ = nullptr;
+  std::unordered_map<std::string_view, std::unique_ptr<RecordAction>>* record_action_map_ptr_ = nullptr;
+  std::unordered_map<std::string_view, std::unique_ptr<PlaybackAction>>* playback_action_map_ptr_ = nullptr;
 };
 
 }  // namespace aimrt::plugins::record_playback_plugin

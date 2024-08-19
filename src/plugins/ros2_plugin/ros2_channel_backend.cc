@@ -187,7 +187,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
     }
 
     std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
-        std::string(info.topic_name),
+        info.topic_name,
         ros2_node_ptr_->get_sub_namespace());
 
     rcl_publisher_t& publisher = emplace_ret.first->second->publisher;
@@ -226,7 +226,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
 
   // 前缀不是ros2类型的消息
   std::string real_ros2_topic_name =
-      std::string(info.topic_name) + "/" + Ros2NameEncode(info.msg_type);
+      info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
   // 先检查是否注册过了
   if (publisher_map_.find(real_ros2_topic_name) == publisher_map_.end()) {
@@ -316,7 +316,7 @@ bool Ros2ChannelBackend::Subscribe(
     }
 
     std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
-        std::string(info.topic_name),
+        info.topic_name,
         ros2_node_ptr_->get_sub_namespace());
     rclcpp::QoS qos(10);
     // 读取配置中的QOS
@@ -367,7 +367,7 @@ bool Ros2ChannelBackend::Subscribe(
 
   // 前缀不是ros2类型的消息
   std::string real_ros2_topic_name =
-      std::string(info.topic_name) + "/" + Ros2NameEncode(info.msg_type);
+      info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
   auto find_itr = subscribe_wrapper_map_.find(real_ros2_topic_name);
   if (find_itr != subscribe_wrapper_map_.end()) {
@@ -493,7 +493,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
   // 前缀不是ros2类型的消息
   std::string real_ros2_topic_name =
-      std::string(info.topic_name) + "/" + Ros2NameEncode(info.msg_type);
+      info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
   auto find_itr = publisher_map_.find(real_ros2_topic_name);
   if (find_itr == publisher_map_.end()) {

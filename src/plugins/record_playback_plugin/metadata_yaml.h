@@ -1,5 +1,7 @@
 #pragma once
 
+#include "record_playback_plugin/topic_meta_key.h"
+
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::plugins::record_playback_plugin {
@@ -7,12 +9,6 @@ namespace aimrt::plugins::record_playback_plugin {
 struct MetaData {
   uint32_t version = 0;
 
-  struct TopicMeta {
-    uint64_t id;
-    std::string topic_name;
-    std::string msg_type;
-    std::string serialization_type;
-  };
   std::vector<TopicMeta> topics;
 
   struct FileMeta {
@@ -62,7 +58,7 @@ struct convert<aimrt::plugins::record_playback_plugin::MetaData> {
 
     if (node["topics"] && node["topics"].IsSequence()) {
       for (auto& topic_node : node["topics"]) {
-        auto topic = Obj::TopicMeta{
+        aimrt::plugins::record_playback_plugin::TopicMeta topic{
             .id = topic_node["id"].as<uint64_t>(),
             .topic_name = topic_node["topic_name"].as<std::string>(),
             .msg_type = topic_node["msg_type"].as<std::string>(),

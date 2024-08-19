@@ -110,10 +110,10 @@ bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
   // create sub wrapper
   auto sub_wrapper_ptr = std::make_unique<SubscribeWrapper>();
   sub_wrapper_ptr->info = TopicInfo{
-      .msg_type = msg_type,
-      .topic_name = topic_name,
-      .pkg_path = wrapper.pkg_path,
-      .module_name = wrapper.module_name,
+      .msg_type = std::string(msg_type),
+      .topic_name = std::string(topic_name),
+      .pkg_path = std::string(wrapper.pkg_path),
+      .module_name = std::string(wrapper.module_name),
       .msg_type_support_ref = msg_type_support_ref};
 
   // create filter
@@ -185,10 +185,10 @@ bool ChannelBackendManager::RegisterPublishType(
   // create pub wrapper
   auto pub_type_wrapper_ptr = std::make_unique<PublishTypeWrapper>();
   pub_type_wrapper_ptr->info = TopicInfo{
-      .msg_type = msg_type,
-      .topic_name = topic_name,
-      .pkg_path = wrapper.pkg_path,
-      .module_name = wrapper.module_name,
+      .msg_type = std::string(msg_type),
+      .topic_name = std::string(topic_name),
+      .pkg_path = std::string(wrapper.pkg_path),
+      .module_name = std::string(wrapper.module_name),
       .msg_type_support_ref = msg_type_support_ref};
 
   // create filter
@@ -261,7 +261,7 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
   // 发起 publish
   filter_collector.InvokeChannel(
       [this](MsgWrapper& msg_wrapper) {
-        auto topic_name = msg_wrapper.info.topic_name;
+        const auto& topic_name = msg_wrapper.info.topic_name;
 
         auto find_itr = pub_topics_backend_index_map_.find(topic_name);
 
@@ -287,8 +287,8 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& wrapper) {
 
   auto sub_wrapper_ptr = std::make_unique<SubscribeWrapper>(std::move(wrapper));
 
-  auto topic_name = sub_wrapper_ptr->info.topic_name;
-  auto msg_type = sub_wrapper_ptr->info.msg_type_support_ref.TypeName();
+  const auto& topic_name = sub_wrapper_ptr->info.topic_name;
+  const auto& msg_type = sub_wrapper_ptr->info.msg_type;
 
   // create filter
   auto filter_name_vec = GetFilterRules(topic_name, subscribe_filters_rules_);
@@ -344,8 +344,8 @@ bool ChannelBackendManager::RegisterPublishType(PublishTypeWrapper&& wrapper) {
 
   auto pub_type_wrapper_ptr = std::make_unique<PublishTypeWrapper>(std::move(wrapper));
 
-  auto topic_name = pub_type_wrapper_ptr->info.topic_name;
-  auto msg_type = pub_type_wrapper_ptr->info.msg_type_support_ref.TypeName();
+  const auto& topic_name = pub_type_wrapper_ptr->info.topic_name;
+  const auto& msg_type = pub_type_wrapper_ptr->info.msg_type;
 
   // create filter
   auto filter_name_vec = GetFilterRules(topic_name, publish_filters_rules_);
@@ -399,7 +399,7 @@ void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
   // 发起 publish
   filter_collector.InvokeChannel(
       [this](MsgWrapper& msg_wrapper) {
-        auto topic_name = msg_wrapper.info.topic_name;
+        const auto& topic_name = msg_wrapper.info.topic_name;
 
         auto find_itr = pub_topics_backend_index_map_.find(topic_name);
 

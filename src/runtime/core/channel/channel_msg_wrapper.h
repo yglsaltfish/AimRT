@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -13,10 +14,10 @@ namespace aimrt::runtime::core::channel {
  *
  */
 struct TopicInfo {
-  std::string_view msg_type;
-  std::string_view topic_name;
-  std::string_view pkg_path;
-  std::string_view module_name;
+  std::string msg_type;
+  std::string topic_name;
+  std::string pkg_path;
+  std::string module_name;
 
   aimrt::util::TypeSupportRef msg_type_support_ref;
 };
