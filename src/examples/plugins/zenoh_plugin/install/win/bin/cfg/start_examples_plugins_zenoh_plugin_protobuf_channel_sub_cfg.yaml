@@ -2,7 +2,7 @@ aimrt:
   plugin:
     plugins:
       - name: zenoh_plugin
-        path: ./libaimrt_zenoh_plugin.dll
+        path: ./aimrt_zenoh_plugin.dll
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -16,7 +16,7 @@ aimrt:
         enable_backends: [zenoh]
   module:
     pkgs:
-      - path: ./libprotobuf_channel_sub_pkg.dll
+      - path: ./protobuf_channel_sub_pkg.dll
         enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalSubscriberModule

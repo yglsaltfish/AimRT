@@ -1,5 +1,3 @@
-#pragma once
-
 #include "zenoh_plugin/zenoh_manager.h"
 #include "zenoh_plugin/msg_handle_registry.h"
 #include "zenoh_plugin/util.h"
