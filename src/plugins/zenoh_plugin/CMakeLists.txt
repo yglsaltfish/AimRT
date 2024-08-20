@@ -31,8 +31,7 @@ target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE aimrt::interface::aimrt_core_plugin_interface
           aimrt::runtime::core
-          zenohc::shared
-          jsoncpp::jsoncpp)
+          zenohc::shared)
 
 # Add -Werror option
 include(AddWerror)

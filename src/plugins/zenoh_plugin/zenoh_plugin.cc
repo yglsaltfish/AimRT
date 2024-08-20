@@ -36,7 +36,7 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
 
     // 初始化zenoh todo把role去掉
-    zenoh_manager_ptr_->SetCallbacks(msg_handle_registry_ptr_);
+    zenoh_manager_ptr_->RegisterMsgHandleRegistry(msg_handle_registry_ptr_);
     zenoh_manager_ptr_->Initialize();
 
     // 注册hook函数

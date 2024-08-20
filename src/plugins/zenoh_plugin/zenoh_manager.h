@@ -7,12 +7,12 @@
 namespace aimrt::plugins::zenoh_plugin {
 class ZenohManager {
  public:
-  void SetCallbacks(std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_);
+  void RegisterMsgHandleRegistry(std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_);
 
-  bool RegisterSubscriber(std::string keyexpr);
-  bool RegisterPublisher(std::string keyexpr);
+  bool RegisterSubscriber(std::string url);
+  bool RegisterPublisher(std::string url);
 
-  bool Publish(std::string topic, char *serialized_data_ptr, int32_t pkg_size);
+  bool Publish(std::string url, char *serialized_data_ptr, int32_t pkg_size);
 
   void Initialize();
   void Shutdown();
@@ -26,8 +26,6 @@ class ZenohManager {
 
   z_owned_session_t z_session_;
   z_owned_config_t z_config_;
-
-  std::string z_role_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin

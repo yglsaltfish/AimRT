@@ -27,7 +27,7 @@ void ZenohManager::Shutdown() {
   printf("Zenoh manager shutdown\n");
 }
 
-void ZenohManager::SetCallbacks(std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr) {
+void ZenohManager::RegisterMsgHandleRegistry(std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr) {
   msg_handle_registry_ptr_ = msg_handle_registry_ptr;
 }
 

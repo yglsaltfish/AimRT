@@ -44,8 +44,6 @@ void ZenohChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
 
-  // todo 释放zenoh的连接资源 ...
-
   msg_handle_registry_ptr_->Shutdown();
 }
 
