@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "core/parameter/parameter_manager.h"
 #include <gtest/gtest.h>

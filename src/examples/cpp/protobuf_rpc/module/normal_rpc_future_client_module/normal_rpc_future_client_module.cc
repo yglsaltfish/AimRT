@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "normal_rpc_future_client_module/normal_rpc_future_client_module.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"

@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "record_playback_plugin/service.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"

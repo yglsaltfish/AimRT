@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "real_time_module/real_time_module.h"
 #include "aimrt_module_cpp_interface/co/aimrt_context.h"

@@ -1,7 +1,8 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "zenoh_plugin/zenoh_manager.h"
+#include "zenoh_plugin/global.h"
 #include "zenoh_plugin/msg_handle_registry.h"
 #include "zenoh_plugin/util.h"
 

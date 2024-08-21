@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "core/module/module_loader.h"
 #include "aimrt_module_cpp_interface/util/string.h"

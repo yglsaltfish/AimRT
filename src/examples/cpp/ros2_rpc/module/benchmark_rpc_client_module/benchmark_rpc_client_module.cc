@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "benchmark_rpc_client_module/benchmark_rpc_client_module.h"
 

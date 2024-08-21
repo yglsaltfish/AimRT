@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "core/rpc/rpc_manager.h"
 #include "core/rpc/local_rpc_backend.h"

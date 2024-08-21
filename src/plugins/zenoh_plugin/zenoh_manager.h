@@ -1,10 +1,9 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #pragma once
 
 #include "zenoh.h"
-#include "zenoh_plugin/global.h"
 #include "zenoh_plugin/msg_handle_registry.h"
 
 namespace aimrt::plugins::zenoh_plugin {
