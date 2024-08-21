@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "ros2_plugin/ros2_plugin.h"
 #include "core/aimrt_core.h"

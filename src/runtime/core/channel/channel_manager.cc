@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "core/channel/channel_manager.h"
 #include "core/channel/local_channel_backend.h"

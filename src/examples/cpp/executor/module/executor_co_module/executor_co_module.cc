@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "executor_co_module/executor_co_module.h"
 #include "aimrt_module_cpp_interface/co/aimrt_context.h"

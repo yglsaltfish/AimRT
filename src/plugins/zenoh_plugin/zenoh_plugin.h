@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #pragma once
 
@@ -13,7 +13,6 @@
 namespace aimrt::plugins::zenoh_plugin {
 class ZenohPlugin : public AimRTCorePluginBase {
  public:
-  // 这个是plgin配置文件的选项 (该插件目前不做任何配置)
   struct Options {};
 
  public:
@@ -22,21 +21,13 @@ class ZenohPlugin : public AimRTCorePluginBase {
 
   std::string_view Name() const noexcept override { return "zenoh_plugin"; }
 
-  // 读取配置文件 初始化zenoh相关资源
   bool Initialize(runtime::core::AimRTCore *core_ptr) noexcept override;
-
-  // 用于链接关闭时的释放工作
   void Shutdown() noexcept override;
 
  private:
-  // 注册logger,可以使用相关宏定义
   void SetPluginLogger();
-
-  // 注册一个zenoh channel后端
   void RegisterZenohChannelBackend();
-
-  // todo rpc后端
-  void RegisterZenohRpcBackend() {}
+  void RegisterZenohRpcBackend() {}  // todo
 
  private:
   runtime::core::AimRTCore *core_ptr_ = nullptr;

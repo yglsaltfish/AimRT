@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "benchmark_publisher_module/benchmark_publisher_module.h"
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"

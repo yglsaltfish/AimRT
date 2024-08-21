@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "aimrt_pkg_c_interface/pkg_macro.h"
 #include "helloworld_module/helloworld_module.h"

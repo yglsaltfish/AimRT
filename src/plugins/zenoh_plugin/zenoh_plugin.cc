@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "zenoh_plugin/zenoh_plugin.h"
 #include "core/aimrt_core.h"
@@ -38,11 +38,10 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
 
-    // 初始化zenoh todo把role去掉
+    // todo remove role
     zenoh_manager_ptr_->RegisterMsgHandleRegistry(msg_handle_registry_ptr_);
     zenoh_manager_ptr_->Initialize();
 
-    // 注册hook函数
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
                                 [this] { SetPluginLogger(); });
 

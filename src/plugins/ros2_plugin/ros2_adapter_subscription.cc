@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "ros2_plugin/ros2_adapter_subscription.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"

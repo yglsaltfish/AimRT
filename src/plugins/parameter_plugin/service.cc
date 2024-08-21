@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "parameter_plugin/service.h"
 #include "aimrt_module_cpp_interface/parameter/parameter_handle.h"

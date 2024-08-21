@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #pragma once
 
@@ -30,6 +30,9 @@ class LoggerBenchModule : public aimrt::ModuleBase {
 
  private:
   aimrt::CoreRef core_;
+
+  size_t log_size_ = 128;
+  size_t bench_num_ = 10000;
 
   std::promise<void> log_loop_stop_sig_;
 };

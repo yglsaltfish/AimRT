@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "normal_rpc_sync_client_module/normal_rpc_sync_client_module.h"
 

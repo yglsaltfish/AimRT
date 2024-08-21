@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "python_runtime/export_channel.h"
 #include "python_runtime/export_configurator.h"

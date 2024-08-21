@@ -17,3 +17,7 @@ aimrt:
     modules:
       - name: LoggerBenchModule
         log_lvl: INFO
+
+LoggerBenchModule:
+  log_size: 1024
+  bench_num: 10000

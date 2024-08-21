@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "normal_subscriber_module/normal_subscriber_module.h"
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"

@@ -1,5 +1,5 @@
 // Copyright (c) 2023, AgiBot Inc.
-// All rights reserved
+// All rights reserved.
 
 #include "mqtt_plugin/mqtt_plugin.h"
 
@@ -89,7 +89,6 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
 
-    // 注册hook函数
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
                                 [this] { SetPluginLogger(); });
 
