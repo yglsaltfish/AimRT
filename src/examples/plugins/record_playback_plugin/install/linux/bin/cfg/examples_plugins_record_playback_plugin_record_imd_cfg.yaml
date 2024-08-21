@@ -11,6 +11,7 @@ aimrt:
               options:
                 bag_path: ./bag
                 max_bag_size_m: 2048
+                max_bag_num: 10
                 mode: imd # imd/signal
                 executor: record_thread # require thread safe!
                 topic_meta_list:

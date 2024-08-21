@@ -108,6 +108,7 @@ class PlaybackAction {
   sqlite3* db_ = nullptr;
   sqlite3_stmt* select_msg_stmt_ = nullptr;
   std::string select_msg_sql_topic_id_range_;
+  std::mutex db_mutex_;
 
   enum class PlayBackState {
     ReadyToPlay,

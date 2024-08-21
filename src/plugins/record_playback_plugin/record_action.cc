@@ -13,6 +13,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     node["bag_path"] = rhs.bag_path;
     node["max_bag_size_m"] = rhs.max_bag_size_m;
+    node["max_bag_num"] = rhs.max_bag_num;
 
     if (rhs.mode == Options::Mode::IMD) {
       node["mode"] = "imd";
@@ -42,6 +43,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     if (node["max_bag_size_m"])
       rhs.max_bag_size_m = node["max_bag_size_m"].as<uint32_t>();
+
+    if (node["max_bag_num"])
+      rhs.max_bag_num = node["max_bag_num"].as<uint32_t>();
 
     auto mode = aimrt::common::util::StrToLower(node["mode"].as<std::string>());
     if (mode == "imd") {
@@ -407,6 +411,13 @@ data        BLOB NOT NULL);
       MetaData::FileMeta{
           .path = cur_db_file_name,
           .start_timestamp = start_timestamp});
+
+  // check and del db file
+  if (options_.max_bag_num > 0 && metadata_.files.size() > options_.max_bag_num) {
+    auto itr = metadata_.files.begin();
+    std::filesystem::remove(real_bag_path_ / itr->path);
+    metadata_.files.erase(itr);
+  }
 
   YAML::Node node;
   node["aimrt_bagfile_information"] = metadata_;
