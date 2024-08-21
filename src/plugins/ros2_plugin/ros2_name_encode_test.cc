@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include <gtest/gtest.h>
 
 #include "ros2_plugin/ros2_name_encode.h"

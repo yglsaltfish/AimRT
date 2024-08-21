@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 get_target_property(py_files aimrt::runtime::python_runtime PY_FILES)
 file(GLOB_RECURSE gencode_file ${CMAKE_SOURCE_DIR}/src/tools/protoc_plugin_py_gen_aimrt_py_rpc/*.py) # TODO
 list(APPEND py_files ${gencode_file})

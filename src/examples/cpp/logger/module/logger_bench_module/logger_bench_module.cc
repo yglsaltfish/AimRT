@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "logger_bench_module/logger_bench_module.h"
 
 #include "yaml-cpp/yaml.h"

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "core/logger/logger_manager.h"
 #include "core/logger/console_logger_backend.h"
 #include "core/logger/rotate_file_logger_backend.h"

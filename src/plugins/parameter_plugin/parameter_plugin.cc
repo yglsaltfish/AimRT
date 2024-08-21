@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "parameter_plugin/parameter_plugin.h"
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"

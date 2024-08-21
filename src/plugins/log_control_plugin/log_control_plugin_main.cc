@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_main.h"
 #include "log_control_plugin/log_control_plugin.h"
 

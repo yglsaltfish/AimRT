@@ -1,5 +1,5 @@
-# coding=UTF-8
-# !/usr/bin/python3
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
 
 import argparse
 

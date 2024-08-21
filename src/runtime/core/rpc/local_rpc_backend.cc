@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "core/rpc/local_rpc_backend.h"
 #include "util/string_util.h"
 #include "util/url_parser.h"

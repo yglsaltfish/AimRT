@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #pragma once
 
 #ifdef AIMRT_EXECUTOR_USE_STDEXEC

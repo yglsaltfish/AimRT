@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "zenoh_channel_backend.h"
 #include <regex>
 #include "util/buffer_util.h"

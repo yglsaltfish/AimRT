@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "time_manipulator_plugin/time_manipulator_plugin.h"
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"

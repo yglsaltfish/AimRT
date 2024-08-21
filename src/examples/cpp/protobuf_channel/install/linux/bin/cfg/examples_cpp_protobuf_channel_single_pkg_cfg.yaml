@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 aimrt:
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off

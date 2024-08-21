@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 set_root_namespace("aimrt")
 
 add_subdirectory(common)

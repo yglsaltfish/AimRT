@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 # add target for protobuf gen code target for proto path
 function(add_protobuf_gencode_target_for_proto_path)
   cmake_parse_arguments(ARG "" "TARGET_NAME" "PROTO_PATH;GENCODE_PATH;DEP_PROTO_TARGETS;OPTIONS" ${ARGN})

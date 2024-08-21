@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include <gtest/gtest.h>
 #include "aimrt_module_cpp_interface/module_base.h"
 #include "core/module/module_manager.h"

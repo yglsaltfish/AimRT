@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "normal_rpc_async_server_module/normal_rpc_async_server_module.h"
 #include "normal_rpc_async_server_module/global.h"
 

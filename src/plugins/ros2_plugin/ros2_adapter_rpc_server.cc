@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "ros2_plugin/ros2_adapter_rpc_server.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"

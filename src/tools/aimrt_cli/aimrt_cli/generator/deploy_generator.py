@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 from dataclasses import dataclass
 from jinja2 import Template
 from warnings import warn as print_warnings

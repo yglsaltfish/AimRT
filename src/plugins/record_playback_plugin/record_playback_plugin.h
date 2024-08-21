@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #pragma once
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"

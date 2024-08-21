@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "net_plugin/http/http_rpc_backend.h"
 
 #include <regex>

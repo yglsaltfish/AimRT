@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "zenoh_plugin/zenoh_plugin.h"
 #include "core/aimrt_core.h"
 

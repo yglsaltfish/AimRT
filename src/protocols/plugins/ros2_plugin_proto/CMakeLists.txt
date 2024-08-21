@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 cmake_minimum_required(VERSION 3.24)
 
 # Get the current folder name

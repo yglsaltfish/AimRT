@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 # add target for aimrt rpc gen code target for proto files
 function(add_protobuf_aimrt_rpc_gencode_target_for_proto_files)
   cmake_parse_arguments(ARG "" "TARGET_NAME" "PROTO_FILES;GENCODE_PATH;DEP_PROTO_TARGETS;OPTIONS" ${ARGN})

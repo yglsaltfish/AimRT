@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 from setuptools import find_packages, setup
 
 package_name = 'aimrt_cli'

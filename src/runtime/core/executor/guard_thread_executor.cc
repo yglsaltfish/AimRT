@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "core/executor/guard_thread_executor.h"
 #include "core/util/thread_tools.h"
 

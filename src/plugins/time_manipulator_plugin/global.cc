@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "time_manipulator_plugin/global.h"
 
 namespace aimrt::plugins::time_manipulator_plugin {

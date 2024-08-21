@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 set_namespace()
 
 if(AIMRT_BUILD_WITH_PROTOBUF)

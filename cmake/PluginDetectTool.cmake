@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 # Get the names of all subdirectories in a directory
 function(get_subdirectories DIR OUT_VAR)
   file(GLOB ALL_FILES_AND_DIRS "${DIR}/*")

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "normal_publisher_module/normal_publisher_module.h"
 #include "aimrt_module_ros2_interface/channel/ros2_channel.h"
 
