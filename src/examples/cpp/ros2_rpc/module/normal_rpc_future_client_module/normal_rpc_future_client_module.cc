@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "normal_rpc_future_client_module/normal_rpc_future_client_module.h"
 
 #include "yaml-cpp/yaml.h"

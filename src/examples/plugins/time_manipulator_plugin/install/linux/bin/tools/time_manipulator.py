@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 import tkinter as tk
 from tkinter import ttk
 import threading

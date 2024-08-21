@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 macro(add_werror target)
   if(AIMRT_BUILD_WITH_WERROR)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include <memory>
 
 #include "example_ros2/msg/ros_test_msg.hpp"

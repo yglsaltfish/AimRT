@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "net_plugin/udp/udp_channel_backend.h"
 
 #include <regex>

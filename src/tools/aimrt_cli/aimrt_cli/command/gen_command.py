@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 from aimrt_cli.command import CommandBase
 from aimrt_cli.generator.project_generator import ProjectGenerator
 

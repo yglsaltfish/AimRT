@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #pragma once
 
 #include "aimrt_module_c_interface/util/string.h"

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "core/configurator/configurator_manager.h"
 
 #include <cstdlib>

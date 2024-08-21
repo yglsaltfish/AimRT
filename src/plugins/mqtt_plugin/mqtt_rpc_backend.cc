@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "mqtt_plugin/mqtt_rpc_backend.h"
 
 #include <regex>

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "time_manipulator_plugin/time_manipulator_executor.h"
 #include "core/util/thread_tools.h"
 #include "time_manipulator_plugin/global.h"

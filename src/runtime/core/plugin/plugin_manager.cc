@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "core/plugin/plugin_manager.h"
 
 #include "util/string_util.h"

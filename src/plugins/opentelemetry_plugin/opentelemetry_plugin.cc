@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "opentelemetry_plugin/opentelemetry_plugin.h"
 
 #include "core/aimrt_core.h"

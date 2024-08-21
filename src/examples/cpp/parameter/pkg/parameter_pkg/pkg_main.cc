@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "aimrt_pkg_c_interface/pkg_macro.h"
 #include "parameter_module/parameter_module.h"
 

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #pragma once
 
 #include "record_playback_plugin/topic_meta_key.h"

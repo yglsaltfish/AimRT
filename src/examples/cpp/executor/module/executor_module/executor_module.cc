@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "executor_module/executor_module.h"
 
 #include "yaml-cpp/yaml.h"

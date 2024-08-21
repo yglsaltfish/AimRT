@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "log_control_plugin/global.h"
 
 namespace aimrt::plugins::log_control_plugin {

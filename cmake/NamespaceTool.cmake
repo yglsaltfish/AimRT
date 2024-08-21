@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 macro(set_root_namespace arg1)
   set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY __CURRENT_NAMESPACE__ ${arg1})
 endmacro()

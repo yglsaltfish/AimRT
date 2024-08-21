@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "helloworld_module/helloworld_module.h"
 
 #include "yaml-cpp/yaml.h"

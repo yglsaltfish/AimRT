@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "normal_rpc_sync_server_module/global.h"
 
 namespace aimrt::examples::cpp::protobuf_rpc::normal_rpc_sync_server_module {

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "core/channel/channel_manager.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "log_control_plugin/service.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 #include "log_control_plugin/global.h"

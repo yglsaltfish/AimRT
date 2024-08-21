@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "ros2_plugin/ros2_channel_backend.h"
 
 #include <regex>

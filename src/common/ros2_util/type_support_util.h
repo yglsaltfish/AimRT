@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #pragma once
 
 #include "rosidl_typesupport_cpp/message_type_support.hpp"

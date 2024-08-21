@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 import google.protobuf
 
 from . import aimrt_python_runtime

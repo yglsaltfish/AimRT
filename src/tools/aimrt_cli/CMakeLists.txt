@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 # Get all the files in folder
 file(GLOB_RECURSE AIMRT_CLI_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/*")
 

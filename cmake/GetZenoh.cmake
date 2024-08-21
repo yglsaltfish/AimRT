@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 include(FetchContent)
 
 message(STATUS "Getting zenohc...")

@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "normal_rpc_co_server_module/global.h"
 
 namespace aimrt::examples::cpp::ros2_rpc::normal_rpc_co_server_module {

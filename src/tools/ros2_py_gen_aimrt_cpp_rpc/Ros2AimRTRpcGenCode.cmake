@@ -1,3 +1,6 @@
+# Copyright (c) 2023, AgiBot Inc.
+# All rights reserved.
+
 # add target for aimrt rpc gen code target for one file
 function(add_ros2_aimrt_rpc_gencode_target_for_one_file)
   cmake_parse_arguments(ARG "" "TARGET_NAME" "PACKAGE_NAME;PROTO_FILE;GENCODE_PATH;DEP_PROTO_TARGETS;OPTIONS" ${ARGN})

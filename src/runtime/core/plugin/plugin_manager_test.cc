@@ -1,3 +1,6 @@
+// Copyright (c) 2023, AgiBot Inc.
+// All rights reserved
+
 #include "core/plugin/plugin_manager.h"
 #include <gtest/gtest.h>
 #include "aimrt_core.h"
