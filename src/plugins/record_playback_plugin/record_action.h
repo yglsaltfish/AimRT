@@ -21,6 +21,7 @@ class RecordAction {
   struct Options {
     std::string bag_path;
     uint32_t max_bag_size_m = 2048;
+    uint32_t max_bag_num = 0;
 
     enum class Mode {
       IMD,

@@ -22,6 +22,7 @@
 | record_actions[i].options         | map           | 必选  | -         | 动作选项 |
 | record_actions[i].options.bag_path        | string        | 必选  | ""        | 录制包存放的路径 |
 | record_actions[i].options.max_bag_size_m  | unsigned int  | 可选  | 2048      | 录制包 db 最大尺寸，单位 MB |
+| record_actions[i].options.max_bag_num     | unsigned int  | 可选  | 0         | 录制包的最大个数，超出后将删除最早的包。0 表示无限大 |
 | record_actions[i].options.mode            | string        | 必选  | ""        | 录制模式，不区分大小写，立即模式：imd，信号触发模式：signal |
 | record_actions[i].options.max_preparation_duration_s  | unsigned int  | 可选  | 0      | 最大提前数据预备时间，仅 signal 模式下生效 |
 | record_actions[i].options.executor        | string        | 必选  | ""        | 录制使用的执行器，要求必须是线程安全的 |

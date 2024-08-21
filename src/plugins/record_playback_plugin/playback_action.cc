@@ -388,6 +388,8 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
     }
   }
 
+  std::lock_guard<std::mutex> db_lck(db_mutex_);
+
   if (db_ == nullptr) [[unlikely]] {
     // first record
     if (!OpenNewDb()) {
@@ -429,14 +431,13 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
           .data = &buffer_view,
           .len = 1};
 
-      OneRecord record;
-      record.topic_index = topic_id;
-      record.dt = timestamp - start_playback_timestamp_;
-      record.buffer_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
-          new aimrt::util::BufferArrayView(buffer_array_view),
-          [data_ptr{std::move(data_ptr)}](const auto* ptr) { delete ptr; });
-
-      records.emplace_back(std::move(record));
+      records.emplace_back(
+          OneRecord{
+              .topic_index = static_cast<uint64_t>(topic_id),
+              .dt = timestamp - start_playback_timestamp_,
+              .buffer_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
+                  new aimrt::util::BufferArrayView(buffer_array_view),
+                  [data_ptr{std::move(data_ptr)}](const auto* ptr) { delete ptr; })});
 
       if (cur_start_timestamp == 0) [[unlikely]] {
         cur_start_timestamp = timestamp;
@@ -451,6 +452,8 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
       }
     }
   }
+
+  db_mutex_.unlock();
 
   AIMRT_TRACE("Get {} record.", records.size());
 

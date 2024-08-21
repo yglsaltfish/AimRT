@@ -18,6 +18,7 @@ aimrt:
               options:
                 bag_path: ./bag
                 max_bag_size_m: 2048
+                max_bag_num: 10
                 mode: signal # imd/signal
                 max_preparation_duration_s: 10 # Effective only in signal mode
                 executor: record_thread # require thread safe!
