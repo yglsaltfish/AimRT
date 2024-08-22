@@ -4,22 +4,22 @@
 #pragma once
 
 #include "core/channel/channel_backend_base.h"
-#include "zenoh_plugin/msg_handle_registry.h"
+#include "util/buffer_util.h"
+#include "util/url_encode.h"
+#include "zenoh.h"
 #include "zenoh_plugin/zenoh_manager.h"
 
 namespace aimrt::plugins::zenoh_plugin {
 
 class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
-  // todo 可选择一些需要用户配置的后端选项用于通信时的配置，暂时使用zenoh默认配置
-  struct Options {};
+  struct Options {
+  };
 
  public:
   ZenohChannelBackend(
-      std::shared_ptr<ZenohManager>& zenoh_util_ptr,
-      std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
-      : zenoh_manager_ptr_(zenoh_util_ptr),
-        msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
+      std::shared_ptr<ZenohManager>& zenoh_util_ptr)
+      : zenoh_manager_ptr_(zenoh_util_ptr) {}
 
   ~ZenohChannelBackend() override = default;
 
@@ -52,7 +52,6 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 
   std::shared_ptr<ZenohManager> zenoh_manager_ptr_;
-  std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 
   std::unordered_map<
       std::string,

@@ -1,11 +1,7 @@
 // Copyright (c) 2023, AgiBot Inc.
 // All rights reserved.
 
-#include "zenoh_channel_backend.h"
-#include <regex>
-#include "util/buffer_util.h"
-#include "util/url_encode.h"
-#include "zenoh.h"
+#include "zenoh_plugin/zenoh_channel_backend.h"
 
 namespace YAML {
 template <>
@@ -46,8 +42,6 @@ void ZenohChannelBackend::Start() {
 void ZenohChannelBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
     return;
-
-  msg_handle_registry_ptr_->Shutdown();
 }
 
 bool ZenohChannelBackend::RegisterPublishType(
@@ -99,13 +93,12 @@ bool ZenohChannelBackend::Subscribe(
       std::make_unique<std::vector<const runtime::core::channel::SubscribeWrapper*>>(
           std::vector<const runtime::core::channel::SubscribeWrapper*>{&subscribe_wrapper}));
   auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
-  // 注册订阅的函数回调
+
   auto handle =
       [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](const z_loaned_sample_t* message) {
         try {
           auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
 
-          // sub数据
           const z_loaned_bytes_t* payload = z_sample_payload(message);
           size_t serialized_size = z_bytes_len(payload);
           z_bytes_reader_t reader = z_bytes_get_reader(payload);
@@ -116,7 +109,6 @@ bool ZenohChannelBackend::Subscribe(
             std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
             ctx_ptr->SetSerializationType(serialization_type);
 
-            // 获取内容
             size_t ctx_num = buf_oper.GetUint8();
             for (size_t ii = 0; ii < ctx_num; ++ii) {
               auto key = buf_oper.GetString(util::BufferLenType::UINT16);
@@ -127,7 +119,6 @@ bool ZenohChannelBackend::Subscribe(
             ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
             ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
-            // 获取消息buf
             auto remaining_buf = buf_oper.GetRemainingBuffer();
             aimrt_buffer_view_t buffer_view{
                 .data = remaining_buf.data(),
@@ -137,17 +128,14 @@ bool ZenohChannelBackend::Subscribe(
                 .data = &buffer_view,
                 .len = 1};
 
-            // 每个pkg统一一次性发布。key=pkg_path
             std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
             for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
               if (msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path) != msg_ptr_map.end())
                 continue;
               auto subscribe_type_support_ref = subscribe_wrapper_ptr->info.msg_type_support_ref;
 
-              // 创建消息
               std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
 
-              // 消息反序列化
               bool deserialize_ret = subscribe_type_support_ref.Deserialize(
                   serialization_type, buffer_array_view, msg_ptr.get());
               AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Zenoh msg deserialize failed! ");
@@ -155,12 +143,10 @@ bool ZenohChannelBackend::Subscribe(
               msg_ptr_map.emplace(subscribe_wrapper_ptr->info.pkg_path, msg_ptr);
             }
 
-            // 调用注册的subscribe方法
             for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
               auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path);
               std::shared_ptr<void> msg_ptr = finditr->second;
 
-              // 创建 sub msg wrapper
               runtime::core::channel::MsgWrapper sub_msg_wrapper{
                   .info = subscribe_wrapper_ptr->info,
                   .msg_ptr = msg_ptr.get(),
@@ -176,12 +162,10 @@ bool ZenohChannelBackend::Subscribe(
         }
       };
 
-  msg_handle_registry_ptr_->RegisterMsgHandle(pattern, std::move(handle));
-  zenoh_manager_ptr_->RegisterSubscriber(pattern);
+  zenoh_manager_ptr_->RegisterSubscriber(pattern, std::move(handle));
   return true;
 }
 
-// 将消息按指定格式序列化后调用底层api将数据发布
 void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   if (state_.load() != State::Start) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
@@ -190,15 +174,13 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
   namespace util = aimrt::common::util;
   const auto& info = msg_wrapper.info;
 
-  // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
   auto publish_type_support_ref = info.msg_type_support_ref;
 
-  std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+  auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
   if (serialization_type.empty()) {
-    serialization_type = publish_type_support_ref.DefaultSerializationType();
+    serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
   }
 
-  // msg序列化
   auto buffer_array_view_ptr = msg_wrapper.SerializeMsgWithCache(serialization_type);
   if (!buffer_array_view_ptr) [[unlikely]] {
     AIMRT_ERROR(
@@ -207,12 +189,10 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
     return;
   }
 
-  // 填内容
   auto buffer_array_data = buffer_array_view_ptr->Data();
   const size_t buffer_array_len = buffer_array_view_ptr->Size();
   size_t msg_size = buffer_array_view_ptr->BufferSize();
 
-  // context
   const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
   if (keys.size() > 255) [[unlikely]] {
     AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
@@ -241,21 +221,18 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
     buf_oper.SetString(s, util::BufferLenType::UINT16);
   }
 
-  // data
   for (size_t ii = 0; ii < buffer_array_len; ++ii) {
     buf_oper.SetBuffer(
         static_cast<const char*>(buffer_array_data[ii].data),
         buffer_array_data[ii].len);
   }
 
-  // 确定path
   std::string zenoh_pub_topic = std::string("/channel/") +
                                 util::UrlEncode(info.topic_name) + "/" +
                                 util::UrlEncode(info.msg_type);
 
   AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
 
-  // pub data
   zenoh_manager_ptr_->Publish(zenoh_pub_topic, serialized_data.data(), pkg_size);
 
   return;
