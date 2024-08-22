@@ -196,20 +196,19 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
       const auto* sub_wrapper_ptr = sub_wrapper_itr.second;
 
       // 创建该 pkg-module 下的 MsgWrapper
-      auto sub_msg_warpper_ptr = std::make_shared<MsgWrapper>(
-          MsgWrapper{
-              .info = sub_wrapper_ptr->info,
-              .msg_ptr = msg_ptr.get(),
-              .ctx_ref = ctx_ptr,
-              .serialization_cache = msg_wrapper.serialization_cache});
+      MsgWrapper sub_msg_warpper{
+          .info = sub_wrapper_ptr->info,
+          .msg_ptr = msg_ptr.get(),
+          .ctx_ref = ctx_ptr,
+          .serialization_cache = msg_wrapper.serialization_cache};
 
       if (subscribe_executor_ref_) {
         subscribe_executor_ref_.Execute(
-            [sub_wrapper_ptr, msg_ptr, ctx_ptr, sub_msg_warpper_ptr]() {
-              sub_wrapper_ptr->callback(*sub_msg_warpper_ptr, [msg_ptr, ctx_ptr]() {});
+            [sub_wrapper_ptr, msg_ptr, ctx_ptr, sub_msg_warpper{std::move(sub_msg_warpper)}]() mutable {
+              sub_wrapper_ptr->callback(sub_msg_warpper, [msg_ptr, ctx_ptr]() {});
             });
       } else {
-        sub_wrapper_ptr->callback(*sub_msg_warpper_ptr, [msg_ptr, ctx_ptr]() {});
+        sub_wrapper_ptr->callback(sub_msg_warpper, [msg_ptr, ctx_ptr]() {});
       }
     }
   }

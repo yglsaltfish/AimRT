@@ -2,6 +2,7 @@
 // All rights reserved.
 
 #include <csignal>
+#include <fstream>
 #include <iostream>
 
 #include "gflags/gflags.h"
