@@ -38,7 +38,7 @@ class MsgHandleRegistry {
 
     try {
       auto find_topic_itr = msg_handle_map_.find(topic);
-      if (find_topic_itr == msg_handle_map_.end()) {
+      if (find_topic_itr == msg_handle_map_.end()) [[unlikely]] {
         AIMRT_WARN("Unregisted topic: {}", topic);
         return;
       }

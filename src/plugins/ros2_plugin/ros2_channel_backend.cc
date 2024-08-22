@@ -510,9 +510,9 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
   // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
   auto publish_type_support_ref = info.msg_type_support_ref;
 
-  auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+  std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
   if (serialization_type.empty()) {
-    serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
+    serialization_type = publish_type_support_ref.DefaultSerializationType();
   }
 
   // msg序列化

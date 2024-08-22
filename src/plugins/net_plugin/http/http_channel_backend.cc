@@ -296,9 +296,9 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
   // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
   auto publish_type_support_ref = info.msg_type_support_ref;
 
-  auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+  std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
   if (serialization_type.empty()) {
-    serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
+    serialization_type = publish_type_support_ref.DefaultSerializationType();
   }
 
   if (serialization_type == "json") {
@@ -371,6 +371,10 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
               .service = server_url.service};
 
           auto client_ptr = co_await http_cli_pool_ptr_->GetClient(cli_options);
+          if (!client_ptr) [[unlikely]] {
+            AIMRT_WARN("Can not get http client!");
+            co_return;
+          }
 
           // todo:
           // 解决多地址发送时req设置host时的线程安全问题，除最后一个直接用指针，前几个都用值拷贝

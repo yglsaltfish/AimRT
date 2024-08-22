@@ -62,7 +62,7 @@ class MsgHandleRegistry {
 
       std::string_view uri = std::string_view(static_cast<const char*>(buf_data) + 1, uri_size);
       auto finditr = msg_handle_map_.find(uri);
-      if (finditr == msg_handle_map_.end()) {
+      if (finditr == msg_handle_map_.end()) [[unlikely]] {
         AIMRT_WARN("Unregisted uri: {}", uri);
         return;
       }
