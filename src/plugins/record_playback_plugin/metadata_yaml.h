@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <deque>
+
 #include "record_playback_plugin/topic_meta_key.h"
 
 #include "yaml-cpp/yaml.h"
@@ -18,7 +20,7 @@ struct MetaData {
     std::string path;
     uint64_t start_timestamp;
   };
-  std::vector<FileMeta> files;
+  std::deque<FileMeta> files;
 };
 
 }  // namespace aimrt::plugins::record_playback_plugin

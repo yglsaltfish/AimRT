@@ -530,9 +530,10 @@ class AsioWebSocketClientPool
     return boost::asio::co_spawn(
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioWebSocketClient>> {
-          AIMRT_CHECK_ERROR_THROW(
-              state_.load() == State::Start,
-              "Method can only be called when state is 'Start'.");
+          if (state_.load() != State::Start) [[unlikely]] {
+            AIMRT_WARN("Method can only be called when state is 'Start'.");
+            co_return std::shared_ptr<AsioWebSocketClient>();
+          }
 
           auto client_key = client_options.host + client_options.service;
 

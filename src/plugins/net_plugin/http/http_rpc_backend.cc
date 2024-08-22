@@ -354,6 +354,11 @@ void HttpRpcBackend::Invoke(
               .service = std::string(url->service)};
 
           auto client_ptr = co_await http_cli_pool_ptr->GetClient(cli_options);
+          if (!client_ptr) [[unlikely]] {
+            AIMRT_WARN("Can not get http client!");
+            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+            co_return;
+          }
 
           http::request<http::dynamic_body> req{http::verb::post, url_path, 11};
           req.set(http::field::host, url->host);

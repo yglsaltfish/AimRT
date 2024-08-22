@@ -111,7 +111,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_ERROR("Method can only be called when state is 'Start'.");
+        AIMRT_WARN("Method can only be called when state is 'Start'.");
         return;
       }
 
@@ -528,9 +528,10 @@ class AsioTcpClientPool
     return boost::asio::co_spawn(
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioTcpClient>> {
-          AIMRT_CHECK_ERROR_THROW(
-              state_.load() == State::Start,
-              "Method can only be called when state is 'Start'.");
+          if (state_.load() != State::Start) [[unlikely]] {
+            AIMRT_WARN("Method can only be called when state is 'Start'.");
+            co_return std::shared_ptr<AsioTcpClient>();
+          }
 
           const size_t client_hash =
               std::hash<boost::asio::ip::tcp::endpoint>{}(client_options.svr_ep);

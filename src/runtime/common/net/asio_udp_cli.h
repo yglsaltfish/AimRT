@@ -419,9 +419,10 @@ class AsioUdpClientPool
     return boost::asio::co_spawn(
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioUdpClient>> {
-          AIMRT_CHECK_ERROR_THROW(
-              state_.load() == State::Start,
-              "Method can only be called when state is 'Start'.");
+          if (state_.load() != State::Start) [[unlikely]] {
+            AIMRT_WARN("Method can only be called when state is 'Start'.");
+            co_return std::shared_ptr<AsioUdpClient>();
+          }
 
           const size_t client_hash =
               std::hash<boost::asio::ip::udp::endpoint>{}(client_options.svr_ep);
