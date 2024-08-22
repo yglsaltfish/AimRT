@@ -57,7 +57,8 @@ int main(int argc, char **argv) {
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
     printf(">> [%s] Publishing message: %s in %d\n", timestamp, msg.msg().c_str(), msg.num());
     z_owned_bytes_t payload;
-    z_bytes_serialize_from_str(&payload, serialized_data);
+
+    z_bytes_from_buf(&payload, reinterpret_cast<uint8_t *>(serialized_data), serialized_size, NULL, NULL);
     z_publisher_put(z_loan(pub), z_move(payload), &options);
     z_sleep_s(1);
   }

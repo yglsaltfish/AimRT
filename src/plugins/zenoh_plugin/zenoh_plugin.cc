@@ -2,7 +2,6 @@
 // All rights reserved.
 
 #include "zenoh_plugin/zenoh_plugin.h"
-#include "core/aimrt_core.h"
 
 namespace YAML {
 template <>
@@ -36,10 +35,7 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     init_flag_ = true;
 
-    msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
-
     // todo remove role
-    zenoh_manager_ptr_->RegisterMsgHandleRegistry(msg_handle_registry_ptr_);
     zenoh_manager_ptr_->Initialize();
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
@@ -64,8 +60,6 @@ void ZenohPlugin::Shutdown() noexcept {
 
     stop_flag_ = true;
 
-    msg_handle_registry_ptr_->Shutdown();
-
     zenoh_manager_ptr_->Shutdown();
 
   } catch (const std::exception &e) {
@@ -80,8 +74,7 @@ void ZenohPlugin::SetPluginLogger() {
 
 void ZenohPlugin::RegisterZenohChannelBackend() {
   std::unique_ptr<runtime::core::channel::ChannelBackendBase> zenoh_channel_backend_ptr =
-      std::make_unique<ZenohChannelBackend>(
-          zenoh_manager_ptr_, msg_handle_registry_ptr_);
+      std::make_unique<ZenohChannelBackend>(zenoh_manager_ptr_);
 
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(zenoh_channel_backend_ptr));
 }

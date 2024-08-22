@@ -4,28 +4,34 @@
 #pragma once
 
 #include "zenoh.h"
-#include "zenoh_plugin/msg_handle_registry.h"
+#include "zenoh_plugin/global.h"
+#include "zenoh_plugin/util.h"
 
 namespace aimrt::plugins::zenoh_plugin {
 class ZenohManager {
  public:
-  void RegisterMsgHandleRegistry(std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_);
+  using MsgHandleFunc = std::function<void(const z_loaned_sample_t* message)>;
 
-  bool RegisterSubscriber(std::string url);
-  bool RegisterPublisher(std::string url);
+  ZenohManager() = default;
+  ~ZenohManager() = default;
 
-  bool Publish(std::string url, char *serialized_data_ptr, int32_t pkg_size);
+  ZenohManager(const ZenohManager&) = delete;
+  ZenohManager& operator=(const ZenohManager&) = delete;
 
   void Initialize();
   void Shutdown();
 
+  void RegisterSubscriber(const std::string& url, MsgHandleFunc handle);
+  void RegisterPublisher(const std::string& url);
+
+  void Publish(const std::string& url, char* serialized_data_ptr, uint64_t serialized_data_len);
+
  private:
   std::unordered_map<std::string, z_owned_publisher_t> z_pub_registry_;
   std::unordered_map<std::string, z_owned_subscriber_t> z_sub_registry_;
-  std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
+  std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;
 
   z_publisher_put_options_t z_pub_options_;
-
   z_owned_session_t z_session_;
   z_owned_config_t z_config_;
 };

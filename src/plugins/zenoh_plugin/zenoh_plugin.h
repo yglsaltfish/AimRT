@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
-#include "zenoh_plugin/msg_handle_registry.h"
+#include "core/aimrt_core.h"
 #include "zenoh_plugin/zenoh_channel_backend.h"
 
 namespace aimrt::plugins::zenoh_plugin {
@@ -38,7 +38,6 @@ class ZenohPlugin : public AimRTCorePluginBase {
   std::atomic_bool stop_flag_ = false;
 
   std::shared_ptr<ZenohManager> zenoh_manager_ptr_ = std::make_shared<ZenohManager>();
-  std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin
