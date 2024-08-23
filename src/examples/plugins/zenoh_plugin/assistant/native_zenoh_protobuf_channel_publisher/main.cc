@@ -20,11 +20,11 @@ int main(int argc, char **argv) {
   msg.set_msg("Hello AimRT");
   msg.set_num(2024);
   size_t serialized_size = msg.ByteSizeLong();
-  char *serialized_data = new char[serialized_size];
-  msg.SerializeToArray(serialized_data, serialized_size);
+  std::vector<uint8_t> serialized_data(serialized_size);
+  msg.SerializeToArray(serialized_data.data(), serialized_size);
 
   // initial configuration
-  const char *keyexpr = "aimrt/example/plugin/zenoh_plugin/assistant/native_zenoh_protobuf_channel_publisher";
+  const char *keyexpr = "channel/**";
 
   z_owned_config_t config;
   z_config_default(&config);
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     printf(">> [%s] Publishing message: %s in %d\n", timestamp, msg.msg().c_str(), msg.num());
     z_owned_bytes_t payload;
 
-    z_bytes_from_buf(&payload, reinterpret_cast<uint8_t *>(serialized_data), serialized_size, NULL, NULL);
+    z_bytes_from_buf(&payload, serialized_data.data(), serialized_size, NULL, NULL);
     z_publisher_put(z_loan(pub), z_move(payload), &options);
     z_sleep_s(1);
   }
@@ -67,9 +67,6 @@ int main(int argc, char **argv) {
   z_undeclare_publisher(z_move(pub));
   z_close(z_move(s));
   printf("This program has been exied successfully.\n");
-
-  delete[] serialized_data;
-  serialized_data = nullptr;
 
   return 0;
 }
