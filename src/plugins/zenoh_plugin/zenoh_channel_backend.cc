@@ -55,7 +55,7 @@ bool ZenohChannelBackend::RegisterPublishType(
 
   // check path
   namespace util = aimrt::common::util;
-  std::string pattern = std::string("/channel/") +
+  std::string pattern = std::string("channel/") +
                         util::UrlEncode(info.topic_name) + "/" +
                         util::UrlEncode(info.msg_type);
 
@@ -79,7 +79,7 @@ bool ZenohChannelBackend::Subscribe(
   const auto& info = subscribe_wrapper.info;
   namespace util = aimrt::common::util;
 
-  std::string pattern = std::string("/channel/") +
+  std::string pattern = std::string("channel/") +
                         util::UrlEncode(info.topic_name) + "/" +
                         util::UrlEncode(info.msg_type);
 
@@ -227,7 +227,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
         buffer_array_data[ii].len);
   }
 
-  std::string zenoh_pub_topic = std::string("/channel/") +
+  std::string zenoh_pub_topic = std::string("channel/") +
                                 util::UrlEncode(info.topic_name) + "/" +
                                 util::UrlEncode(info.msg_type);
 
