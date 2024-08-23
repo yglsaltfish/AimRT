@@ -5,7 +5,7 @@
 ## 插件概述
 
 
-**parameter_plugin**中注册了一个基于protobuf协议定义的RPC：`ParameterService`，提供了针对Parameter的一些管理接口，协议文件为[parameter.proto](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/protocols/plugins/parameter_plugin/parameter.proto)。请注意，**parameter_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的RPC通信后端一块使用，例如[net_plugin](./net_plugin.md)中的http RPC后端。
+**parameter_plugin**中注册了一个基于protobuf协议定义的RPC：`ParameterService`，提供了针对Parameter的一些管理接口，协议文件为{{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}。请注意，**parameter_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的RPC通信后端一块使用，例如[net_plugin](./net_plugin.md)中的http RPC后端。
 
 
 在当前版本，本插件没有插件级的配置。以下是一个简单的配置示例，将**parameter_plugin**与**net_plugin**中的http RPC后端搭配使用：
@@ -35,7 +35,7 @@ aimrt:
 
 ## ParameterService
 
-在[parameter.proto](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/protocols/plugins/parameter_plugin/parameter.proto)中，定义了一个`ParameterService`，提供了如下接口：
+在{{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}中，定义了一个`ParameterService`，提供了如下接口：
 - Set：设置参数
 - Get：获取参数
 - List：列出参数列表

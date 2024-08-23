@@ -3,8 +3,8 @@
 ## ParameterHandleRef句柄概述
 
 相关链接：
-- 代码文件：[aimrt_module_cpp_interface/parameter/parameter_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/parameter/parameter_handle.h)
-- 参考示例：[parameter_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/parameter/module/parameter_module/parameter_module.cc)
+- 代码文件：{{ '[aimrt_module_cpp_interface/parameter/parameter_handle.h]({}/src/interface/aimrt_module_cpp_interface/parameter/parameter_handle.h)'.format(code_site_root_path_url) }}
+- 参考示例：{{ '[parameter_module.cc]({}/src/examples/cpp/parameter/module/parameter_module/parameter_module.cc)'.format(code_site_root_path_url) }}
 
 
 AimRT中提供了一个简单的模块级kv参数功能，模块可以通过调用`CoreRef`句柄的`GetParameterHandle()`接口，获取`aimrt::parameter::ParameterHandleRef`句柄，来使用此功能。该句柄提供的核心接口如下：

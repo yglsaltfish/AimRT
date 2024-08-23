@@ -1095,7 +1095,6 @@ void CheckArrays(Json::Value& json_node, const ArrayType& msgs) {
   CHECK_ARRAY_TYPE_VALUES(string, std::string);
 }
 
-// 固定数组大小的array
 TEST(ArrayTypeToJson, FixSizeArrays) {
   auto msg = GetMessagesArrays();
   const rosidl_message_type_support_t* type_support = GetIntrospectionTypeSupport<test_msgs::msg::Arrays>();
@@ -1110,7 +1109,6 @@ TEST(ArrayTypeToJson, FixSizeArrays) {
   }
 }
 
-// 不固定数组大小,设置最大大小的array
 TEST(ArrayTypeToJson, BoundedSizeArray) {
   auto msg = GetMessagesBoundedSequences();
   const rosidl_message_type_support_t* type_support = GetIntrospectionTypeSupport<test_msgs::msg::BoundedSequences>();
@@ -1125,7 +1123,6 @@ TEST(ArrayTypeToJson, BoundedSizeArray) {
   }
 }
 
-// 未指定大小的动态数组
 TEST(ArrayTypeToJson, UnboundedSizeArray) {
   auto msg = GetMessagesUnboundedSequences();
   const rosidl_message_type_support_t* type_support = GetIntrospectionTypeSupport<test_msgs::msg::UnboundedSequences>();
@@ -1144,7 +1141,7 @@ TEST(ArrayTypeToJson, UnboundedSizeArray) {
   EXPECT_TRUE(json_basic_types_value_node.isMember(#type "_value")); \
   EXPECT_EQ(GetJsonValue<inner_type>(json_basic_types_value_node[#type "_value"]), basic_types_values.type##_value);
 
-// ros msg 类型
+// ros msg
 TEST(NestTypeToJson, Nest) {
   std::vector<test_msgs::msg::Nested::SharedPtr> msg = GetMessagesNested();
   const rosidl_message_type_support_t* type_support = GetIntrospectionTypeSupport<test_msgs::msg::Nested>();

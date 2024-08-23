@@ -5,7 +5,7 @@
   <version>0.1.0</version>
   <description>Contains message and service definitions used by ros2 plugin.</description>
 
-  <maintainer email="wtudio@outlook.com">wtudio</maintainer>
+  <maintainer email="wangtian@zhiyuan-robot.com">wangtian</maintainer>
 
   <license>Apache License 2.0</license>
 

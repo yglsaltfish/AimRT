@@ -55,12 +55,6 @@ void AimRTCore::Initialize(const Options& options) {
   guard_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("guard_thread"));
   EnterState(State::PostInitGuardThread);
 
-  // Init allocator
-  EnterState(State::PreInitAllocator);
-  allocator_manager_.SetLogger(logger_ptr_);
-  allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
-  EnterState(State::PostInitAllocator);
-
   // Init executor
   EnterState(State::PreInitExecutor);
   executor_manager_.SetLogger(logger_ptr_);
@@ -77,6 +71,12 @@ void AimRTCore::Initialize(const Options& options) {
   logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
   SetCoreLogger();
   EnterState(State::PostInitLog);
+
+  // Init allocator
+  EnterState(State::PreInitAllocator);
+  allocator_manager_.SetLogger(logger_ptr_);
+  allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
+  EnterState(State::PostInitAllocator);
 
   // Init rpc
   EnterState(State::PreInitRpc);
@@ -122,9 +122,9 @@ void AimRTCore::StartImpl() {
   plugin_manager_.Start();
   main_thread_executor_.Start();
   guard_thread_executor_.Start();
-  allocator_manager_.Start();
   executor_manager_.Start();
   logger_manager_.Start();
+  allocator_manager_.Start();
   rpc_manager_.Start();
   channel_manager_.Start();
   parameter_manager_.Start();
@@ -140,13 +140,13 @@ void AimRTCore::ShutdownImpl() {
   parameter_manager_.Shutdown();
   channel_manager_.Shutdown();
   rpc_manager_.Shutdown();
+  allocator_manager_.Shutdown();
 
   ResetCoreLogger();
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
   logger_manager_.Shutdown();
 
   executor_manager_.Shutdown();
-  allocator_manager_.Shutdown();
   guard_thread_executor_.Shutdown();
   main_thread_executor_.Shutdown();
   plugin_manager_.Shutdown();
@@ -194,7 +194,6 @@ void AimRTCore::EnterState(State state) {
 
 void AimRTCore::SetCoreLogger() {
   const auto* core_logger_ptr = logger_manager_.GetLoggerProxy("core").NativeHandle();
-  const auto* core_allocator_ptr = allocator_manager_.GetAllocatorProxy("core").NativeHandle();
 
   logger_ptr_->get_log_level_func = [core_logger_ptr]() -> uint32_t {
     return core_logger_ptr->get_log_level(core_logger_ptr->impl);
@@ -215,19 +214,11 @@ void AimRTCore::SetCoreLogger() {
             line, column, file_name, function_name,
             log_data, log_data_size);  //
       };
-
-  logger_ptr_->get_log_buf_func =
-      [core_allocator_ptr]() -> std::tuple<char*, size_t> {
-    constexpr size_t kMaxLogBufSize = 1024 * 1024;
-    void* buf = core_allocator_ptr->get_thread_local_buf(core_allocator_ptr->impl, kMaxLogBufSize);
-    return {static_cast<char*>(buf), kMaxLogBufSize};
-  };
 }
 
 void AimRTCore::ResetCoreLogger() {
   logger_ptr_->get_log_level_func = aimrt::common::util::SimpleLogger::GetLogLevel;
   logger_ptr_->log_func = aimrt::common::util::SimpleLogger::Log;
-  logger_ptr_->get_log_buf_func = []() -> std::tuple<char*, size_t> { return {nullptr, 0}; };
 }
 
 aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_name) {
@@ -238,9 +229,9 @@ aimrt::executor::ExecutorRef AimRTCore::GetExecutor(std::string_view executor_na
 
 void AimRTCore::InitCoreProxy(const util::ModuleDetailInfo& info, module::CoreProxy& proxy) {
   proxy.SetConfigurator(configurator_manager_.GetConfiguratorProxy(info).NativeHandle());
-  proxy.SetAllocator(allocator_manager_.GetAllocatorProxy(info).NativeHandle());
   proxy.SetExecutorManager(executor_manager_.GetExecutorManagerProxy(info).NativeHandle());
   proxy.SetLogger(logger_manager_.GetLoggerProxy(info).NativeHandle());
+  proxy.SetAllocator(allocator_manager_.GetAllocatorProxy(info).NativeHandle());
   proxy.SetRpcHandle(rpc_manager_.GetRpcHandleProxy(info).NativeHandle());
   proxy.SetChannelHandle(channel_manager_.GetChannelHandleProxy(info).NativeHandle());
   proxy.SetParameterHandle(parameter_manager_.GetParameterHandleProxy(info).NativeHandle());
@@ -265,9 +256,9 @@ std::string AimRTCore::GenInitializationReport() const {
 
   report.splice(report.end(), configurator_manager_.GenInitializationReport());
   report.splice(report.end(), plugin_manager_.GenInitializationReport());
-  report.splice(report.end(), allocator_manager_.GenInitializationReport());
   report.splice(report.end(), executor_manager_.GenInitializationReport());
   report.splice(report.end(), logger_manager_.GenInitializationReport());
+  report.splice(report.end(), allocator_manager_.GenInitializationReport());
   report.splice(report.end(), rpc_manager_.GenInitializationReport());
   report.splice(report.end(), channel_manager_.GenInitializationReport());
   report.splice(report.end(), parameter_manager_.GenInitializationReport());

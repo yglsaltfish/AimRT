@@ -29,7 +29,7 @@ class LoggerManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
     YAML::Node thread_options_node = YAML::Load(R"str(
-      executors:
+    executors:
       - name: work_thread_pool
         type: asio_thread
         options:

@@ -46,17 +46,14 @@ base_info:
 ```
 # 依赖的标准模块
 depends_std_modules:
-  - name: ep-example-aimrt-module
-    git_repository: http://code.agibot.com/agi-ep/ep-example-aimrt-module.git
+  - name: xxx
+    git_repository: https://github.com/xxx/xxx.git
     git_tag: v0.1.5
     import_options:
       XXX: 'ON'
-  - name: ep-example-aimrt-protocols
-    git_repository: http://code.agibot.com/agi-ep/ep-example-aimrt-proto.git
+  - name: yyy
+    git_repository: https://github.com/yyy/yyy.git
     git_tag: v0.1.11
-  # - name: xxx
-  #   git_repository: http://xxx/xxx.git
-  #   git_tag: v1.x.x
 ```
 此处，您可指定您的工程依赖的一些外部的标准模块，
 `depends_std_modules`不是必备项， 如不需要可将其删除或者内容置为空。

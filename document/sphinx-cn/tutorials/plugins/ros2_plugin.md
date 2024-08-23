@@ -140,7 +140,7 @@ aimrt:
 
 Client端向Server端发起调用时，如果协议层是原生ROS2协议，那么通信时将完全复用ROS2的原生协议，原生ROS2节点可以基于该协议无缝与AimRT节点对接。
 
-如果Client端向Server端发起调用时，协议层没有使用ROS2协议，那么通信时将基于[RosRpcWrapper.srv](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/protocols/plugins/ros2_plugin_proto/srv/RosRpcWrapper.srv)这个ROS2协议进行包装，该协议内容如下：
+如果Client端向Server端发起调用时，协议层没有使用ROS2协议，那么通信时将基于{{ '[RosRpcWrapper.srv]({}/src/protocols/plugins/ros2_plugin_proto/srv/RosRpcWrapper.srv)'.format(code_site_root_path_url) }}这个ROS2协议进行包装，该协议内容如下：
 ```
 string  serialization_type
 byte[]  data
@@ -253,7 +253,7 @@ aimrt:
 
 如果消息发布订阅时，协议层是原生ROS2协议，那么通信时将完全复用ROS2的原生协议，原生ROS2节点可以基于该协议无缝与AimRT节点对接。
 
-如果消息发布订阅时，协议层没有使用ROS2协议，那么通信时将基于[RosMsgWrapper.msg](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/protocols/plugins/ros2_plugin_proto/msg/RosMsgWrapper.msg)这个ROS2协议进行包装，该协议内容如下：
+如果消息发布订阅时，协议层没有使用ROS2协议，那么通信时将基于{{ '[RosMsgWrapper.msg]({}/src/protocols/plugins/ros2_plugin_proto/msg/RosMsgWrapper.msg)'.format(code_site_root_path_url) }}这个ROS2协议进行包装，该协议内容如下：
 ```
 string  serialization_type
 byte[]  data

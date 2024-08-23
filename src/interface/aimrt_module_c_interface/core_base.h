@@ -60,15 +60,6 @@ typedef struct {
   const aimrt_configurator_base_t* (*configurator)(void* impl);
 
   /**
-   * @brief Function to get allocator handle
-   * @note
-   * Parameter definition:
-   * Input 1: Pointer to impl
-   * Output: Allocator handle
-   */
-  const aimrt_allocator_base_t* (*allocator_handle)(void* impl);
-
-  /**
    * @brief Function to get executor manager handle
    * @note
    * Parameter definition:
@@ -85,6 +76,15 @@ typedef struct {
    * Output: Logger handle
    */
   const aimrt_logger_base_t* (*logger)(void* impl);
+
+  /**
+   * @brief Function to get allocator handle
+   * @note
+   * Parameter definition:
+   * Input 1: Pointer to impl
+   * Output: Allocator handle
+   */
+  const aimrt_allocator_base_t* (*allocator_handle)(void* impl);
 
   /**
    * @brief Function to get rpc handle

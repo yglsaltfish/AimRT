@@ -25,7 +25,6 @@ class BlockQueue {
   BlockQueue(const BlockQueue &) = delete;
   BlockQueue &operator=(const BlockQueue &) = delete;
 
-  /// 添加元素
   void Enqueue(const T &item) {
     std::unique_lock<std::mutex> lck(mutex_);
     if (!running_flag_) throw BlockQueueStoppedException();
@@ -33,7 +32,6 @@ class BlockQueue {
     cond_.notify_one();
   }
 
-  /// 添加元素
   void Enqueue(T &&item) {
     std::unique_lock<std::mutex> lck(mutex_);
     if (!running_flag_) throw BlockQueueStoppedException();
@@ -41,7 +39,6 @@ class BlockQueue {
     cond_.notify_one();
   }
 
-  /// 阻塞式取出元素
   T Dequeue() {
     std::unique_lock<std::mutex> lck(mutex_);
     cond_.wait(lck, [this] { return !queue_.empty() || !running_flag_; });
@@ -51,7 +48,6 @@ class BlockQueue {
     return item;
   }
 
-  /// 非阻塞式取出元素
   std::optional<T> TryDequeue() {
     std::lock_guard<std::mutex> lck(mutex_);
     if (queue_.empty() || !running_flag_) [[unlikely]]
@@ -79,9 +75,9 @@ class BlockQueue {
   }
 
  protected:
-  mutable std::mutex mutex_;      ///< 同步锁
-  std::condition_variable cond_;  ///< 条件锁
-  std::queue<T> queue_;           ///< 队列
-  bool running_flag_ = true;      ///< 运行标志，为false时，当队列为空阻塞式取出将失败
+  mutable std::mutex mutex_;
+  std::condition_variable cond_;
+  std::queue<T> queue_;
+  bool running_flag_ = true;
 };
 }  // namespace aimrt::common::util

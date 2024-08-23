@@ -5,7 +5,7 @@
 
 
 
-**log_control_plugin**中注册了一个基于protobuf协议定义的RPC：`LogControlService`，提供了针对Log的一些运行时管理接口，协议文件为[log_control.proto](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/protocols/plugins/log_control_plugin/log_control.proto)。请注意，**log_control_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的RPC通信后端一块使用，例如[net_plugin](./net_plugin.md)中的http RPC后端。
+**log_control_plugin**中注册了一个基于protobuf协议定义的RPC：`LogControlService`，提供了针对Log的一些运行时管理接口，协议文件为{{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}。请注意，**log_control_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的RPC通信后端一块使用，例如[net_plugin](./net_plugin.md)中的http RPC后端。
 
 
 
@@ -36,7 +36,7 @@ aimrt:
 
 ## LogControlService
 
-在[log_control.proto](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/protocols/plugins/log_control_plugin/log_control.proto)中，定义了一个`LogControlService`，提供了如下接口：
+在{{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}中，定义了一个`LogControlService`，提供了如下接口：
 - GetModuleLogLevel：获取模块日志等级
 - SetModuleLogLevel：设置模块日志等级
 

@@ -95,6 +95,8 @@ void LoggerManager::Initialize(YAML::Node options_node) {
     logger_backend_vec_.emplace_back(std::move(logger_backend_ptr));
   }
 
+  AIMRT_CHECK_WARN(!logger_backend_vec_.empty(), "No log backend!");
+
   options_node = options_;
 
   AIMRT_INFO("Logger manager init complete");

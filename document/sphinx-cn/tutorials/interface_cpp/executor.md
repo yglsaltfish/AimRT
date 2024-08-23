@@ -15,9 +15,9 @@ void Execute(std::function<void()>);
 
 相关链接：
 - 代码文件：
-  - [aimrt_module_cpp_interface/executor/executor_manager.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/executor/executor_manager.h)
-  - [aimrt_module_cpp_interface/executor/executor.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/executor/executor.h)
-- 参考示例：[executor_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/executor/module/executor_module/executor_module.cc)
+  - {{ '[aimrt_module_cpp_interface/executor/executor_manager.h]({}/src/interface/aimrt_module_cpp_interface/executor/executor_manager.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/executor/executor.h]({}/src/interface/aimrt_module_cpp_interface/executor/executor.h)'.format(code_site_root_path_url) }}
+- 参考示例：{{ '[executor_module.cc]({}/src/examples/cpp/executor/module/executor_module/executor_module.cc)'.format(code_site_root_path_url) }}
 
 
 在AimRT中，模块可以通过调用`CoreRef`句柄的`GetExecutorManager()`接口，获取`aimrt::configurator::ExecutorManagerRef`句柄，其中提供了一个简单的获取Executor的接口：
@@ -235,14 +235,14 @@ class HelloWorldModule : public aimrt::ModuleBase {
 
 相关链接：
 - 代码文件：
-  - [aimrt_module_cpp_interface/co/aimrt_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)
-  - [aimrt_module_cpp_interface/co/async_scope.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/async_scope.h)
-  - [aimrt_module_cpp_interface/co/inline_scheduler.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/inline_scheduler.h)
-  - [aimrt_module_cpp_interface/co/on.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/on.h)
-  - [aimrt_module_cpp_interface/co/schedule.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/schedule.h)
-  - [aimrt_module_cpp_interface/co/sync_wait.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/sync_wait.h)
-  - [aimrt_module_cpp_interface/co/task.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/co/task.h)
-- 参考示例：[executor_co_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/executor/module/executor_co_module/executor_co_module.cc)
+  - {{ '[aimrt_module_cpp_interface/co/aimrt_context.h]({}/src/interface/aimrt_module_cpp_interface/co/aimrt_context.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/co/async_scope.h]({}/src/interface/aimrt_module_cpp_interface/co/async_scope.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/co/inline_scheduler.h]({}/src/interface/aimrt_module_cpp_interface/co/inline_scheduler.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/co/on.h]({}/src/interface/aimrt_module_cpp_interface/co/on.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/co/schedule.h]({}/src/interface/aimrt_module_cpp_interface/co/schedule.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/co/sync_wait.h]({}/src/interface/aimrt_module_cpp_interface/co/sync_wait.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/co/task.h]({}/src/interface/aimrt_module_cpp_interface/co/task.h)'.format(code_site_root_path_url) }}
+- 参考示例：{{ '[executor_co_module.cc]({}/src/examples/cpp/executor/module/executor_co_module/executor_co_module.cc)'.format(code_site_root_path_url) }}
 
 AimRT框架中，为执行器封装了基于C++20协程和`libunifex`库的一个协程形式接口。关于协程和`libunifex`库的详细使用方式，请参考[libunifex官方文档](https://github.com/facebookexperimental/libunifex)。
 

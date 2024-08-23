@@ -43,14 +43,14 @@ class AimRTCore {
     PreInitGuardThread,
     PostInitGuardThread,
 
-    PreInitAllocator,
-    PostInitAllocator,
-
     PreInitExecutor,
     PostInitExecutor,
 
     PreInitLog,
     PostInitLog,
+
+    PreInitAllocator,
+    PostInitAllocator,
 
     PreInitRpc,
     PostInitRpc,
@@ -112,14 +112,14 @@ class AimRTCore {
   auto& GetGuardThreadExecutor() { return guard_thread_executor_; }
   const auto& GetGuardThreadExecutor() const { return guard_thread_executor_; }
 
-  auto& GetAllocatorManager() { return allocator_manager_; }
-  const auto& GetAllocatorManager() const { return allocator_manager_; }
-
   auto& GetExecutorManager() { return executor_manager_; }
   const auto& GetExecutorManager() const { return executor_manager_; }
 
   auto& GetLoggerManager() { return logger_manager_; }
   const auto& GetLoggerManager() const { return logger_manager_; }
+
+  auto& GetAllocatorManager() { return allocator_manager_; }
+  const auto& GetAllocatorManager() const { return allocator_manager_; }
 
   auto& GetRpcManager() { return rpc_manager_; }
   const auto& GetRpcManager() const { return rpc_manager_; }
@@ -162,9 +162,9 @@ class AimRTCore {
   plugin::PluginManager plugin_manager_;
   executor::MainThreadExecutor main_thread_executor_;
   executor::GuardThreadExecutor guard_thread_executor_;
-  allocator::AllocatorManager allocator_manager_;
   executor::ExecutorManager executor_manager_;
   logger::LoggerManager logger_manager_;
+  allocator::AllocatorManager allocator_manager_;
   rpc::RpcManager rpc_manager_;
   channel::ChannelManager channel_manager_;
   parameter::ParameterManager parameter_manager_;

@@ -43,7 +43,7 @@
 | playback_actions[i].options.topic_meta_list[j].msg_type     | string        | 必选  | ""        | 要播放的消息类型 |
 
 
-此外，插件还注册了一个基于protobuf协议定义的RPC：`RecordPlaybackService`，提供了信号触发模式下的一些接口，协议文件为[record_playback.proto](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/protocols/plugins/record_playback_plugin/record_playback.proto)。请注意，**record_playback_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的RPC通信后端一块使用，例如[net_plugin](./net_plugin.md)中的http RPC后端。
+此外，插件还注册了一个基于protobuf协议定义的RPC：`RecordPlaybackService`，提供了信号触发模式下的一些接口，协议文件为{{ '[record_playback.proto]({}/src/protocols/plugins/record_playback_plugin/record_playback.proto)'.format(code_site_root_path_url) }}。请注意，**record_playback_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的RPC通信后端一块使用，例如[net_plugin](./net_plugin.md)中的http RPC后端。
 
 
 

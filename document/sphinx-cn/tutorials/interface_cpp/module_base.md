@@ -3,8 +3,8 @@
 ## ModuleBase类型概述
 
 相关链接：
-- 代码文件：[aimrt_module_cpp_interface/module_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/module_base.h)
-- 参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+- 代码文件：{{ '[aimrt_module_cpp_interface/module_base.h]({}/src/interface/aimrt_module_cpp_interface/module_base.h)'.format(code_site_root_path_url) }}
+- 参考示例：{{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
 
 `ModuleBase`类型是一个模块基类类型，开发者可以继承`ModuleBase`类型来实现自己的`Module`，它定义了业务模块所需要实现的几个接口：
