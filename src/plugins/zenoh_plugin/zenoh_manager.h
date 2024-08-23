@@ -5,7 +5,6 @@
 
 #include "zenoh.h"
 #include "zenoh_plugin/global.h"
-#include "zenoh_plugin/util.h"
 
 namespace aimrt::plugins::zenoh_plugin {
 class ZenohManager {

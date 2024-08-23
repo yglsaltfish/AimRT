@@ -32,8 +32,7 @@ void ZenohManager::Shutdown() {
   printf("Zenoh manager shutdown\n");
 }
 
-void ZenohManager::RegisterPublisher(const std::string &url) {
-  std::string keyexpr = Url2Keyexpr(url);
+void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
 
@@ -51,8 +50,7 @@ void ZenohManager::RegisterPublisher(const std::string &url) {
   return;
 }
 
-void ZenohManager::RegisterSubscriber(const std::string &url, MsgHandleFunc handle) {
-  std::string keyexpr = Url2Keyexpr(url);
+void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc handle) {
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
   z_owned_closure_sample_t z_callback_;
@@ -81,12 +79,10 @@ void ZenohManager::RegisterSubscriber(const std::string &url, MsgHandleFunc hand
   return;
 }
 
-void ZenohManager::Publish(const std::string &url, char *serialized_data_ptr, uint64_t serialized_data_len) {
-  std::string topic = Url2Keyexpr(url);
-
+void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, uint64_t serialized_data_len) {
   auto z_pub_iter = z_pub_registry_.find(topic);
   if (z_pub_iter == z_pub_registry_.end()) {
-    AIMRT_ERROR("Url: {} is not registered!", url);
+    AIMRT_ERROR("Url: {} is not registered!", topic);
     return;
   }
 

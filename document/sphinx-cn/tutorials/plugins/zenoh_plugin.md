@@ -19,7 +19,7 @@ aimrt:
       - name: zenoh_plugin # 【必选】插件名称
         path: ./libaimrt_zenoh_plugin.so #【可选】插件路径。如果是硬编码注册的插件不需要填
 ```
-**zenoh_plugin**插件基于插件基于[zenoh.c](https://github.com/eclipse-zenoh/zenoh-c)开发的的。请注意，该插件在编译过程依赖于[Rust](https://www.rust-lang.org/)，请确保运行环境中存在Rust编译器，否则该插件将自动关闭。
+**zenoh_plugin**插件基于插件基于[zenoh.c](https://github.com/eclipse-zenoh/zenoh-c)开发的的。`请注意`，该插件在编译过程依赖于[Rust](https://www.rust-lang.org/)，请确保运行环境中存在Rust编译器，否则该插件将自动关闭，尽管在编译选项中是开启状态。
 
 ## `zenoh` Channel后端
 
@@ -59,7 +59,7 @@ channel: # 【可选】Channel配置根节点
 
 在这个过程中，底层使用的Zenoh Topic名称格式为：`channel/${topic_name}/${message_type}`。其中，`${topic_name}`为AimRT的Topic名称，`${message_type}`为url编码后的AimRT消息名称。这个Topic被设置成为Zenoh的键表达式（Keyxpr）,这是Zenoh的提供的资源标识符，只有键表达式匹配的订阅者和发布者才能够进行通信。
 
-例如，AimRT Topic名称为`test_topic`，消息类型为`pb:aimrt.protocols.example.ExampleEventMsg`，则最终Zenoh的topic名称为：`channel/test_topic/pb%3Aaimrt.protocols.example.ExampleEventMsg`。
+例如，AimRT Topic名称为`test_topic`，消息类型为`pb:aimrt.protocols.example.ExampleEventMsg`，则最终Zenoh的topic名称为：`channel/test_topic/pb%3Aaimrt.protocols.example.ExampleEventMsg`。如果订阅者和发布者的Topic均为`channel/test_topic/pb%3Aaimrt.protocols.example.ExampleEventMsg`，则二者可以进行通信。
 
 在AimRT发布端发布数据到订阅端这个链路上，Zenoh数据包格式整体分3段：
 - 序列化类型，一般是`pb`或`json`
