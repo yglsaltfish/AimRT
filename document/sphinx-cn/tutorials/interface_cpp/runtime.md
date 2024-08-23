@@ -15,7 +15,7 @@ AimRT为CPP版本的Module提供了两种部署集成方式：
 
 ## App模式
 
-开发者直接引用CMake Target：**aimrt::runtime::core**，然后即可使用[core/aimrt_core.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/runtime/core/aimrt_core.h)文件中的`aimrt::runtime::core::AimRTCore`类，在App模式下需要使用的核心接口如下：
+开发者直接引用CMake Target：**aimrt::runtime::core**，然后即可使用{{ '[core/aimrt_core.h]({}/src/runtime/core/aimrt_core.h)'.format(code_site_root_path_url) }}文件中的`aimrt::runtime::core::AimRTCore`类，在App模式下需要使用的核心接口如下：
 
 ```cpp
 namespace aimrt::runtime::core {
@@ -206,7 +206,7 @@ int32_t main(int32_t argc, char** argv) {
 
 ## Pkg模式
 
-开发者可以引用CMake Target：**aimrt::interface::aimrt_pkg_c_interface**，在其中的头文件[aimrt_pkg_c_interface/pkg_main.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_pkg_c_interface/pkg_main.h)中，定义了4个要实现的接口：
+开发者可以引用CMake Target：**aimrt::interface::aimrt_pkg_c_interface**，在其中的头文件{{ '[aimrt_pkg_c_interface/pkg_main.h]({}/src/interface/aimrt_pkg_c_interface/pkg_main.h)'.format(code_site_root_path_url) }}中，定义了4个要实现的接口：
 
 ```cpp
 #ifdef __cplusplus
@@ -233,7 +233,7 @@ void AimRTDynlibDestroyModule(const aimrt_module_base_t* module_ptr);
 通过这4个接口，AimRT框架运行时可以从Pkg动态库中获取想要的模块。开发者需要在一个`C/CPP`文件中实现这些接口来创建一个Pkg。
 
 
-这些接口是纯C形式的，但如果开发者使用C++，也可以使用[aimrt_pkg_c_interface/pkg_macro.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_pkg_c_interface/pkg_macro.h)文件中的一个简单的宏来封装这些细节，用户只需要实现一个内容类型为`std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>>`的静态数组即可，在其中表明模块的名称和模块创建方法。
+这些接口是纯C形式的，但如果开发者使用C++，也可以使用{{ '[aimrt_pkg_c_interface/pkg_macro.h]({}/src/interface/aimrt_pkg_c_interface/pkg_macro.h)'.format(code_site_root_path_url) }}文件中的一个简单的宏来封装这些细节，用户只需要实现一个内容类型为`std::tuple<std::string_view, std::function<aimrt::ModuleBase*()>>`的静态数组即可，在其中表明模块的名称和模块创建方法。
 
 以下是一个简单的示例，开发者需要链接自己的模块lib，然后编写如下的`pkg_main.cc`文件：
 

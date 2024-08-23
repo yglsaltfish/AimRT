@@ -25,7 +25,6 @@ inline bool IsSequence(const rosidl_typesupport_introspection_cpp::MessageMember
   return ((member.is_array_ && member.array_size_ == 0) || member.is_upper_bound_);
 }
 
-// 写入数组的单个item
 template <int RosTypeId>
 inline void WriteSequenceMemberItem(const Json::Value &json, uint8_t *buffer) {
   using CppType = typename TypeMappingCpp<RosTypeId>::CppType;
@@ -64,7 +63,6 @@ inline void WriteSequenceMemberItem<rosidl_typesupport_introspection_cpp::ROS_TY
   throw std::runtime_error("Not support json to wstring type");
 }
 
-// 写入整个数组
 template <int RosTypeId>
 inline void WriteSequence(
     const Json::Value &json,
@@ -78,7 +76,6 @@ inline void WriteSequence(
   }
 }
 
-// 写入单个item
 template <int RosTypeId>
 inline void WriteMemberItem(const Json::Value &json, uint8_t *buffer) {
   using CppType = typename TypeMappingCpp<RosTypeId>::CppType;
@@ -153,7 +150,6 @@ inline void WriteMemberSequenceNested(
   }
 }
 
-// 复合类型
 inline void WriteMemberNested(
     const Json::Value &json,
     uint8_t *buffer,

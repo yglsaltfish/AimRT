@@ -3,8 +3,8 @@
 ## CoreRef句柄概述
 
 相关链接：
-- 代码文件：[aimrt_module_cpp_interface/core.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/core.h)
-- 参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+- 代码文件：{{ '[aimrt_module_cpp_interface/core.h]({}/src/interface/aimrt_module_cpp_interface/core.h)'.format(code_site_root_path_url) }}
+- 参考示例：{{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
 
 `aimrt::CoreRef`是调用框架功能的句柄类型，可以通过以下两种方式获取：

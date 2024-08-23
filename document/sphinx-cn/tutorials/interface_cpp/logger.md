@@ -3,7 +3,7 @@
 ## AimRT中的独立日志组件
 
 相关链接：
-- 代码文件：[util/log_util.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/common/util/log_util.h)
+- 代码文件：{{ '[util/log_util.h]({}/src/common/util/log_util.h)'.format(code_site_root_path_url) }}
 
 
 在AimRT框架中，有一个独立的通用日志组件，属于**aimrt::common::util**这个CMake Target，只需要`#include "util/log_util.h"`即可独立于接口层使用。其中提供了一些基础的日志宏，这些日志宏需要在调用时传入一个日志句柄，来定义日志打印行为的具体表现。日志句柄以模板concept的形式定义，只要是类似于以下这个示例、包含`GetLogLevel`和`Log`两个接口的C++类的实例都可以作为日志句柄：
@@ -100,8 +100,8 @@ int Main() {
 ## 日志句柄
 
 相关链接：
-- 代码文件：[aimrt_module_cpp_interface/logger/logger.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/logger/logger.h)
-- 参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+- 代码文件：{{ '[aimrt_module_cpp_interface/logger/logger.h]({}/src/interface/aimrt_module_cpp_interface/logger/logger.h)'.format(code_site_root_path_url) }}
+- 参考示例：{{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
 在AimRT中，模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`aimrt::logger::LoggerRef`句柄，这是一个包含`GetLogLevel`和`Log`接口的类，满足上一节中对日志句柄的要求，可以直接作为日志宏的参数。其核心接口如下：
 ```cpp

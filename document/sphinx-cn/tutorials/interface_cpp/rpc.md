@@ -5,14 +5,14 @@
 
 相关链接：
 - 代码文件：
-  - [aimrt_module_cpp_interface/rpc/rpc_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_handle.h)
-  - [aimrt_module_cpp_interface/rpc/rpc_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_context.h)
-  - [aimrt_module_cpp_interface/rpc/rpc_status.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_status.h)
-  - [aimrt_module_cpp_interface/rpc/rpc_co_filter.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_co_filter.h)
-  - [aimrt_module_cpp_interface/rpc/rpc_async_filter.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_async_filter.h)
+  - {{ '[aimrt_module_cpp_interface/rpc/rpc_handle.h]({}/src/interface/aimrt_module_cpp_interface/rpc/rpc_handle.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/rpc/rpc_context.h]({}/src/interface/aimrt_module_cpp_interface/rpc/rpc_context.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/rpc/rpc_status.h]({}/src/interface/aimrt_module_cpp_interface/rpc/rpc_status.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/rpc/rpc_co_filter.h]({}/src/interface/aimrt_module_cpp_interface/rpc/rpc_co_filter.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/rpc/rpc_async_filter.h]({}/src/interface/aimrt_module_cpp_interface/rpc/rpc_async_filter.h)'.format(code_site_root_path_url) }}
 - 参考示例：
-  - [protobuf_rpc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc)
-  - [ros2_rpc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc)
+  - {{ '[protobuf_rpc]({}/src/examples/cpp/protobuf_rpc)'.format(code_site_root_path_url) }}
+  - {{ '[ros2_rpc]({}/src/examples/cpp/ros2_rpc)'.format(code_site_root_path_url) }}
 
 
 AimRT中，模块可以通过调用`CoreRef`句柄的`GetRpcHandle()`接口，获取`aimrt::rpc::RpcHandleRef`句柄。开发者在使用RPC功能时必须要按照一定的步骤，调用几个核心接口：
@@ -72,7 +72,7 @@ protoc --aimrt_rpc_out=. --plugin=protoc-gen-aimrt_rpc=./protoc_plugin_py_gen_ai
 
 这将生成`rpc.aimrt_rpc.pb.h`和`rpc.aimrt_rpc.pb.cc`文件，包含了根据定义的服务生成的C++类和方法。
 
-请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufAimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/protoc_plugin_cpp_gen_aimrt_cpp_rpc/ProtobufAimRTRpcGenCode.cmake)文件中提供的CMake方法：
+请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在{{ '[ProtobufAimRTRpcGenCode.cmake]({}/src/tools/protoc_plugin_cpp_gen_aimrt_cpp_rpc/ProtobufAimRTRpcGenCode.cmake)'.format(code_site_root_path_url) }}文件中提供的CMake方法：
 
 - `add_protobuf_aimrt_rpc_gencode_target_for_proto_files`：为一些.proto文件生成C++代码，参数如下：
   - **TARGET_NAME**：生成的CMake Target名称；
@@ -130,7 +130,7 @@ python3 ARGS ./ros2_py_gen_aimrt_cpp_rpc.py --pkg_name=example_pkg --srv_file=./
 这将生成`example.aimrt_rpc.srv.h`和`example.aimrt_rpc.srv.cc`文件，包含了根据定义的服务生成的C++类和方法。
 
 
-请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在[Ros2AimRTRpcGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/tools/ros2_py_gen_aimrt_cpp_rpc/Ros2AimRTRpcGenCode.cmake)文件中提供的CMake方法：
+请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用的话需要手动处理依赖和CMake封装等方面的问题，并不推荐在项目中直接使用。开发者可以直接使用AimRT在{{ '[Ros2AimRTRpcGenCode.cmake]({}/src/tools/ros2_py_gen_aimrt_cpp_rpc/Ros2AimRTRpcGenCode.cmake)'.format(code_site_root_path_url) }}文件中提供的CMake方法：
 
 
 - `add_ros2_aimrt_rpc_gencode_target_for_one_file`：为单个srv文件生成RPC服务C++代码，参数如下：
@@ -164,8 +164,8 @@ target_link_libraries(my_lib PUBLIC example_ros2_rpc_aimrt_rpc_gencode)
 
 相关链接：
 - 代码文件：
- - [aimrt_module_cpp_interface/rpc/rpc_status.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_status.h)
- - [aimrt_module_c_interface/rpc/rpc_status_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)
+ - {{ '[aimrt_module_cpp_interface/rpc/rpc_status.h]({}/src/interface/aimrt_module_cpp_interface/rpc/rpc_status.h)'.format(code_site_root_path_url) }}
+ - {{ '[aimrt_module_c_interface/rpc/rpc_status_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)'.format(code_site_root_path_url) }}
 
 
 在RPC调用或者RPC处理时，使用者可以通过一个`aimrt::rpc::Status`类型的变量获取RPC过程中的错误情况，其包含的接口如下：
@@ -194,7 +194,7 @@ class Status {
 }  // namespace aimrt::rpc
 ```
 
-`Status`类型非常轻量，其中只包含一个错误码字段。使用者可以通过构造函数或Set方法设置这个code，也可以通过Get方法获取这个code。错误码的枚举值可以参考[rpc_status_base.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)文件中的定义。
+`Status`类型非常轻量，其中只包含一个错误码字段。使用者可以通过构造函数或Set方法设置这个code，也可以通过Get方法获取这个code。错误码的枚举值可以参考{{ '[rpc_status_base.h]({}/src/interface/aimrt_module_c_interface/rpc/rpc_status_base.h)'.format(code_site_root_path_url) }}文件中的定义。
 
 
 
@@ -202,7 +202,7 @@ class Status {
 
 
 相关链接：
-- 代码文件：[aimrt_module_cpp_interface/rpc/rpc_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/rpc/rpc_context.h)
+- 代码文件：{{ '[aimrt_module_cpp_interface/rpc/rpc_context.h]({}/src/interface/aimrt_module_cpp_interface/rpc/rpc_context.h)'.format(code_site_root_path_url) }}
 
 
 开发者在调用RPC时，可以传入一个`aimrt::rpc::Context`，在处理RPC时，也会得到一个`aimrt::rpc::ContextRef`。`ContextRef`类型是`Context`类型的引用，两者包含的接口基本一致，如下：
@@ -286,8 +286,8 @@ class XXXProxy {
 ### 同步型接口
 
 参考示例：
-- [protobuf_rpc_sync_client](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
-- [ros2_rpc_sync_client](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)
+- {{ '[protobuf_rpc_sync_client]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_sync_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_client_module/normal_rpc_sync_client_module.cc)'.format(code_site_root_path_url) }}
 
 
 同步型接口在使用上最简单，但在运行效率上是最低的。它通过阻塞当前线程，等待RPC接口返回。一般可以在一些不要求性能的场合为了提高开发效率而使用这种方式，但不推荐在高性能要求的场景使用。
@@ -348,8 +348,8 @@ void HelloWorldModule::Foo() {
 ### 异步回调型接口
 
 参考示例：
-- [protobuf_rpc_async_client](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
-- [ros2_rpc_async_client](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)
+- {{ '[protobuf_rpc_async_client]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_async_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_async_client_module/normal_rpc_async_client_module.cc)'.format(code_site_root_path_url) }}
 
 
 异步回调型接口使用回调来返回异步结果，在性能上表现最好，但开发友好度是最低的，很容易陷入回调地狱。
@@ -412,8 +412,8 @@ void HelloWorldModule::Foo() {
 ### 异步Future型接口
 
 参考示例：
-- [protobuf_rpc_future_client](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)
-- [ros2_rpc_future_client](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)
+- {{ '[protobuf_rpc_future_client]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_future_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_future_client_module/normal_rpc_future_client_module.cc)'.format(code_site_root_path_url) }}
 
 
 异步Future型接口基于`std::future`来返回异步结果，开发者可以在发起RPC调用后先去做其他事情，等需要RPC结果时在调用`std::future::get`方法来阻塞的获取结果。它在一定程度上兼顾了性能和开发友好度，属于同步型和异步回调型中间的一个选择。
@@ -479,8 +479,8 @@ void HelloWorldModule::Foo() {
 ### 无栈协程型接口
 
 参考示例：
-- [protobuf_rpc_co_client](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
-- [ros2_rpc_co_client](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)
+- {{ '[protobuf_rpc_co_client]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_co_client]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_co_client_module/normal_rpc_co_client_module.cc)'.format(code_site_root_path_url) }}
 
 
 AimRT为RPC Client端提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步回调型接口的封装，在性能上基本与异步回调型接口一致，但大大提升了开发友好度。
@@ -551,8 +551,8 @@ co::Task<void> HelloWorldModule::Foo() {
 ### 同步型接口
 
 参考示例：
-- [protobuf_rpc_sync_service](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_server_module/service.cc)
-- [ros2_rpc_sync_service](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_server_module/service.cc)
+- {{ '[protobuf_rpc_sync_service]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_sync_server_module/service.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_sync_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_sync_server_module/service.cc)'.format(code_site_root_path_url) }}
 
 
 同步型接口在使用上最简单，但很多时候实现的service中需要请求下游，会有一些异步调用，这种情况下只能阻塞的等待下游调用完成，可能会造成运行效率上的降低。一般可以在处理一些简单的请求、不需要发起其他异步调用的场景下使用同步型接口。
@@ -602,8 +602,8 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 ### 异步回调型接口
 
 参考示例：
-- [protobuf_rpc_async_service](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_server_module/service.cc)
-- [ros2_rpc_async_service](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)
+- {{ '[protobuf_rpc_async_service]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_async_server_module/service.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_async_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_async_server_module/service.cc)'.format(code_site_root_path_url) }}
 
 
 异步回调型接口会传递一个回调给开发者，开发者在RPC处理完成后调用这个回调来传递最终处理结果。这种方式可以在RPC中发起其他异步调用，由于不会阻塞，因此性能表现通常最好，但通常会导致开发出的代码难以阅读和维护。
@@ -653,8 +653,8 @@ bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
 ### 无栈协程型接口
 
 参考示例：
-- [protobuf_rpc_co_service](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_rpc/module/normal_rpc_co_server_module/service.cc)
-- [ros2_rpc_co_service](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_rpc/module/normal_rpc_co_server_module/service.cc)
+- {{ '[protobuf_rpc_co_service]({}/src/examples/cpp/protobuf_rpc/module/normal_rpc_co_server_module/service.cc)'.format(code_site_root_path_url) }}
+- {{ '[ros2_rpc_co_service]({}/src/examples/cpp/ros2_rpc/module/normal_rpc_co_server_module/service.cc)'.format(code_site_root_path_url) }}
 
 
 与RPC Client端一样，在RPC Service端，AimRT也提供了一套基于C++20协程和[C++ executors提案](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0443r14.html)当前的一个实现库[libunifex](https://github.com/facebookexperimental/libunifex)来实现的一套无栈协程形式的接口。无栈协程接口在本质上是对异步回调型接口的封装，在性能上基本与异步回调型接口一致，但大大提升了开发友好度。

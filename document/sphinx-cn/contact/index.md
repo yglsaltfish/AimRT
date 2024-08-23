@@ -3,7 +3,7 @@
 
 ## Issues
 
-如果您在使用过程中遇到任何问题，或者想提出任何建议，请在[AimRT官方Git仓库](https://code.agibot.com/agibot_aima/aimrt)上新建您的 Issue。在新建 Issue 时，请先搜索 Issue，以确保您的问题没有被提出过。新建 Issue 时，请参考对应类型的模板。
+如果您在使用过程中遇到任何问题，或者想提出任何建议，请在{{ '[AimRT官方Git仓库]({})'.format(code_site_url) }}上新建您的 Issue。在新建 Issue 时，请先搜索 Issue，以确保您的问题没有被提出过。新建 Issue 时，请参考对应类型的模板。
 
 ### 需求类Issue
 - **标题**：【需求】实现 xxxx 功能

@@ -46,11 +46,10 @@ class SimpleLogger {
         sizeof(lvl_name_array) / sizeof(lvl_name_array[0]);
     if (lvl >= lvl_name_array_size) lvl = lvl_name_array_size;
 
-    size_t tid;
 #if defined(_WIN32)
-    tid = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    thread_local size_t tid(std::hash<std::thread::id>{}(std::this_thread::get_id()));
 #else
-    tid = gettid();
+    thread_local size_t tid(gettid());
 #endif
 
     auto t = std::chrono::system_clock::now();
@@ -100,11 +99,10 @@ class SimpleAsyncLogger {
     if (lvl >= lvl_name_array_size) [[unlikely]]
       lvl = lvl_name_array_size;
 
-    size_t tid;
 #if defined(_WIN32)
-    tid = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    thread_local size_t tid(std::hash<std::thread::id>{}(std::this_thread::get_id()));
 #else
-    tid = gettid();
+    thread_local size_t tid(gettid());
 #endif
 
     auto t = std::chrono::system_clock::now();
@@ -156,17 +154,11 @@ struct LoggerWrapper {
     log_func(lvl, line, column, file_name, function_name, log_data, log_data_size);
   }
 
-  std::tuple<char*, size_t> GetLogBuf() const {
-    return get_log_buf_func();
-  }
-
   using GetLogLevelFunc = std::function<uint32_t(void)>;
   using LogFunc = std::function<void(uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, size_t)>;
-  using GetLogBufFunc = std::function<std::tuple<char*, size_t>(void)>;
 
   GetLogLevelFunc get_log_level_func = SimpleLogger::GetLogLevel;
   LogFunc log_func = SimpleLogger::Log;
-  GetLogBufFunc get_log_buf_func = []() -> std::tuple<char*, size_t> { return {nullptr, 0}; };
 };
 
 template <typename T>
@@ -176,32 +168,15 @@ concept LoggerType =
       { t.Log(0, 0, 0, nullptr, nullptr, nullptr, 0) };
     };
 
-template <typename T>
-concept LoggerWithBufType =
-    requires(T t) {
-      { t.GetLogLevel() } -> std::same_as<uint32_t>;
-      { t.Log(0, 0, 0, nullptr, nullptr, nullptr, 0) };
-      { t.GetLogBuf() } -> std::same_as<std::tuple<char*, size_t>>;
-    };
-
 template <LoggerType Logger, typename... Args>
-inline void LogImpl(const Logger& logger,
-                    uint32_t lvl,
-                    uint32_t line,
-                    uint32_t column,
-                    const char* file_name,
-                    const char* function_name,
-                    ::aimrt_fmt::format_string<Args...> fmt,
-                    Args&&... args) {
-  if constexpr (aimrt::common::util::LoggerWithBufType<Logger>) {
-    auto [buf, buf_size] = logger.GetLogBuf();
-    if (buf != nullptr) {
-      auto format_ret = ::aimrt_fmt::format_to_n(buf, buf_size, fmt, (Args &&) args...);
-      logger.Log(lvl, line, column, file_name, function_name, buf, format_ret.size);
-      return;
-    }
-  }
-
+void LogImpl(const Logger& logger,
+             uint32_t lvl,
+             uint32_t line,
+             uint32_t column,
+             const char* file_name,
+             const char* function_name,
+             ::aimrt_fmt::format_string<Args...> fmt,
+             Args&&... args) {
   std::string log_str = ::aimrt_fmt::format(fmt, (Args &&) args...);
   logger.Log(lvl, line, column, file_name, function_name, log_str.c_str(), log_str.size());
 }

@@ -49,7 +49,12 @@ myst_enable_extensions = [
     "colon_fence",
     "smartquotes",
     "replacements",
-    # "linkify",
+    "linkify",
     "substitution",
     "tasklist",
 ]
+
+myst_substitutions = {
+    "code_site_url": "https://code.agibot.com/agibot_aima/aimrt",
+    "code_site_root_path_url": "https://code.agibot.com/agibot_aima/aimrt/-/blob/main",
+}

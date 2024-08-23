@@ -4,15 +4,15 @@
 
 相关链接：
 - 代码文件：
-  - [aimrt_module_cpp_interface/channel/channel_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/channel/channel_context.h)
-  - [aimrt_module_cpp_interface/channel/channel_handle.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/channel/channel_handle.h)
+  - {{ '[aimrt_module_cpp_interface/channel/channel_context.h]({}/src/interface/aimrt_module_cpp_interface/channel/channel_context.h)'.format(code_site_root_path_url) }}
+  - {{ '[aimrt_module_cpp_interface/channel/channel_handle.h]({}/src/interface/aimrt_module_cpp_interface/channel/channel_handle.h)'.format(code_site_root_path_url) }}
 - Protobuf Channel（需CMake引用**aimrt::interface::aimrt_module_protobuf_interface**）：
-  - [aimrt_module_protobuf_interface/channel/protobuf_channel.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_protobuf_interface/channel/protobuf_channel.h)
+  - {{ '[aimrt_module_protobuf_interface/channel/protobuf_channel.h]({}/src/interface/aimrt_module_protobuf_interface/channel/protobuf_channel.h)'.format(code_site_root_path_url) }}
 - Ros2 Channel（需CMake引用**aimrt::interface::aimrt_module_ros2_interface**）：
-  - [aimrt_module_ros2_interface/channel/ros2_channel.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_ros2_interface/channel/ros2_channel.h)
+  - {{ '[aimrt_module_ros2_interface/channel/ros2_channel.h]({}/src/interface/aimrt_module_ros2_interface/channel/ros2_channel.h)'.format(code_site_root_path_url) }}
 - 参考示例：
-  - [protobuf_channel](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_channel)
-  - [ros2_channel](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_channel)
+  - {{ '[protobuf_channel]({}/src/examples/cpp/protobuf_channel)'.format(code_site_root_path_url) }}
+  - {{ '[ros2_channel]({}/src/examples/cpp/ros2_channel)'.format(code_site_root_path_url) }}
 
 AimRT中，模块可以通过调用`CoreRef`句柄的`GetChannelHandle()`接口，获取`aimrt::channel::ChannelHandleRef`句柄，来使用Channel功能。其提供的核心接口如下：
 ```cpp
@@ -64,7 +64,7 @@ protoc --cpp_out=. example.proto
 
 这将生成`example.pb.h`和`example.pb.cc`文件，包含了根据定义的消息类型生成的C++类和方法。
 
-请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用时还需要手动处理依赖和CMake封装等方面的问题，因此并不推荐在项目中直接使用。开发者可以直接使用AimRT在[ProtobufGenCode.cmake](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/cmake/ProtobufGenCode.cmake)文件中提供的两个CMake方法：
+请注意，以上这套原生的代码生成方式只是为了给开发者展示底层的原理，实际使用时还需要手动处理依赖和CMake封装等方面的问题，因此并不推荐在项目中直接使用。开发者可以直接使用AimRT在{{ '[ProtobufGenCode.cmake]({}/cmake/ProtobufGenCode.cmake)'.format(code_site_root_path_url) }}文件中提供的两个CMake方法：
 - `add_protobuf_gencode_target_for_proto_path`：为某个路径下的.proto文件生成C++代码，参数如下：
   - **TARGET_NAME**：生成的CMake Target名称；
   - **PROTO_PATH**：协议存放目录；
@@ -116,7 +116,7 @@ rosidl_generate_interfaces(example_msg_gencode
 ## Context
 
 相关链接：
-- 代码文件：[aimrt_module_cpp_interface/channel/channel_context.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/channel/channel_context.h)
+- 代码文件：{{ '[aimrt_module_cpp_interface/channel/channel_context.h]({}/src/interface/aimrt_module_cpp_interface/channel/channel_context.h)'.format(code_site_root_path_url) }}
 
 开发者在发布Channel消息时，可以传入一个`aimrt::channel::Context`，在订阅Channel消息时，也可以选择向回调中传入一个`aimrt::channel::ContextRef`。`ContextRef`类型是`Context`类型的引用，两者包含的接口基本一致，如下：
 
@@ -162,8 +162,8 @@ class ContextRef {
 
 相关链接：
 - 参考示例：
-  - protobuf_channel:[normal_publisher_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)
-  - ros2_channel:[normal_publisher_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_channel/module/normal_publisher_module/normal_publisher_module.cc)
+  - protobuf_channel:{{ '[normal_publisher_module.cc]({}/src/examples/cpp/protobuf_channel/module/normal_publisher_module/normal_publisher_module.cc)'.format(code_site_root_path_url) }}
+  - ros2_channel:{{ '[normal_publisher_module.cc]({}/src/examples/cpp/ros2_channel/module/normal_publisher_module/normal_publisher_module.cc)'.format(code_site_root_path_url) }}
 
 
 AimRT提供了两种风格的接口来发布一个消息：
@@ -232,8 +232,8 @@ Proxy类型接口可以绑定类型信息和一个默认Context，还能设置Ho
 
 相关链接：
 - 参考示例：
-  - protobuf_channel:[normal_subscriber_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
-  - ros2_channel:[normal_subscriber_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/ros2_channel/module/normal_subscriber_module/normal_subscriber_module.cc)
+  - protobuf_channel:{{ '[normal_subscriber_module.cc]({}/src/examples/cpp/protobuf_channel/module/normal_subscriber_module/normal_subscriber_module.cc)'.format(code_site_root_path_url) }}
+  - ros2_channel:{{ '[normal_subscriber_module.cc]({}/src/examples/cpp/ros2_channel/module/normal_subscriber_module/normal_subscriber_module.cc)'.format(code_site_root_path_url) }}
 
 
 AimRT提供了**函数风格**和**Proxy风格**两种风格类型的接口来订阅一个消息，同时还提供了**智能指针形式**和**协程形式**两种回调函数：

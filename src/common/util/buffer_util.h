@@ -13,7 +13,7 @@
 
 namespace aimrt::common::util {
 
-// 将uin64_t类型以小端形式存储到buf中
+// Store the uin64_t type as a small terminal in buf
 inline void SetBufFromUint64(char *p, uint64_t n) {
   p[0] = (char)(n & 0xFF);
   p[1] = (char)((n >> 8) & 0xFF);
@@ -25,7 +25,7 @@ inline void SetBufFromUint64(char *p, uint64_t n) {
   p[7] = (char)((n >> 56) & 0xFF);
 }
 
-// 以小端形式从buf中获取uin64_t类型
+// Retrieve the uin64_t type from buf in the form of a small terminal
 inline uint64_t GetUint64FromBuf(const char *p) {
   return (uint64_t)((uint8_t)(p[0])) +
          ((uint64_t)((uint8_t)(p[1])) << 8) +
@@ -37,7 +37,7 @@ inline uint64_t GetUint64FromBuf(const char *p) {
          ((uint64_t)((uint8_t)(p[7])) << 56);
 }
 
-// 将uin32_t类型以小端形式存储到buf中
+// Store the uint32_t type as a small terminal in buf
 inline void SetBufFromUint32(char *p, uint32_t n) {
   if constexpr (std::endian::native == std::endian::little) {
     memcpy(p, &n, 4);
@@ -49,7 +49,7 @@ inline void SetBufFromUint32(char *p, uint32_t n) {
   }
 }
 
-// 以小端形式从buf中获取uin32_t类型
+// Retrieve the uint32_t type from buf in the form of a small terminal
 inline uint32_t GetUint32FromBuf(const char *p) {
   if constexpr (std::endian::native == std::endian::little) {
     return *((uint32_t *)p);
@@ -61,7 +61,7 @@ inline uint32_t GetUint32FromBuf(const char *p) {
   }
 }
 
-// 将uin16_t类型以小端形式存储到buf中
+// Store the uint16_t type as a small terminal in buf
 inline void SetBufFromUint16(char *p, uint16_t n) {
   if constexpr (std::endian::native == std::endian::little) {
     memcpy(p, &n, 2);
@@ -71,7 +71,7 @@ inline void SetBufFromUint16(char *p, uint16_t n) {
   }
 }
 
-// 以小端形式从buf中获取uin16_t类型
+// Retrieve the uint16_t type from buf in the form of a small terminal
 inline uint16_t GetUint16FromBuf(const char *p) {
   if constexpr (std::endian::native == std::endian::little) {
     return *((uint16_t *)p);

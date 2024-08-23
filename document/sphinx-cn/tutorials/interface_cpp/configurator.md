@@ -3,8 +3,8 @@
 ## ConfiguratorRef句柄概述
 
 相关链接：
-- 代码文件：[aimrt_module_cpp_interface/configurator/configurator.h](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)
-- 参考示例：[helloworld_module.cc](https://code.agibot.com/agibot_aima/aimrt/-/blob/main/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)
+- 代码文件：{{ '[aimrt_module_cpp_interface/configurator/configurator.h]({}/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)'.format(code_site_root_path_url) }}
+- 参考示例：{{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
 `aimrt::configurator::ConfiguratorRef`类型是一个配置句柄类型，模块可以通过调用`CoreRef`句柄的`GetConfigurator()`接口获取该类型的句柄，通过它使用一些配置相关的功能。其提供的核心接口如下：
 
