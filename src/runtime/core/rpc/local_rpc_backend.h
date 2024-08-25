@@ -30,7 +30,7 @@ class LocalRpcBackend : public RpcBackendBase {
       : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~LocalRpcBackend() override = default;
 
-  std::string_view Name() const override { return "local"; }
+  std::string_view Name() const noexcept override { return "local"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
@@ -42,7 +42,7 @@ class LocalRpcBackend : public RpcBackendBase {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  void SetRpcRegistry(const RpcRegistry* rpc_registry_ptr) override {
+  void SetRpcRegistry(const RpcRegistry* rpc_registry_ptr) noexcept override {
     rpc_registry_ptr_ = rpc_registry_ptr;
   }
 

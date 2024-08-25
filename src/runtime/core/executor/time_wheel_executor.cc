@@ -132,60 +132,75 @@ void TimeWheelExecutor::Shutdown() {
   get_executor_func_ = std::function<aimrt::executor::ExecutorRef(std::string_view)>();
 }
 
-bool TimeWheelExecutor::IsInCurrentExecutor() const {
-  return bind_executor_ref_
-             ? bind_executor_ref_.IsInCurrentExecutor()
-             : (tid_ == std::this_thread::get_id());
-}
-
-void TimeWheelExecutor::Execute(aimrt::executor::Task&& task) {
-  if (bind_executor_ref_) {
-    bind_executor_ref_.Execute(std::move(task));
-    return;
+bool TimeWheelExecutor::IsInCurrentExecutor() const noexcept {
+  try {
+    return bind_executor_ref_
+               ? bind_executor_ref_.IsInCurrentExecutor()
+               : (tid_ == std::this_thread::get_id());
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
   }
-
-  std::unique_lock<std::mutex> lck(imd_mutex_);
-  imd_queue_.emplace(std::move(task));
+  return false;
 }
 
-std::chrono::system_clock::time_point TimeWheelExecutor::Now() const {
+void TimeWheelExecutor::Execute(aimrt::executor::Task&& task) noexcept {
+  try {
+    if (bind_executor_ref_) {
+      bind_executor_ref_.Execute(std::move(task));
+      return;
+    }
+
+    std::unique_lock<std::mutex> lck(imd_mutex_);
+    imd_queue_.emplace(std::move(task));
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+  }
+}
+
+std::chrono::system_clock::time_point TimeWheelExecutor::Now() const noexcept {
   std::shared_lock<std::shared_mutex> lck(tick_mutex_);
 
-  return aimrt::common::util::GetTimePointFromTimestampNs(current_tick_count_ * dt_count_ + start_time_point_);
+  return aimrt::common::util::GetTimePointFromTimestampNs(
+      current_tick_count_ * dt_count_ + start_time_point_);
 }
 
-void TimeWheelExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
-  uint64_t virtual_tp = aimrt::common::util::GetTimestampNs(tp) - start_time_point_;
+void TimeWheelExecutor::ExecuteAt(
+    std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
+  try {
+    uint64_t virtual_tp = aimrt::common::util::GetTimestampNs(tp) - start_time_point_;
 
-  std::unique_lock<std::shared_mutex> lck(tick_mutex_);
+    std::unique_lock<std::shared_mutex> lck(tick_mutex_);
 
-  if (virtual_tp < current_tick_count_ * dt_count_) {
-    lck.unlock();
-    Execute(std::move(task));
-    return;
-  }
-
-  // 当前时间点 time_point_
-  uint64_t temp_current_tick_count = current_tick_count_;
-  uint64_t diff_tick_count = virtual_tp / dt_count_ - current_tick_count_;
-
-  const size_t len = options_.wheel_size.size();
-  for (size_t ii = 0; ii < len; ++ii) {
-    if (diff_tick_count < options_.wheel_size[ii]) {
-      auto pos = (diff_tick_count + temp_current_tick_count) % options_.wheel_size[ii];
-
-      // TODO：基于时间将任务排序后插进去
-      timing_wheel_vec_[ii].wheel[pos].emplace_back(
-          TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
+    if (virtual_tp < current_tick_count_ * dt_count_) {
+      lck.unlock();
+      Execute(std::move(task));
       return;
-    } else {
-      diff_tick_count /= options_.wheel_size[ii];
-      temp_current_tick_count /= options_.wheel_size[ii];
     }
-  }
 
-  timing_task_map_[diff_tick_count + temp_current_tick_count].emplace_back(
-      TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
+    // 当前时间点 time_point_
+    uint64_t temp_current_tick_count = current_tick_count_;
+    uint64_t diff_tick_count = virtual_tp / dt_count_ - current_tick_count_;
+
+    const size_t len = options_.wheel_size.size();
+    for (size_t ii = 0; ii < len; ++ii) {
+      if (diff_tick_count < options_.wheel_size[ii]) {
+        auto pos = (diff_tick_count + temp_current_tick_count) % options_.wheel_size[ii];
+
+        // TODO：基于时间将任务排序后插进去
+        timing_wheel_vec_[ii].wheel[pos].emplace_back(
+            TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
+        return;
+      } else {
+        diff_tick_count /= options_.wheel_size[ii];
+        temp_current_tick_count /= options_.wheel_size[ii];
+      }
+    }
+
+    timing_task_map_[diff_tick_count + temp_current_tick_count].emplace_back(
+        TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+  }
 }
 
 void TimeWheelExecutor::RegisterGetExecutorFunc(

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
+#include "core/channel/channel_backend_tools.h"
 #include "util/stl_tool.h"
 
 namespace aimrt::runtime::core::channel {
@@ -139,10 +140,16 @@ bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
             });
 
         filter_collector.InvokeChannel(
-            [sub_func_ptr = sub_func_shared_ptr.get(),
+            [this,
+             sub_func_ptr = sub_func_shared_ptr.get(),
              release_callback_shared_ptr](MsgWrapper& msg_wrapper) {
+              if (!TryCheckMsg(msg_wrapper)) [[unlikely]] {
+                AIMRT_WARN("Msg is null!");
+                return;
+              }
+
               aimrt::channel::SubscriberReleaseCallback release_callback(
-                  [release_callback_shared_ptr]() {});
+                  [release_callback_shared_ptr, msg_cache_ptr{msg_wrapper.msg_cache_ptr}]() {});
 
               (*sub_func_ptr)(
                   msg_wrapper.ctx_ref.NativeHandle(),
@@ -312,7 +319,9 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& wrapper) {
 
         filter_collector.InvokeChannel(
             [&callback, release_callback_shared_ptr](MsgWrapper& msg_wrapper) {
-              callback(msg_wrapper, [release_callback_shared_ptr]() {});
+              callback(
+                  msg_wrapper,
+                  [release_callback_shared_ptr, msg_cache_ptr{msg_wrapper.msg_cache_ptr}]() {});
             },
             msg_wrapper);
       };

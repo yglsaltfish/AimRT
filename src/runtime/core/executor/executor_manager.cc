@@ -88,9 +88,9 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 
     AIMRT_TRACE("Gen executor '{}' success.", executor_ptr->Name());
 
-    executor_proxy_map_.emplace(
-        executor_options.name,
-        std::make_unique<ExecutorProxy>(executor_ptr.get()));
+    auto proxy_ptr = std::make_unique<ExecutorProxy>(executor_ptr.get());
+
+    executor_proxy_map_.emplace(executor_options.name, std::move(proxy_ptr));
 
     executor_vec_.emplace_back(std::move(executor_ptr));
   }
@@ -138,7 +138,8 @@ void ExecutorManager::RegisterExecutorGenFunc(
   executor_gen_func_map_.emplace(type, std::move(executor_gen_func));
 }
 
-const ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(const util::ModuleDetailInfo& module_info) {
+const ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(
+    const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::Init,
       "Method can only be called when state is 'Init'.");
@@ -146,14 +147,16 @@ const ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(const util:
   auto itr = executor_manager_proxy_map_.find(module_info.name);
   if (itr != executor_manager_proxy_map_.end()) return *(itr->second);
 
-  auto emplace_ret = executor_manager_proxy_map_.emplace(
-      module_info.name,
-      std::make_unique<ExecutorManagerProxy>(executor_proxy_map_));
+  auto proxy_ptr = std::make_unique<ExecutorManagerProxy>(executor_proxy_map_);
+  proxy_ptr->SetLogger(logger_ptr_);
+
+  auto emplace_ret = executor_manager_proxy_map_.emplace(module_info.name, std::move(proxy_ptr));
 
   return *(emplace_ret.first->second);
 }
 
-aimrt::executor::ExecutorRef ExecutorManager::GetExecutor(std::string_view executor_name) {
+aimrt::executor::ExecutorRef ExecutorManager::GetExecutor(
+    std::string_view executor_name) {
   auto finditr = executor_proxy_map_.find(executor_name);
   if (finditr != executor_proxy_map_.end())
     return aimrt::executor::ExecutorRef(finditr->second->NativeHandle());

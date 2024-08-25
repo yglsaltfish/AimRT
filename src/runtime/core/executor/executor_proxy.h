@@ -6,7 +6,9 @@
 #include <unordered_map>
 
 #include "core/executor/executor_base.h"
+#include "util/log_util.h"
 #include "util/string_util.h"
+#include "util/time_util.h"
 
 namespace aimrt::runtime::core::executor {
 
@@ -46,17 +48,11 @@ class ExecutorProxy {
           static_cast<ExecutorBase*>(impl)->Execute(aimrt::executor::Task(task));  //
         },
         .now = [](void* impl) -> uint64_t {
-          return static_cast<uint64_t>(
-              std::chrono::duration_cast<std::chrono::nanoseconds>(
-                  static_cast<ExecutorBase*>(impl)->Now().time_since_epoch())
-                  .count());
+          return aimrt::common::util::GetTimestampNs(static_cast<ExecutorBase*>(impl)->Now());
         },
         .execute_at_ns = [](void* impl, uint64_t tp, aimrt_function_base_t* task) {
           static_cast<ExecutorBase*>(impl)->ExecuteAt(
-              std::chrono::system_clock::time_point(
-                  std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(
-                      std::chrono::nanoseconds(tp))),
-              aimrt::executor::Task(task));  //
+              aimrt::common::util::GetTimePointFromTimestampNs(tp), aimrt::executor::Task(task));  //
         },
         .impl = impl};
   }
@@ -80,31 +76,31 @@ class ExecutorManagerProxy {
   ExecutorManagerProxy(const ExecutorManagerProxy&) = delete;
   ExecutorManagerProxy& operator=(const ExecutorManagerProxy&) = delete;
 
+  void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
+
   const aimrt_executor_manager_base_t* NativeHandle() const { return &base_; }
 
  private:
-  ExecutorProxy* GetExecutor(std::string_view executor_name) const {
-    auto finditr = executor_proxy_map_.find(executor_name);
-    if (finditr != executor_proxy_map_.end()) return finditr->second.get();
+  const aimrt_executor_base_t* GetExecutor(aimrt_string_view_t executor_name) const {
+    auto finditr = executor_proxy_map_.find(aimrt::util::ToStdStringView(executor_name));
+    if (finditr != executor_proxy_map_.end()) return finditr->second->NativeHandle();
 
-    // TODO，使找不到executor时打一个日志
-    // AIMRT_WARN("Get executor failed, executor name '{}'", executor_name);
+    AIMRT_WARN("Can not find executor '{}'.", aimrt::util::ToStdStringView(executor_name));
 
     return nullptr;
   }
 
   static aimrt_executor_manager_base_t GenBase(void* impl) {
     return aimrt_executor_manager_base_t{
-        .get_executor = [](void* impl, aimrt_string_view_t executor_name)
-            -> const aimrt_executor_base_t* {
-          auto ptr = static_cast<ExecutorManagerProxy*>(impl)->GetExecutor(
-              aimrt::util::ToStdStringView(executor_name));
-          return (ptr != nullptr) ? ptr->NativeHandle() : nullptr;
+        .get_executor = [](void* impl, aimrt_string_view_t executor_name) -> const aimrt_executor_base_t* {
+          return static_cast<ExecutorManagerProxy*>(impl)->GetExecutor(executor_name);
         },
         .impl = impl};
   }
 
  private:
+  std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
   const ExecutorProxyMap& executor_proxy_map_;
   const aimrt_executor_manager_base_t base_;
 };

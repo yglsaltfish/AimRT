@@ -2,6 +2,7 @@
 // All rights reserved.
 
 #include "core/channel/channel_manager.h"
+#include "core/channel/channel_backend_tools.h"
 #include "core/channel/local_channel_backend.h"
 
 namespace YAML {
@@ -392,13 +393,22 @@ void ChannelManager::RegisterDebugLogFilter() {
   RegisterPublishFilter(
       "debug_log",
       [this](MsgWrapper& msg_wrapper, FrameworkAsyncChannelHandle&& h) {
-        auto msg_str = msg_wrapper.SerializeMsgWithCache("json")->JoinToString();
+        auto buf_ptr = TrySerializeMsgWithCache(msg_wrapper, "json");
 
-        AIMRT_INFO("Channel publish a new msg. msg type: {}, topic name: {}, context: {}, msg: {}",
-                   msg_wrapper.info.msg_type,
-                   msg_wrapper.info.topic_name,
-                   msg_wrapper.ctx_ref.ToString(),
-                   msg_str);
+        if (buf_ptr) {
+          auto msg_str = buf_ptr->JoinToString();
+
+          AIMRT_INFO("Channel publish a new msg. msg type: {}, topic name: {}, context: {}, msg: {}",
+                     msg_wrapper.info.msg_type,
+                     msg_wrapper.info.topic_name,
+                     msg_wrapper.ctx_ref.ToString(),
+                     msg_str);
+        } else {
+          AIMRT_INFO("Channel publish a new msg. msg type: {}, topic name: {}, context: {}",
+                     msg_wrapper.info.msg_type,
+                     msg_wrapper.info.topic_name,
+                     msg_wrapper.ctx_ref.ToString());
+        }
 
         h(msg_wrapper);
       });
@@ -406,13 +416,22 @@ void ChannelManager::RegisterDebugLogFilter() {
   RegisterSubscribeFilter(
       "debug_log",
       [this](MsgWrapper& msg_wrapper, FrameworkAsyncChannelHandle&& h) {
-        auto msg_str = msg_wrapper.SerializeMsgWithCache("json")->JoinToString();
+        auto buf_ptr = TrySerializeMsgWithCache(msg_wrapper, "json");
 
-        AIMRT_INFO("Channel subscriber handle a new msg. msg type: {}, topic name: {}, context: {}, msg: {}",
-                   msg_wrapper.info.msg_type,
-                   msg_wrapper.info.topic_name,
-                   msg_wrapper.ctx_ref.ToString(),
-                   msg_str);
+        if (buf_ptr) {
+          auto msg_str = buf_ptr->JoinToString();
+
+          AIMRT_INFO("Channel subscriber handle a new msg. msg type: {}, topic name: {}, context: {}, msg: {}",
+                     msg_wrapper.info.msg_type,
+                     msg_wrapper.info.topic_name,
+                     msg_wrapper.ctx_ref.ToString(),
+                     msg_str);
+        } else {
+          AIMRT_INFO("Channel subscriber handle a new msg. msg type: {}, topic name: {}, context: {}",
+                     msg_wrapper.info.msg_type,
+                     msg_wrapper.info.topic_name,
+                     msg_wrapper.ctx_ref.ToString());
+        }
 
         h(msg_wrapper);
       });

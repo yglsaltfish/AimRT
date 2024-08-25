@@ -2,6 +2,9 @@
 // All rights reserved.
 
 #include "record_playback_plugin/record_action.h"
+
+#include <fstream>
+
 #include "record_playback_plugin/global.h"
 #include "util/string_util.h"
 

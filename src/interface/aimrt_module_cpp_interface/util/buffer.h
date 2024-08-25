@@ -100,6 +100,26 @@ class BufferArray {
 
 class BufferArrayView {
  public:
+  explicit BufferArrayView(const void* data, size_t len) {
+    buffer_array_view_vec_.emplace_back(
+        aimrt_buffer_view_t{.data = data, .len = len});
+
+    SyncCType();
+  }
+
+  explicit BufferArrayView(aimrt_buffer_t buffer) {
+    buffer_array_view_vec_.emplace_back(
+        aimrt_buffer_view_t{.data = buffer.data, .len = buffer.len});
+
+    SyncCType();
+  }
+
+  explicit BufferArrayView(aimrt_buffer_view_t buffer_view) {
+    buffer_array_view_vec_.emplace_back(buffer_view);
+
+    SyncCType();
+  }
+
   explicit BufferArrayView(aimrt_buffer_array_view_t buffer_array_view) {
     buffer_array_view_vec_.reserve(buffer_array_view.len);
     for (size_t ii = 0; ii < buffer_array_view.len; ++ii) {

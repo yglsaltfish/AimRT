@@ -113,37 +113,51 @@ void AsioThreadExecutor::Shutdown() {
   }
 }
 
-bool AsioThreadExecutor::IsInCurrentExecutor() const {
-  return (std::find(thread_id_vec_.begin(), thread_id_vec_.end(),
-                    std::this_thread::get_id()) != thread_id_vec_.end());
+bool AsioThreadExecutor::IsInCurrentExecutor() const noexcept {
+  try {
+    auto finditr = std::find(thread_id_vec_.begin(), thread_id_vec_.end(), std::this_thread::get_id());
+    return (finditr != thread_id_vec_.end());
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+  }
+  return false;
 }
 
-void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) {
-  boost::asio::post(*io_ptr_, std::move(task));
+void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
+  try {
+    boost::asio::post(*io_ptr_, std::move(task));
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+  }
 }
 
-void AsioThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
-  auto timer_ptr_ = std::make_shared<boost::asio::system_timer>(*io_ptr_);
-  timer_ptr_->expires_at(tp);
-  timer_ptr_->async_wait([this, timer_ptr_,
-                          task{std::move(task)}](boost::system::error_code ec) {
-    if (ec) [[unlikely]] {
-      AIMRT_ERROR("Asio thread executor '{}' timer get err, code '{}', msg: {}",
-                  Name(), ec.value(), ec.message());
-      return;
-    }
+void AsioThreadExecutor::ExecuteAt(
+    std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
+  try {
+    auto timer_ptr_ = std::make_shared<boost::asio::system_timer>(*io_ptr_);
+    timer_ptr_->expires_at(tp);
+    timer_ptr_->async_wait([this, timer_ptr_,
+                            task{std::move(task)}](boost::system::error_code ec) {
+      if (ec) [[unlikely]] {
+        AIMRT_ERROR("Asio thread executor '{}' timer get err, code '{}', msg: {}",
+                    Name(), ec.value(), ec.message());
+        return;
+      }
 
-    auto dif_time = std::chrono::system_clock::now() - timer_ptr_->expiry();
+      auto dif_time = std::chrono::system_clock::now() - timer_ptr_->expiry();
 
-    task();
+      task();
 
-    AIMRT_CHECK_WARN(
-        dif_time <= options_.timeout_alarm_threshold_us,
-        "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
-        "Perhaps the CPU load is too high",
-        Name(), std::chrono::duration_cast<std::chrono::microseconds>(dif_time),
-        options_.timeout_alarm_threshold_us);
-  });
+      AIMRT_CHECK_WARN(
+          dif_time <= options_.timeout_alarm_threshold_us,
+          "Asio thread executor '{}' timer delay too much, error time value '{}', require '{}'. "
+          "Perhaps the CPU load is too high",
+          Name(), std::chrono::duration_cast<std::chrono::microseconds>(dif_time),
+          options_.timeout_alarm_threshold_us);
+    });
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+  }
 }
 
 }  // namespace aimrt::runtime::core::executor

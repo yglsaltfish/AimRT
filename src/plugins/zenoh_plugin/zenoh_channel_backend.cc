@@ -46,196 +46,210 @@ void ZenohChannelBackend::Shutdown() {
 
 bool ZenohChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
-  if (state_.load() != State::Init) {
-    AIMRT_ERROR("Method can only be called when state is 'Init'.");
+  try {
+    if (state_.load() != State::Init) {
+      AIMRT_ERROR("Method can only be called when state is 'Init'.");
+      return false;
+    }
+
+    const auto& info = publish_type_wrapper.info;
+
+    // check path
+    namespace util = aimrt::common::util;
+    std::string pattern = std::string("channel/") +
+                          util::UrlEncode(info.topic_name) + "/" +
+                          util::UrlEncode(info.msg_type);
+
+    if (pattern.size() > 255) {
+      AIMRT_ERROR("Too long uri: {}", pattern);
+      return false;
+    }
+    zenoh_manager_ptr_->RegisterPublisher(pattern);
+    AIMRT_INFO("Register publish type to zenoh channel, url: {}", pattern);
+
+    return true;
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
     return false;
   }
-
-  const auto& info = publish_type_wrapper.info;
-
-  // check path
-  namespace util = aimrt::common::util;
-  std::string pattern = std::string("channel/") +
-                        util::UrlEncode(info.topic_name) + "/" +
-                        util::UrlEncode(info.msg_type);
-
-  if (pattern.size() > 255) {
-    AIMRT_ERROR("Too long uri: {}", pattern);
-    return false;
-  }
-  zenoh_manager_ptr_->RegisterPublisher(pattern);
-  AIMRT_INFO("Register publish type to zenoh channel, url: {}", pattern);
-
-  return true;
 }
 
 bool ZenohChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
-  if (state_.load() != State::Init) {
-    AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
+  try {
+    if (state_.load() != State::Init) {
+      AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
+      return false;
+    }
+
+    const auto& info = subscribe_wrapper.info;
+    namespace util = aimrt::common::util;
+
+    std::string pattern = std::string("channel/") +
+                          util::UrlEncode(info.topic_name) + "/" +
+                          util::UrlEncode(info.msg_type);
+
+    auto find_itr = subscribe_wrapper_map_.find(pattern);
+    if (find_itr != subscribe_wrapper_map_.end()) {
+      find_itr->second->emplace_back(&subscribe_wrapper);
+      return true;
+    }
+    auto emplace_ret = subscribe_wrapper_map_.emplace(
+        pattern,
+        std::make_unique<std::vector<const runtime::core::channel::SubscribeWrapper*>>(
+            std::vector<const runtime::core::channel::SubscribeWrapper*>{&subscribe_wrapper}));
+    auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
+
+    auto handle =
+        [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](const z_loaned_sample_t* message) {
+          try {
+            auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+
+            const z_loaned_bytes_t* payload = z_sample_payload(message);
+            size_t serialized_size = z_bytes_len(payload);
+            z_bytes_reader_t reader = z_bytes_get_reader(payload);
+            std::vector<char> serialized_data(serialized_size);
+
+            if (z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size) >= 0) {
+              util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
+              std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+              ctx_ptr->SetSerializationType(serialization_type);
+
+              size_t ctx_num = buf_oper.GetUint8();
+              for (size_t ii = 0; ii < ctx_num; ++ii) {
+                auto key = buf_oper.GetString(util::BufferLenType::UINT16);
+                auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+                ctx_ptr->SetMetaValue(key, val);
+              }
+
+              ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
+              ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
+
+              auto remaining_buf = buf_oper.GetRemainingBuffer();
+              aimrt_buffer_view_t buffer_view{
+                  .data = remaining_buf.data(),
+                  .len = remaining_buf.size()};
+
+              aimrt_buffer_array_view_t buffer_array_view{
+                  .data = &buffer_view,
+                  .len = 1};
+
+              std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
+              for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
+                if (msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path) != msg_ptr_map.end())
+                  continue;
+                auto subscribe_type_support_ref = subscribe_wrapper_ptr->info.msg_type_support_ref;
+
+                std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
+
+                bool deserialize_ret = subscribe_type_support_ref.Deserialize(
+                    serialization_type, buffer_array_view, msg_ptr.get());
+                AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Zenoh msg deserialize failed! ");
+
+                msg_ptr_map.emplace(subscribe_wrapper_ptr->info.pkg_path, msg_ptr);
+              }
+
+              for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
+                auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path);
+                std::shared_ptr<void> msg_ptr = finditr->second;
+
+                runtime::core::channel::MsgWrapper sub_msg_wrapper{
+                    .info = subscribe_wrapper_ptr->info,
+                    .msg_ptr = msg_ptr.get(),
+                    .ctx_ref = ctx_ptr};
+                subscribe_wrapper_ptr->callback(sub_msg_wrapper, [msg_ptr, ctx_ptr]() {});
+              }
+
+            } else {
+              AIMRT_ERROR("Zenoh Plugin Read payload failed!");
+            }
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Handle Zenoh channel msg failed, exception info: {}", e.what());
+          }
+        };
+
+    zenoh_manager_ptr_->RegisterSubscriber(pattern, std::move(handle));
+    return true;
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
     return false;
   }
-
-  const auto& info = subscribe_wrapper.info;
-  namespace util = aimrt::common::util;
-
-  std::string pattern = std::string("channel/") +
-                        util::UrlEncode(info.topic_name) + "/" +
-                        util::UrlEncode(info.msg_type);
-
-  auto find_itr = subscribe_wrapper_map_.find(pattern);
-  if (find_itr != subscribe_wrapper_map_.end()) {
-    find_itr->second->emplace_back(&subscribe_wrapper);
-    return true;
-  }
-  auto emplace_ret = subscribe_wrapper_map_.emplace(
-      pattern,
-      std::make_unique<std::vector<const runtime::core::channel::SubscribeWrapper*>>(
-          std::vector<const runtime::core::channel::SubscribeWrapper*>{&subscribe_wrapper}));
-  auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
-
-  auto handle =
-      [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](const z_loaned_sample_t* message) {
-        try {
-          auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
-
-          const z_loaned_bytes_t* payload = z_sample_payload(message);
-          size_t serialized_size = z_bytes_len(payload);
-          z_bytes_reader_t reader = z_bytes_get_reader(payload);
-          std::vector<char> serialized_data(serialized_size);
-
-          if (z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size) >= 0) {
-            util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
-            std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
-            ctx_ptr->SetSerializationType(serialization_type);
-
-            size_t ctx_num = buf_oper.GetUint8();
-            for (size_t ii = 0; ii < ctx_num; ++ii) {
-              auto key = buf_oper.GetString(util::BufferLenType::UINT16);
-              auto val = buf_oper.GetString(util::BufferLenType::UINT16);
-              ctx_ptr->SetMetaValue(key, val);
-            }
-
-            ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
-            ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
-
-            auto remaining_buf = buf_oper.GetRemainingBuffer();
-            aimrt_buffer_view_t buffer_view{
-                .data = remaining_buf.data(),
-                .len = remaining_buf.size()};
-
-            aimrt_buffer_array_view_t buffer_array_view{
-                .data = &buffer_view,
-                .len = 1};
-
-            std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
-            for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-              if (msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path) != msg_ptr_map.end())
-                continue;
-              auto subscribe_type_support_ref = subscribe_wrapper_ptr->info.msg_type_support_ref;
-
-              std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
-
-              bool deserialize_ret = subscribe_type_support_ref.Deserialize(
-                  serialization_type, buffer_array_view, msg_ptr.get());
-              AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Zenoh msg deserialize failed! ");
-
-              msg_ptr_map.emplace(subscribe_wrapper_ptr->info.pkg_path, msg_ptr);
-            }
-
-            for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-              auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path);
-              std::shared_ptr<void> msg_ptr = finditr->second;
-
-              runtime::core::channel::MsgWrapper sub_msg_wrapper{
-                  .info = subscribe_wrapper_ptr->info,
-                  .msg_ptr = msg_ptr.get(),
-                  .ctx_ref = ctx_ptr};
-              subscribe_wrapper_ptr->callback(sub_msg_wrapper, [msg_ptr, ctx_ptr]() {});
-            }
-
-          } else {
-            AIMRT_ERROR("Zenoh Plugin Read payload failed!");
-          }
-        } catch (const std::exception& e) {
-          AIMRT_WARN("Handle Zenoh channel msg failed, exception info: {}", e.what());
-        }
-      };
-
-  zenoh_manager_ptr_->RegisterSubscriber(pattern, std::move(handle));
-  return true;
 }
 
 void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
-  if (state_.load() != State::Start) [[unlikely]] {
-    AIMRT_WARN("Method can only be called when state is 'Start'.");
+  try {
+    if (state_.load() != State::Start) [[unlikely]] {
+      AIMRT_WARN("Method can only be called when state is 'Start'.");
+      return;
+    }
+    namespace util = aimrt::common::util;
+    const auto& info = msg_wrapper.info;
+
+    auto publish_type_support_ref = info.msg_type_support_ref;
+
+    auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+    if (serialization_type.empty()) {
+      serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
+    }
+
+    auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
+    if (!buffer_array_view_ptr) [[unlikely]] {
+      AIMRT_ERROR(
+          "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+          serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
+      return;
+    }
+
+    auto buffer_array_data = buffer_array_view_ptr->Data();
+    const size_t buffer_array_len = buffer_array_view_ptr->Size();
+    size_t msg_size = buffer_array_view_ptr->BufferSize();
+
+    const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
+    if (keys.size() > 255) [[unlikely]] {
+      AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
+      return;
+    }
+
+    std::vector<std::string_view> context_meta_kv;
+    size_t context_meta_kv_size = 1;
+    for (const auto& key : keys) {
+      context_meta_kv_size += (2 + key.size());
+      context_meta_kv.emplace_back(key);
+
+      auto val = msg_wrapper.ctx_ref.GetMetaValue(key);
+      context_meta_kv_size += (2 + val.size());
+      context_meta_kv.emplace_back(val);
+    }
+
+    int32_t pkg_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
+
+    std::vector<char> serialized_data(pkg_size);
+    util::BufferOperator buf_oper(serialized_data.data(), pkg_size);
+    buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+
+    buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
+    for (const auto& s : context_meta_kv) {
+      buf_oper.SetString(s, util::BufferLenType::UINT16);
+    }
+
+    for (size_t ii = 0; ii < buffer_array_len; ++ii) {
+      buf_oper.SetBuffer(
+          static_cast<const char*>(buffer_array_data[ii].data),
+          buffer_array_data[ii].len);
+    }
+
+    std::string zenoh_pub_topic = std::string("channel/") +
+                                  util::UrlEncode(info.topic_name) + "/" +
+                                  util::UrlEncode(info.msg_type);
+
+    AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
+
+    zenoh_manager_ptr_->Publish(zenoh_pub_topic, serialized_data.data(), pkg_size);
+
     return;
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
   }
-  namespace util = aimrt::common::util;
-  const auto& info = msg_wrapper.info;
-
-  auto publish_type_support_ref = info.msg_type_support_ref;
-
-  auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
-  if (serialization_type.empty()) {
-    serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
-  }
-
-  auto buffer_array_view_ptr = msg_wrapper.SerializeMsgWithCache(serialization_type);
-  if (!buffer_array_view_ptr) [[unlikely]] {
-    AIMRT_ERROR(
-        "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-        serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
-    return;
-  }
-
-  auto buffer_array_data = buffer_array_view_ptr->Data();
-  const size_t buffer_array_len = buffer_array_view_ptr->Size();
-  size_t msg_size = buffer_array_view_ptr->BufferSize();
-
-  const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
-  if (keys.size() > 255) [[unlikely]] {
-    AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
-    return;
-  }
-
-  std::vector<std::string_view> context_meta_kv;
-  size_t context_meta_kv_size = 1;
-  for (const auto& key : keys) {
-    context_meta_kv_size += (2 + key.size());
-    context_meta_kv.emplace_back(key);
-
-    auto val = msg_wrapper.ctx_ref.GetMetaValue(key);
-    context_meta_kv_size += (2 + val.size());
-    context_meta_kv.emplace_back(val);
-  }
-
-  int32_t pkg_size = 1 + serialization_type.size() + context_meta_kv_size + msg_size;
-
-  std::vector<char> serialized_data(pkg_size);
-  util::BufferOperator buf_oper(serialized_data.data(), pkg_size);
-  buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
-
-  buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
-  for (const auto& s : context_meta_kv) {
-    buf_oper.SetString(s, util::BufferLenType::UINT16);
-  }
-
-  for (size_t ii = 0; ii < buffer_array_len; ++ii) {
-    buf_oper.SetBuffer(
-        static_cast<const char*>(buffer_array_data[ii].data),
-        buffer_array_data[ii].len);
-  }
-
-  std::string zenoh_pub_topic = std::string("channel/") +
-                                util::UrlEncode(info.topic_name) + "/" +
-                                util::UrlEncode(info.msg_type);
-
-  AIMRT_TRACE("Zenoh publish to '{}'", zenoh_pub_topic);
-
-  zenoh_manager_ptr_->Publish(zenoh_pub_topic, serialized_data.data(), pkg_size);
-
-  return;
 }
 
 }  // namespace aimrt::plugins::zenoh_plugin

@@ -40,17 +40,17 @@ class TimeWheelExecutor : public ExecutorBase {
   void Start() override;
   void Shutdown() override;
 
-  std::string_view Type() const override { return "time_wheel"; }
-  std::string_view Name() const override { return name_; }
+  std::string_view Type() const noexcept override { return "time_wheel"; }
+  std::string_view Name() const noexcept override { return name_; }
 
-  bool ThreadSafe() const override { return thread_safe_; }
-  bool IsInCurrentExecutor() const override;
-  bool SupportTimerSchedule() const override { return true; }
+  bool ThreadSafe() const noexcept override { return thread_safe_; }
+  bool IsInCurrentExecutor() const noexcept override;
+  bool SupportTimerSchedule() const noexcept override { return true; }
 
-  void Execute(aimrt::executor::Task&& task) override;
+  void Execute(aimrt::executor::Task&& task) noexcept override;
 
-  std::chrono::system_clock::time_point Now() const override;
-  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) override;
+  std::chrono::system_clock::time_point Now() const noexcept override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept override;
 
   void RegisterGetExecutorFunc(
       const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func);

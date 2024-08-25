@@ -88,35 +88,39 @@ void RotateFileLoggerBackend::Initialize(YAML::Node options_node) {
   run_flag_.store(true);
 }
 
-void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) {
-  if (!run_flag_.load()) [[unlikely]]
-    return;
+void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept {
+  try {
+    if (!run_flag_.load()) [[unlikely]]
+      return;
 
-  if (!CheckLog(log_data_wrapper)) [[unlikely]]
-    return;
+    if (!CheckLog(log_data_wrapper)) [[unlikely]]
+      return;
 
-  std::string log_data_str(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
+    std::string log_data_str(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
 
-  auto log_work = [this, log_data_wrapper, log_data_str{std::move(log_data_str)}]() {
-    auto format_log_prefix_str = ::aimrt_fmt::format(
-        "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]",
-        aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
-        (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
-        LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
-        log_data_wrapper.thread_id,
-        log_data_wrapper.module_name,
-        log_data_wrapper.file_name,
-        log_data_wrapper.line,
-        log_data_wrapper.column,
-        log_data_wrapper.function_name);
+    auto log_work = [this, log_data_wrapper, log_data_str{std::move(log_data_str)}]() {
+      auto format_log_prefix_str = ::aimrt_fmt::format(
+          "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]",
+          aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
+          (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
+          LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
+          log_data_wrapper.thread_id,
+          log_data_wrapper.module_name,
+          log_data_wrapper.file_name,
+          log_data_wrapper.line,
+          log_data_wrapper.column,
+          log_data_wrapper.function_name);
 
-    if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
-      if (!OpenNewFile()) return;
-    }
-    ofs_ << format_log_prefix_str << log_data_str << std::endl;
-  };
+      if (!ofs_.is_open() || ofs_.tellp() > options_.max_file_size_m * 1024 * 1024) {
+        if (!OpenNewFile()) return;
+      }
+      ofs_ << format_log_prefix_str << log_data_str << std::endl;
+    };
 
-  log_executor_.Execute(std::move(log_work));
+    log_executor_.Execute(std::move(log_work));
+  } catch (const std::exception& e) {
+    fprintf(stderr, "Log get exception: %s", e.what());
+  }
 }
 
 bool RotateFileLoggerBackend::OpenNewFile() {

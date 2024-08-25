@@ -56,7 +56,7 @@ class RosTestRpcWrapperServer : public rclcpp::Node {
     rsp.SerializeToArray(wrapper_rsp->data.data(), serialized_size);
 
     wrapper_rsp->code = 0;
-    // RCLCPP_INFO(this->get_logger(), "handle service");
+    RCLCPP_INFO(this->get_logger(), "handle service");
   };
 };
 

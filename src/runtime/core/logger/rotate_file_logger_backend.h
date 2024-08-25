@@ -29,7 +29,7 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
   RotateFileLoggerBackend() = default;
   ~RotateFileLoggerBackend() override;
 
-  std::string_view Type() const override { return "rotate_file"; }
+  std::string_view Type() const noexcept override { return "rotate_file"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override {}
@@ -40,9 +40,9 @@ class RotateFileLoggerBackend : public LoggerBackendBase {
     get_executor_func_ = get_executor_func;
   }
 
-  bool AllowDuplicates() const override { return true; }
+  bool AllowDuplicates() const noexcept override { return true; }
 
-  void Log(const LogDataWrapper& log_data_wrapper) override;
+  void Log(const LogDataWrapper& log_data_wrapper) noexcept override;
 
  private:
   bool OpenNewFile();

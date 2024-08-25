@@ -31,7 +31,7 @@ class LocalChannelBackend : public ChannelBackendBase {
       : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
   ~LocalChannelBackend() override = default;
 
-  std::string_view Name() const override { return "local"; }
+  std::string_view Name() const noexcept override { return "local"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
@@ -43,7 +43,7 @@ class LocalChannelBackend : public ChannelBackendBase {
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  void SetChannelRegistry(const ChannelRegistry* channel_registry_ptr) override {
+  void SetChannelRegistry(const ChannelRegistry* channel_registry_ptr) noexcept override {
     channel_registry_ptr_ = channel_registry_ptr;
   }
 

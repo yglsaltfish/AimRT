@@ -41,17 +41,17 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   void Start() override;
   void Shutdown() override;
 
-  std::string_view Type() const override { return "time_manipulator"; }
-  std::string_view Name() const override { return name_; }
+  std::string_view Type() const noexcept override { return "time_manipulator"; }
+  std::string_view Name() const noexcept override { return name_; }
 
-  bool ThreadSafe() const override;
-  bool IsInCurrentExecutor() const override;
-  bool SupportTimerSchedule() const override { return true; }
+  bool ThreadSafe() const noexcept override { return thread_safe_; }
+  bool IsInCurrentExecutor() const noexcept override;
+  bool SupportTimerSchedule() const noexcept override { return true; }
 
-  void Execute(aimrt::executor::Task&& task) override;
+  void Execute(aimrt::executor::Task&& task) noexcept override;
 
-  std::chrono::system_clock::time_point Now() const override;
-  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) override;
+  std::chrono::system_clock::time_point Now() const noexcept override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept override;
 
   State GetState() const { return state_.load(); }
 
@@ -98,6 +98,7 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   executor::ExecutorRef bind_executor_ref_;
+  bool thread_safe_ = true;
 
   uint64_t dt_count_;
 

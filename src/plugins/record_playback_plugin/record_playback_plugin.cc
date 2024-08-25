@@ -6,6 +6,7 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 #include "core/aimrt_core.h"
+#include "core/channel/channel_backend_tools.h"
 #include "record_playback_plugin/global.h"
 #include "util/string_util.h"
 #include "util/time_util.h"
@@ -301,7 +302,13 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
   using namespace aimrt::runtime::core::channel;
 
   using RecordFunc = std::function<void(uint64_t, MsgWrapper&)>;
-  std::unordered_map<TopicMetaKey, std::vector<RecordFunc>, TopicMetaKey::Hash> recore_func_map;
+
+  struct Wrapper {
+    std::unordered_set<std::string> require_cache_serialization_types;
+    std::vector<RecordFunc> record_func_vec;
+  };
+
+  std::unordered_map<TopicMetaKey, Wrapper, TopicMetaKey::Hash> recore_func_map;
 
   for (auto& record_action_itr : record_action_map_) {
     auto& record_action = *(record_action_itr.second);
@@ -312,10 +319,10 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
     for (const auto& topic_meta_itr : topic_meta_map) {
       const auto& topic_meta = topic_meta_itr.second;
 
-      RecordFunc recore_func =
+      RecordFunc record_func =
           [&record_action, topic_id{topic_meta.id}, serialization_type{topic_meta.serialization_type}](
               uint64_t cur_timestamp, MsgWrapper& msg_wrapper) {
-            auto buffer_view_ptr = msg_wrapper.SerializeMsgWithCache(serialization_type);
+            auto buffer_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
             if (!buffer_view_ptr) [[unlikely]] {
               AIMRT_WARN("Can not serialize msg type '{}' with serialization type '{}'.",
                          msg_wrapper.info.msg_type, serialization_type);
@@ -329,13 +336,16 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
                     .buffer_view_ptr = buffer_view_ptr});
           };
 
-      recore_func_map[topic_meta_itr.first].emplace_back(std::move(recore_func));
+      auto& item = recore_func_map[topic_meta_itr.first];
+      item.require_cache_serialization_types.emplace(topic_meta.serialization_type);
+      item.record_func_vec.emplace_back(std::move(record_func));
     }
   }
 
   // Subscribe
   for (auto& recore_func_itr : recore_func_map) {
     const auto& key = recore_func_itr.first;
+    const auto& wrapper = recore_func_itr.second;
 
     auto finditr = type_support_map_.find(key.msg_type);
 
@@ -350,26 +360,28 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
         .module_name = "core",
         .msg_type_support_ref = type_support_ref};
 
+    sub_wrapper.require_cache_serialization_types = wrapper.require_cache_serialization_types;
+
     // 小优化
-    auto& recore_func_vec = recore_func_itr.second;
-    if (recore_func_vec.size() == 1) {
+    auto& record_func_vec = wrapper.record_func_vec;
+    if (record_func_vec.size() == 1) {
       sub_wrapper.callback =
-          [recore_func{std::move(recore_func_vec[0])}](
+          [record_func{std::move(record_func_vec[0])}](
               MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
             auto cur_timestamp = aimrt::common::util::GetCurTimestampNs();
 
-            recore_func(cur_timestamp, msg_wrapper);
+            record_func(cur_timestamp, msg_wrapper);
 
             release_callback();
           };
     } else {
       sub_wrapper.callback =
-          [recore_func_vec{std::move(recore_func_vec)}](
+          [record_func_vec{std::move(record_func_vec)}](
               MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
             auto cur_timestamp = aimrt::common::util::GetCurTimestampNs();
 
-            for (const auto& recore_func : recore_func_vec)
-              recore_func(cur_timestamp, msg_wrapper);
+            for (const auto& record_func : record_func_vec)
+              record_func(cur_timestamp, msg_wrapper);
 
             release_callback();
           };

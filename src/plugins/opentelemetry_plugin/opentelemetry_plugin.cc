@@ -4,6 +4,7 @@
 #include "opentelemetry_plugin/opentelemetry_plugin.h"
 
 #include "core/aimrt_core.h"
+#include "core/channel/channel_backend_tools.h"
 #include "opentelemetry_plugin/context_carrier.h"
 #include "opentelemetry_plugin/global.h"
 #include "opentelemetry_plugin/util.h"
@@ -197,7 +198,7 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
         h(msg_wrapper);
 
         // 序列化包成json
-        auto msg_str = msg_wrapper.SerializeMsgWithCache("json")->JoinToString();
+        auto msg_str = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, "json")->JoinToString();
         if (!msg_str.empty()) span->SetAttribute("msg_data", msg_str);
 
         span->End();
@@ -263,7 +264,7 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
         h(msg_wrapper);
 
         // 序列化包成json
-        auto msg_str = msg_wrapper.SerializeMsgWithCache("json")->JoinToString();
+        auto msg_str = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, "json")->JoinToString();
         if (!msg_str.empty()) span->SetAttribute("msg_data", msg_str);
 
         span->End();

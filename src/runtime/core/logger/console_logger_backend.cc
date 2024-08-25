@@ -139,62 +139,66 @@ void ConsoleLoggerBackend::Initialize(YAML::Node options_node) {
   run_flag_.store(true);
 }
 
-void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) {
-  if (!run_flag_.load()) [[unlikely]]
-    return;
+void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept {
+  try {
+    if (!run_flag_.load()) [[unlikely]]
+      return;
 
-  if (!CheckLog(log_data_wrapper)) [[unlikely]]
-    return;
+    if (!CheckLog(log_data_wrapper)) [[unlikely]]
+      return;
 
-  std::string log_data_str(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
+    std::string log_data_str(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
 
-  auto log_work = [this, log_data_wrapper, log_data_str{std::move(log_data_str)}]() {
-    auto lvl = log_data_wrapper.lvl;
+    auto log_work = [this, log_data_wrapper, log_data_str{std::move(log_data_str)}]() {
+      auto lvl = log_data_wrapper.lvl;
 
-    auto format_log_prefix_str = ::aimrt_fmt::format(
-        "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]",
-        aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
-        (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
-        LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
-        log_data_wrapper.thread_id,
-        log_data_wrapper.module_name,
-        log_data_wrapper.file_name,
-        log_data_wrapper.line,
-        log_data_wrapper.column,
-        log_data_wrapper.function_name);
+      auto format_log_prefix_str = ::aimrt_fmt::format(
+          "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]",
+          aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
+          (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
+          LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
+          log_data_wrapper.thread_id,
+          log_data_wrapper.module_name,
+          log_data_wrapper.file_name,
+          log_data_wrapper.line,
+          log_data_wrapper.column,
+          log_data_wrapper.function_name);
 
-    if (options_.print_color) {
+      if (options_.print_color) {
 #if defined(_WIN32)
-      static constexpr WORD
-          color_array[aimrt_log_level_t::AIMRT_LOG_LEVEL_OFF] = {
-              0, CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
+        static constexpr WORD
+            color_array[aimrt_log_level_t::AIMRT_LOG_LEVEL_OFF] = {
+                0, CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
-      if (color_array[lvl] == 0) {
-        std::cout << format_log_prefix_str << log_data_str;
-      } else {
-        SetConsoleTextAttribute(g_hConsole, color_array[lvl]);
-        std::cout << format_log_prefix_str << log_data_str;
-        SetConsoleTextAttribute(g_hConsole, CC_DEFAULT);
-      }
+        if (color_array[lvl] == 0) {
+          std::cout << format_log_prefix_str << log_data_str;
+        } else {
+          SetConsoleTextAttribute(g_hConsole, color_array[lvl]);
+          std::cout << format_log_prefix_str << log_data_str;
+          SetConsoleTextAttribute(g_hConsole, CC_DEFAULT);
+        }
 
 #else
-      static constexpr std::string_view
-          color_array[aimrt_log_level_t::AIMRT_LOG_LEVEL_OFF] = {
-              "", CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
+        static constexpr std::string_view
+            color_array[aimrt_log_level_t::AIMRT_LOG_LEVEL_OFF] = {
+                "", CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
-      if (color_array[lvl].empty()) {
-        std::cout << format_log_prefix_str << log_data_str;
-      } else {
-        std::cout << color_array[lvl] << format_log_prefix_str << log_data_str << CC_NONE;
-      }
+        if (color_array[lvl].empty()) {
+          std::cout << format_log_prefix_str << log_data_str;
+        } else {
+          std::cout << color_array[lvl] << format_log_prefix_str << log_data_str << CC_NONE;
+        }
 #endif
-    } else {
-      std::cout << format_log_prefix_str << log_data_str;
-    }
-    std::cout << std::endl;
-  };
+      } else {
+        std::cout << format_log_prefix_str << log_data_str;
+      }
+      std::cout << std::endl;
+    };
 
-  log_executor_.Execute(std::move(log_work));
+    log_executor_.Execute(std::move(log_work));
+  } catch (const std::exception& e) {
+    fprintf(stderr, "Log get exception: %s", e.what());
+  }
 }
 
 bool ConsoleLoggerBackend::CheckLog(const LogDataWrapper& log_data_wrapper) {
