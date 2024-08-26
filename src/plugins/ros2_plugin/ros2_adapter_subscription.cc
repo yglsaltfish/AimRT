@@ -19,7 +19,7 @@ void Ros2AdapterSubscription::handle_message(
     std::shared_ptr<void>& message, const rclcpp::MessageInfo& message_info) {
   if (!run_flag.load()) return;
 
-  auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+  auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
   // 创建 sub msg wrapper
   runtime::core::channel::MsgWrapper sub_msg_wrapper{

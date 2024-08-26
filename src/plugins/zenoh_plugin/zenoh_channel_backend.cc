@@ -103,7 +103,7 @@ bool ZenohChannelBackend::Subscribe(
     auto handle =
         [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](const z_loaned_sample_t* message) {
           try {
-            auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+            auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
             const z_loaned_bytes_t* payload = z_sample_payload(message);
             size_t serialized_size = z_bytes_len(payload);

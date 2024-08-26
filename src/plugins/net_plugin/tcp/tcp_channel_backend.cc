@@ -160,7 +160,7 @@ bool TcpChannelBackend::Subscribe(
 
     auto handle = [this, topic_name = info.topic_name, sub_tool_ptr](
                       const std::shared_ptr<boost::asio::streambuf>& msg_buf_ptr) {
-      auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+      auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
       // 解析msg buf
       util::ConstBufferOperator buf_oper(

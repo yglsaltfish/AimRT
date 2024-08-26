@@ -67,9 +67,77 @@ class AimRTCore {
     PostInit,
 
     PreStart,
+
+    PreStartConfigurator,
+    PostStartConfigurator,
+
+    PreStartPlugin,
+    PostStartPlugin,
+
+    PreStartMainThread,
+    PostStartMainThread,
+
+    PreStartGuardThread,
+    PostStartGuardThread,
+
+    PreStartExecutor,
+    PostStartExecutor,
+
+    PreStartLog,
+    PostStartLog,
+
+    PreStartAllocator,
+    PostStartAllocator,
+
+    PreStartRpc,
+    PostStartRpc,
+
+    PreStartChannel,
+    PostStartChannel,
+
+    PreStartParameter,
+    PostStartParameter,
+
+    PreStartModules,
+    PostStartModules,
+
     PostStart,
 
     PreShutdown,
+
+    PreShutdownModules,
+    PostShutdownModules,
+
+    PreShutdownParameter,
+    PostShutdownParameter,
+
+    PreShutdownChannel,
+    PostShutdownChannel,
+
+    PreShutdownRpc,
+    PostShutdownRpc,
+
+    PreShutdownAllocator,
+    PostShutdownAllocator,
+
+    PreShutdownLog,
+    PostShutdownLog,
+
+    PreShutdownExecutor,
+    PostShutdownExecutor,
+
+    PreShutdownGuardThread,
+    PostShutdownGuardThread,
+
+    PreShutdownMainThread,
+    PostShutdownMainThread,
+
+    PreShutdownPlugin,
+    PostShutdownPlugin,
+
+    PreShutdownConfigurator,
+    PostShutdownConfigurator,
+
     PostShutdown,
 
     MaxStateNum,
@@ -156,7 +224,7 @@ class AimRTCore {
   std::promise<void> shutdown_promise_;
   std::atomic_bool shutdown_impl_flag_ = false;
 
-  std::vector<HookTask> hook_task_vec_array_[static_cast<uint32_t>(State::MaxStateNum)];
+  std::vector<std::vector<HookTask>> hook_task_vec_array_;
 
   configurator::ConfiguratorManager configurator_manager_;
   plugin::PluginManager plugin_manager_;

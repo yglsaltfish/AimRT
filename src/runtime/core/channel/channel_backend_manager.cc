@@ -46,14 +46,14 @@ void ChannelBackendManager::SetChannelRegistry(ChannelRegistry* channel_registry
   channel_registry_ptr_ = channel_registry_ptr;
 }
 
-void ChannelBackendManager::SetPublishFrameworkAsyncRpcFilterManager(FrameworkAsyncChannelFilterManager* ptr) {
+void ChannelBackendManager::SetPublishFrameworkAsyncChannelFilterManager(FrameworkAsyncChannelFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
   publish_filter_manager_ptr_ = ptr;
 }
 
-void ChannelBackendManager::SetSubscribeFrameworkAsyncRpcFilterManager(FrameworkAsyncChannelFilterManager* ptr) {
+void ChannelBackendManager::SetSubscribeFrameworkAsyncChannelFilterManager(FrameworkAsyncChannelFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
       state_.load() == State::PreInit,
       "Method can only be called when state is 'PreInit'.");
@@ -250,7 +250,7 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
   }
 
   // 检查ctx
-  if (ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT ||
+  if (ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT ||
       ctx_ref.CheckUsed()) {
     AIMRT_WARN("Publish context has been used!");
     return;
@@ -396,7 +396,7 @@ void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
   auto ctx_ref = publish_msg_wrapper_ptr->ctx_ref;
 
   // 检查ctx
-  if (ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT ||
+  if (ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT ||
       ctx_ref.CheckUsed()) {
     AIMRT_WARN("Publish context has been used!");
     return;

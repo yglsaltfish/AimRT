@@ -30,9 +30,9 @@ class ChannelBackendBase {
    * @note
    * 1. This method will only be called once before 'Initialize'.
    *
-   * @param rpc_registry_ptr
+   * @param channel_registry_ptr
    */
-  virtual void SetChannelRegistry(const ChannelRegistry* rpc_registry_ptr) noexcept {}
+  virtual void SetChannelRegistry(const ChannelRegistry* channel_registry_ptr) noexcept {}
 
   /**
    * @brief Register publish type

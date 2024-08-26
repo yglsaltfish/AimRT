@@ -65,8 +65,8 @@ class PublisherProxy {
     aimrt::channel::ContextRef subscribe_ctx_ref(subscribe_ctx_ptr);
     aimrt::channel::ContextRef publish_ctx_ref(publish_ctx_ptr);
 
-    if (subscribe_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT ||
-        publish_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT) [[unlikely]] {
+    if (subscribe_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT ||
+        publish_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT) [[unlikely]] {
       // TODO warn log
       return;
     }
@@ -260,8 +260,8 @@ class ChannelHandleProxy {
     aimrt::channel::ContextRef subscribe_ctx_ref(subscribe_ctx_ptr);
     aimrt::channel::ContextRef publish_ctx_ref(publish_ctx_ptr);
 
-    if (subscribe_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT ||
-        publish_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT) [[unlikely]] {
+    if (subscribe_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT ||
+        publish_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT) [[unlikely]] {
       // TODO warn log
       return;
     }
