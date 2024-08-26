@@ -118,18 +118,23 @@ void SimpleThreadExecutor::Shutdown() {
   thread_ptr_.reset();
 }
 
-void SimpleThreadExecutor::Execute(aimrt::executor::Task&& task) {
-  if (state_.load() == State::Init || state_.load() == State::Start) {
-    std::unique_lock<std::mutex> lck(mutex_);
-    queue_.emplace(std::move(task));
-    cond_.notify_one();
-  } else {
-    AIMRT_WARN("Simple thread executor '{}' can only execute task when state is 'Init' or 'Start'.", Name());
+void SimpleThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
+  try {
+    if (state_.load() == State::Init || state_.load() == State::Start) {
+      std::unique_lock<std::mutex> lck(mutex_);
+      queue_.emplace(std::move(task));
+      cond_.notify_one();
+    } else {
+      AIMRT_ERROR("Simple thread executor '{}' can only execute task when state is 'Init' or 'Start'.", Name());
+    }
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
   }
 }
 
-void SimpleThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
-  AIMRT_ERROR_THROW("Simple thread executor '{}' does not support timer schedule.", Name());
+void SimpleThreadExecutor::ExecuteAt(
+    std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
+  AIMRT_ERROR("Simple thread executor '{}' does not support timer schedule.", Name());
 }
 
 }  // namespace aimrt::runtime::core::executor

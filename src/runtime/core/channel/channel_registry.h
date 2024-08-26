@@ -6,6 +6,7 @@
 #include <memory>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "core/channel/channel_msg_wrapper.h"
 #include "util/log_util.h"
@@ -16,11 +17,13 @@ using SubscriberCallback = std::function<void(MsgWrapper&, std::function<void()>
 
 struct SubscribeWrapper {
   TopicInfo info;
+  std::unordered_set<std::string> require_cache_serialization_types;
   SubscriberCallback callback;
 };
 
 struct PublishTypeWrapper {
   TopicInfo info;
+  std::unordered_set<std::string> require_cache_serialization_types;
 };
 
 class ChannelRegistry {

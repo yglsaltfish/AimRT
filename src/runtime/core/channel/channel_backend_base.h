@@ -17,13 +17,13 @@ class ChannelBackendBase {
   ChannelBackendBase(const ChannelBackendBase&) = delete;
   ChannelBackendBase& operator=(const ChannelBackendBase&) = delete;
 
-  virtual std::string_view Name() const = 0;  // It should always return the same value
+  virtual std::string_view Name() const noexcept = 0;  // It should always return the same value
 
   virtual void Initialize(YAML::Node options_node) = 0;
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
 
-  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const { return {}; }
+  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const noexcept { return {}; }
 
   /**
    * @brief Set the Channel Registry to backend
@@ -32,7 +32,7 @@ class ChannelBackendBase {
    *
    * @param rpc_registry_ptr
    */
-  virtual void SetChannelRegistry(const ChannelRegistry* rpc_registry_ptr) {}
+  virtual void SetChannelRegistry(const ChannelRegistry* rpc_registry_ptr) noexcept {}
 
   /**
    * @brief Register publish type

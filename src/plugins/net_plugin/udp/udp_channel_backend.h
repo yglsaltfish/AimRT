@@ -6,6 +6,7 @@
 #include <set>
 
 #include "core/channel/channel_backend_base.h"
+#include "core/channel/channel_backend_tools.h"
 #include "net/asio_udp_cli.h"
 #include "net/asio_udp_svr.h"
 #include "net_plugin/msg_handle_registry.h"
@@ -38,13 +39,13 @@ class UdpChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   ~UdpChannelBackend() override = default;
 
-  std::string_view Name() const override { return "udp"; }
+  std::string_view Name() const noexcept override { return "udp"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
 
-  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override {
+  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) noexcept override {
     channel_registry_ptr_ = channel_registry_ptr;
   }
 

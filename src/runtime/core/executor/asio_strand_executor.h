@@ -37,19 +37,19 @@ class AsioStrandExecutor : public ExecutorBase {
   void Start() override;
   void Shutdown() override;
 
-  std::string_view Type() const override { return "asio_strand"; }
-  std::string_view Name() const override { return name_; }
+  std::string_view Type() const noexcept override { return "asio_strand"; }
+  std::string_view Name() const noexcept override { return name_; }
 
-  bool ThreadSafe() const override { return true; }
-  bool IsInCurrentExecutor() const override { return false; }
-  bool SupportTimerSchedule() const override { return true; }
+  bool ThreadSafe() const noexcept override { return true; }
+  bool IsInCurrentExecutor() const noexcept override { return false; }
+  bool SupportTimerSchedule() const noexcept override { return true; }
 
-  void Execute(aimrt::executor::Task&& task) override;
+  void Execute(aimrt::executor::Task&& task) noexcept override;
 
-  std::chrono::system_clock::time_point Now() const override {
+  std::chrono::system_clock::time_point Now() const noexcept override {
     return std::chrono::system_clock::now();
   }
-  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept override;
 
   void RegisterGetAsioHandle(GetAsioHandle&& handle);
 

@@ -10,6 +10,7 @@
 #include <unordered_set>
 
 #include "core/channel/channel_backend_base.h"
+#include "core/channel/channel_backend_tools.h"
 
 #include "ros2_plugin/ros2_adapter_subscription.h"
 
@@ -101,13 +102,13 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
   Ros2ChannelBackend() = default;
   ~Ros2ChannelBackend() override = default;
 
-  std::string_view Name() const override { return "ros2"; }
+  std::string_view Name() const noexcept override { return "ros2"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
 
-  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override {
+  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) noexcept override {
     channel_registry_ptr_ = channel_registry_ptr;
   }
 

@@ -17,15 +17,15 @@ class LoggerBackendBase {
   LoggerBackendBase(const LoggerBackendBase&) = delete;
   LoggerBackendBase& operator=(const LoggerBackendBase&) = delete;
 
-  virtual std::string_view Type() const = 0;  // It should always return the same value
+  virtual std::string_view Type() const noexcept = 0;  // It should always return the same value
 
   virtual void Initialize(YAML::Node options_node) = 0;
   virtual void Start() = 0;
   virtual void Shutdown() = 0;
 
-  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const { return {}; }
+  virtual std::list<std::pair<std::string, std::string>> GenInitializationReport() const noexcept { return {}; }
 
-  virtual bool AllowDuplicates() const = 0;  // It should always return the same value
+  virtual bool AllowDuplicates() const noexcept = 0;  // It should always return the same value
 
   /**
    * @brief Do the log
@@ -35,7 +35,7 @@ class LoggerBackendBase {
    *
    * @param log_data_wrapper Log data
    */
-  virtual void Log(const LogDataWrapper& log_data_wrapper) = 0;
+  virtual void Log(const LogDataWrapper& log_data_wrapper) noexcept = 0;
 };
 
 }  // namespace aimrt::runtime::core::logger

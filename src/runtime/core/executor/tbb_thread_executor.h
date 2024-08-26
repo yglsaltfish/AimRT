@@ -36,19 +36,19 @@ class TBBThreadExecutor : public ExecutorBase {
   void Start() override;
   void Shutdown() override;
 
-  std::string_view Type() const override { return "tbb_thread"; }
-  std::string_view Name() const override { return name_; }
+  std::string_view Type() const noexcept override { return "tbb_thread"; }
+  std::string_view Name() const noexcept override { return name_; }
 
-  bool ThreadSafe() const override { return (options_.thread_num == 1); }
-  bool IsInCurrentExecutor() const override;
-  bool SupportTimerSchedule() const override { return false; }
+  bool ThreadSafe() const noexcept override { return (options_.thread_num == 1); }
+  bool IsInCurrentExecutor() const noexcept override;
+  bool SupportTimerSchedule() const noexcept override { return false; }
 
-  void Execute(aimrt::executor::Task&& task) override;
+  void Execute(aimrt::executor::Task&& task) noexcept override;
 
-  std::chrono::system_clock::time_point Now() const override {
+  std::chrono::system_clock::time_point Now() const noexcept override {
     return std::chrono::system_clock::now();
   }
-  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) override;
+  void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept override;
 
   State GetState() const { return state_.load(); }
 

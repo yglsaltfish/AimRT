@@ -33,7 +33,7 @@ aimrt:
   // 模拟的通道后端类，继承自ChannelBackendBase
   class MockChannelBackend : public ChannelBackendBase {
    public:
-    std::string_view Name() const override { return "mock_backend_test"; }
+    std::string_view Name() const noexcept override { return "mock_backend_test"; }
     MOCK_METHOD1(Initialize, void(YAML::Node options_node));
     MOCK_METHOD0(Start, void());
     MOCK_METHOD0(Shutdown, void());

@@ -6,6 +6,7 @@
 #include <set>
 
 #include "core/channel/channel_backend_base.h"
+#include "core/channel/channel_backend_tools.h"
 #include "net/asio_tcp_cli.h"
 #include "net/asio_tcp_svr.h"
 #include "net_plugin/msg_handle_registry.h"
@@ -38,13 +39,13 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   ~TcpChannelBackend() override = default;
 
-  std::string_view Name() const override { return "tcp"; }
+  std::string_view Name() const noexcept override { return "tcp"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
 
-  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override {
+  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) noexcept override {
     channel_registry_ptr_ = channel_registry_ptr;
   }
 
@@ -73,7 +74,7 @@ class TcpChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   std::unordered_map<
       std::string,
-      std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
+      std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       tcp_subscribe_wrapper_map_;
 
   struct PubCfgInfo {

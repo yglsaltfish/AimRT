@@ -4,6 +4,7 @@
 #pragma once
 
 #include "core/channel/channel_backend_base.h"
+#include "core/channel/channel_backend_tools.h"
 #include "util/buffer_util.h"
 #include "util/url_encode.h"
 #include "zenoh.h"
@@ -23,13 +24,13 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   ~ZenohChannelBackend() override = default;
 
-  std::string_view Name() const override { return "zenoh"; }
+  std::string_view Name() const noexcept override { return "zenoh"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
 
-  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) override {
+  void SetChannelRegistry(const runtime::core::channel::ChannelRegistry* channel_registry_ptr) noexcept override {
     channel_registry_ptr_ = channel_registry_ptr;
   }
 

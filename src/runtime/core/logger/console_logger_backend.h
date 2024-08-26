@@ -25,7 +25,7 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
   ConsoleLoggerBackend() = default;
   ~ConsoleLoggerBackend() override = default;
 
-  std::string_view Type() const override { return "console"; }
+  std::string_view Type() const noexcept override { return "console"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override {}
@@ -36,9 +36,9 @@ class ConsoleLoggerBackend : public LoggerBackendBase {
     get_executor_func_ = get_executor_func;
   }
 
-  bool AllowDuplicates() const override { return false; }
+  bool AllowDuplicates() const noexcept override { return false; }
 
-  void Log(const LogDataWrapper& log_data_wrapper) override;
+  void Log(const LogDataWrapper& log_data_wrapper) noexcept override;
 
  private:
   bool CheckLog(const LogDataWrapper& log_data_wrapper);

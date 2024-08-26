@@ -42,13 +42,13 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   ~MqttRpcBackend() override = default;
 
-  std::string_view Name() const override { return "mqtt"; }
+  std::string_view Name() const noexcept override { return "mqtt"; }
 
   void Initialize(YAML::Node options_node) override;
   void Start() override;
   void Shutdown() override;
 
-  void SetRpcRegistry(const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) override {
+  void SetRpcRegistry(const runtime::core::rpc::RpcRegistry* rpc_registry_ptr) noexcept override {
     rpc_registry_ptr_ = rpc_registry_ptr;
   }
 

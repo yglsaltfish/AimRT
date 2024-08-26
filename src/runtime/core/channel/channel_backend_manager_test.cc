@@ -9,7 +9,7 @@ namespace aimrt::runtime::core::channel {
 
 class MockChannelBackend : public ChannelBackendBase {
  public:
-  std::string_view Name() const override { return "mock_backend"; }
+  std::string_view Name() const noexcept override { return "mock_backend"; }
 
   void Initialize(YAML::Node options_node) noexcept override {
     is_initialized_ = true;

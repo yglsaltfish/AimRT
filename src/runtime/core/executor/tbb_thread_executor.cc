@@ -129,22 +129,27 @@ void TBBThreadExecutor::Shutdown() {
   }
 }
 
-bool TBBThreadExecutor::IsInCurrentExecutor() const {
-  return (std::find(thread_id_vec_.begin(), thread_id_vec_.end(),
-                    std::this_thread::get_id()) != thread_id_vec_.end());
+bool TBBThreadExecutor::IsInCurrentExecutor() const noexcept {
+  try {
+    auto finditr = std::find(thread_id_vec_.begin(), thread_id_vec_.end(), std::this_thread::get_id());
+    return (finditr != thread_id_vec_.end());
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+  }
+  return false;
 }
 
-void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) {
+void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   try {
     qu_.emplace(std::move(task));
   } catch (const std::exception& e) {
-    AIMRT_FATAL("Tbb thread executor '{}' execute task get exception, {}",
-                Name(), e.what());
+    AIMRT_ERROR("Tbb thread executor '{}' execute task get exception, {}", Name(), e.what());
   }
 }
 
-void TBBThreadExecutor::ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) {
-  AIMRT_ERROR_THROW("Tbb thread executor '{}' does not support timer schedule.", Name());
+void TBBThreadExecutor::ExecuteAt(
+    std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
+  AIMRT_ERROR("Tbb thread executor '{}' does not support timer schedule.", Name());
 }
 
 }  // namespace aimrt::runtime::core::executor
