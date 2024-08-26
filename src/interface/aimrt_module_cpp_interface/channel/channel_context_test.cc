@@ -8,7 +8,7 @@
 
 namespace aimrt::channel {
 
-TEST(RPC_CONTEXT_TEST, Context) {
+TEST(CHANNEL_CONTEXT_TEST, Context) {
   Context ctx;
 
   EXPECT_EQ(ctx.GetMetaKeys().size(), 0);
@@ -25,7 +25,7 @@ TEST(RPC_CONTEXT_TEST, Context) {
       std::vector<std::string_view>{"key1", "key2"}));
 }
 
-TEST(RPC_CONTEXT_TEST, ContextRef) {
+TEST(CHANNEL_CONTEXT_TEST, ContextRef) {
   Context real_ctx;
   ContextRef ctx(real_ctx);
 

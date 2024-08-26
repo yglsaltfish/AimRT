@@ -398,7 +398,7 @@ bool Ros2ChannelBackend::Subscribe(
             10,
             [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](
                 ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
-              auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+              auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
               const std::string& serialization_type = wrapper_msg->serialization_type;
               ctx_ptr->SetSerializationType(serialization_type);
@@ -492,6 +492,8 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
       }
 
       rcl_publisher_t& publisher = finditr->second->publisher;
+
+      aimrt::runtime::core::channel::CheckMsg(msg_wrapper);
 
       rcl_ret_t ret = rcl_publish(&publisher, msg_wrapper.msg_ptr, nullptr);
       if (ret != RMW_RET_OK) {

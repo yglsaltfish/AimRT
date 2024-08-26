@@ -17,7 +17,7 @@ namespace aimrt::channel {
 
 class Context {
  public:
-  Context(aimrt_channel_context_type_t type = aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT)
+  Context(aimrt_channel_context_type_t type = aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT)
       : type_(type),
         base_(aimrt_channel_context_base_t{
             .ops = GenOpsBase(),
@@ -75,9 +75,9 @@ class Context {
 
   std::string ToString() const {
     std::stringstream ss;
-    if (type_ == aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT) {
+    if (type_ == aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT) {
       ss << "Publisher context, ";
-    } else if (type_ == aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT) {
+    } else if (type_ == aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT) {
       ss << "Subscriber context, ";
     } else {
       ss << "Unknown context, ";
@@ -225,9 +225,9 @@ class ContextRef {
     std::stringstream ss;
 
     auto type = base_ptr_->ops->get_type(base_ptr_->impl);
-    if (type == aimrt_channel_context_type_t::AIMRT_RPC_PUBLISHER_CONTEXT) {
+    if (type == aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT) {
       ss << "Publisher context, ";
-    } else if (type == aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT) {
+    } else if (type == aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT) {
       ss << "Subscriber context, ";
     } else {
       ss << "Unknown context, ";

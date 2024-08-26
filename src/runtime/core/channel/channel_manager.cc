@@ -106,8 +106,8 @@ void ChannelManager::Initialize(YAML::Node options_node) {
 
   channel_backend_manager_.SetLogger(logger_ptr_);
   channel_backend_manager_.SetChannelRegistry(channel_registry_ptr_.get());
-  channel_backend_manager_.SetPublishFrameworkAsyncRpcFilterManager(&publish_filter_manager_);
-  channel_backend_manager_.SetSubscribeFrameworkAsyncRpcFilterManager(&subscribe_filter_manager_);
+  channel_backend_manager_.SetPublishFrameworkAsyncChannelFilterManager(&publish_filter_manager_);
+  channel_backend_manager_.SetSubscribeFrameworkAsyncChannelFilterManager(&subscribe_filter_manager_);
 
   std::vector<std::string> channel_backend_name_vec;
 

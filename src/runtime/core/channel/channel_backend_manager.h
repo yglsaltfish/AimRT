@@ -75,8 +75,8 @@ class ChannelBackendManager {
   void SetSubscribeFiltersRules(
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
 
-  void SetPublishFrameworkAsyncRpcFilterManager(FrameworkAsyncChannelFilterManager* ptr);
-  void SetSubscribeFrameworkAsyncRpcFilterManager(FrameworkAsyncChannelFilterManager* ptr);
+  void SetPublishFrameworkAsyncChannelFilterManager(FrameworkAsyncChannelFilterManager* ptr);
+  void SetSubscribeFrameworkAsyncChannelFilterManager(FrameworkAsyncChannelFilterManager* ptr);
 
   void SetPubTopicsBackendsRules(
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);

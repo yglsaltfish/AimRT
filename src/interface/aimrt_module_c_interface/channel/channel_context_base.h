@@ -25,8 +25,8 @@ extern "C" {
 #define AIMRT_CHANNEL_CONTEXT_KEY_BACKEND "aimrt-backend"
 
 typedef enum {
-  AIMRT_RPC_PUBLISHER_CONTEXT = 0,
-  AIMRT_RPC_SUBSCRIBER_CONTEXT = 1,
+  AIMRT_CHANNEL_PUBLISHER_CONTEXT = 0,
+  AIMRT_CHANNEL_SUBSCRIBER_CONTEXT = 1,
 } aimrt_channel_context_type_t;
 
 /**

@@ -1,5 +1,4 @@
-#FROM nginx:latest 访问dockerhub官方镜像存在网络问题，使用quay.mirrors.ustc.edu.cn加速
-FROM quay.mirrors.ustc.edu.cn/jitesoft/nginx
+FROM nginx:latest
 
 ENV SERVER_ROOT=/usr/share/nginx/html
 

@@ -11,7 +11,9 @@
 namespace aimrt::runtime::core {
 
 AimRTCore::AimRTCore()
-    : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {}
+    : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {
+  hook_task_vec_array_.resize(static_cast<uint32_t>(State::MaxStateNum));
+}
 
 AimRTCore::~AimRTCore() {
   try {
@@ -20,9 +22,7 @@ AimRTCore::~AimRTCore() {
     AIMRT_INFO("AimRTCore destruct get exception, {}", e.what());
   }
 
-  for (uint32_t ii = 0; ii < static_cast<uint32_t>(State::MaxStateNum); ++ii) {
-    hook_task_vec_array_[ii].clear();
-  }
+  hook_task_vec_array_.clear();
 }
 
 void AimRTCore::Initialize(const Options& options) {
@@ -118,17 +118,51 @@ void AimRTCore::StartImpl() {
   AIMRT_INFO("Gen initialization report:\n{}", GenInitializationReport());
 
   EnterState(State::PreStart);
+
+  EnterState(State::PreStartConfigurator);
   configurator_manager_.Start();
+  EnterState(State::PostStartConfigurator);
+
+  EnterState(State::PreStartPlugin);
   plugin_manager_.Start();
+  EnterState(State::PostStartPlugin);
+
+  EnterState(State::PreStartMainThread);
   main_thread_executor_.Start();
+  EnterState(State::PostStartMainThread);
+
+  EnterState(State::PreStartGuardThread);
   guard_thread_executor_.Start();
+  EnterState(State::PostStartGuardThread);
+
+  EnterState(State::PreStartExecutor);
   executor_manager_.Start();
+  EnterState(State::PostStartExecutor);
+
+  EnterState(State::PreStartLog);
   logger_manager_.Start();
+  EnterState(State::PostStartLog);
+
+  EnterState(State::PreStartAllocator);
   allocator_manager_.Start();
+  EnterState(State::PostStartAllocator);
+
+  EnterState(State::PreStartRpc);
   rpc_manager_.Start();
+  EnterState(State::PostStartRpc);
+
+  EnterState(State::PreStartChannel);
   channel_manager_.Start();
+  EnterState(State::PostStartChannel);
+
+  EnterState(State::PreStartParameter);
   parameter_manager_.Start();
+  EnterState(State::PostStartParameter);
+
+  EnterState(State::PreStartModules);
   module_manager_.Start();
+  EnterState(State::PostStartModules);
+
   EnterState(State::PostStart);
 }
 
@@ -136,21 +170,53 @@ void AimRTCore::ShutdownImpl() {
   if (std::atomic_exchange(&shutdown_impl_flag_, true)) return;
 
   EnterState(State::PreShutdown);
-  module_manager_.Shutdown();
-  parameter_manager_.Shutdown();
-  channel_manager_.Shutdown();
-  rpc_manager_.Shutdown();
-  allocator_manager_.Shutdown();
 
+  EnterState(State::PreShutdownModules);
+  module_manager_.Shutdown();
+  EnterState(State::PostShutdownModules);
+
+  EnterState(State::PreShutdownParameter);
+  parameter_manager_.Shutdown();
+  EnterState(State::PostShutdownParameter);
+
+  EnterState(State::PreShutdownChannel);
+  channel_manager_.Shutdown();
+  EnterState(State::PostShutdownChannel);
+
+  EnterState(State::PreShutdownRpc);
+  rpc_manager_.Shutdown();
+  EnterState(State::PostShutdownRpc);
+
+  EnterState(State::PreShutdownAllocator);
+  allocator_manager_.Shutdown();
+  EnterState(State::PostShutdownAllocator);
+
+  EnterState(State::PreShutdownLog);
   ResetCoreLogger();
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
   logger_manager_.Shutdown();
+  EnterState(State::PostShutdownLog);
 
+  EnterState(State::PreShutdownExecutor);
   executor_manager_.Shutdown();
+  EnterState(State::PostShutdownExecutor);
+
+  EnterState(State::PreShutdownGuardThread);
   guard_thread_executor_.Shutdown();
+  EnterState(State::PostShutdownGuardThread);
+
+  EnterState(State::PreShutdownMainThread);
   main_thread_executor_.Shutdown();
+  EnterState(State::PostShutdownMainThread);
+
+  EnterState(State::PreShutdownPlugin);
   plugin_manager_.Shutdown();
+  EnterState(State::PostShutdownPlugin);
+
+  EnterState(State::PreShutdownConfigurator);
   configurator_manager_.Shutdown();
+  EnterState(State::PostShutdownConfigurator);
+
   EnterState(State::PostShutdown);
 }
 

@@ -154,7 +154,7 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
       std::shared_ptr<void> msg_ptr = tpl_sub_info.msg_type_support_ref.CreateSharedPtr();
 
       // 创建该pkg下的 context
-      auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_RPC_SUBSCRIBER_CONTEXT);
+      auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
       const auto& meta_keys = msg_wrapper.ctx_ref.GetMetaKeys();
       for (const auto& item : meta_keys) {
