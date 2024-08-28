@@ -130,7 +130,7 @@ void Ros2ChannelBackend::Start() {
       "Method can only be called when state is 'Init'.");
 
   for (auto& itr : ros2_subscribe_wrapper_map_) {
-    static_cast<Ros2AdapterSubscription*>(itr.second.get())->Start();
+    static_cast<Ros2AdapterSubscription*>(itr.second.ros_sub_handle_ptr.get())->Start();
   }
 }
 
@@ -139,7 +139,7 @@ void Ros2ChannelBackend::Shutdown() {
     return;
 
   for (auto& itr : ros2_publish_type_wrapper_map_) {
-    rcl_publisher_t& publisher = itr.second->publisher;
+    rcl_publisher_t& publisher = *(itr.second);
     rcl_ret_t ret = rcl_publisher_fini(
         &publisher,
         ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle().get());
@@ -152,7 +152,7 @@ void Ros2ChannelBackend::Shutdown() {
   }
 
   for (auto& itr : ros2_subscribe_wrapper_map_) {
-    static_cast<Ros2AdapterSubscription*>(itr.second.get())->Shutdown();
+    static_cast<Ros2AdapterSubscription*>(itr.second.ros_sub_handle_ptr.get())->Shutdown();
   }
 
   ros2_node_ptr_.reset();
@@ -161,40 +161,28 @@ void Ros2ChannelBackend::Shutdown() {
 bool Ros2ChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
-      AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
-      return false;
-    }
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+                            "Method can only be called when state is 'Init'.");
 
     const auto& info = publish_type_wrapper.info;
 
     // 前缀是ros2类型的消息
     if (CheckRosMsg(info.msg_type)) {
-      ChannelTypeKey type_key{
-          info.pkg_path,
-          info.module_name,
-          info.topic_name,
-          info.msg_type};
+      Key key{info.pkg_path, info.module_name};
 
-      auto emplace_ret = ros2_publish_type_wrapper_map_.emplace(
-          type_key,
-          std::make_unique<Ros2PublishWrapper>(Ros2PublishWrapper{
-              .type_wrapper = publish_type_wrapper,
-              .publisher = rcl_get_zero_initialized_publisher()}));
-
-      if (!emplace_ret.second) {
-        // 重复注册
-        AIMRT_WARN(
-            "Publish msg type '{}' is registered repeatedly in ros2 channel backend, topic '{}', module '{}', lib path '{}'",
-            info.msg_type, info.topic_name, info.module_name, info.pkg_path);
-        return false;
+      if (ros2_publish_type_wrapper_map_.find(key) != ros2_publish_type_wrapper_map_.end()) {
+        return true;
       }
+
+      auto unique_ptr = std::make_unique<rcl_publisher_t>(rcl_get_zero_initialized_publisher());
+
+      rcl_publisher_t* publisher_ptr = unique_ptr.get();
+      ros2_publish_type_wrapper_map_.emplace(key, std::move(unique_ptr));
 
       std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
           info.topic_name,
           ros2_node_ptr_->get_sub_namespace());
 
-      rcl_publisher_t& publisher = emplace_ret.first->second->publisher;
       rcl_publisher_options_t publisher_options = rcl_publisher_get_default_options();
       // 读取配置中的QOS
       auto find_qos_option = std::find_if(options_.pub_topics_options.begin(), options_.pub_topics_options.end(), [&ros2_topic_name](const Options::PubTopicOptions& pub_option) {
@@ -206,11 +194,13 @@ bool Ros2ChannelBackend::RegisterPublishType(
           return false;
         }
       });
+
       if (find_qos_option != options_.pub_topics_options.end()) {
         publisher_options.qos = GetQos(find_qos_option->qos).get_rmw_qos_profile();
       }
+
       rcl_ret_t ret = rcl_publisher_init(
-          &publisher,
+          publisher_ptr,
           ros2_node_ptr_->get_node_base_interface()->get_shared_rcl_node_handle().get(),
           static_cast<const rosidl_message_type_support_t*>(info.msg_type_support_ref.CustomTypeSupportPtr()),
           ros2_topic_name.c_str(),
@@ -229,8 +219,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
     }
 
     // 前缀不是ros2类型的消息
-    std::string real_ros2_topic_name =
-        info.topic_name + "/" + Ros2NameEncode(info.msg_type);
+    std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
 
     // 先检查是否注册过了
     if (publisher_map_.find(real_ros2_topic_name) == publisher_map_.end()) {
@@ -246,6 +235,236 @@ bool Ros2ChannelBackend::RegisterPublishType(
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
     return false;
+  }
+}
+
+bool Ros2ChannelBackend::Subscribe(
+    const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
+  try {
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+                            "Method can only be called when state is 'Init'.");
+
+    const auto& info = subscribe_wrapper.info;
+
+    // 前缀是ros2类型的消息
+    if (CheckRosMsg(info.msg_type)) {
+      Key key{info.pkg_path, info.module_name};
+
+      auto find_itr = ros2_subscribe_wrapper_map_.find(key);
+      if (find_itr != ros2_subscribe_wrapper_map_.end()) {
+        find_itr->second.sub_tool_ptr->AddSubscribeWrapper(&subscribe_wrapper);
+        return true;
+      }
+
+      auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
+      sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
+
+      auto sub_tool_ptr = sub_tool_unique_ptr.get();
+
+      std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
+          info.topic_name,
+          ros2_node_ptr_->get_sub_namespace());
+
+      rclcpp::QoS qos(10);
+      // 读取配置中的QOS
+      auto find_qos_option = std::find_if(options_.sub_topics_options.begin(), options_.sub_topics_options.end(), [&ros2_topic_name](const Options::SubTopicOptions& sub_option) {
+        try {
+          return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
+        } catch (const std::exception& e) {
+          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                     sub_option.topic_name, ros2_topic_name, e.what());
+          return false;
+        }
+      });
+
+      if (find_qos_option != options_.sub_topics_options.end()) {
+        qos = GetQos(find_qos_option->qos);
+      }
+
+      auto node_topics_interface =
+          rclcpp::node_interfaces::get_node_topics_interface(*ros2_node_ptr_);
+
+      rclcpp::SubscriptionFactory factory{
+          [&subscribe_wrapper, sub_tool_ptr](
+              rclcpp::node_interfaces::NodeBaseInterface* node_base,
+              const std::string& topic_name,
+              const rclcpp::QoS& qos) -> rclcpp::SubscriptionBase::SharedPtr {
+            const rclcpp::SubscriptionOptionsWithAllocator<
+                std::allocator<void>>& options =
+                rclcpp::SubscriptionOptionsWithAllocator<std::allocator<void>>();
+
+            std::shared_ptr<Ros2AdapterSubscription> subscriber =
+                std::make_shared<Ros2AdapterSubscription>(
+                    node_base,
+                    *static_cast<const rosidl_message_type_support_t*>(subscribe_wrapper.info.msg_type_support_ref.CustomTypeSupportPtr()),
+                    topic_name,
+                    // todo: ros2的bug，新版本修复后去掉模板参数
+                    options.to_rcl_subscription_options<void>(qos),
+                    subscribe_wrapper,
+                    *sub_tool_ptr);
+            return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
+          }};
+
+      auto subscriber = node_topics_interface->create_subscription(ros2_topic_name, factory, qos);
+      node_topics_interface->add_subscription(subscriber, nullptr);
+
+      ros2_subscribe_wrapper_map_.emplace(
+          key,
+          RosSubWrapper{
+              .sub_tool_ptr = std::move(sub_tool_unique_ptr),
+              .ros_sub_handle_ptr = std::move(subscriber)});
+
+      AIMRT_INFO("subscribe topic '{}' success.", info.topic_name);
+
+      return true;
+    }
+
+    // 前缀不是ros2类型的消息
+    std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
+
+    auto find_itr = subscribe_wrapper_map_.find(real_ros2_topic_name);
+    if (find_itr != subscribe_wrapper_map_.end()) {
+      find_itr->second.sub_tool_ptr->AddSubscribeWrapper(&subscribe_wrapper);
+      return true;
+    }
+
+    auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
+    sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
+
+    auto sub_tool_ptr = sub_tool_unique_ptr.get();
+
+    auto ros_sub_handle_ptr = ros2_node_ptr_->create_subscription<ros2_plugin_proto::msg::RosMsgWrapper>(
+        real_ros2_topic_name,
+        10,
+        [this, topic_name = info.topic_name, sub_tool_ptr](
+            ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
+          try {
+            auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
+
+            const std::string& serialization_type = wrapper_msg->serialization_type;
+            ctx_ptr->SetSerializationType(serialization_type);
+
+            size_t context_size = wrapper_msg->context.size() / 2;
+            for (size_t ii = 0; ii < context_size; ++ii) {
+              const auto& key = wrapper_msg->context[ii * 2];
+              const auto& val = wrapper_msg->context[ii * 2 + 1];
+              ctx_ptr->SetMetaValue(key, val);
+            }
+
+            ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
+            ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
+
+            sub_tool_ptr->DoSubscribeCallback(
+                ctx_ptr, serialization_type, static_cast<const void*>(wrapper_msg->data.data()), wrapper_msg->data.size());
+
+          } catch (const std::exception& e) {
+            AIMRT_ERROR("{}", e.what());
+          }
+        });
+
+    subscribe_wrapper_map_.emplace(
+        real_ros2_topic_name,
+        SubWrapper{
+            .sub_tool_ptr = std::move(sub_tool_unique_ptr),
+            .ros_sub_handle_ptr = std::move(ros_sub_handle_ptr)});
+
+    AIMRT_INFO("subscribe topic '{}' success, real ros2 topic name is '{}'.",
+               info.topic_name, real_ros2_topic_name);
+
+    return true;
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+    return false;
+  }
+}
+
+void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
+  try {
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Start,
+                            "Method can only be called when state is 'Start'.");
+
+    const auto& info = msg_wrapper.info;
+
+    // 前缀是ros2类型的消息
+    if (CheckRosMsg(info.msg_type)) {
+      Key key{info.pkg_path, info.module_name};
+
+      auto finditr = ros2_publish_type_wrapper_map_.find(key);
+      AIMRT_CHECK_ERROR_THROW(
+          finditr != ros2_publish_type_wrapper_map_.end(),
+          "Publish msg type '{}' unregistered in ros2 channel backend, topic '{}', module '{}', lib path '{}'",
+          info.msg_type, info.topic_name, info.module_name, info.pkg_path);
+
+      rcl_publisher_t& publisher = *(finditr->second);
+
+      aimrt::runtime::core::channel::CheckMsg(msg_wrapper);
+
+      rcl_ret_t ret = rcl_publish(&publisher, msg_wrapper.msg_ptr, nullptr);
+      if (ret != RMW_RET_OK) {
+        AIMRT_WARN(
+            "Publish msg type '{}' failed in ros2 channel backend, topic '{}', module '{}', lib path '{}', error info: {}",
+            info.msg_type, info.topic_name, info.module_name, info.pkg_path,
+            rcl_get_error_string().str);
+        rcl_reset_error();
+      }
+
+      return;
+    }
+
+    // 前缀不是ros2类型的消息
+    std::string real_ros2_topic_name = info.topic_name + "/" + Ros2NameEncode(info.msg_type);
+
+    auto finditr = publisher_map_.find(real_ros2_topic_name);
+    AIMRT_CHECK_ERROR_THROW(
+        finditr != publisher_map_.end(),
+        "Publish msg type '{}' unregistered in ros2 channel backend, topic '{}', module '{}', lib path '{}'",
+        info.msg_type, info.topic_name, info.module_name, info.pkg_path);
+
+    auto ros2_publisher_ptr = finditr->second;
+
+    // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
+    auto publish_type_support_ref = info.msg_type_support_ref;
+
+    std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
+    if (serialization_type.empty()) {
+      serialization_type = publish_type_support_ref.DefaultSerializationType();
+    }
+
+    // msg序列化
+    auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
+    AIMRT_CHECK_ERROR_THROW(
+        buffer_array_view_ptr,
+        "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+        serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
+
+    // 填内容，直接复制过去
+    auto buffer_array_data = buffer_array_view_ptr->Data();
+    const size_t buffer_array_len = buffer_array_view_ptr->Size();
+    size_t msg_size = buffer_array_view_ptr->BufferSize();
+
+    ros2_plugin_proto::msg::RosMsgWrapper wrapper_msg;
+    wrapper_msg.serialization_type = serialization_type;
+
+    // context
+    const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
+    wrapper_msg.context.reserve(2 * keys.size());
+    for (const auto& key : keys) {
+      wrapper_msg.context.emplace_back(key);
+      wrapper_msg.context.emplace_back(msg_wrapper.ctx_ref.GetMetaValue(key));
+    }
+
+    wrapper_msg.data.resize(msg_size);
+
+    auto cur_pos = wrapper_msg.data.data();
+    for (size_t ii = 0; ii < buffer_array_len; ++ii) {
+      memcpy(cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
+      cur_pos += buffer_array_data[ii].len;
+    }
+
+    // 发送数据
+    ros2_publisher_ptr->publish(std::move(wrapper_msg));
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
   }
 }
 
@@ -296,276 +515,6 @@ rclcpp::QoS Ros2ChannelBackend::GetQos(const Options::QosOptions& qos_option) {
     qos.liveliness_lease_duration(rclcpp::Duration::from_nanoseconds(qos_option.liveliness_lease_duration * 1000000));
   }
   return qos;
-}
-
-bool Ros2ChannelBackend::Subscribe(
-    const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
-  try {
-    if (state_.load() != State::Init) {
-      AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
-      return false;
-    }
-
-    const auto& info = subscribe_wrapper.info;
-
-    // 前缀是ros2类型的消息
-    if (CheckRosMsg(info.msg_type)) {
-      ChannelTypeKey type_key{
-          info.pkg_path,
-          info.module_name,
-          info.topic_name,
-          info.msg_type};
-
-      if (ros2_subscribe_wrapper_map_.find(type_key) != ros2_subscribe_wrapper_map_.end()) {
-        // 重复注册
-        AIMRT_WARN(
-            "Msg type '{}' is subscribed repeatedly in ros2 channel backend, topic '{}', module '{}', lib path '{}'",
-            info.msg_type, info.topic_name, info.module_name, info.pkg_path);
-        return false;
-      }
-
-      std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
-          info.topic_name,
-          ros2_node_ptr_->get_sub_namespace());
-      rclcpp::QoS qos(10);
-      // 读取配置中的QOS
-      auto find_qos_option = std::find_if(options_.sub_topics_options.begin(), options_.sub_topics_options.end(), [&ros2_topic_name](const Options::SubTopicOptions& sub_option) {
-        try {
-          return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
-        } catch (const std::exception& e) {
-          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                     sub_option.topic_name, ros2_topic_name, e.what());
-          return false;
-        }
-      });
-      if (find_qos_option != options_.sub_topics_options.end()) {
-        qos = GetQos(find_qos_option->qos);
-      }
-      auto node_topics_interface =
-          rclcpp::node_interfaces::get_node_topics_interface(*ros2_node_ptr_);
-
-      rclcpp::SubscriptionFactory factory{
-          [&subscribe_wrapper](
-              rclcpp::node_interfaces::NodeBaseInterface* node_base,
-              const std::string& topic_name,
-              const rclcpp::QoS& qos) -> rclcpp::SubscriptionBase::SharedPtr {
-            const rclcpp::SubscriptionOptionsWithAllocator<
-                std::allocator<void>>& options =
-                rclcpp::SubscriptionOptionsWithAllocator<std::allocator<void>>();
-
-            std::shared_ptr<Ros2AdapterSubscription> subscriber =
-                std::make_shared<Ros2AdapterSubscription>(
-                    node_base,
-                    *static_cast<const rosidl_message_type_support_t*>(subscribe_wrapper.info.msg_type_support_ref.CustomTypeSupportPtr()),
-                    topic_name,
-                    // todo: ros2的bug，新版本修复后去掉模板参数
-                    options.to_rcl_subscription_options<void>(qos),
-                    subscribe_wrapper);
-            return std::dynamic_pointer_cast<rclcpp::SubscriptionBase>(subscriber);
-          }};
-
-      auto subscriber = node_topics_interface->create_subscription(ros2_topic_name, factory, qos);
-      node_topics_interface->add_subscription(subscriber, nullptr);
-
-      ros2_subscribe_wrapper_map_.emplace(type_key, subscriber);
-
-      AIMRT_INFO("subscribe topic '{}' success.", info.topic_name);
-
-      return true;
-    }
-
-    // 前缀不是ros2类型的消息
-    std::string real_ros2_topic_name =
-        info.topic_name + "/" + Ros2NameEncode(info.msg_type);
-
-    auto find_itr = subscribe_wrapper_map_.find(real_ros2_topic_name);
-    if (find_itr != subscribe_wrapper_map_.end()) {
-      find_itr->second->emplace_back(&subscribe_wrapper);
-      return true;
-    }
-
-    auto emplace_ret = subscribe_wrapper_map_.emplace(
-        real_ros2_topic_name,
-        std::make_unique<std::vector<const runtime::core::channel::SubscribeWrapper*>>(
-            std::vector<const runtime::core::channel::SubscribeWrapper*>{&subscribe_wrapper}));
-
-    auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
-
-    subscriber_map_.emplace(
-        real_ros2_topic_name,
-        ros2_node_ptr_->create_subscription<ros2_plugin_proto::msg::RosMsgWrapper>(
-            real_ros2_topic_name,
-            10,
-            [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](
-                ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
-              auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
-
-              const std::string& serialization_type = wrapper_msg->serialization_type;
-              ctx_ptr->SetSerializationType(serialization_type);
-
-              size_t context_size = wrapper_msg->context.size() / 2;
-              for (size_t ii = 0; ii < context_size; ++ii) {
-                const auto& key = wrapper_msg->context[ii * 2];
-                const auto& val = wrapper_msg->context[ii * 2 + 1];
-                ctx_ptr->SetMetaValue(key, val);
-              }
-
-              ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
-              ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
-
-              aimrt_buffer_view_t buffer_view{
-                  .data = wrapper_msg->data.data(),
-                  .len = wrapper_msg->data.size()};
-
-              aimrt_buffer_array_view_t buffer_array_view{
-                  .data = &buffer_view,
-                  .len = 1};
-
-              // 每个lib统一一次性发布。lib_name:msg_ptr
-              std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
-              for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-                if (msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path) != msg_ptr_map.end())
-                  continue;
-
-                auto subscribe_type_support_ref = subscribe_wrapper_ptr->info.msg_type_support_ref;
-
-                // 创建消息
-                std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
-
-                // 消息反序列化
-                bool deserialize_ret = subscribe_type_support_ref.Deserialize(
-                    serialization_type, buffer_array_view, msg_ptr.get());
-
-                AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Mqtt msg deserialize failed.");
-
-                msg_ptr_map.emplace(subscribe_wrapper_ptr->info.pkg_path, msg_ptr);
-              }
-
-              // 调用注册的subscribe方法
-              for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-                auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path);
-                std::shared_ptr<void> msg_ptr = finditr->second;
-
-                // 创建 sub msg wrapper
-                runtime::core::channel::MsgWrapper sub_msg_wrapper{
-                    .info = subscribe_wrapper_ptr->info,
-                    .msg_ptr = msg_ptr.get(),
-                    .ctx_ref = ctx_ptr};
-
-                subscribe_wrapper_ptr->callback(sub_msg_wrapper, [msg_ptr, ctx_ptr]() {});
-              }
-            }));
-
-    AIMRT_INFO("subscribe topic '{}' success, real ros2 topic name is '{}'.",
-               info.topic_name, real_ros2_topic_name);
-
-    return true;
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("{}", e.what());
-    return false;
-  }
-}
-
-void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
-  try {
-    if (state_.load() != State::Start) [[unlikely]] {
-      AIMRT_WARN("Method can only be called when state is 'Start'.");
-      return;
-    }
-
-    const auto& info = msg_wrapper.info;
-
-    // 前缀是ros2类型的消息
-    if (CheckRosMsg(info.msg_type)) {
-      ChannelTypeKey type_key{
-          info.pkg_path,
-          info.module_name,
-          info.topic_name,
-          info.msg_type};
-
-      auto finditr = ros2_publish_type_wrapper_map_.find(type_key);
-      if (finditr == ros2_publish_type_wrapper_map_.end()) {
-        AIMRT_WARN(
-            "Publish msg type '{}' unregistered in ros2 channel backend, topic '{}', module '{}', lib path '{}'",
-            info.msg_type, info.topic_name, info.module_name, info.pkg_path);
-        return;
-      }
-
-      rcl_publisher_t& publisher = finditr->second->publisher;
-
-      aimrt::runtime::core::channel::CheckMsg(msg_wrapper);
-
-      rcl_ret_t ret = rcl_publish(&publisher, msg_wrapper.msg_ptr, nullptr);
-      if (ret != RMW_RET_OK) {
-        AIMRT_WARN(
-            "Publish msg type '{}' failed in ros2 channel backend, topic '{}', module '{}', lib path '{}', error info: {}",
-            info.msg_type, info.topic_name, info.module_name, info.pkg_path,
-            rcl_get_error_string().str);
-        rcl_reset_error();
-      }
-
-      return;
-    }
-
-    // 前缀不是ros2类型的消息
-    std::string real_ros2_topic_name =
-        info.topic_name + "/" + Ros2NameEncode(info.msg_type);
-
-    auto find_itr = publisher_map_.find(real_ros2_topic_name);
-    if (find_itr == publisher_map_.end()) {
-      AIMRT_WARN(
-          "Publish msg type '{}' unregistered in ros2 channel backend, topic '{}', module '{}', lib path '{}'",
-          info.msg_type, info.topic_name, info.module_name, info.pkg_path);
-      return;
-    }
-    auto ros2_publisher_ptr = find_itr->second;
-
-    // 确定数据序列化类型，先找ctx，ctx中未配置则找支持的第一种序列化类型
-    auto publish_type_support_ref = info.msg_type_support_ref;
-
-    std::string_view serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
-    if (serialization_type.empty()) {
-      serialization_type = publish_type_support_ref.DefaultSerializationType();
-    }
-
-    // msg序列化
-    auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
-    if (!buffer_array_view_ptr) [[unlikely]] {
-      AIMRT_ERROR(
-          "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-          serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
-      return;
-    }
-
-    // 填内容，直接复制过去
-    auto buffer_array_data = buffer_array_view_ptr->Data();
-    const size_t buffer_array_len = buffer_array_view_ptr->Size();
-    size_t msg_size = buffer_array_view_ptr->BufferSize();
-
-    ros2_plugin_proto::msg::RosMsgWrapper wrapper_msg;
-    wrapper_msg.serialization_type = serialization_type;
-
-    // context
-    const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
-    wrapper_msg.context.reserve(2 * keys.size());
-    for (const auto& key : keys) {
-      wrapper_msg.context.emplace_back(key);
-      wrapper_msg.context.emplace_back(msg_wrapper.ctx_ref.GetMetaValue(key));
-    }
-
-    wrapper_msg.data.resize(msg_size);
-
-    auto cur_pos = wrapper_msg.data.data();
-    for (size_t ii = 0; ii < buffer_array_len; ++ii) {
-      memcpy(cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
-      cur_pos += buffer_array_data[ii].len;
-    }
-
-    // 发送数据
-    ros2_publisher_ptr->publish(std::move(wrapper_msg));
-  } catch (const std::exception& e) {
-    AIMRT_ERROR("{}", e.what());
-  }
 }
 
 }  // namespace aimrt::plugins::ros2_plugin

@@ -388,7 +388,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
             Shutdown();
 
-            AIMRT_ERROR_THROW("Http client session send & recv failed and exit.");
+            AIMRT_WARN_THROW("Http client session send & recv failed and exit.");
           },
           boost::asio::use_awaitable);
     }

@@ -19,15 +19,13 @@ void Ros2AdapterSubscription::handle_message(
     std::shared_ptr<void>& message, const rclcpp::MessageInfo& message_info) {
   if (!run_flag.load()) return;
 
-  auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
+  try {
+    auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
-  // 创建 sub msg wrapper
-  runtime::core::channel::MsgWrapper sub_msg_wrapper{
-      .info = subscribe_wrapper_.info,
-      .msg_ptr = message.get(),
-      .ctx_ref = ctx_ptr};
-
-  subscribe_wrapper_.callback(sub_msg_wrapper, [message, ctx_ptr]() {});
+    sub_tool_.DoSubscribeCallback(ctx_ptr, subscribe_wrapper_, message);
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("{}", e.what());
+  }
 }
 
 void Ros2AdapterSubscription::handle_serialized_message(

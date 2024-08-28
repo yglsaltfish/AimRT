@@ -47,10 +47,8 @@ void ZenohChannelBackend::Shutdown() {
 bool ZenohChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
-      AIMRT_ERROR("Method can only be called when state is 'Init'.");
-      return false;
-    }
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+                            "Method can only be called when state is 'Init'.");
 
     const auto& info = publish_type_wrapper.info;
 
@@ -60,11 +58,8 @@ bool ZenohChannelBackend::RegisterPublishType(
                           util::UrlEncode(info.topic_name) + "/" +
                           util::UrlEncode(info.msg_type);
 
-    if (pattern.size() > 255) {
-      AIMRT_ERROR("Too long uri: {}", pattern);
-      return false;
-    }
     zenoh_manager_ptr_->RegisterPublisher(pattern);
+
     AIMRT_INFO("Register publish type to zenoh channel, url: {}", pattern);
 
     return true;
@@ -77,10 +72,8 @@ bool ZenohChannelBackend::RegisterPublishType(
 bool ZenohChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
-      AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
-      return false;
-    }
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+                            "Method can only be called when state is 'Init'.");
 
     const auto& info = subscribe_wrapper.info;
     namespace util = aimrt::common::util;
@@ -91,17 +84,19 @@ bool ZenohChannelBackend::Subscribe(
 
     auto find_itr = subscribe_wrapper_map_.find(pattern);
     if (find_itr != subscribe_wrapper_map_.end()) {
-      find_itr->second->emplace_back(&subscribe_wrapper);
+      find_itr->second->AddSubscribeWrapper(&subscribe_wrapper);
       return true;
     }
-    auto emplace_ret = subscribe_wrapper_map_.emplace(
-        pattern,
-        std::make_unique<std::vector<const runtime::core::channel::SubscribeWrapper*>>(
-            std::vector<const runtime::core::channel::SubscribeWrapper*>{&subscribe_wrapper}));
-    auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
+
+    auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
+    sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
+
+    auto sub_tool_ptr = sub_tool_unique_ptr.get();
+
+    subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
     auto handle =
-        [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](const z_loaned_sample_t* message) {
+        [this, topic_name = info.topic_name, sub_tool_ptr](const z_loaned_sample_t* message) {
           try {
             auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
@@ -126,39 +121,9 @@ bool ZenohChannelBackend::Subscribe(
               ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
               auto remaining_buf = buf_oper.GetRemainingBuffer();
-              aimrt_buffer_view_t buffer_view{
-                  .data = remaining_buf.data(),
-                  .len = remaining_buf.size()};
 
-              aimrt_buffer_array_view_t buffer_array_view{
-                  .data = &buffer_view,
-                  .len = 1};
-
-              std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
-              for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-                if (msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path) != msg_ptr_map.end())
-                  continue;
-                auto subscribe_type_support_ref = subscribe_wrapper_ptr->info.msg_type_support_ref;
-
-                std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
-
-                bool deserialize_ret = subscribe_type_support_ref.Deserialize(
-                    serialization_type, buffer_array_view, msg_ptr.get());
-                AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Zenoh msg deserialize failed! ");
-
-                msg_ptr_map.emplace(subscribe_wrapper_ptr->info.pkg_path, msg_ptr);
-              }
-
-              for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-                auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path);
-                std::shared_ptr<void> msg_ptr = finditr->second;
-
-                runtime::core::channel::MsgWrapper sub_msg_wrapper{
-                    .info = subscribe_wrapper_ptr->info,
-                    .msg_ptr = msg_ptr.get(),
-                    .ctx_ref = ctx_ptr};
-                subscribe_wrapper_ptr->callback(sub_msg_wrapper, [msg_ptr, ctx_ptr]() {});
-              }
+              sub_tool_ptr->DoSubscribeCallback(
+                  ctx_ptr, serialization_type, static_cast<const void*>(remaining_buf.data()), remaining_buf.size());
 
             } else {
               AIMRT_ERROR("Zenoh Plugin Read payload failed!");
@@ -178,10 +143,9 @@ bool ZenohChannelBackend::Subscribe(
 
 void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
-    if (state_.load() != State::Start) [[unlikely]] {
-      AIMRT_WARN("Method can only be called when state is 'Start'.");
-      return;
-    }
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Start,
+                            "Method can only be called when state is 'Start'.");
+
     namespace util = aimrt::common::util;
     const auto& info = msg_wrapper.info;
 
@@ -193,22 +157,18 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
     }
 
     auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
-    if (!buffer_array_view_ptr) [[unlikely]] {
-      AIMRT_ERROR(
-          "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-          serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
-      return;
-    }
+    AIMRT_CHECK_ERROR_THROW(
+        buffer_array_view_ptr,
+        "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+        serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
     auto buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t msg_size = buffer_array_view_ptr->BufferSize();
 
     const auto& keys = msg_wrapper.ctx_ref.GetMetaKeys();
-    if (keys.size() > 255) [[unlikely]] {
-      AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", keys.size());
-      return;
-    }
+    AIMRT_CHECK_ERROR_THROW(keys.size() <= 255,
+                            "Too much context meta, require less than 255, but actually {}.", keys.size());
 
     std::vector<std::string_view> context_meta_kv;
     size_t context_meta_kv_size = 1;

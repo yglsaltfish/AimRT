@@ -37,7 +37,7 @@ class NormalPublisherModule : public aimrt::ModuleBase {
   std::atomic_bool run_flag_ = true;
   std::promise<void> stop_sig_;
 
-  std::string topic_name_;
+  std::string topic_name_ = "test_topic";
   double channel_frq_;
   aimrt::channel::PublisherRef publisher_;
 };

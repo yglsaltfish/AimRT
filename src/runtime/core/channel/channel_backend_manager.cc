@@ -143,18 +143,20 @@ bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
             [this,
              sub_func_ptr = sub_func_shared_ptr.get(),
              release_callback_shared_ptr](MsgWrapper& msg_wrapper) {
-              if (!TryCheckMsg(msg_wrapper)) [[unlikely]] {
-                AIMRT_WARN("Msg is null!");
-                return;
+              try {
+                CheckMsg(msg_wrapper);
+
+                aimrt::channel::SubscriberReleaseCallback release_callback(
+                    [release_callback_shared_ptr, msg_cache_ptr{msg_wrapper.msg_cache_ptr}]() {});
+
+                (*sub_func_ptr)(
+                    msg_wrapper.ctx_ref.NativeHandle(),
+                    msg_wrapper.msg_ptr,
+                    release_callback.NativeHandle());
+
+              } catch (const std::exception& e) {
+                AIMRT_ERROR("{}", e.what());
               }
-
-              aimrt::channel::SubscriberReleaseCallback release_callback(
-                  [release_callback_shared_ptr, msg_cache_ptr{msg_wrapper.msg_cache_ptr}]() {});
-
-              (*sub_func_ptr)(
-                  msg_wrapper.ctx_ref.NativeHandle(),
-                  msg_wrapper.msg_ptr,
-                  release_callback.NativeHandle());
             },
             msg_wrapper);
       };

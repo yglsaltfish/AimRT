@@ -22,11 +22,13 @@ class PublisherProxy {
   PublisherProxy(std::string_view pkg_path,
                  std::string_view module_name,
                  std::string_view topic_name,
+                 aimrt::common::util::LoggerWrapper& logger,
                  ChannelBackendManager& channel_backend_manager,
                  const std::unordered_set<std::string>& passed_context_meta_keys)
       : pkg_path_(pkg_path),
         module_name_(module_name),
         topic_name_(topic_name),
+        logger_(logger),
         channel_backend_manager_(channel_backend_manager),
         passed_context_meta_keys_(passed_context_meta_keys),
         base_(GenBase(this)) {}
@@ -36,6 +38,8 @@ class PublisherProxy {
   PublisherProxy& operator=(const PublisherProxy&) = delete;
 
   const aimrt_channel_publisher_base_t* NativeHandle() const { return &base_; }
+
+  const aimrt::common::util::LoggerWrapper& GetLogger() const { return logger_; }
 
  private:
   bool RegisterPublishType(const aimrt_type_support_base_t* msg_type_support) {
@@ -67,7 +71,7 @@ class PublisherProxy {
 
     if (subscribe_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT ||
         publish_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT) [[unlikely]] {
-      // TODO warn log
+      AIMRT_WARN("Invalid context type!");
       return;
     }
 
@@ -103,6 +107,8 @@ class PublisherProxy {
   const std::string pkg_path_;
   const std::string module_name_;
   const std::string topic_name_;
+
+  aimrt::common::util::LoggerWrapper& logger_;
 
   ChannelBackendManager& channel_backend_manager_;
 
@@ -225,6 +231,7 @@ class ChannelHandleProxy {
             pkg_path_,
             module_name_,
             topic,
+            logger_,
             channel_backend_manager_,
             passed_context_meta_keys_));
 
@@ -262,7 +269,7 @@ class ChannelHandleProxy {
 
     if (subscribe_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT ||
         publish_ctx_ref.GetType() != aimrt_channel_context_type_t::AIMRT_CHANNEL_PUBLISHER_CONTEXT) [[unlikely]] {
-      // TODO warn log
+      AIMRT_WARN("Invalid context type!");
       return;
     }
 

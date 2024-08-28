@@ -89,6 +89,9 @@ void HttpChannelBackend::Shutdown() {
 bool HttpChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   try {
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+                            "Method can only be called when state is 'Init'.");
+
     namespace util = aimrt::common::util;
 
     const auto& info = publish_type_wrapper.info;
@@ -136,10 +139,8 @@ bool HttpChannelBackend::RegisterPublishType(
 bool HttpChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
-      AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
-      return false;
-    }
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+                            "Method can only be called when state is 'Init'.");
 
     namespace asio = boost::asio;
     namespace http = boost::beast::http;
@@ -153,19 +154,19 @@ bool HttpChannelBackend::Subscribe(
 
     auto find_itr = http_subscribe_wrapper_map_.find(pattern);
     if (find_itr != http_subscribe_wrapper_map_.end()) {
-      find_itr->second->emplace_back(&subscribe_wrapper);
+      find_itr->second->AddSubscribeWrapper(&subscribe_wrapper);
       return true;
     }
 
-    auto emplace_ret = http_subscribe_wrapper_map_.emplace(
-        pattern,
-        std::make_unique<std::vector<const runtime::core::channel::SubscribeWrapper*>>(
-            std::vector<const runtime::core::channel::SubscribeWrapper*>{&subscribe_wrapper}));
+    auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
+    sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
 
-    auto subscribe_wrapper_vec_ptr = emplace_ret.first->second.get();
+    auto sub_tool_ptr = sub_tool_unique_ptr.get();
+
+    http_subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
     runtime::common::net::AsioHttpServer::HttpHandle<http::dynamic_body> http_handle =
-        [this, topic_name = info.topic_name, subscribe_wrapper_vec_ptr](
+        [this, topic_name = info.topic_name, sub_tool_ptr](
             const http::request<http::dynamic_body>& req,
             http::response<http::dynamic_body>& rsp,
             std::chrono::nanoseconds timeout)
@@ -220,43 +221,9 @@ bool HttpChannelBackend::Subscribe(
             .len = buf.size()});
       }
 
-      aimrt_buffer_array_view_t buffer_array_view{
-          .data = buffer_view_vec.data(),
-          .len = buffer_view_vec.size()};
+      aimrt::util::BufferArrayView buffer_array_view(buffer_view_vec);
 
-      // 每个lib统一一次性发布。lib_name:msg_ptr
-      std::unordered_map<std::string_view, std::shared_ptr<void>> msg_ptr_map;
-      for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-        if (msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path) != msg_ptr_map.end())
-          continue;
-
-        auto subscribe_type_support_ref = subscribe_wrapper_ptr->info.msg_type_support_ref;
-
-        // 创建消息
-        std::shared_ptr<void> msg_ptr = subscribe_type_support_ref.CreateSharedPtr();
-
-        // 消息反序列化
-        bool deserialize_ret = subscribe_type_support_ref.Deserialize(
-            serialization_type, buffer_array_view, msg_ptr.get());
-
-        AIMRT_CHECK_ERROR_THROW(deserialize_ret, "Http req deserialize failed.");
-
-        msg_ptr_map.emplace(subscribe_wrapper_ptr->info.pkg_path, msg_ptr);
-      }
-
-      // 调用注册的subscribe方法
-      for (auto subscribe_wrapper_ptr : *subscribe_wrapper_vec_ptr) {
-        auto finditr = msg_ptr_map.find(subscribe_wrapper_ptr->info.pkg_path);
-        std::shared_ptr<void> msg_ptr = finditr->second;
-
-        // 创建 sub msg wrapper
-        runtime::core::channel::MsgWrapper sub_msg_wrapper{
-            .info = subscribe_wrapper_ptr->info,
-            .msg_ptr = msg_ptr.get(),
-            .ctx_ref = ctx_ptr};
-
-        subscribe_wrapper_ptr->callback(sub_msg_wrapper, [msg_ptr, ctx_ptr]() {});
-      }
+      sub_tool_ptr->DoSubscribeCallback(ctx_ptr, serialization_type, buffer_array_view);
 
       co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::OK;
     };
@@ -275,10 +242,8 @@ bool HttpChannelBackend::Subscribe(
 
 void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
-    if (state_.load() != State::Start) [[unlikely]] {
-      AIMRT_WARN("Method can only be called when state is 'Start'.");
-      return;
-    }
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Start,
+                            "Method can only be called when state is 'Start'.");
 
     namespace asio = boost::asio;
     namespace http = boost::beast::http;
@@ -287,10 +252,9 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
     const auto& info = msg_wrapper.info;
 
     auto find_itr = pub_cfg_info_map_.find(info.topic_name);
-    if (find_itr == pub_cfg_info_map_.end() || find_itr->second.server_url_st_vec.empty()) {
-      AIMRT_WARN("Server url list is empty for topic '{}'", info.topic_name);
-      return;
-    }
+    AIMRT_CHECK_ERROR_THROW(
+        find_itr != pub_cfg_info_map_.end() && !(find_itr->second.server_url_st_vec.empty()),
+        "Server url list is empty for topic '{}'", info.topic_name);
 
     const auto& server_url_st_vec = find_itr->second.server_url_st_vec;
 
@@ -319,8 +283,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
     } else if (serialization_type == "ros2") {
       req_ptr->set(http::field::content_type, "application/ros2");
     } else {
-      AIMRT_WARN("Unsupport serialization type '{}'", serialization_type);
-      return;
+      req_ptr->set(http::field::content_type, "application/" + std::string(serialization_type));
     }
 
     // 向http header中设置其他context meta字段
@@ -333,12 +296,10 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     // msg序列化
     auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
-    if (!buffer_array_view_ptr) [[unlikely]] {
-      AIMRT_ERROR(
-          "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-          serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
-      return;
-    }
+    AIMRT_CHECK_ERROR_THROW(
+        buffer_array_view_ptr,
+        "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
+        serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
     // 填http req包，直接复制过去
     size_t msg_size = buffer_array_view_ptr->BufferSize();
