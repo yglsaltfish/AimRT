@@ -32,7 +32,7 @@ class NormalSubscriberModule : public aimrt::ModuleBase {
  private:
   aimrt::CoreRef core_;
 
-  std::string topic_name_;
+  std::string topic_name_ = "test_topic";
   aimrt::channel::SubscriberRef subscriber_;
 };
 

@@ -22,7 +22,6 @@
 
 namespace aimrt::plugins::ros2_plugin {
 
-// todo：暂时只支持cdr序列化
 class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
  public:
   struct Options {
@@ -142,62 +141,54 @@ class Ros2ChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   std::shared_ptr<rclcpp::Node> ros2_node_ptr_;
 
-  struct ChannelTypeKey {
-    std::string_view lib_path;
-    std::string_view module_name;
-    std::string_view topic_name;
-    std::string_view msg_type;
+  struct Key {
+    std::string topic_name;
+    std::string msg_type;
 
-    bool operator==(const ChannelTypeKey& val) const {
-      return ((lib_path == val.lib_path) &&
-              (module_name == val.module_name) &&
-              (topic_name == val.topic_name) &&
-              (msg_type == val.msg_type));
+    bool operator==(const Key& rhs) const {
+      return topic_name == rhs.topic_name && msg_type == rhs.msg_type;
     }
+
+    struct Hash {
+      std::size_t operator()(const Key& k) const {
+        return (std::hash<std::string>()(k.topic_name)) ^
+               (std::hash<std::string>()(k.msg_type));
+      }
+    };
   };
 
-  struct ChannelTypeKeyHash {
-    std::size_t operator()(const ChannelTypeKey& key) const {
-      return std::hash<std::string_view>{}(key.lib_path) +
-             std::hash<std::string_view>{}(key.module_name) +
-             std::hash<std::string_view>{}(key.topic_name) +
-             std::hash<std::string_view>{}(key.msg_type);
-    }
-  };
-
-  struct Ros2PublishWrapper {
-    const runtime::core::channel::PublishTypeWrapper& type_wrapper;
-    rcl_publisher_t publisher;
-  };
-
+  // ros2 msg
   std::unordered_map<
-      ChannelTypeKey,
-      std::unique_ptr<Ros2PublishWrapper>,
-      ChannelTypeKeyHash,
+      Key,
+      std::unique_ptr<rcl_publisher_t>,
+      Key::Hash,
       std::equal_to<>>
       ros2_publish_type_wrapper_map_;
 
+  struct RosSubWrapper {
+    std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool> sub_tool_ptr;
+    std::shared_ptr<rclcpp::SubscriptionBase> ros_sub_handle_ptr;
+  };
+
   std::unordered_map<
-      ChannelTypeKey,
-      std::shared_ptr<rclcpp::SubscriptionBase>,
-      ChannelTypeKeyHash,
+      Key,
+      RosSubWrapper,
+      Key::Hash,
       std::equal_to<>>
       ros2_subscribe_wrapper_map_;
 
+  // other msg
   std::unordered_map<
       std::string,
       rclcpp::Publisher<ros2_plugin_proto::msg::RosMsgWrapper>::SharedPtr>
       publisher_map_;
 
-  std::unordered_map<
-      std::string,
-      std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
-      subscribe_wrapper_map_;
+  struct SubWrapper {
+    std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool> sub_tool_ptr;
+    rclcpp::Subscription<ros2_plugin_proto::msg::RosMsgWrapper>::SharedPtr ros_sub_handle_ptr;
+  };
 
-  std::unordered_map<
-      std::string,
-      rclcpp::Subscription<ros2_plugin_proto::msg::RosMsgWrapper>::SharedPtr>
-      subscriber_map_;
+  std::unordered_map<std::string, SubWrapper> subscribe_wrapper_map_;
 };
 
 }  // namespace aimrt::plugins::ros2_plugin

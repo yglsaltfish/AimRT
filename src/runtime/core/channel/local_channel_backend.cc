@@ -150,9 +150,6 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
 
       auto tpl_sub_info = tpl_sub_wrapper_ptr->info;
 
-      // 创建该pkg下的 sub msg
-      std::shared_ptr<void> msg_ptr = tpl_sub_info.msg_type_support_ref.CreateSharedPtr();
-
       // 创建该pkg下的 context
       auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
 
@@ -166,9 +163,36 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
 
       if (cur_sub_pkg_path == pub_info.pkg_path) {
         // pub和sub在同一个pkg中，直接复制
+
+        // 创建该pkg下的 sub msg
+        std::shared_ptr<void> msg_ptr = tpl_sub_info.msg_type_support_ref.CreateSharedPtr();
+
         CheckMsg(msg_wrapper);
 
         tpl_sub_info.msg_type_support_ref.Copy(msg_wrapper.msg_ptr, msg_ptr.get());
+
+        // 调用注册的subscribe方法
+        for (const auto& sub_wrapper_itr : *module_sub_wrapper_map_ptr) {
+          const auto* sub_wrapper_ptr = sub_wrapper_itr.second;
+
+          // 创建该 pkg-module 下的 MsgWrapper
+          MsgWrapper sub_msg_warpper{
+              .info = sub_wrapper_ptr->info,
+              .msg_ptr = msg_ptr.get(),
+              .ctx_ref = ctx_ptr,
+              .serialization_cache = msg_wrapper.serialization_cache,
+              .msg_cache_ptr = msg_ptr};
+
+          if (subscribe_executor_ref_) {
+            subscribe_executor_ref_.Execute(
+                [sub_wrapper_ptr, ctx_ptr, sub_msg_warpper{std::move(sub_msg_warpper)}]() mutable {
+                  sub_wrapper_ptr->callback(sub_msg_warpper, [ctx_ptr]() {});
+                });
+          } else {
+            sub_wrapper_ptr->callback(sub_msg_warpper, [ctx_ptr]() {});
+          }
+        }
+
       } else {
         // pub和sub在不同pkg中，需要进行序列化反序列化
         // 在同一个pkg中的不同模块中，对同一个类型结构可以复用，不管它是通过哪种序列化方法/反序列化方法从pub端原始结构转过来的
@@ -177,44 +201,27 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
         ctx_ptr->SetSerializationType(serialization_type);
 
         // pub 端 msg 序列化
-        auto buffer_array_view_ptr = SerializeMsgWithCache(msg_wrapper, serialization_type);
-        if (!buffer_array_view_ptr) {
-          AIMRT_ERROR(
-              "Msg serialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-              serialization_type, pub_info.pkg_path, pub_info.module_name, pub_info.topic_name, pub_info.msg_type);
-          continue;
-        }
+        SerializeMsgWithCache(msg_wrapper, serialization_type);
 
-        // sub 端 msg 反序列化
-        bool deserialize_ret = tpl_sub_info.msg_type_support_ref.Deserialize(
-            serialization_type, *(buffer_array_view_ptr->NativeHandle()), msg_ptr.get());
-        if (!deserialize_ret) {
-          // 反序列化失败
-          AIMRT_FATAL(
-              "Deserialization failed, serialization_type {}, pkg_path: {}, module_name: {}, topic_name: {}, msg_type: {}",
-              serialization_type, tpl_sub_info.pkg_path, tpl_sub_info.module_name, tpl_sub_info.topic_name, tpl_sub_info.msg_type);
-          continue;
-        }
-      }
+        // 调用注册的subscribe方法
+        for (const auto& sub_wrapper_itr : *module_sub_wrapper_map_ptr) {
+          const auto* sub_wrapper_ptr = sub_wrapper_itr.second;
 
-      // 调用注册的subscribe方法
-      for (const auto& sub_wrapper_itr : *module_sub_wrapper_map_ptr) {
-        const auto* sub_wrapper_ptr = sub_wrapper_itr.second;
+          // 创建该 pkg-module 下的 MsgWrapper
+          MsgWrapper sub_msg_warpper{
+              .info = sub_wrapper_ptr->info,
+              .msg_ptr = nullptr,
+              .ctx_ref = ctx_ptr,
+              .serialization_cache = msg_wrapper.serialization_cache};
 
-        // 创建该 pkg-module 下的 MsgWrapper
-        MsgWrapper sub_msg_warpper{
-            .info = sub_wrapper_ptr->info,
-            .msg_ptr = msg_ptr.get(),
-            .ctx_ref = ctx_ptr,
-            .serialization_cache = msg_wrapper.serialization_cache};
-
-        if (subscribe_executor_ref_) {
-          subscribe_executor_ref_.Execute(
-              [sub_wrapper_ptr, msg_ptr, ctx_ptr, sub_msg_warpper{std::move(sub_msg_warpper)}]() mutable {
-                sub_wrapper_ptr->callback(sub_msg_warpper, [msg_ptr, ctx_ptr]() {});
-              });
-        } else {
-          sub_wrapper_ptr->callback(sub_msg_warpper, [msg_ptr, ctx_ptr]() {});
+          if (subscribe_executor_ref_) {
+            subscribe_executor_ref_.Execute(
+                [sub_wrapper_ptr, ctx_ptr, sub_msg_warpper{std::move(sub_msg_warpper)}]() mutable {
+                  sub_wrapper_ptr->callback(sub_msg_warpper, [ctx_ptr]() {});
+                });
+          } else {
+            sub_wrapper_ptr->callback(sub_msg_warpper, [ctx_ptr]() {});
+          }
         }
       }
     }

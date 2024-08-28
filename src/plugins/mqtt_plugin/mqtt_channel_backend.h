@@ -83,7 +83,7 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
   std::unordered_map<
       std::string,
-      std::unique_ptr<std::vector<const runtime::core::channel::SubscribeWrapper*>>>
+      std::unique_ptr<aimrt::runtime::core::channel::SubscribeTool>>
       subscribe_wrapper_map_;
 
   struct PubCfgInfo {

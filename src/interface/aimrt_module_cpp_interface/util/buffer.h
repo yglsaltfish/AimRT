@@ -100,6 +100,12 @@ class BufferArray {
 
 class BufferArrayView {
  public:
+  explicit BufferArrayView(const std::vector<aimrt_buffer_view_t>& vec) {
+    buffer_array_view_vec_ = vec;
+
+    SyncCType();
+  }
+
   explicit BufferArrayView(const void* data, size_t len) {
     buffer_array_view_vec_.emplace_back(
         aimrt_buffer_view_t{.data = data, .len = len});

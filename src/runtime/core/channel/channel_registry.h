@@ -116,18 +116,18 @@ class ChannelRegistry {
   std::unordered_map<Key, std::unique_ptr<PublishTypeWrapper>, Key::Hash>
       publish_type_wrapper_map_;
 
-  // 索引表，topic:wrapper
+  // index map, topic:wrapper
   std::unordered_map<std::string_view, std::vector<PublishTypeWrapper*>>
       pub_topic_index_map_;
 
   std::unordered_map<Key, std::unique_ptr<SubscribeWrapper>, Key::Hash>
       subscribe_wrapper_map_;
 
-  // 索引表，topic:wrapper
+  // index map, topic:wrapper
   std::unordered_map<std::string_view, std::vector<SubscribeWrapper*>>
       sub_topic_index_map_;
 
-  // 索引表，msg-topic-pkg:module:wrapper
+  // index map, msg-topic-pkg:module:wrapper
   std::unordered_map<MTPKey, ModuleSubscribeWrapperMap, MTPKey::Hash>
       sub_msg_topic_pkg_index_map_;
 };

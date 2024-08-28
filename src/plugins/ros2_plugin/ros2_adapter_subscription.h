@@ -5,6 +5,7 @@
 
 #include "core/channel/channel_backend_base.h"
 
+#include "core/channel/channel_backend_tools.h"
 #include "rclcpp/subscription_base.hpp"
 #include "rclcpp/subscription_options.hpp"
 
@@ -17,9 +18,11 @@ class Ros2AdapterSubscription : public rclcpp::SubscriptionBase {
       const rosidl_message_type_support_t& type_support_handle,
       const std::string& topic_name,
       const rcl_subscription_options_t& subscription_options,
-      const runtime::core::channel::SubscribeWrapper& subscribe_wrapper)
+      const runtime::core::channel::SubscribeWrapper& subscribe_wrapper,
+      const aimrt::runtime::core::channel::SubscribeTool& sub_tool)
       : rclcpp::SubscriptionBase(node_base, type_support_handle, topic_name, subscription_options),
-        subscribe_wrapper_(subscribe_wrapper) {}
+        subscribe_wrapper_(subscribe_wrapper),
+        sub_tool_(sub_tool) {}
 
   ~Ros2AdapterSubscription() override = default;
 
@@ -49,6 +52,7 @@ class Ros2AdapterSubscription : public rclcpp::SubscriptionBase {
  private:
   std::atomic_bool run_flag = false;
   const runtime::core::channel::SubscribeWrapper& subscribe_wrapper_;
+  const aimrt::runtime::core::channel::SubscribeTool& sub_tool_;
 };
 
 }  // namespace aimrt::plugins::ros2_plugin
