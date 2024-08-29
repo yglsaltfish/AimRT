@@ -273,12 +273,18 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
         auto find_itr = clients_backend_index_map_.find(func_name);
 
         if (find_itr == clients_backend_index_map_.end()) [[unlikely]] {
-          AIMRT_ERROR("Rpc call found no backend to handle, func name '{}'.", func_name);
+          AIMRT_WARN("Rpc call found no backend to handle, func name '{}'.", func_name);
           client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE));
           return;
         }
 
         const auto& backend_ptr_vec = find_itr->second;
+
+        if (backend_ptr_vec.empty()) [[unlikely]] {
+          AIMRT_WARN("Rpc call found no backend to handle, func name '{}'.", func_name);
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_NO_BACKEND_TO_HANDLE));
+          return;
+        }
 
         // 如果ctx中指定了后端，则使用指定的后端
         std::string_view to_addr(client_invoke_wrapper_ptr->ctx_ref.GetToAddr());
@@ -305,7 +311,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
         }
 
         // 使用配置的第一个backend
-        auto& backend = *(backend_ptr_vec.back());
+        auto& backend = *(backend_ptr_vec[0]);
         AIMRT_TRACE("Rpc call use backend '{}', func name '{}'.", backend.Name(), func_name);
         backend.Invoke(client_invoke_wrapper_ptr);
       },
