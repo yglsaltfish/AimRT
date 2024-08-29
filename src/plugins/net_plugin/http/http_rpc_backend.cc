@@ -182,7 +182,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
       // 设置回调
       uint32_t ret_code = 0;
-      auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, timeout);
+      auto sig_timer_ptr = std::make_shared<asio::steady_timer>(*io_ptr_, std::chrono::nanoseconds::max());
       std::atomic_bool handle_flag = false;
 
       service_invoke_wrapper_ptr->callback =
@@ -251,17 +251,10 @@ bool HttpRpcBackend::RegisterServiceFunc(
       // service rpc调用
       service_func_wrapper.service_func(service_invoke_wrapper_ptr);
 
-      bool finish_flag = true;
       if (!handle_flag.load()) {
-        try {
-          co_await sig_timer_ptr->async_wait(asio::use_awaitable);
-          if (!handle_flag.load()) finish_flag = false;
-        } catch (const std::exception& e) {
-          AIMRT_TRACE("rpc cli session recv sig timer canceled, exception info: {}", e.what());
-        }
+        co_await sig_timer_ptr->async_wait(asio::use_awaitable);
       }
 
-      AIMRT_CHECK_ERROR_THROW(finish_flag, "Local processing timeout.");
       AIMRT_CHECK_ERROR_THROW(ret_code == 0, "Handle rpc failed, code: {}.", ret_code);
 
       co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::OK;
