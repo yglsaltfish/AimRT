@@ -436,7 +436,7 @@ void Ros2RpcBackend::Invoke(
     if (CheckRosFunc(info.func_name)) {
       auto finditr = ros2_adapter_client_map_.find(info.func_name);
       if (finditr == ros2_adapter_client_map_.end()) {
-        AIMRT_TRACE(
+        AIMRT_WARN(
             "Client '{}' unregistered in ros2 rpc backend, module '{}', lib path '{}'",
             info.func_name, info.module_name, info.pkg_path);
 
@@ -445,8 +445,8 @@ void Ros2RpcBackend::Invoke(
       }
 
       if (!(finditr->second->service_is_ready())) {
-        AIMRT_TRACE("Ros2 service '{}' not ready, module '{}', lib path '{}'",
-                    info.func_name, info.module_name, info.pkg_path);
+        AIMRT_WARN("Ros2 service '{}' not ready, module '{}', lib path '{}'",
+                   info.func_name, info.module_name, info.pkg_path);
 
         client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
         return;
@@ -459,7 +459,7 @@ void Ros2RpcBackend::Invoke(
     // 前缀不是ros2类型的消息
     auto finditr = ros2_adapter_wrapper_client_map_.find(info.func_name);
     if (finditr == ros2_adapter_wrapper_client_map_.end()) {
-      AIMRT_TRACE(
+      AIMRT_WARN(
           "Client '{}' unregistered in ros2 rpc backend, module '{}', lib path '{}'",
           info.func_name, info.module_name, info.pkg_path);
 
@@ -468,8 +468,8 @@ void Ros2RpcBackend::Invoke(
     }
 
     if (!(finditr->second->service_is_ready())) {
-      AIMRT_TRACE("Ros2 service '{}' not ready, module '{}', lib path '{}'",
-                  info.func_name, info.module_name, info.pkg_path);
+      AIMRT_WARN("Ros2 service '{}' not ready, module '{}', lib path '{}'",
+                 info.func_name, info.module_name, info.pkg_path);
 
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
