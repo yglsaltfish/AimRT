@@ -37,6 +37,9 @@ void LocalRpcBackend::Initialize(YAML::Node options_node) {
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
 
+  client_tool_ptr_ =
+      std::make_unique<util::RpcClientTool<std::shared_ptr<InvokeWrapper>>>();
+
   if (!options_.timeout_executor.empty()) {
     AIMRT_CHECK_ERROR_THROW(
         get_executor_func_,
@@ -47,9 +50,6 @@ void LocalRpcBackend::Initialize(YAML::Node options_node) {
     AIMRT_CHECK_ERROR_THROW(
         timeout_executor,
         "Get timeout executor '{}' failed.", options_.timeout_executor);
-
-    client_tool_ptr_ =
-        std::make_unique<util::RpcClientTool<std::shared_ptr<InvokeWrapper>>>();
 
     client_tool_ptr_->RegisterTimeoutExecutor(timeout_executor);
     client_tool_ptr_->RegisterTimeoutHandle(
