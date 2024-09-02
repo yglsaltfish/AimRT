@@ -3,6 +3,7 @@
 
 #include "core/rpc/rpc_manager.h"
 #include "core/rpc/local_rpc_backend.h"
+#include "core/rpc/rpc_backend_tools.h"
 
 namespace YAML {
 template <>
@@ -383,21 +384,35 @@ void RpcManager::RegisterDebugLogFilter() {
   RegisterClientFilter(
       "debug_log",
       [this](const std::shared_ptr<InvokeWrapper>& ptr, FrameworkAsyncRpcHandle&& h) {
-        auto req_str = ptr->SerializeReqWithCache("json")->JoinToString();
+        auto buf_ptr = TrySerializeReqWithCache(*ptr, "json");
 
-        AIMRT_INFO("RPC client start new rpc call. func name: {}, context: {}, req: {}",
-                   ptr->info.func_name, ptr->ctx_ref.ToString(), req_str);
+        if (buf_ptr) {
+          auto req_str = buf_ptr->JoinToString();
+
+          AIMRT_INFO("RPC client start new rpc call. func name: {}, context: {}, req: {}",
+                     ptr->info.func_name, ptr->ctx_ref.ToString(), req_str);
+        } else {
+          AIMRT_INFO("RPC client start new rpc call. func name: {}, context: {}",
+                     ptr->info.func_name, ptr->ctx_ref.ToString());
+        }
 
         ptr->callback =
             [this, ptr, callback{std::move(ptr->callback)}](aimrt::rpc::Status status) {
-              auto rsp_str = ptr->SerializeRspWithCache("json")->JoinToString();
-
-              if (status.OK()) {
-                AIMRT_INFO("RPC client get rpc ret. func name: {}, status: {}, rsp: {}",
-                           ptr->info.func_name, status.ToString(), rsp_str);
-              } else {
+              if (!status.OK()) {
                 AIMRT_WARN("RPC client get rpc error ret. func name: {}, status: {}",
                            ptr->info.func_name, status.ToString());
+              } else {
+                auto buf_ptr = TrySerializeRspWithCache(*ptr, "json");
+
+                if (buf_ptr) {
+                  auto rsp_str = buf_ptr->JoinToString();
+
+                  AIMRT_INFO("RPC client get rpc ret. func name: {}, status: {}, rsp: {}",
+                             ptr->info.func_name, status.ToString(), rsp_str);
+                } else {
+                  AIMRT_INFO("RPC client get rpc ret. func name: {}, status: {}",
+                             ptr->info.func_name, status.ToString());
+                }
               }
 
               callback(status);
@@ -409,21 +424,35 @@ void RpcManager::RegisterDebugLogFilter() {
   RegisterServerFilter(
       "debug_log",
       [this](const std::shared_ptr<InvokeWrapper>& ptr, FrameworkAsyncRpcHandle&& h) {
-        auto req_str = ptr->SerializeReqWithCache("json")->JoinToString();
+        auto buf_ptr = TrySerializeReqWithCache(*ptr, "json");
 
-        AIMRT_INFO("RPC server get new rpc call. func name: {}, context: {}, req: {}",
-                   ptr->info.func_name, ptr->ctx_ref.ToString(), req_str);
+        if (buf_ptr) {
+          auto req_str = buf_ptr->JoinToString();
+
+          AIMRT_INFO("RPC server start new rpc call. func name: {}, context: {}, req: {}",
+                     ptr->info.func_name, ptr->ctx_ref.ToString(), req_str);
+        } else {
+          AIMRT_INFO("RPC server start new rpc call. func name: {}, context: {}",
+                     ptr->info.func_name, ptr->ctx_ref.ToString());
+        }
 
         ptr->callback =
             [this, ptr, callback{std::move(ptr->callback)}](aimrt::rpc::Status status) {
-              auto rsp_str = ptr->SerializeRspWithCache("json")->JoinToString();
-
-              if (status.OK()) {
-                AIMRT_INFO("RPC server return rpc ret. func name: {}, status: {}, rsp: {}",
-                           ptr->info.func_name, status.ToString(), rsp_str);
-              } else {
-                AIMRT_WARN("RPC server return rpc error ret. func name: {}, status: {}",
+              if (!status.OK()) {
+                AIMRT_WARN("RPC server get rpc error ret. func name: {}, status: {}",
                            ptr->info.func_name, status.ToString());
+              } else {
+                auto buf_ptr = TrySerializeRspWithCache(*ptr, "json");
+
+                if (buf_ptr) {
+                  auto rsp_str = buf_ptr->JoinToString();
+
+                  AIMRT_INFO("RPC server get rpc ret. func name: {}, status: {}, rsp: {}",
+                             ptr->info.func_name, status.ToString(), rsp_str);
+                } else {
+                  AIMRT_INFO("RPC server get rpc ret. func name: {}, status: {}",
+                             ptr->info.func_name, status.ToString());
+                }
               }
 
               callback(status);

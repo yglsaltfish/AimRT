@@ -5,6 +5,7 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
+#include "core/rpc/rpc_backend_tools.h"
 #include "ros2_plugin/global.h"
 
 #include "ros2_plugin_proto/srv/ros_rpc_wrapper.hpp"
@@ -123,7 +124,8 @@ void Ros2AdapterServer::handle_request(
 Ros2AdapterWrapperServer::Ros2AdapterWrapperServer(
     const std::shared_ptr<rcl_node_t>& node_handle,
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper,
-    const std::string& real_ros2_func_name)
+    const std::string& real_ros2_func_name,
+    const rclcpp::QoS& qos)
     : rclcpp::ServiceBase(node_handle),
       service_func_wrapper_(service_func_wrapper),
       real_ros2_func_name_(real_ros2_func_name) {
@@ -143,7 +145,7 @@ Ros2AdapterWrapperServer::Ros2AdapterWrapperServer(
   *service_handle_.get() = rcl_get_zero_initialized_service();
 
   rcl_service_options_t service_options = rcl_service_get_default_options();
-  service_options.qos = rclcpp::ServicesQoS().get_rmw_qos_profile();
+  service_options.qos = qos.get_rmw_qos_profile();
   rcl_ret_t ret = rcl_service_init(
       service_handle_.get(),
       node_handle.get(),
@@ -260,7 +262,7 @@ void Ros2AdapterWrapperServer::handle_request(
         }
 
         // service rsp序列化
-        auto buffer_array_view_ptr = service_invoke_wrapper_ptr->SerializeRspWithCache(serialization_type);
+        auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(*service_invoke_wrapper_ptr, serialization_type);
         if (!buffer_array_view_ptr) [[unlikely]] {
           ReturnRspWithStatusCode(request_header, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
           return;

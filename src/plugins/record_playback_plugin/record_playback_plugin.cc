@@ -322,7 +322,7 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
       RecordFunc record_func =
           [&record_action, topic_id{topic_meta.id}, serialization_type{topic_meta.serialization_type}](
               uint64_t cur_timestamp, MsgWrapper& msg_wrapper) {
-            auto buffer_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);
+            auto buffer_view_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, serialization_type);
             if (!buffer_view_ptr) [[unlikely]] {
               AIMRT_WARN("Can not serialize msg type '{}' with serialization type '{}'.",
                          msg_wrapper.info.msg_type, serialization_type);

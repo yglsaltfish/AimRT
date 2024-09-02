@@ -49,6 +49,7 @@ aimrt:
 
 | 节点                                              | 类型    | 是否可选 | 默认值     | 作用  |
 | ----                                              | ----    | ----  | ----        | ----  |
+| timeout_executor                                  | string  | 可选   | ""         | Client端RPC超时情况下的执行器                          |
 | clients_options                                   | array   | 可选   | []         | 客户端发起RPC请求时的规则 |
 | clients_options[i].func_name                      | string  | 必选   | ""         | RPC Func名称，支持正则表达式  |
 | clients_options[i].qos                            | map     | 可选   | -          | QOS配置  |

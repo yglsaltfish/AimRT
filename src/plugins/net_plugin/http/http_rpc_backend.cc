@@ -8,6 +8,7 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
+#include "core/rpc/rpc_backend_tools.h"
 #include "net_plugin/global.h"
 #include "util/url_encode.h"
 
@@ -201,7 +202,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
             } else {
               // service rsp序列化
-              auto buffer_array_view_ptr = service_invoke_wrapper_ptr->SerializeRspWithCache(serialization_type);
+              auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(*service_invoke_wrapper_ptr, serialization_type);
 
               if (!buffer_array_view_ptr) [[unlikely]] {
                 ret_code = AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED;
@@ -396,7 +397,7 @@ void HttpRpcBackend::Invoke(
             }
 
             // client req序列化
-            auto buffer_array_view_ptr = client_invoke_wrapper_ptr->SerializeReqWithCache(serialization_type);
+            auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
             if (!buffer_array_view_ptr) [[unlikely]] {
               // 序列化失败
               client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));

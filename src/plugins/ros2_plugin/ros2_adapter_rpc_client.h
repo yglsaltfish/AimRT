@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "core/rpc/rpc_backend_base.h"
+#include "core/util/rpc_client_tool.h"
 
 #include "rclcpp/client.hpp"
 
@@ -19,7 +20,8 @@ class Ros2AdapterClient : public rclcpp::ClientBase {
       rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
       const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper,
       const std::string& real_ros2_func_name,
-      const rclcpp::QoS& qos);
+      const rclcpp::QoS& qos,
+      aimrt::executor::ExecutorRef timeout_executor);
   ~Ros2AdapterClient() override = default;
 
   std::shared_ptr<void> create_response() override;
@@ -34,27 +36,12 @@ class Ros2AdapterClient : public rclcpp::ClientBase {
   void Shutdown() { run_flag.store(false); }
 
  private:
-  struct CallBackWrapper {
-    std::shared_ptr<runtime::core::rpc::InvokeWrapper> client_invoke_wrapper_ptr;
-  };
-
-  std::optional<CallBackWrapper> GetAndErasePendingRequest(int64_t request_number) {
-    std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-    auto finditr = pending_requests_.find(request_number);
-    if (finditr == pending_requests_.end()) return std::nullopt;
-
-    auto value = std::move(finditr->second);
-    pending_requests_.erase(finditr);
-    return value;
-  }
-
- private:
   std::atomic_bool run_flag = false;
   const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper_;
   std::string real_ros2_func_name_;
 
-  std::unordered_map<int64_t, CallBackWrapper> pending_requests_;
-  std::mutex pending_requests_mutex_;
+  runtime::core::util::RpcClientTool<std::shared_ptr<runtime::core::rpc::InvokeWrapper>>
+      client_tool_;
 };
 
 class Ros2AdapterWrapperClient : public rclcpp::ClientBase {
@@ -63,7 +50,9 @@ class Ros2AdapterWrapperClient : public rclcpp::ClientBase {
       rclcpp::node_interfaces::NodeBaseInterface* node_base,
       rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
       const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper,
-      const std::string& real_ros2_func_name);
+      const std::string& real_ros2_func_name,
+      const rclcpp::QoS& qos,
+      aimrt::executor::ExecutorRef timeout_executor);
   ~Ros2AdapterWrapperClient() override = default;
 
   std::shared_ptr<void> create_response() override;
@@ -78,27 +67,12 @@ class Ros2AdapterWrapperClient : public rclcpp::ClientBase {
   void Shutdown() { run_flag.store(false); }
 
  private:
-  struct CallBackWrapper {
-    std::shared_ptr<runtime::core::rpc::InvokeWrapper> client_invoke_wrapper_ptr;
-  };
-
-  std::optional<CallBackWrapper> GetAndErasePendingRequest(int64_t request_number) {
-    std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-    auto finditr = pending_requests_.find(request_number);
-    if (finditr == pending_requests_.end()) return std::nullopt;
-
-    auto value = std::move(finditr->second);
-    pending_requests_.erase(finditr);
-    return value;
-  }
-
- private:
   std::atomic_bool run_flag = false;
   const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper_;
   std::string real_ros2_func_name_;
 
-  std::unordered_map<int64_t, CallBackWrapper> pending_requests_;
-  std::mutex pending_requests_mutex_;
+  runtime::core::util::RpcClientTool<std::shared_ptr<runtime::core::rpc::InvokeWrapper>>
+      client_tool_;
 };
 
 }  // namespace aimrt::plugins::ros2_plugin

@@ -8,6 +8,7 @@
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
+#include "core/rpc/rpc_backend_tools.h"
 #include "mqtt_plugin/global.h"
 #include "util/buffer_util.h"
 #include "util/url_encode.h"
@@ -261,7 +262,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
               }
 
               // service rsp序列化
-              auto buffer_array_view_ptr = service_invoke_wrapper_ptr->SerializeRspWithCache(serialization_type);
+              auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(*service_invoke_wrapper_ptr, serialization_type);
               if (!buffer_array_view_ptr) [[unlikely]] {
                 ReturnRspWithStatusCode(
                     mqtt_pub_topic, qos, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
@@ -518,7 +519,7 @@ void MqttRpcBackend::Invoke(
     }
 
     // client req序列化
-    auto buffer_array_view_ptr = client_invoke_wrapper_ptr->SerializeReqWithCache(serialization_type);
+    auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
     if (!buffer_array_view_ptr) [[unlikely]] {
       // 序列化失败
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
@@ -570,7 +571,6 @@ void MqttRpcBackend::Invoke(
     bool ret = client_tool_ptr_->Record(cur_req_id, timeout, std::move(record_ptr));
 
     if (!ret) [[unlikely]] {
-      // 一般不太可能出现
       AIMRT_ERROR("Failed to record msg.");
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;

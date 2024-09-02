@@ -2,6 +2,7 @@
 // All rights reserved.
 
 #include "core/rpc/local_rpc_backend.h"
+#include "core/rpc/rpc_backend_tools.h"
 #include "util/string_util.h"
 #include "util/url_parser.h"
 
@@ -278,7 +279,7 @@ void LocalRpcBackend::Invoke(
     // client req序列化
     std::string serialization_type(client_invoke_wrapper_ptr->ctx_ref.GetSerializationType());
 
-    auto buffer_array_view_ptr = client_invoke_wrapper_ptr->SerializeReqWithCache(serialization_type);
+    auto buffer_array_view_ptr = TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
     if (!buffer_array_view_ptr) [[unlikely]] {
       // 序列化失败
       AIMRT_ERROR(
@@ -338,7 +339,7 @@ void LocalRpcBackend::Invoke(
           const auto& service_info = service_invoke_wrapper_ptr->info;
 
           // service rsp 序列化
-          auto buffer_array_view_ptr = service_invoke_wrapper_ptr->SerializeRspWithCache(serialization_type);
+          auto buffer_array_view_ptr = TrySerializeRspWithCache(*service_invoke_wrapper_ptr, serialization_type);
           if (!buffer_array_view_ptr) [[unlikely]] {
             // 序列化失败
             AIMRT_ERROR(
