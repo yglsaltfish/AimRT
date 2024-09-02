@@ -5,6 +5,7 @@
 
 #include "core/rpc/rpc_backend_base.h"
 
+#include "aimrt_module_cpp_interface/executor/executor.h"
 #include "ros2_plugin/ros2_adapter_rpc_client.h"
 #include "ros2_plugin/ros2_adapter_rpc_server.h"
 
@@ -72,6 +73,8 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
       int64_t liveliness_lease_duration = -1;
     };
 
+    std::string timeout_executor;
+
     struct ClientOptions {
       std::string func_name;
       QosOptions qos;
@@ -106,6 +109,8 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   void Invoke(
       const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) noexcept override;
 
+  void RegisterGetExecutorFunc(const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func);
+
   void SetNodePtr(const std::shared_ptr<rclcpp::Node>& ros2_node_ptr) {
     ros2_node_ptr_ = ros2_node_ptr;
   }
@@ -135,6 +140,9 @@ class Ros2RpcBackend : public runtime::core::rpc::RpcBackendBase {
   std::atomic<State> state_ = State::PreInit;
 
   const runtime::core::rpc::RpcRegistry* rpc_registry_ptr_ = nullptr;
+
+  std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
+  executor::ExecutorRef timeout_executor_;
 
   std::shared_ptr<rclcpp::Node> ros2_node_ptr_;
 

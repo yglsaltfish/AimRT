@@ -5,6 +5,7 @@
 
 #include "core/aimrt_core.h"
 #include "core/channel/channel_backend_tools.h"
+#include "core/rpc/rpc_backend_tools.h"
 #include "opentelemetry_plugin/context_carrier.h"
 #include "opentelemetry_plugin/global.h"
 #include "opentelemetry_plugin/util.h"
@@ -198,8 +199,11 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
         h(msg_wrapper);
 
         // 序列化包成json
-        auto msg_str = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, "json")->JoinToString();
-        if (!msg_str.empty()) span->SetAttribute("msg_data", msg_str);
+        auto buf_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, "json");
+        if (buf_ptr) {
+          auto msg_str = buf_ptr->JoinToString();
+          if (!msg_str.empty()) span->SetAttribute("msg_data", msg_str);
+        }
 
         span->End();
       });
@@ -264,8 +268,11 @@ void OpenTelemetryPlugin::RegisterChannelFilter() {
         h(msg_wrapper);
 
         // 序列化包成json
-        auto msg_str = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, "json")->JoinToString();
-        if (!msg_str.empty()) span->SetAttribute("msg_data", msg_str);
+        auto buf_ptr = aimrt::runtime::core::channel::TrySerializeMsgWithCache(msg_wrapper, "json");
+        if (buf_ptr) {
+          auto msg_str = buf_ptr->JoinToString();
+          if (!msg_str.empty()) span->SetAttribute("msg_data", msg_str);
+        }
 
         span->End();
       });
@@ -344,11 +351,17 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
               }
 
               // 序列化req/rsp为json
-              auto req_json = wrapper_ptr->SerializeReqWithCache("json")->JoinToString();
-              if (!req_json.empty()) span->SetAttribute("req_data", req_json);
+              auto req_buf_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(*wrapper_ptr, "json");
+              if (req_buf_ptr) {
+                auto req_json = req_buf_ptr->JoinToString();
+                if (!req_json.empty()) span->SetAttribute("req_data", req_json);
+              }
 
-              auto rsp_json = wrapper_ptr->SerializeRspWithCache("json")->JoinToString();
-              if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
+              auto rsp_buf_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(*wrapper_ptr, "json");
+              if (rsp_buf_ptr) {
+                auto rsp_json = rsp_buf_ptr->JoinToString();
+                if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
+              }
 
               span->End();
 
@@ -423,11 +436,17 @@ void OpenTelemetryPlugin::RegisterRpcFilter() {
               }
 
               // 序列化req/rsp为json
-              auto req_json = wrapper_ptr->SerializeReqWithCache("json")->JoinToString();
-              if (!req_json.empty()) span->SetAttribute("req_data", req_json);
+              auto req_buf_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(*wrapper_ptr, "json");
+              if (req_buf_ptr) {
+                auto req_json = req_buf_ptr->JoinToString();
+                if (!req_json.empty()) span->SetAttribute("req_data", req_json);
+              }
 
-              auto rsp_json = wrapper_ptr->SerializeRspWithCache("json")->JoinToString();
-              if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
+              auto rsp_buf_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(*wrapper_ptr, "json");
+              if (rsp_buf_ptr) {
+                auto rsp_json = rsp_buf_ptr->JoinToString();
+                if (!rsp_json.empty()) span->SetAttribute("rsp_data", rsp_json);
+              }
 
               span->End();
 

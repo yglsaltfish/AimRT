@@ -166,6 +166,25 @@ bool Ros2ChannelBackend::RegisterPublishType(
 
     const auto& info = publish_type_wrapper.info;
 
+    rclcpp::QoS qos(10);
+    // 读取配置中的QOS
+    auto find_qos_option = std::find_if(
+        options_.pub_topics_options.begin(), options_.pub_topics_options.end(),
+        [&info](const Options::PubTopicOptions& pub_option) {
+          try {
+            return std::regex_match(info.topic_name.begin(), info.topic_name.end(),
+                                    std::regex(pub_option.topic_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       pub_option.topic_name, info.topic_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_qos_option != options_.pub_topics_options.end()) {
+      qos = GetQos(find_qos_option->qos);
+    }
+
     // 前缀是ros2类型的消息
     if (CheckRosMsg(info.msg_type)) {
       Key key{info.pkg_path, info.module_name};
@@ -184,20 +203,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
           ros2_node_ptr_->get_sub_namespace());
 
       rcl_publisher_options_t publisher_options = rcl_publisher_get_default_options();
-      // 读取配置中的QOS
-      auto find_qos_option = std::find_if(options_.pub_topics_options.begin(), options_.pub_topics_options.end(), [&ros2_topic_name](const Options::PubTopicOptions& pub_option) {
-        try {
-          return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(pub_option.topic_name, std::regex::ECMAScript));
-        } catch (const std::exception& e) {
-          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                     pub_option.topic_name, ros2_topic_name, e.what());
-          return false;
-        }
-      });
-
-      if (find_qos_option != options_.pub_topics_options.end()) {
-        publisher_options.qos = GetQos(find_qos_option->qos).get_rmw_qos_profile();
-      }
+      publisher_options.qos = qos.get_rmw_qos_profile();
 
       rcl_ret_t ret = rcl_publisher_init(
           publisher_ptr,
@@ -225,7 +231,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
     if (publisher_map_.find(real_ros2_topic_name) == publisher_map_.end()) {
       publisher_map_.emplace(
           real_ros2_topic_name,
-          ros2_node_ptr_->create_publisher<ros2_plugin_proto::msg::RosMsgWrapper>(real_ros2_topic_name, 10));
+          ros2_node_ptr_->create_publisher<ros2_plugin_proto::msg::RosMsgWrapper>(real_ros2_topic_name, qos));
     }
 
     AIMRT_INFO("ros backend register publish type for topic '{}' success, real ros2 topic name is '{}'.",
@@ -246,6 +252,25 @@ bool Ros2ChannelBackend::Subscribe(
 
     const auto& info = subscribe_wrapper.info;
 
+    rclcpp::QoS qos(10);
+    // 读取配置中的QOS
+    auto find_qos_option = std::find_if(
+        options_.sub_topics_options.begin(), options_.sub_topics_options.end(),
+        [&info](const Options::SubTopicOptions& sub_option) {
+          try {
+            return std::regex_match(info.topic_name.begin(), info.topic_name.end(),
+                                    std::regex(sub_option.topic_name, std::regex::ECMAScript));
+          } catch (const std::exception& e) {
+            AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
+                       sub_option.topic_name, info.topic_name, e.what());
+            return false;
+          }
+        });
+
+    if (find_qos_option != options_.sub_topics_options.end()) {
+      qos = GetQos(find_qos_option->qos);
+    }
+
     // 前缀是ros2类型的消息
     if (CheckRosMsg(info.msg_type)) {
       Key key{info.pkg_path, info.module_name};
@@ -264,22 +289,6 @@ bool Ros2ChannelBackend::Subscribe(
       std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
           info.topic_name,
           ros2_node_ptr_->get_sub_namespace());
-
-      rclcpp::QoS qos(10);
-      // 读取配置中的QOS
-      auto find_qos_option = std::find_if(options_.sub_topics_options.begin(), options_.sub_topics_options.end(), [&ros2_topic_name](const Options::SubTopicOptions& sub_option) {
-        try {
-          return std::regex_match(ros2_topic_name.begin(), ros2_topic_name.end(), std::regex(sub_option.topic_name, std::regex::ECMAScript));
-        } catch (const std::exception& e) {
-          AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
-                     sub_option.topic_name, ros2_topic_name, e.what());
-          return false;
-        }
-      });
-
-      if (find_qos_option != options_.sub_topics_options.end()) {
-        qos = GetQos(find_qos_option->qos);
-      }
 
       auto node_topics_interface =
           rclcpp::node_interfaces::get_node_topics_interface(*ros2_node_ptr_);
@@ -335,7 +344,7 @@ bool Ros2ChannelBackend::Subscribe(
 
     auto ros_sub_handle_ptr = ros2_node_ptr_->create_subscription<ros2_plugin_proto::msg::RosMsgWrapper>(
         real_ros2_topic_name,
-        10,
+        qos,
         [this, topic_name = info.topic_name, sub_tool_ptr](
             ros2_plugin_proto::msg::RosMsgWrapper::UniquePtr wrapper_msg) {
           try {

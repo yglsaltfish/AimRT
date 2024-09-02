@@ -122,6 +122,12 @@ void Ros2Plugin::RegisterRos2RpcBackend() {
       std::make_unique<Ros2RpcBackend>();
 
   static_cast<Ros2RpcBackend*>(ros2_rpc_backend_ptr.get())
+      ->RegisterGetExecutorFunc(
+          [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
+            return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+          });
+
+  static_cast<Ros2RpcBackend*>(ros2_rpc_backend_ptr.get())
       ->SetNodePtr(ros2_node_ptr_);
 
   core_ptr_->GetRpcManager().RegisterRpcBackend(

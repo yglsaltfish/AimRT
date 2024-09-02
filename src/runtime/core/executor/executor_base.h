@@ -73,6 +73,17 @@ class ExecutorBase {
    * @param task
    */
   virtual void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept = 0;
+
+  /**
+   * @brief Get current number of immediate tasks in the executor
+   * @note
+   * 1. This method will only be called after 'Initialize' and before 'Shutdown'.
+   * 2. Executor should return the number of unexecuted immediate tasks.
+   * 3. This is an optional interface that may return 0 when the executor does not implement it.
+   *
+   * @return size_t
+   */
+  virtual size_t CurrentImdTaskNum() noexcept { return 0; }
 };
 
 }  // namespace aimrt::runtime::core::executor
