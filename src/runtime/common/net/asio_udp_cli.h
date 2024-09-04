@@ -97,7 +97,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_ERROR("Method can only be called when state is 'Start'.");
+        AIMRT_WARN("Method can only be called when state is 'Start'.");
         return;
       }
 
@@ -256,7 +256,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
           session_socket_strand_,
           [this, self, msg_buf_ptr]() -> Awaitable<void> {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_ERROR("Method can only be called when state is 'Start'.");
+              AIMRT_WARN("Method can only be called when state is 'Start'.");
               co_return;
             }
 

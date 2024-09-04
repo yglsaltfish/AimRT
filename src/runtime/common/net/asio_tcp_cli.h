@@ -381,7 +381,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_ERROR("Method can only be called when state is 'Start'.");
+              AIMRT_WARN("Method can only be called when state is 'Start'.");
               return;
             }
 

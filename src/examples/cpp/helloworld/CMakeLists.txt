@@ -15,6 +15,7 @@ add_subdirectory(pkg/helloworld_pkg)
 
 # app
 add_subdirectory(app/helloworld_app)
+add_subdirectory(app/helloworld_app_registration_mode)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")

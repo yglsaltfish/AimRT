@@ -119,9 +119,12 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
             return (item.topic_name == topic_meta.topic_name) && (item.msg_type == topic_meta.msg_type);
           });
 
-      AIMRT_CHECK_ERROR_THROW(finditr != metadata_.topics.end(),
-                              "Can not find topic '{}' with msg type '{}' in bag '{}'.",
-                              item.topic_name, item.msg_type, options_.bag_path);
+      if (finditr == metadata_.topics.end()) [[unlikely]] {
+        AIMRT_WARN("Can not find topic '{}' with msg type '{}' in bag '{}'.",
+                   item.topic_name, item.msg_type, options_.bag_path);
+
+        continue;
+      }
 
       enable_topic_id_vec.emplace_back(finditr->id);
 

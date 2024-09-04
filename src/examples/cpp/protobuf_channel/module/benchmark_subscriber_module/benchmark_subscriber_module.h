@@ -33,37 +33,39 @@ class BenchmarkSubscriberModule : public aimrt::ModuleBase {
       uint32_t topic_index,
       const std::shared_ptr<const aimrt::protocols::example::BenchmarkMessage>& data);
 
-  void CheckAndEvaluate() const;
+  void Evaluate() const;
 
  private:
   aimrt::CoreRef core_;
 
-  aimrt::channel::SubscriberRef signal_subscriber_;
+  aimrt::channel::SubscriberRef signal_subscriber_;  // topic name: benchmark_signal
 
-  uint32_t topic_number_ = 1;
-  std::string topic_name_prefix_ = "test_topic";
-  std::vector<aimrt::channel::SubscriberRef> subscribers_;
+  uint32_t max_topic_number_;
+  std::vector<aimrt::channel::SubscriberRef> subscribers_;  // name: test_topic_x
+
+  enum class State : uint32_t {
+    ReadyToRun,
+    Running,
+    Evaluating,
+  };
+  std::atomic<State> run_state_ = State::ReadyToRun;
+
+  uint32_t cur_bench_plan_id_ = 0;
+  uint32_t cur_bench_topic_number_ = 0;
+  uint32_t cur_bench_expect_send_num_ = 0;
+  uint32_t cur_bench_message_size_ = 0;
+  uint32_t cur_bench_send_frequency_ = 0;
 
   struct TopicRecord {
     std::string topic_name;
 
-    uint32_t expect_send_num = 0;
-    uint32_t real_send_num = 0;
-
-    uint32_t message_size = 0;
-    uint32_t send_frequency = 0;
-
-    bool is_finished = false;
-
     struct MsgRecord {
       bool recv = false;
-      uint32_t data_size = 0;
       uint64_t send_timestamp = 0;
       uint64_t recv_timestamp = 0;
     };
     std::vector<MsgRecord> msg_record_vec;
   };
-
   std::vector<TopicRecord> topic_record_vec_;
 };
 

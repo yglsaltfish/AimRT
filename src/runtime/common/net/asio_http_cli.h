@@ -45,7 +45,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
     std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(60);
 
     /// 最大连接数
-    size_t max_session_num = 10;
+    size_t max_session_num = 1000;
 
     /// 校验配置
     static Options Verify(const Options& verify_options) {

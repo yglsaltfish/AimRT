@@ -25,8 +25,7 @@ bool BenchmarkSubscriberModule::Initialize(aimrt::CoreRef core) {
     auto file_path = core_.GetConfigurator().GetConfigFilePath();
     if (!file_path.empty()) {
       YAML::Node cfg_node = YAML::LoadFile(file_path.data());
-      topic_number_ = cfg_node["topic_number"].as<uint32_t>();
-      topic_name_prefix_ = cfg_node["topic_name_prefix"].as<std::string>();
+      max_topic_number_ = cfg_node["max_topic_number"].as<uint32_t>();
     }
 
     // Subscribe
@@ -37,21 +36,22 @@ bool BenchmarkSubscriberModule::Initialize(aimrt::CoreRef core) {
         signal_subscriber_, std::bind(&BenchmarkSubscriberModule::BenchmarkSignalHandle, this, std::placeholders::_1));
     AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed.");
 
-    for (uint32_t i = 0; i < topic_number_; i++) {
-      auto topic_name = topic_name_prefix_ + "_" + std::to_string(i);
+    for (uint32_t ii = 0; ii < max_topic_number_; ++ii) {
+      auto topic_name = "test_topic_" + std::to_string(ii);
+
+      topic_record_vec_.emplace_back(TopicRecord{.topic_name = topic_name});
+
       auto subscriber = core_.GetChannelHandle().GetSubscriber(topic_name);
       AIMRT_CHECK_ERROR_THROW(subscriber, "Get subscriber for topic '{}' failed.", topic_name);
 
       bool ret = aimrt::channel::Subscribe<aimrt::protocols::example::BenchmarkMessage>(
           subscriber,
-          [this, i](const std::shared_ptr<const aimrt::protocols::example::BenchmarkMessage>& data) {
-            BenchmarkMessageHandle(i, data);
+          [this, ii](const std::shared_ptr<const aimrt::protocols::example::BenchmarkMessage>& data) {
+            BenchmarkMessageHandle(ii, data);
           });
       AIMRT_CHECK_ERROR_THROW(ret, "Subscribe failed.");
 
-      subscribers_.push_back(subscriber);
-
-      topic_record_vec_.push_back(TopicRecord{.topic_name = topic_name});
+      subscribers_.emplace_back(subscriber);
     }
   } catch (const std::exception& e) {
     AIMRT_ERROR("Init failed, {}", e.what());
@@ -71,32 +71,41 @@ void BenchmarkSubscriberModule::BenchmarkSignalHandle(
     const std::shared_ptr<const aimrt::protocols::example::BenchmarkSignal>& data) {
   AIMRT_INFO("Receive new signal data: {}", aimrt::Pb2CompactJson(*data));
 
-  auto topic_name = data->topic_name();
-  auto finditr = std::find_if(
-      topic_record_vec_.begin(), topic_record_vec_.end(),
-      [&topic_name](const TopicRecord& topic_record) {
-        return topic_record.topic_name == topic_name;
-      });
+  try {
+    if (data->status() == aimrt::protocols::example::BenchmarkStatus::Begin) {
+      AIMRT_CHECK_ERROR_THROW(
+          std::atomic_exchange(&run_state_, State::Running) == State::ReadyToRun,
+          "Invalid state!");
 
-  if (finditr == topic_record_vec_.end()) [[unlikely]] {
-    AIMRT_WARN("Can not find topic name: {}", topic_name);
-    return;
-  }
+      cur_bench_plan_id_ = data->bench_plan_id();
+      cur_bench_topic_number_ = data->topic_number();
+      cur_bench_expect_send_num_ = data->send_num();
+      cur_bench_message_size_ = data->message_size();
+      cur_bench_send_frequency_ = data->send_frequency();
 
-  auto& topic_record = finditr;
+      AIMRT_CHECK_ERROR_THROW(
+          cur_bench_topic_number_ <= max_topic_number_,
+          "Topic num({}) is greater than max topic number({})",
+          cur_bench_topic_number_, max_topic_number_);
 
-  if (data->status() == aimrt::protocols::example::BenchmarkStatus::Begin) {
-    topic_record->expect_send_num = data->send_num();
-    topic_record->message_size = data->message_size();
-    topic_record->send_frequency = data->send_frequency();
+      for (size_t ii = 0; ii < cur_bench_topic_number_; ++ii) {
+        topic_record_vec_[ii].msg_record_vec.clear();
+        topic_record_vec_[ii].msg_record_vec.resize(cur_bench_expect_send_num_);
+      }
 
-    topic_record->msg_record_vec.resize(data->send_num());
+    } else if (data->status() == aimrt::protocols::example::BenchmarkStatus::End) {
+      AIMRT_CHECK_ERROR_THROW(
+          std::atomic_exchange(&run_state_, State::Evaluating) == State::Running,
+          "Invalid state!");
 
-  } else if (data->status() == aimrt::protocols::example::BenchmarkStatus::End) {
-    topic_record->real_send_num = data->send_num();
-    topic_record->is_finished = true;
+      Evaluate();
 
-    CheckAndEvaluate();
+      AIMRT_CHECK_ERROR_THROW(
+          std::atomic_exchange(&run_state_, State::ReadyToRun) == State::Evaluating,
+          "Invalid state!");
+    }
+  } catch (const std::exception& e) {
+    AIMRT_ERROR("Exception, {}", e.what());
   }
 }
 
@@ -105,14 +114,21 @@ void BenchmarkSubscriberModule::BenchmarkMessageHandle(
     const std::shared_ptr<const aimrt::protocols::example::BenchmarkMessage>& data) {
   auto recv_timestamp = aimrt::common::util::GetCurTimestampNs();
 
-  auto seq = data->seq();
-
   auto& topic_record = topic_record_vec_[topic_index];
 
-  if (topic_record.is_finished) [[unlikely]] {
+  if (run_state_.load() != State::Running) [[unlikely]] {
     AIMRT_WARN("Topic '{}' is end bench.", topic_record.topic_name);
     return;
   }
+
+  auto data_size = static_cast<uint32_t>(data->data().size());
+  if (data_size != cur_bench_message_size_) [[unlikely]] {
+    AIMRT_WARN("Topic '{}' get error data size {}, expect {}.",
+               topic_record.topic_name, data_size, cur_bench_message_size_);
+    return;
+  }
+
+  auto seq = data->seq();
 
   auto& msg_record_vec = topic_record.msg_record_vec;
 
@@ -124,70 +140,83 @@ void BenchmarkSubscriberModule::BenchmarkMessageHandle(
   auto& msg_record = msg_record_vec[seq];
 
   msg_record.recv = true;
-  msg_record.data_size = static_cast<uint32_t>(data->data().size());
   msg_record.send_timestamp = data->timestamp();
   msg_record.recv_timestamp = recv_timestamp;
 }
 
-void BenchmarkSubscriberModule::CheckAndEvaluate() const {
-  // Check all finish
-  for (const auto& topic_record : topic_record_vec_) {
-    if (!topic_record.is_finished)
-      return;
-  }
+void BenchmarkSubscriberModule::Evaluate() const {
+  AIMRT_INFO("Benchmark plan {} completed, evaluate...", cur_bench_plan_id_);
 
-  AIMRT_INFO("End benchmark, evaluate...");
+  size_t send_count = cur_bench_expect_send_num_ * cur_bench_topic_number_;
 
-  size_t send_count = 0;
-  size_t recv_count = 0;
-
-  uint64_t min_latency = std::numeric_limits<uint64_t>::max();
-  uint64_t max_latency = 0;
+  std::vector<uint32_t> statistics_array;
+  statistics_array.reserve(send_count);
 
   uint64_t sum_latency = 0;
 
-  for (const auto& topic_record : topic_record_vec_) {
-    send_count += topic_record.real_send_num;
+  for (size_t ii = 0; ii < cur_bench_topic_number_; ++ii) {
+    for (auto& msg_record : topic_record_vec_[ii].msg_record_vec) {
+      if (!msg_record.recv) [[unlikely]]
+        continue;
 
-    const auto& msg_record_vec = topic_record.msg_record_vec;
-
-    for (size_t seq = 0; seq < msg_record_vec.size(); ++seq) {
-      auto& msg_record = msg_record_vec[seq];
-
-      if (!msg_record.recv) continue;
-
-      ++recv_count;
-
-      uint64_t latency = msg_record.recv_timestamp - msg_record.send_timestamp;
-
-      if (msg_record.recv_timestamp <= msg_record.send_timestamp) {
+      uint32_t latency = 0;
+      if (msg_record.recv_timestamp < msg_record.send_timestamp) [[unlikely]] {
         AIMRT_WARN("Invalid timestamp, recv timestamp: {}, send timestamp: {}",
                    msg_record.recv_timestamp, msg_record.send_timestamp);
 
-        latency = 0;
+      } else {
+        latency = static_cast<uint32_t>(msg_record.recv_timestamp - msg_record.send_timestamp);
       }
 
-      if (min_latency > latency) min_latency = latency;
-
-      if (max_latency < latency) max_latency = latency;
-
       sum_latency += latency;
+      statistics_array.emplace_back(latency);
     }
   }
 
-  uint64_t avg_latency = sum_latency / recv_count;
+  size_t recv_count = statistics_array.size();
+
   double loss_rate = static_cast<double>(send_count - recv_count) / send_count;
 
-  std::vector<std::vector<std::string>> table =
-      {{"send count", "recv count", "loss rate", "min latency(us)", "max latency(us)", "avg latency(us)"},
-       {std::to_string(send_count),
-        std::to_string(recv_count),
-        std::to_string(loss_rate),
-        std::to_string(static_cast<double>(min_latency) / 1000),
-        std::to_string(static_cast<double>(max_latency) / 1000),
-        std::to_string(static_cast<double>(avg_latency) / 1000)}};
+  std::sort(statistics_array.begin(), statistics_array.end());
 
-  AIMRT_INFO("report:\n{}", aimrt::common::util::DrawTable(table));
+  uint32_t min_latency = statistics_array.front();
+  uint32_t max_latency = statistics_array.back();
+
+  uint32_t p90_latency = statistics_array[static_cast<size_t>(recv_count * 0.9)];
+  uint32_t p99_latency = statistics_array[static_cast<size_t>(recv_count * 0.99)];
+  uint32_t p999_latency = statistics_array[static_cast<size_t>(recv_count * 0.999)];
+
+  uint32_t avg_latency = sum_latency / recv_count;
+
+  AIMRT_INFO(R"str(Benchmark plan {} completed, report:
+frequency: {} hz
+topic number: {}
+msg size: {} byte
+msg count per topic: {}
+send count : {}
+recv count: {}
+loss rate: {}
+min latency: {} us
+max latency: {} us
+avg latency: {} us
+p90 latency: {} us
+p99 latency: {} us
+p999 latency: {} us
+)str",
+             cur_bench_plan_id_,
+             cur_bench_send_frequency_,
+             cur_bench_topic_number_,
+             cur_bench_message_size_,
+             cur_bench_expect_send_num_,
+             send_count,
+             recv_count,
+             loss_rate,
+             min_latency / 1000.0,
+             max_latency / 1000.0,
+             avg_latency / 1000.0,
+             p90_latency / 1000.0,
+             p99_latency / 1000.0,
+             p999_latency / 1000.0);
 }
 
 }  // namespace aimrt::examples::cpp::protobuf_channel::benchmark_subscriber_module

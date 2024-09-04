@@ -28,8 +28,6 @@ void ZenohManager::Shutdown() {
   z_sub_registry_.clear();
 
   z_close(z_move(z_session_));
-
-  printf("Zenoh manager shutdown\n");
 }
 
 void ZenohManager::RegisterPublisher(const std::string &keyexpr) {

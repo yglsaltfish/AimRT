@@ -1,1 +1,1 @@
-.\aimrt_main.exe --cfg_file_path=./cfg/start_examples_plugins_zenoh_plugin_protobuf_channel_pub_cfg.yaml
+.\aimrt_main.exe --cfg_file_path=./cfg/examples_plugins_zenoh_plugin_protobuf_channel_pub_cfg.yaml

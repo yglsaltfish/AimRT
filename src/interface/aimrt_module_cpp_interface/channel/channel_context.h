@@ -47,17 +47,11 @@ class Context {
 
   void SetMetaValue(std::string_view key, std::string_view val) {
     auto finditr = meta_data_map_.find(key);
-    if (finditr != meta_data_map_.end()) {
-      if (!val.empty()) {
-        finditr->second = std::string(val);
-      } else {
-        meta_data_map_.erase(finditr);
-      }
-      return;
-    }
-
-    if (!val.empty())
+    if (finditr == meta_data_map_.end()) {
       meta_data_map_.emplace(key, val);
+    } else {
+      finditr->second = std::string(val);
+    }
   }
 
   std::vector<std::string_view> GetMetaKeys() const {
@@ -82,15 +76,12 @@ class Context {
     } else {
       ss << "Unknown context, ";
     }
-    ss << "meta: {";
-    bool flag = true;
-    for (const auto& itr : meta_data_map_) {
-      if (flag)
-        flag = false;
-      else
-        ss << ",";
 
-      ss << "{\"" << itr.first << "\":\"" << itr.second << "\"}";
+    ss << "meta: {";
+
+    for (auto itr = meta_data_map_.begin(); itr != meta_data_map_.end(); ++itr) {
+      if (itr != meta_data_map_.begin()) ss << ",";
+      ss << "{\"" << itr->first << "\":\"" << itr->second << "\"}";
     }
 
     ss << "}";
@@ -125,9 +116,8 @@ class Context {
           meta_keys_vec.clear();
           meta_keys_vec.reserve(meta_data_map.size());
 
-          for (const auto& it : meta_data_map) {
+          for (const auto& it : meta_data_map)
             meta_keys_vec.emplace_back(aimrt::util::ToAimRTStringView(it.first));
-          }
 
           return aimrt_string_view_array_t{
               .str_array = meta_keys_vec.data(),
@@ -205,9 +195,8 @@ class ContextRef {
     aimrt_string_view_array_t keys = base_ptr_->ops->get_meta_keys(base_ptr_->impl);
 
     std::vector<std::string_view> result;
-    for (size_t ii = 0; ii < keys.len; ++ii) {
+    for (size_t ii = 0; ii < keys.len; ++ii)
       result.emplace_back(aimrt::util::ToStdStringView(keys.str_array[ii]));
-    }
 
     return result;
   }

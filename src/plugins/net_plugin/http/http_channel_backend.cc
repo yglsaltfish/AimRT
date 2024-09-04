@@ -317,7 +317,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
         size_t cur_copy_size = std::min(cur_beast_buffer_size, cur_buffer_size);
 
-        memcpy(buf.data(),
+        memcpy(static_cast<char*>(buf.data()) + cur_beast_buf_pos,
                static_cast<const char*>(data[buffer_array_pos].data) + buffer_pos,
                cur_copy_size);
 

@@ -12,10 +12,16 @@ aimrt:
       - type: console
   executor:
     executors:
-      - name: publish_thread_pool
-        type: asio_thread
-        options:
-          thread_num: 4
+      - name: publish_control_executor
+        type: simple_thread
+      - name: publish_executor_0
+        type: simple_thread
+      - name: publish_executor_1
+        type: simple_thread
+      - name: publish_executor_2
+        type: simple_thread
+      - name: publish_executor_3
+        type: simple_thread
   channel:
     backends:
       - type: zenoh
@@ -32,8 +38,13 @@ aimrt:
 
 # Module custom configuration
 BenchmarkPublisherModule:
-  topic_name_prefix: test_topic
-  topic_number: 3
-  channel_frq: 1000
-  msg_size: 1024
-  msg_count: 5000
+  max_topic_number: 4
+  bench_plans:
+    - channel_frq: 1000
+      msg_size: 512
+      topic_number: 4
+      msg_count: 5000
+    - channel_frq: 1000
+      msg_size: 4096
+      topic_number: 1
+      msg_count: 1000

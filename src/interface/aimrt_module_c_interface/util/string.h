@@ -51,7 +51,7 @@ typedef struct {
  */
 typedef struct {
   /// String view array
-  aimrt_string_view_t* str_array;
+  const aimrt_string_view_t* str_array;
 
   /// Length of string view array
   size_t len;
