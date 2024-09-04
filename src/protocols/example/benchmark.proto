@@ -8,16 +8,18 @@ package aimrt.protocols.example;
 enum BenchmarkStatus {
   Begin = 0;
   End = 1;
+  WarmUp = 2;
 }
 
 message BenchmarkSignal {
   BenchmarkStatus status = 1;
 
-  string topic_name = 2;
-  uint32 send_num = 3;
+  uint32 bench_plan_id = 2;
 
-  uint32 message_size = 4;
-  uint32 send_frequency = 5;
+  uint32 topic_number = 3;
+  uint32 send_num = 4;
+  uint32 message_size = 5;
+  uint32 send_frequency = 6;
 }
 
 message BenchmarkMessage {

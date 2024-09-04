@@ -3,6 +3,8 @@
 
 #include "logger_bench_module/logger_bench_module.h"
 
+#include "util/string_util.h"
+
 #include "yaml-cpp/yaml.h"
 
 namespace aimrt::examples::cpp::logger::logger_bench_module {
@@ -15,8 +17,8 @@ bool LoggerBenchModule::Initialize(aimrt::CoreRef core) {
   auto file_path = core_.GetConfigurator().GetConfigFilePath();
   if (!file_path.empty()) {
     YAML::Node cfg_node = YAML::LoadFile(file_path.data());
-    log_size_ = cfg_node["log_size"].as<size_t>();
-    bench_num_ = cfg_node["bench_num"].as<size_t>();
+    log_data_size_vec_ = cfg_node["log_data_size"].as<std::vector<uint32_t>>();
+    log_bench_num_ = cfg_node["log_bench_num"].as<uint32_t>();
   }
 
   auto work_executor = core_.GetExecutorManager().GetExecutor("work_executor");
@@ -32,30 +34,46 @@ bool LoggerBenchModule::Start() {
 
   auto work_executor = core_.GetExecutorManager().GetExecutor("work_executor");
 
-  std::string log_data;
-  log_data.reserve(log_size_);
-  for (size_t ii = 0; ii < log_size_; ++ii) {
-    log_data += std::to_string(ii % 10);
-  }
-
-  work_executor.Execute([this, log_data{std::move(log_data)}]() {
+  work_executor.Execute([this, work_executor]() {
     using namespace std::chrono;
 
-    auto start_time_point = steady_clock::now();
+    std::vector<std::vector<std::string>> result_table =
+        {{"log num", "log data size", "total duration(us)", "avg latency(ns)"}};
 
-    for (size_t ii = 0; ii < bench_num_; ++ii) {
-      AIMRT_INFO("{}", log_data);
+    size_t bench_num = log_data_size_vec_.size();
+
+    for (size_t bench_count = 0; bench_count < bench_num; ++bench_count) {
+      uint32_t log_data_size = log_data_size_vec_[bench_count];
+
+      // create log data
+      std::string log_data;
+      log_data.reserve(log_data_size);
+      for (size_t ii = 0; ii < log_data_size; ++ii) {
+        log_data += std::to_string(ii % 10);
+      }
+
+      // bench
+      auto start_time_point = steady_clock::now();
+
+      for (size_t ii = 0; ii < log_bench_num_; ++ii) {
+        AIMRT_INFO("{}", log_data);
+      }
+
+      auto end_time_point = steady_clock::now();
+
+      auto total_duration = end_time_point - start_time_point;
+
+      result_table.emplace_back(
+          std::vector<std::string>{
+              std::to_string(log_bench_num_),
+              std::to_string(log_data_size),
+              std::to_string(duration_cast<nanoseconds>(total_duration).count()),
+              std::to_string(duration_cast<nanoseconds>(total_duration).count() / log_bench_num_)});
+
+      std::this_thread::sleep_for(std::chrono::seconds(5));
     }
 
-    auto end_time_point = steady_clock::now();
-
-    auto total_duration = end_time_point - start_time_point;
-
-    AIMRT_INFO("Printed {} logs ( {} bytes per log ) within {} microseconds, with an average of {} nanoseconds per log",
-               bench_num_,
-               log_size_,
-               duration_cast<microseconds>(total_duration).count(),
-               duration_cast<nanoseconds>(total_duration).count() / bench_num_);
+    AIMRT_INFO("report:\n{}", aimrt::common::util::DrawTable(result_table));
 
     log_loop_stop_sig_.set_value();
   });

@@ -244,6 +244,8 @@ void LocalRpcBackend::Invoke(
 
     ctx_ptr->SetFunctionName(service_info.func_name);
     ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_BACKEND, Name());
+    ctx_ptr->SetMetaValue("aimrt-from_pkg", client_info.pkg_path);
+    ctx_ptr->SetMetaValue("aimrt-from_module", client_info.module_name);
 
     // 在同一个pkg内，直接调用，无需序列化
     if (service_pkg_path == client_info.pkg_path) {

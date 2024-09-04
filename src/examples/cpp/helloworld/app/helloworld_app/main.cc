@@ -4,11 +4,10 @@
 #include <csignal>
 #include <iostream>
 
+#include "aimrt_module_cpp_interface/core.h"
 #include "core/aimrt_core.h"
-#include "helloworld_module/helloworld_module.h"
 
 using namespace aimrt::runtime::core;
-using namespace aimrt::examples::cpp::helloworld::helloworld_module;
 
 AimRTCore* global_core_ptr_ = nullptr;
 
@@ -31,17 +30,37 @@ int32_t main(int32_t argc, char** argv) {
     AimRTCore core;
     global_core_ptr_ = &core;
 
-    // register module
-    HelloWorldModule helloworld_module;
-    core.GetModuleManager().RegisterModule(helloworld_module.NativeHandle());
-
+    // Initialize
     AimRTCore::Options options;
     if (argc > 1) options.cfg_file_path = argv[1];
 
     core.Initialize(options);
 
-    core.Start();
+    // Create Module
+    aimrt::CoreRef module_handle(
+        core.GetModuleManager().CreateModule("HelloWorldModule"));
+    AIMRT_HL_INFO(module_handle.GetLogger(), "This is an example log.");
 
+    // Read cfg
+    auto file_path = module_handle.GetConfigurator().GetConfigFilePath();
+    if (!file_path.empty()) {
+      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+      for (const auto& itr : cfg_node) {
+        std::string k = itr.first.as<std::string>();
+        std::string v = itr.second.as<std::string>();
+        AIMRT_HL_INFO(module_handle.GetLogger(), "cfg [{} : {}]", k, v);
+      }
+    }
+
+    // Start
+    auto fu = core.AsyncStart();
+
+    AIMRT_HL_INFO(module_handle.GetLogger(), "Start succeeded.");
+
+    // Wait
+    fu.wait();
+
+    // Shutdown
     core.Shutdown();
 
     global_core_ptr_ = nullptr;

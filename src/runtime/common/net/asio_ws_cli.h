@@ -123,7 +123,7 @@ class AsioWebSocketClient
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_ERROR("Method can only be called when state is 'Start'.");
+        AIMRT_WARN("Method can only be called when state is 'Start'.");
         return;
       }
 
@@ -261,7 +261,7 @@ class AsioWebSocketClient
 
                         if (heartbeat_flag) {
                           // 心跳包仅用来保活，不传输业务/管理信息
-                          static constexpr websocket::ping_data empty_ping_data;
+                          static const websocket::ping_data empty_ping_data;
 
                           co_await stream_.async_ping(empty_ping_data, boost::asio::use_awaitable);
                           AIMRT_TRACE(
@@ -383,7 +383,7 @@ class AsioWebSocketClient
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_ERROR("Method can only be called when state is 'Start'.");
+              AIMRT_WARN("Method can only be called when state is 'Start'.");
               return;
             }
 

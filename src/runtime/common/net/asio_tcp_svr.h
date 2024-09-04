@@ -37,7 +37,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     Tcp::endpoint ep = Tcp::endpoint{boost::asio::ip::address_v4(), 57634};
 
     /// 最大连接数
-    size_t max_session_num = 1000;
+    size_t max_session_num = 1000000;
 
     /// 管理协程定时器间隔
     std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(10);

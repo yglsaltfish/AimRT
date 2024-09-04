@@ -18,6 +18,10 @@ aimrt:
   channel:
     backends:
       - type: mqtt
+        options:
+          sub_topics_options:
+            - topic_name: "(.*)"
+              qos: 0
     sub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [mqtt]
@@ -31,5 +35,4 @@ aimrt:
 
 # Module custom configuration
 BenchmarkSubscriberModule:
-  topic_name_prefix: test_topic
-  topic_number: 3
+  max_topic_number: 4
