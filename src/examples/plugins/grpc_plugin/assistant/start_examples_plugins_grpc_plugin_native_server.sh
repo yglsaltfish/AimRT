@@ -2,4 +2,4 @@
 
 set -ex
 
-python server.py --port 50050
+python3 server.py --port 50050
