@@ -32,6 +32,7 @@ aimrt:
   module:
     pkgs:
       - path: ./parameter_pkg.dll
+        enable_modules: [ParameterModule]
     modules:
       - name: ParameterModule
         log_lvl: INFO

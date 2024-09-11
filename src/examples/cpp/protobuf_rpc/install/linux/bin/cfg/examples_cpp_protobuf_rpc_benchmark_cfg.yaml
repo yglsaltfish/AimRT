@@ -8,31 +8,27 @@ aimrt:
       - type: console
   executor:
     executors:
-      - name: client_statistics_thread_pool
+      - name: client_statistics_executor
         type: asio_thread
-      - name: client_thread_pool_0
+        options:
+          thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: client_statistics_executor
+      - name: client_executor_0
         type: asio_thread
-      - name: client_thread_pool_1
+      - name: client_executor_1
         type: asio_thread
-      - name: client_thread_pool_2
+      - name: client_executor_2
         type: asio_thread
-      - name: client_thread_pool_3
-        type: asio_thread
-      - name: client_thread_pool_4
-        type: asio_thread
-      - name: client_thread_pool_5
-        type: asio_thread
-      - name: client_thread_pool_6
-        type: asio_thread
-      - name: client_thread_pool_7
-        type: asio_thread
-      - name: client_thread_pool_8
-        type: asio_thread
-      - name: client_thread_pool_9
+      - name: client_executor_3
         type: asio_thread
   rpc:
     backends:
       - type: local
+        options:
+          timeout_executor: timeout_handle
     clients_options:
       - func_name: "(.*)"
         enable_backends: [local]
@@ -41,9 +37,9 @@ aimrt:
         enable_backends: [local]
   module:
     pkgs:
-      - path: ./libros2_rpc_client_pkg.so
+      - path: ./libprotobuf_rpc_client_pkg.so
         enable_modules: [BenchmarkRpcClientModule]
-      - path: ./libros2_rpc_server_pkg.so
+      - path: ./libprotobuf_rpc_server_pkg.so
         enable_modules: [NormalRpcCoServerModule]
     modules:
       - name: BenchmarkRpcClientModule
@@ -53,8 +49,16 @@ aimrt:
 
 # Module custom configuration
 BenchmarkRpcClientModule:
-  perf_mod: bench # bench/fixed-freq
-  msg_size: 1024
-  parallel: 5
-  increasing_parallel: true
-  freq: [24, 30, 50, 60, 120] # Only effective when perf_mod=fixed freq
+  max_parallel: 4
+  bench_plans:
+    - perf_mode: bench
+      msg_size: 256
+      parallel: 4
+      msg_count: 10000
+    - perf_mode: fixed-freq
+      freq: 1000
+      msg_size: 1024
+      parallel: 2
+      msg_count: 1000
+
+NormalRpcCoServerModule:

@@ -27,6 +27,7 @@ aimrt:
   module:
     pkgs:
       - path: ./ros2_channel_pkg.dll
+        enable_modules: [NormalPublisherModule, NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule
         log_lvl: INFO

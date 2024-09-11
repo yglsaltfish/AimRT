@@ -3,7 +3,7 @@
 data='{
 	"module_log_level_map": {
 		"core": "Trace",
-		"ExecutorCoModule": "Trace"
+		"LoggerModule": "Trace"
 	}
 }'
 

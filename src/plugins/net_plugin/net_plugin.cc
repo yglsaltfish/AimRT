@@ -262,8 +262,10 @@ void NetPlugin::Shutdown() noexcept {
       http_cli_pool_ptr_->Shutdown();
 
     // asio
-    if (asio_executor_ptr_)
+    if (asio_executor_ptr_) {
       asio_executor_ptr_->Shutdown();
+      asio_executor_ptr_->Join();
+    }
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());

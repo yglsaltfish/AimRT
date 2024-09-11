@@ -25,7 +25,7 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 2
-      - name: work_thread_pool
+      - name: time_schedule_executor
         type: time_manipulator
         options:
           bind_executor: real_work_thread_pool
@@ -40,12 +40,8 @@ aimrt:
         enable_backends: [http]
   module:
     pkgs:
-      - path: ./helloworld_pkg.dll
+      - path: ./libexecutor_pkg.so
+        enable_modules: [ExecutorCoLoopModule]
     modules:
-      - name: HelloWorldModule
+      - name: ExecutorCoLoopModule
         log_lvl: INFO
-
-# Module custom configuration
-HelloWorldModule:
-  key1: val1
-  key2: val2

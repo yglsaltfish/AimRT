@@ -12,9 +12,15 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
   rpc:
     backends:
       - type: local
+        options:
+          timeout_executor: timeout_handle
     clients_options:
       - func_name: "(.*)"
         enable_backends: [local]
@@ -23,16 +29,18 @@ aimrt:
         enable_backends: [local]
   module:
     pkgs:
-      - path: ./libprotobuf_rpc_pkg.so
-        enable_modules: [NormalRpcAsyncClientModule, NormalRpcAsyncServerModule]
+      - path: ./libprotobuf_rpc_client_pkg.so
+        enable_modules: [NormalRpcFutureClientModule]
+      - path: ./libprotobuf_rpc_server_pkg.so
+        enable_modules: [NormalRpcSyncServerModule]
     modules:
-      - name: NormalRpcAsyncClientModule
+      - name: NormalRpcFutureClientModule
         log_lvl: INFO
-      - name: NormalRpcAsyncServerModule
+      - name: NormalRpcSyncServerModule
         log_lvl: INFO
 
 # Module custom configuration
-NormalRpcAsyncClientModule:
+NormalRpcFutureClientModule:
   rpc_frq: 0.5
 
-NormalRpcAsyncServerModule:
+NormalRpcSyncServerModule:

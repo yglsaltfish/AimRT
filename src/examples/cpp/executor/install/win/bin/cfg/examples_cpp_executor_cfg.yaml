@@ -23,6 +23,7 @@ aimrt:
   module:
     pkgs:
       - path: ./executor_pkg.dll
+        enable_modules: [ExecutorModule]
     modules:
       - name: ExecutorModule
         log_lvl: INFO

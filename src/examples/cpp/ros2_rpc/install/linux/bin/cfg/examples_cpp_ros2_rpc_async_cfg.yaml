@@ -12,9 +12,15 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
   rpc:
     backends:
       - type: local
+        options:
+          timeout_executor: timeout_handle
     clients_options:
       - func_name: "(.*)"
         enable_backends: [local]
@@ -23,14 +29,18 @@ aimrt:
         enable_backends: [local]
   module:
     pkgs:
-      - path: ./libros2_rpc_pkg.so
-        enable_modules: [NormalRpcSyncClientModule, NormalRpcSyncServerModule]
+      - path: ./libros2_rpc_client_pkg.so
+        enable_modules: [NormalRpcAsyncClientModule]
+      - path: ./libros2_rpc_server_pkg.so
+        enable_modules: [NormalRpcAsyncServerModule]
     modules:
-      - name: NormalRpcSyncClientModule
+      - name: NormalRpcAsyncClientModule
         log_lvl: INFO
-      - name: NormalRpcSyncServerModule
+      - name: NormalRpcAsyncServerModule
         log_lvl: INFO
 
 # Module custom configuration
-NormalRpcSyncClientModule:
+NormalRpcAsyncClientModule:
   rpc_frq: 0.5
+
+NormalRpcAsyncServerModule:

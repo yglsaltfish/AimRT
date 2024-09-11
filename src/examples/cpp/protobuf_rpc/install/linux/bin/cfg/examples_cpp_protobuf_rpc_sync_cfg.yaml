@@ -29,8 +29,10 @@ aimrt:
         enable_backends: [local]
   module:
     pkgs:
-      - path: ./libprotobuf_rpc_pkg.so
-        enable_modules: [NormalRpcSyncClientModule, NormalRpcSyncServerModule]
+      - path: ./libprotobuf_rpc_client_pkg.so
+        enable_modules: [NormalRpcSyncClientModule]
+      - path: ./libprotobuf_rpc_server_pkg.so
+        enable_modules: [NormalRpcSyncServerModule]
     modules:
       - name: NormalRpcSyncClientModule
         log_lvl: INFO

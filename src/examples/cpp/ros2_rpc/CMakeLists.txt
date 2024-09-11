@@ -9,7 +9,6 @@ set_namespace()
 
 # module
 add_subdirectory(module/normal_rpc_co_client_module)
-add_subdirectory(module/benchmark_rpc_client_module)
 add_subdirectory(module/normal_rpc_sync_client_module)
 add_subdirectory(module/normal_rpc_async_client_module)
 add_subdirectory(module/normal_rpc_future_client_module)

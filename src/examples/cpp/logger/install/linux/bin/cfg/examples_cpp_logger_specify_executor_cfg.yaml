@@ -10,6 +10,8 @@ aimrt:
           log_executor_name: log_executor
   executor:
     executors:
+      - name: work_executor
+        type: simple_thread
       - name: log_executor
         type: simple_thread
   module:

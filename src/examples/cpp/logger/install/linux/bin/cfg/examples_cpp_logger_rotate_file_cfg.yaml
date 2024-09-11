@@ -12,6 +12,10 @@ aimrt:
           filename: examples_cpp_logger_rotate_file.log
           max_file_size_m: 4
           max_file_num: 10
+  executor:
+    executors:
+      - name: work_executor
+        type: simple_thread
   module:
     pkgs:
       - path: ./liblogger_pkg.so
