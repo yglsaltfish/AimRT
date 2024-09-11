@@ -161,6 +161,26 @@ struct LoggerWrapper {
   LogFunc log_func = SimpleLogger::Log;
 };
 
+template <typename T>
+concept LoggerType =
+    requires(T t) {
+      { t.GetLogLevel() } -> std::same_as<uint32_t>;
+      { t.Log(0, 0, 0, nullptr, nullptr, nullptr, 0) };
+    };
+
+template <LoggerType Logger, typename... Args>
+inline void LogImpl(const Logger& logger,
+                    uint32_t lvl,
+                    uint32_t line,
+                    uint32_t column,
+                    const char* file_name,
+                    const char* function_name,
+                    ::aimrt_fmt::format_string<Args...> fmt,
+                    Args&&... args) {
+  std::string log_str = ::aimrt_fmt::format(fmt, (Args &&) args...);
+  logger.Log(lvl, line, column, file_name, function_name, log_str.c_str(), log_str.size());
+}
+
 }  // namespace aimrt::common::util
 
 /// Log with the specified logger handle
