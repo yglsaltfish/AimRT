@@ -24,7 +24,10 @@ variables:
       -Dopentelemetry_proto_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-proto-1.3.2.tar.gz \
       -Dopentelemetry_cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-cpp-1.16.1.tar.gz \
       -Dzenohc_DOWNLOAD_URL=https://file.agibot.com/third_party/zenoh-c-1.0.0.6.tar.gz \
-      -Dnghttp2_DOWNLOAD_URL=https://file.agibot.com/third_party/nghttp2-1.62.1.tar.gz
+      -Dnghttp2_DOWNLOAD_URL=https://file.agibot.com/third_party/nghttp2-1.62.1.tar.gz \
+      -Diceoryx_DOWNLOAD_URL=https://file.agibot.com/third_party/iceoryx-2.0.6.tar.gz \
+      -Dcpptoml_DOWNLOAD_URL=https://file.agibot.com/third_party/cpptoml-0.1.0.tar.gz \
+
 
   TEST_CMD:
     value: |
@@ -47,4 +50,7 @@ variables:
       -Dopentelemetry_proto_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-proto-1.3.2.tar.gz \
       -Dopentelemetry_cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-cpp-1.16.1.tar.gz \
       -Dzenohc_DOWNLOAD_URL=https://file.agibot.com/third_party/zenoh-c-1.0.0.6.tar.gz \
-      -Dnghttp2_DOWNLOAD_URL=https://file.agibot.com/third_party/nghttp2-1.62.1.tar.gz
+      -Dnghttp2_DOWNLOAD_URL=https://file.agibot.com/third_party/nghttp2-1.62.1.tar.gz \
+      -Diceoryx_DOWNLOAD_URL=https://file.agibot.com/third_party/iceoryx-2.0.6.tar.gz \
+      -Dcpptoml_DOWNLOAD_URL=https://file.agibot.com/third_party/cpptoml-0.1.0.tar.gz \
+
