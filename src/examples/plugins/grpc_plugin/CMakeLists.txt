@@ -23,3 +23,11 @@ add_custom_target(
   ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all ALL
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin ${CMAKE_BINARY_DIR}
   DEPENDS aimrt::runtime::main)
+
+if(AIMRT_BUILD_WITH_PROTOBUF)
+  add_dependencies(
+    ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all #
+    aimrt::examples::cpp::protobuf_rpc::protobuf_rpc_client_pkg #
+    aimrt::examples::cpp::protobuf_rpc::protobuf_rpc_server_pkg #
+  )
+endif()
