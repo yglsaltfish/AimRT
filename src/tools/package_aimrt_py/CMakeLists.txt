@@ -29,7 +29,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml ${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_CURRENT_SOURCE_DIR}/MANIFEST.in
           ${AIMRT_PY_PKG_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/VERSION ${CMAKE_SOURCE_DIR}/README.md ${CMAKE_SOURCE_DIR}/LICENSE ${AIMRT_PY_PKG_DIR}
-  COMMAND ${Python3_EXECUTABLE} -m build
+  COMMAND ${Python3_EXECUTABLE} -m build --wheel --no-isolation -v
   COMMENT "Creating python package"
   DEPENDS copy_python_runtime
   WORKING_DIRECTORY ${AIMRT_PY_PKG_DIR})
