@@ -20,17 +20,7 @@ aimrt:
   executor:
     executors:
       - name: work_executor
-        type: asio_thread
-        options:
-          thread_num: 2
-      - name: thread_safe_executor
-        type: asio_thread
-        options:
-          thread_num: 1
-      - name: time_schedule_executor
-        type: asio_thread
-        options:
-          thread_num: 2
+        type: simple_thread
   rpc:
     backends:
       - type: http
@@ -39,8 +29,8 @@ aimrt:
         enable_backends: [http]
   module:
     pkgs:
-      - path: ./libexecutor_pkg.so
-        enable_modules: [ExecutorCoModule]
+      - path: ./liblogger_pkg.so
+        enable_modules: [LoggerModule]
     modules:
-      - name: ExecutorCoModule
-        log_lvl: INFO
+      - name: LoggerModule
+        log_lvl: TRACE

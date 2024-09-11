@@ -12,9 +12,15 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
   rpc:
     backends:
       - type: local
+        options:
+          timeout_executor: timeout_handle
     clients_options:
       - func_name: "(.*)"
         enable_backends: [local]
@@ -36,3 +42,5 @@ aimrt:
 # Module custom configuration
 NormalRpcCoClientModule:
   rpc_frq: 0.5
+
+NormalRpcCoServerModule:

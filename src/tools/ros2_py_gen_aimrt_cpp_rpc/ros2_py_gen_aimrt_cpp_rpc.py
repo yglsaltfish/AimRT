@@ -85,8 +85,12 @@ class {{srv_filename}}SyncProxy : public aimrt::rpc::ProxyBase {
   explicit {{srv_filename}}SyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref);
   ~{{srv_filename}}SyncProxy() = default;
 
-  bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{srv_filename}}ClientFunc(rpc_handle_ref, service_name_);
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref);
+  }
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref, service_name);
   }
 
   aimrt::rpc::Status {{srv_filename}}(
@@ -106,8 +110,12 @@ class {{srv_filename}}AsyncProxy : public aimrt::rpc::ProxyBase {
   explicit {{srv_filename}}AsyncProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref);
   ~{{srv_filename}}AsyncProxy() = default;
 
-  bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{srv_filename}}ClientFunc(rpc_handle_ref, service_name_);
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref);
+  }
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref, service_name);
   }
 
   void {{srv_filename}}(
@@ -129,8 +137,12 @@ class {{srv_filename}}FutureProxy : public aimrt::rpc::ProxyBase {
   explicit {{srv_filename}}FutureProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref);
   ~{{srv_filename}}FutureProxy() = default;
 
-  bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{srv_filename}}ClientFunc(rpc_handle_ref, service_name_);
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref);
+  }
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref, service_name);
   }
 
   std::future<aimrt::rpc::Status> {{srv_filename}}(
@@ -150,8 +162,12 @@ class {{srv_filename}}CoProxy : public aimrt::rpc::CoProxyBase {
   explicit {{srv_filename}}CoProxy(aimrt::rpc::RpcHandleRef rpc_handle_ref);
   ~{{srv_filename}}CoProxy() = default;
 
-  bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
-    return Register{{srv_filename}}ClientFunc(rpc_handle_ref, service_name_);
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref);
+  }
+
+  static bool RegisterClientFunc(aimrt::rpc::RpcHandleRef rpc_handle_ref, std::string_view service_name) {
+    return Register{{srv_filename}}ClientFunc(rpc_handle_ref, service_name);
   }
 
   aimrt::co::Task<aimrt::rpc::Status> {{srv_filename}}(

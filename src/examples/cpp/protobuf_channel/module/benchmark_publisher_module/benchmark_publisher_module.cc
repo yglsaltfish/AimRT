@@ -12,6 +12,26 @@
 
 namespace aimrt::examples::cpp::protobuf_channel::benchmark_publisher_module {
 
+std::string GenerateRandomString(int min_length, int max_length) {
+  static constexpr std::string_view chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  srand(time(nullptr));
+
+  int length = rand() % (max_length - min_length + 1) + min_length;
+
+  std::string result;
+  result.reserve(length);
+
+  for (int i = 0; i < length; ++i) {
+    result += chars[rand() % chars.length()];
+  }
+
+  return result;
+}
+
+std::string GenerateRandomString(int length) {
+  return GenerateRandomString(length, length);
+}
+
 bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
   core_ = core;
 
@@ -62,7 +82,7 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
       bool ret = aimrt::channel::RegisterPublishType<aimrt::protocols::example::BenchmarkMessage>(publisher);
       AIMRT_CHECK_ERROR_THROW(ret, "Register publish type failed.");
 
-      publisher_wrapper_vec.emplace_back(PublisherWrapper{
+      publisher_wrapper_vec_.emplace_back(PublisherWrapper{
           .publish_executor = executor,
           .publisher = publisher});
     }
@@ -119,7 +139,7 @@ void BenchmarkPublisherModule::MainLoop() {
     for (size_t ii = 0; ii < bench_plans_.size(); ++ii) {
       if (!run_flag_.load()) break;
 
-      StartSingleBench(ii, bench_plans_[ii]);
+      StartSinglePlan(ii, bench_plans_[ii]);
 
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
@@ -133,7 +153,7 @@ void BenchmarkPublisherModule::MainLoop() {
   stop_sig_.set_value();
 }
 
-void BenchmarkPublisherModule::StartSingleBench(uint32_t plan_id, BenchPlan plan) {
+void BenchmarkPublisherModule::StartSinglePlan(uint32_t plan_id, BenchPlan plan) {
   // publish start signal
   aimrt::protocols::example::BenchmarkSignal begin_signal;
   begin_signal.set_status(aimrt::protocols::example::BenchmarkStatus::Begin);
@@ -151,8 +171,8 @@ void BenchmarkPublisherModule::StartSingleBench(uint32_t plan_id, BenchPlan plan
   // publish topic
   std::vector<std::future<void>> future_vec;
   for (size_t ii = 0; ii < plan.topic_number; ++ii) {
-    auto publish_executor = publisher_wrapper_vec[ii].publish_executor;
-    auto publisher = publisher_wrapper_vec[ii].publisher;
+    auto publish_executor = publisher_wrapper_vec_[ii].publish_executor;
+    auto publisher = publisher_wrapper_vec_[ii].publisher;
 
     std::promise<void> task_promise;
     future_vec.emplace_back(task_promise.get_future());
@@ -160,7 +180,7 @@ void BenchmarkPublisherModule::StartSingleBench(uint32_t plan_id, BenchPlan plan
     publish_executor.Execute(
         [this, publisher, plan, task_promise{std::move(task_promise)}]() mutable {
           aimrt::protocols::example::BenchmarkMessage msg;
-          msg.set_data(std::string(plan.msg_size, 'a'));
+          msg.set_data(GenerateRandomString(plan.msg_size));
 
           uint32_t send_count = 0;
 

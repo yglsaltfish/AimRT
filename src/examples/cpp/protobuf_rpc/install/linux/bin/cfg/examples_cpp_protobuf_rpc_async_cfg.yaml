@@ -29,16 +29,18 @@ aimrt:
         enable_backends: [local]
   module:
     pkgs:
-      - path: ./libprotobuf_rpc_pkg.so
-        enable_modules: [NormalRpcFutureClientModule, NormalRpcSyncServerModule]
+      - path: ./libprotobuf_rpc_client_pkg.so
+        enable_modules: [NormalRpcAsyncClientModule]
+      - path: ./libprotobuf_rpc_server_pkg.so
+        enable_modules: [NormalRpcAsyncServerModule]
     modules:
-      - name: NormalRpcFutureClientModule
+      - name: NormalRpcAsyncClientModule
         log_lvl: INFO
-      - name: NormalRpcSyncServerModule
+      - name: NormalRpcAsyncServerModule
         log_lvl: INFO
 
 # Module custom configuration
-NormalRpcFutureClientModule:
+NormalRpcAsyncClientModule:
   rpc_frq: 0.5
 
-NormalRpcSyncServerModule:
+NormalRpcAsyncServerModule:

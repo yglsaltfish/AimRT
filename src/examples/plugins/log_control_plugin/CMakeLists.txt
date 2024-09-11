@@ -23,4 +23,4 @@ add_custom_target(
   ${CUR_SUPERIOR_NAMESPACE_UNDERLINE}_${CUR_DIR}_build_all ALL
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin ${CMAKE_BINARY_DIR}
   DEPENDS aimrt::runtime::main
-          aimrt::examples::cpp::executor::executor_pkg)
+          aimrt::examples::cpp::logger::logger_pkg)

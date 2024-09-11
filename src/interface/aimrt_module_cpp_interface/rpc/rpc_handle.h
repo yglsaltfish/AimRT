@@ -300,4 +300,9 @@ bool RegisterClientFunc(RpcHandleRef rpc_handle_ref) {
   return ProxyType::RegisterClientFunc(rpc_handle_ref);
 }
 
+template <class ProxyType>
+bool RegisterClientFunc(RpcHandleRef rpc_handle_ref, std::string_view service_name) {
+  return ProxyType::RegisterClientFunc(rpc_handle_ref, service_name);
+}
+
 }  // namespace aimrt::rpc

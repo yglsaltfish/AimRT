@@ -27,7 +27,9 @@ aimrt:
   module:
     pkgs:
       - path: ./libros2_channel_pub_pkg.so
+        enable_modules: [NormalPublisherModule]
       - path: ./libros2_channel_sub_pkg.so
+        enable_modules: [NormalSubscriberModule]
     modules:
       - name: NormalPublisherModule
         log_lvl: INFO

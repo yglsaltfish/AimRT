@@ -52,6 +52,10 @@ if(NOT opentelemetry_cpp_POPULATED)
       ${opentelemetry_proto_SOURCE_DIR}
       CACHE PATH "")
 
+  set(PROTOBUF_PROTOC_EXECUTABLE
+      ${Protobuf_PROTOC_EXECUTABLE}
+      CACHE STRING "")
+
   set(BUILD_SHARED_LIBS
       OFF
       CACHE BOOL "")

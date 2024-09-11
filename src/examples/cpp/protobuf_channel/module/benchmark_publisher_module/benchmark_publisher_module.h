@@ -37,7 +37,7 @@ class BenchmarkPublisherModule : public aimrt::ModuleBase {
     uint32_t msg_count;
   };
 
-  void StartSingleBench(uint32_t plan_id, BenchPlan plan);
+  void StartSinglePlan(uint32_t plan_id, BenchPlan plan);
 
  private:
   aimrt::CoreRef core_;
@@ -52,7 +52,7 @@ class BenchmarkPublisherModule : public aimrt::ModuleBase {
     aimrt::executor::ExecutorRef publish_executor;  // name: publish_executor_x
     aimrt::channel::PublisherRef publisher;         // name: test_topic_x
   };
-  std::vector<PublisherWrapper> publisher_wrapper_vec;
+  std::vector<PublisherWrapper> publisher_wrapper_vec_;
 
   // cfg
   uint32_t max_topic_number_;

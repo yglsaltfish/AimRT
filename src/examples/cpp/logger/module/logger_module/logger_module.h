@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <future>
 
 #include "aimrt_module_cpp_interface/module_base.h"
 
@@ -26,6 +27,10 @@ class LoggerModule : public aimrt::ModuleBase {
 
  private:
   aimrt::CoreRef core_;
+  aimrt::executor::ExecutorRef executor_;
+
+  std::atomic_bool run_flag_ = true;
+  std::promise<void> stop_sig_;
 };
 
 }  // namespace aimrt::examples::cpp::logger::logger_module

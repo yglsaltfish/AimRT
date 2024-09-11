@@ -37,14 +37,7 @@ target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_C
 target_link_libraries(
   ${CUR_TARGET_NAME}
   PRIVATE yaml-cpp::yaml-cpp
-  PUBLIC aimrt::interface::aimrt_module_cpp_interface
-         aimrt::interface::aimrt_module_ros2_interface
-         rclcpp::rclcpp
-         example_ros2::example_ros2__rosidl_generator_cpp
-         example_ros2::example_ros2__rosidl_typesupport_cpp
-         example_ros2::example_ros2__rosidl_typesupport_fastrtps_cpp
-         example_ros2::example_ros2__rosidl_typesupport_introspection_cpp
-         aimrt::protocols::example_ros2_aimrt_rpc_gencode)
+  PUBLIC aimrt::interface::aimrt_module_cpp_interface)
 
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)
