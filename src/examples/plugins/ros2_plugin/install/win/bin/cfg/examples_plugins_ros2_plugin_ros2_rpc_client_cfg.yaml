@@ -20,9 +20,15 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
   rpc:
     backends:
       - type: ros2
+        options:
+          timeout_executor: timeout_handle
     clients_options:
       - func_name: "(.*)"
         enable_backends: [ros2]

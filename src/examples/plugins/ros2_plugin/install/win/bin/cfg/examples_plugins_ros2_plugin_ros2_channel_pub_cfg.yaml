@@ -5,7 +5,7 @@ aimrt:
   plugin:
     plugins:
       - name: ros2_plugin
-        path: ./libaimrt_ros2_plugin.so
+        path: ./aimrt_ros2_plugin.dll
         options:
           node_name: example_ros2_channel_publisher_node
           executor_type: MultiThreaded # SingleThreaded/StaticSingleThreaded/MultiThreaded
@@ -29,6 +29,7 @@ aimrt:
   module:
     pkgs:
       - path: ./ros2_channel_pub_pkg.dll
+        enable_modules: [NormalPublisherModule]
     modules:
       - name: NormalPublisherModule
         log_lvl: INFO

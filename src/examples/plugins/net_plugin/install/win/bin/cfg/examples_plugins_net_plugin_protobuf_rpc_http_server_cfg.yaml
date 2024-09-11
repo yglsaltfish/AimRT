@@ -8,28 +8,24 @@ aimrt:
         path: ./aimrt_net_plugin.dll
         options:
           thread_num: 4
-          tcp_options:
+          http_options:
             listen_ip: 127.0.0.1
-            listen_port: 50060
+            listen_port: 50080
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
       - type: console
   executor:
-  channel:
+  rpc:
     backends:
-      - type: tcp
-    sub_topics_options:
-      - topic_name: "(.*)"
-        enable_backends: [tcp]
+      - type: http
+    servers_options:
+      - func_name: "(.*)"
+        enable_backends: [http]
   module:
     pkgs:
-      - path: ./protobuf_channel_sub_pkg.dll
-        enable_modules: [NormalSubscriberModule]
+      - path: ./protobuf_rpc_server_pkg.dll
+        enable_modules: [NormalRpcCoServerModule]
     modules:
-      - name: NormalSubscriberModule
+      - name: NormalRpcCoServerModule
         log_lvl: INFO
-
-# Module custom configuration
-NormalSubscriberModule:
-  topic_name: test_topic
