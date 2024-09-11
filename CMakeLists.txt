@@ -206,7 +206,16 @@ if(AIMRT_BUILD_RUNTIME)
         RESULT_VARIABLE BUILD_RESULT
         OUTPUT_QUIET ERROR_QUIET)
       if(NOT ${BUILD_RESULT} EQUAL 0)
-        message(WARNING "Can not find build in your python environment, will not compile package_aimrt_py!")
+        message(WARNING "Can not find build in your python environment, will not generate aimrt_py package!")
+        set(AIMRT_BUILD_PYTHON_PACKAGE OFF)
+      endif()
+
+      execute_process(
+        COMMAND ${Python3_EXECUTABLE} -m pip show setuptools
+        RESULT_VARIABLE SETUPTOOLS_RESULT
+        OUTPUT_QUIET ERROR_QUIET)
+      if(NOT ${SETUPTOOLS_RESULT} EQUAL 0)
+        message(WARNING "Can not find setuptools in your python environment, will not generate aimrt_py package!")
         set(AIMRT_BUILD_PYTHON_PACKAGE OFF)
       endif()
     endif()
