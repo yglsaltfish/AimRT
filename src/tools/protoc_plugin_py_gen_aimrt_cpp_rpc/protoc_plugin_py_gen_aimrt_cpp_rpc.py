@@ -215,9 +215,6 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 #include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
 
-#include <google/protobuf/stubs/stringpiece.h>
-#include <google/protobuf/util/json_util.h>
-
 {{namespace_begin}}
 static constexpr std::string_view kRpcType = "pb";
 
@@ -560,7 +557,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
             if end_pos == -1:
                 break
 
-            cur_temp = result[begin_pos + len(method_begin_flag):end_pos]
+            cur_temp = result[begin_pos + len(method_begin_flag): end_pos]
             cur_result = ""
             for node in service_node.method_vec:
                 cur_result += AimRTCodeGenerator.gen_method_code(cur_temp, node)
@@ -589,7 +586,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
             if end_pos == -1:
                 break
 
-            cur_temp = result[begin_pos + len(service_begin_flag):end_pos]
+            cur_temp = result[begin_pos + len(service_begin_flag): end_pos]
             cur_result = ""
             for node in package_node.service_vec:
                 cur_result += AimRTCodeGenerator.gen_service_code(cur_temp, node)
@@ -632,7 +629,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
             package_name: str = proto_file.package
 
             package_node = AimRTCodeGenerator.PackageNode()
-            package_node.kv["{{file_name}}"] = file_name.replace('.proto', '')
+            package_node.kv["{{file_name}}"] = file_name.replace(".proto", "")
             package_node.kv["{{package_name}}"] = package_name
             package_node.kv["{{namespace_begin}}"] = self.gen_namespace_begin_str(package_name)
             package_node.kv["{{namespace_end}}"] = self.gen_namespace_end_str(package_name)
@@ -657,19 +654,19 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
                 package_node.service_vec.append(service_node)
 
             hfile: CodeGeneratorResponse.File = CodeGeneratorResponse.File()
-            hfile.name = file_name.replace('.proto', '.aimrt_rpc.pb.h')
+            hfile.name = file_name.replace(".proto", ".aimrt_rpc.pb.h")
             hfile.content = AimRTCodeGenerator.gen_package_code(self.t_hfile, package_node)
             response.file.append(hfile)
 
             ccfile: CodeGeneratorResponse.File = CodeGeneratorResponse.File()
-            ccfile.name = file_name.replace('.proto', '.aimrt_rpc.pb.cc')
+            ccfile.name = file_name.replace(".proto", ".aimrt_rpc.pb.cc")
             ccfile.content = AimRTCodeGenerator.gen_package_code(self.t_ccfile, package_node)
             response.file.append(ccfile)
 
         return response
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     request: CodeGeneratorRequest = CodeGeneratorRequest.FromString(sys.stdin.buffer.read())
 
     aimrt_code_generator: AimRTCodeGenerator = AimRTCodeGenerator()

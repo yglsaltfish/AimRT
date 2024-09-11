@@ -255,9 +255,6 @@ class {{service_name}}CoProxy : public aimrt::rpc::CoProxyBase {
 #include "aimrt_module_cpp_interface/co/then.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_type_support.h"
 
-#include <google/protobuf/stubs/stringpiece.h>
-#include <google/protobuf/util/json_util.h>
-
 {{namespace_begin}}
 static constexpr std::string_view kRpcType = "pb";
 

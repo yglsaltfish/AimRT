@@ -11,8 +11,12 @@
 #include "aimrt_module_cpp_interface/util/string.h"
 #include "aimrt_module_protobuf_interface/util/protobuf_zero_copy_stream.h"
 
+#if GOOGLE_PROTOBUF_VERSION >= 3022000
+  #include <google/protobuf/json/json.h>
+#else
+  #include <google/protobuf/stubs/stringpiece.h>
+#endif
 #include <google/protobuf/message.h>
-#include <google/protobuf/stubs/stringpiece.h>
 #include <google/protobuf/util/json_util.h>
 
 namespace aimrt {
@@ -55,7 +59,11 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
           if (aimrt::util::ToStdStringView(serialization_type) == "json") {
             // todo：使用zerocopy
             ::google::protobuf::util::JsonPrintOptions op;
+#if GOOGLE_PROTOBUF_VERSION >= 5026000
+            op.always_print_fields_with_no_presence = true;
+#else
             op.always_print_primitive_fields = true;
+#endif
             op.preserve_proto_field_names = true;
             std::string str;
             auto status = ::google::protobuf::util::MessageToJsonString(msg_ref, &str, op);
@@ -83,12 +91,21 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
           if (aimrt::util::ToStdStringView(serialization_type) == "json") {
             // todo：使用zerocopy
             if (buffer_array_view.len == 1) {
+#if GOOGLE_PROTOBUF_VERSION >= 3022000
+              auto status = ::google::protobuf::json::JsonStringToMessage(
+                  absl::string_view(
+                      static_cast<const char*>(buffer_array_view.data[0].data),
+                      buffer_array_view.data[0].len),
+                  static_cast<MsgType*>(msg),
+                  ::google::protobuf::util::JsonParseOptions());
+#else
               auto status = ::google::protobuf::util::JsonStringToMessage(
                   ::google::protobuf::StringPiece(
                       static_cast<const char*>(buffer_array_view.data[0].data),
                       buffer_array_view.data[0].len),
                   static_cast<MsgType*>(msg),
                   ::google::protobuf::util::JsonParseOptions());
+#endif
               return status.ok();
             }
 
@@ -105,11 +122,19 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
                        buffer_array_view.data[ii].len);
                 cur_size += buffer_array_view.data[ii].len;
               }
+#if GOOGLE_PROTOBUF_VERSION >= 5022000
+              auto status = ::google::protobuf::util::JsonStringToMessage(
+                  absl::string_view(
+                      static_cast<const char*>(buffer), total_size),
+                  static_cast<MsgType*>(msg),
+                  ::google::protobuf::util::JsonParseOptions());
+#else
               auto status = ::google::protobuf::util::JsonStringToMessage(
                   ::google::protobuf::StringPiece(
                       static_cast<const char*>(buffer), total_size),
                   static_cast<MsgType*>(msg),
                   ::google::protobuf::util::JsonParseOptions());
+#endif
               return status.ok();
             }
             return false;
