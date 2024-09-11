@@ -27,6 +27,15 @@ if(NOT protobuf_POPULATED)
   set(protobuf_BUILD_TESTS
       OFF
       CACHE BOOL "")
+  set(protobuf_BUILD_CONFORMANCE
+      OFF
+      CACHE BOOL "")
+  set(protobuf_BUILD_EXAMPLES
+      OFF
+      CACHE BOOL "")
+  set(protobuf_DISABLE_RTTI
+      OFF
+      CACHE BOOL "")
   set(protobuf_WITH_ZLIB
       OFF
       CACHE BOOL "")
@@ -35,6 +44,9 @@ if(NOT protobuf_POPULATED)
       CACHE BOOL "")
   set(protobuf_INSTALL
       ${AIMRT_INSTALL}
+      CACHE BOOL "")
+  set(protobuf_VERBOSE
+      ON
       CACHE BOOL "")
 
   FetchContent_MakeAvailable(protobuf)

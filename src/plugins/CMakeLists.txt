@@ -38,3 +38,7 @@ endif()
 if(AIMRT_BUILD_OPENTELEMETRY_PLUGIN)
   add_subdirectory(opentelemetry_plugin)
 endif()
+
+if(AIMRT_BUILD_WITH_PROTOBUF AND AIMRT_BUILD_GRPC_PLUGIN)
+  add_subdirectory(grpc_plugin)
+endif()

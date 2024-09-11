@@ -17,7 +17,7 @@ def signal_handler(sig, frame):
     global global_core
     global running_flag
 
-    if(global_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
+    if (global_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
         global_core.Shutdown()
         running_flag = False
         return
@@ -63,7 +63,7 @@ def main():
     def Loop():
         count = 1
         global running_flag
-        while(running_flag):
+        while (running_flag):
             aimrt_py.info(module_handle.GetLogger(), "Loop count: {}".format(count))
             count = count + 1
             time.sleep(1)

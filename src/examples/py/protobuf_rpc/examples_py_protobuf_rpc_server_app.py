@@ -18,7 +18,7 @@ global_core = None
 def signal_handler(sig, frame):
     global global_core
 
-    if(global_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
+    if (global_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
         global_core.Shutdown()
         return
 
