@@ -10,7 +10,6 @@ set_namespace()
 # assistant
 add_subdirectory(assistant/native_ros2_channel_publisher)
 add_subdirectory(assistant/native_ros2_channel_subscriber)
-add_subdirectory(assistant/native_ros2_rpc_benchmark_client)
 add_subdirectory(assistant/native_ros2_rpc_client)
 add_subdirectory(assistant/native_ros2_rpc_server)
 add_subdirectory(assistant/native_ros2_protobuf_channel_publisher)

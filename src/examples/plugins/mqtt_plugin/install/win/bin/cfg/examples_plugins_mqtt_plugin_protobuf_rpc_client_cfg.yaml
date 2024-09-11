@@ -20,15 +20,25 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
   rpc:
     backends:
       - type: mqtt
+        options:
+          timeout_executor: timeout_handle
+          clients_options:
+            - func_name: "(.*)"
+              qos: 0
     clients_options:
       - func_name: "(.*)"
         enable_backends: [mqtt]
   module:
     pkgs:
       - path: ./protobuf_rpc_client_pkg.dll
+        enable_modules: [NormalRpcCoClientModule]
     modules:
       - name: NormalRpcCoClientModule
         log_lvl: INFO

@@ -34,7 +34,7 @@ class RosTestRpcServer : public rclcpp::Node {
   void CoRpcHandle(const std::shared_ptr<RosTestRpc::Request> request,
                    std::shared_ptr<RosTestRpc::Response> response) {
     response->code = 123;
-    // RCLCPP_INFO(this->get_logger(), "handle service");
+    RCLCPP_INFO(this->get_logger(), "handle service");
   };
 };
 

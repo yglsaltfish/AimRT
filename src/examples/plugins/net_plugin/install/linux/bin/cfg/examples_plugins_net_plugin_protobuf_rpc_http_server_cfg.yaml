@@ -25,8 +25,7 @@ aimrt:
   module:
     pkgs:
       - path: ./libprotobuf_rpc_server_pkg.so
+        enable_modules: [NormalRpcCoServerModule]
     modules:
       - name: NormalRpcCoServerModule
         log_lvl: INFO
-
-NormalRpcCoServerModule:
