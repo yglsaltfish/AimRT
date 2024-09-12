@@ -13,7 +13,7 @@
 aimrt_cli gen -p [your_required_configuration].yaml -o [your_required_output_folder]
 ```
 
-您也可以使用 `aimrt_cli -h/--help`查看支持的命令行选项。
+您也可以使用 `aimrt_cli -h/--help`查看支持的命令行选项。值得注意的是，输出文件夹最好是空文件夹或不存在的文件夹，否则 aimrt_cli 遇到同名文件会报错并终止生成，典型情况是包含 README.md 的初始仓库文件夹，这种情况下需要您手动删除 README.md 文件后再执行生成命令。
 
 ## 配置文件解读
 代码库在 `aimrt_cli` 文件夹下给出了一个配置文件示例 `configuration_example.yaml`。
@@ -80,7 +80,7 @@ protocols:
     build_mode_tag: ["EXAMPLE"] #仅在EXAMPLE模式为true时构建。build_mode_tag未设置则表示默认在所有模式下都构建
 ```
 此处，您可自定义您在工程中所需用到的协议内容与类型，
-代码生成工具会根据此处配置生成对应的协议模块， 
+代码生成工具会根据此处配置生成对应的协议模块，
 `protocols`不是必备项， 如不需要可将其删除或者内容置为空。
 + `name`是您所需定义的数据协议名。
 + `type`是您定义的协议所属的种类，分为`protobuf`以及`ros2`两种类型，分别生成对应的协议模块。
@@ -169,6 +169,60 @@ deploy_modes:
 注意，代码自动生成工具，给予部署配置生成的具体部署的配置文件中并没有为关联的模块生成具体配置项，需要您自己指定。
 
 最终将在指定的目录中生成具体的工程， `configuration_example.yaml`生成的工程结构如下：
-
-<img src="./project_tree.jpg" alt="工程树形图" width="300" height="450">
-
+```
+.
+├── build.sh
+├── cmake
+│   ├── GetAimRT.cmake
+│   ├── GetGTest.cmake
+│   └── NamespaceTool.cmake
+├── CMakeLists.txt
+├── format.sh
+├── README.md
+├── src
+│   ├── CMakeLists.txt
+│   ├── install
+│   │   ├── linux
+│   │   │   └── bin
+│   │   │       ├── cfg
+│   │   │       │   └── exmaple_mode_local_ins_1_cfg.yaml
+│   │   │       └── start_exmaple_mode_local_ins_1.sh
+│   │   └── win
+│   │       └── bin
+│   │           ├── cfg
+│   │           │   └── exmaple_mode_local_ins_1_cfg.yaml
+│   │           └── start_exmaple_mode_local_ins_1.bat
+│   ├── module
+│   │   ├── exmaple_module
+│   │   │   ├── CMakeLists.txt
+│   │   │   ├── exmaple_module.cc
+│   │   │   └── exmaple_module.h
+│   │   ├── my_bar_module
+│   │   │   ├── CMakeLists.txt
+│   │   │   ├── my_bar_module.cc
+│   │   │   └── my_bar_module.h
+│   │   └── my_foo_module
+│   │       ├── CMakeLists.txt
+│   │       ├── my_foo_module.cc
+│   │       └── my_foo_module.h
+│   ├── pkg
+│   │   ├── pkg1
+│   │   │   ├── CMakeLists.txt
+│   │   │   └── pkg_main.cc
+│   │   └── pkg2
+│   │       ├── CMakeLists.txt
+│   │       └── pkg_main.cc
+│   └── protocols
+│       ├── example_proto
+│       │   ├── CMakeLists.txt
+│       │   └── example_proto.proto
+│       ├── my_proto
+│       │   ├── CMakeLists.txt
+│       │   └── my_proto.proto
+│       └── my_ros2_proto
+│           ├── CMakeLists.txt
+│           ├── msg
+│           │   └── RosChangeMe.msg
+│           └── package.xml
+└── test.sh
+```
