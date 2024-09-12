@@ -21,7 +21,7 @@ class URLApp:
         self.url_entry.pack()
 
         self.executor_name_entry = tk.Entry(root, width=100)
-        self.executor_name_entry.insert(0, "work_thread_pool")
+        self.executor_name_entry.insert(0, "time_schedule_executor")
         self.executor_name_entry.pack()
 
         self.discrete_values = [0, 1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8]

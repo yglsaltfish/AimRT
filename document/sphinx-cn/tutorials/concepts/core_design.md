@@ -1,5 +1,5 @@
 
-# 核心设计理念
+# AimRT 核心设计理念
 
 ## Initialize阶段和Start阶段
 
