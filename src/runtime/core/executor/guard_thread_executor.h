@@ -21,6 +21,7 @@ class GuardThreadExecutor {
     std::string name = "aimrt_guard";
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
+    uint32_t queue_threshold = 1000;
   };
 
   enum class State : uint32_t {
@@ -50,6 +51,8 @@ class GuardThreadExecutor {
   bool SupportTimerSchedule() const { return false; }
 
   void Execute(aimrt::executor::Task&& task);
+
+  size_t CurrentTaskNum() noexcept { return queue_task_num_.load(); }
 
   State GetState() const { return state_.load(); }
 
@@ -81,8 +84,8 @@ class GuardThreadExecutor {
         .execute = [](void* impl, aimrt_function_base_t* task) {
           static_cast<GuardThreadExecutor*>(impl)->Execute(aimrt::executor::Task(task));  //
         },
-        .now = nullptr,
-        .execute_at_ns = nullptr,
+        .now = nullptr,            // TODO, support time schedule
+        .execute_at_ns = nullptr,  // TODO, support time schedule
         .impl = impl};
   }
 
@@ -93,6 +96,10 @@ class GuardThreadExecutor {
 
   std::string name_;
   std::thread::id thread_id_;
+
+  uint32_t queue_threshold_;
+  uint32_t queue_warn_threshold_;
+  std::atomic_uint32_t queue_task_num_ = 0;
 
   std::mutex mutex_;
   std::condition_variable cond_;

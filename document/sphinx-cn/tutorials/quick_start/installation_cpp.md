@@ -3,7 +3,7 @@
 
 
 在开发 C++ 工程时，您可以通过两种方式引用 AimRT：
-- 基于 CMake FetchContent，通过源码进行引用【推荐】；
+- [推荐] 基于 CMake FetchContent，通过源码进行引用；
 - 安装后，基于 CMake find_package 进行引用；
 
 AimRT 比较轻量，推荐用户直接基于源码进行引用。如果要使用基于安装的方式进行引用，AimRT 也提供了两种方式：
@@ -26,8 +26,9 @@ AimRT 兼容 linux、windows 等主流操作系统，编译器需要能够支持
 
 请注意：
 - 在编译构建时，AimRT 可能通过源码方式引用一些第三方依赖，如果出现网络问题，可以参考[CMake](../concepts/cmake.md)文档进行处理。
-- 如果要编译 ROS2 相关接口/插件，AimRT 会通过`find_package`的方式在本地寻找 rclcpp 等依赖，请确保本地安装有[ROS2 Humble](https://docs.ros.org/en/humble/)。
-- 如果要构建 Python 接口、cli 工具等，AimRT 会通过`find_package`的方式在本地寻找 Python 依赖，请确保本地安装有 Python3。
+- 在打开某些选项、编译某些插件时，AimRT 可能需要额外引用一些第三方依赖，细节请参考对应插件的文档、CMake 代码文件或构建时的提示。以下是一些示例：
+  - 如果要编译 ROS2 相关接口/插件，AimRT 会通过`find_package`的方式在本地寻找 rclcpp 等依赖，请确保本地安装有[ROS2 Humble](https://docs.ros.org/en/humble/)。
+  - 如果要构建 Python 接口、cli 工具等，AimRT 会通过`find_package`的方式在本地寻找 Python 依赖，请确保本地安装有 Python3。
 
 
 ## 通过源码引用
@@ -39,7 +40,7 @@ include(FetchContent)
 # 可以指定aimrt地址和版本
 FetchContent_Declare(
   aimrt
-  GIT_REPOSITORY http://code.agibot.com/agibot_aima/aimrt.git
+  GIT_REPOSITORY https://github.com/AimRT/aimrt.git
   GIT_TAG v1.x.x)
 
 FetchContent_GetProperties(aimrt)
@@ -79,7 +80,7 @@ target_link_libraries(
 
 ***TODO，此方式还在建设中***
 
-您可以直接在[AimRT的发布页面]()上下载一些主流平台上编译好的二进制包并安装。
+您可以直接在[AimRT 的发布页面]()上下载一些主流平台上编译好的二进制包并安装。
 
 注意：
 - 部分插件只在一些平台上提供，这和插件本身所需的组件依赖的平台有关。
@@ -120,8 +121,8 @@ list(APPEND CMAKE_MODULE_PATH "/path/to/aimrt/install/cmake")
 include(GetFmt)
 include(GetLibUnifex)
 include(GetProtobuf)
-include(GetJsonCpp)
 include(GetYamlCpp)
+include(GetJsonCpp)
 
 find_package(ros2_plugin_proto REQUIRED)
 find_package(aimrt REQUIRED)

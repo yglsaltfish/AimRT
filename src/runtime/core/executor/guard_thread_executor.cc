@@ -15,6 +15,7 @@ struct convert<aimrt::runtime::core::executor::GuardThreadExecutor::Options> {
     node["name"] = rhs.name;
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
+    node["queue_threshold"] = rhs.queue_threshold;
 
     return node;
   }
@@ -30,6 +31,9 @@ struct convert<aimrt::runtime::core::executor::GuardThreadExecutor::Options> {
 
     if (node["thread_bind_cpu"])
       rhs.thread_bind_cpu = node["thread_bind_cpu"].as<std::vector<uint32_t>>();
+
+    if (node["queue_threshold"])
+      rhs.queue_threshold = node["queue_threshold"].as<uint32_t>();
 
     return true;
   }
@@ -47,6 +51,9 @@ void GuardThreadExecutor::Initialize(YAML::Node options_node) {
     options_ = options_node.as<Options>();
 
   name_ = options_.name;
+
+  queue_threshold_ = options_.queue_threshold;
+  queue_warn_threshold_ = queue_threshold_ * 0.8;
 
   thread_ptr_ = std::make_unique<std::thread>([this]() {
     thread_id_ = std::this_thread::get_id();
@@ -75,6 +82,7 @@ void GuardThreadExecutor::Initialize(YAML::Node options_node) {
 
         try {
           task();
+          --queue_task_num_;
         } catch (const std::exception& e) {
           AIMRT_FATAL("Guard thread executor run task get exception, {}", e.what());
         }
@@ -89,6 +97,7 @@ void GuardThreadExecutor::Initialize(YAML::Node options_node) {
 
       try {
         task();
+        --queue_task_num_;
       } catch (const std::exception& e) {
         AIMRT_FATAL("Guard thread executor run task get exception, {}", e.what());
       }
@@ -128,13 +137,30 @@ void GuardThreadExecutor::Shutdown() {
 }
 
 void GuardThreadExecutor::Execute(aimrt::executor::Task&& task) {
-  if (state_.load() == State::Init || state_.load() == State::Start) {
-    std::unique_lock<std::mutex> lck(mutex_);
-    queue_.emplace(std::move(task));
-    cond_.notify_one();
-  } else {
-    AIMRT_WARN("Guard thread executor can only execute task when state is 'Init' or 'Start'.");
+  if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
+    AIMRT_ERROR("Guard thread executor can only execute task when state is 'Init' or 'Start'.");
+    return;
   }
+
+  uint32_t cur_queue_task_num = ++queue_task_num_;
+
+  if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
+    AIMRT_ERROR(
+        "The number of tasks in the guard thread executor has reached the threshold '{}', the task will not be delivered.",
+        queue_threshold_);
+    --queue_task_num_;
+    return;
+  }
+
+  if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
+    AIMRT_WARN(
+        "The number of tasks in the guard thread executor is about to reach the threshold: '{} / {}'",
+        cur_queue_task_num, queue_threshold_);
+  }
+
+  std::unique_lock<std::mutex> lck(mutex_);
+  queue_.emplace(std::move(task));
+  cond_.notify_one();
 }
 
 }  // namespace aimrt::runtime::core::executor

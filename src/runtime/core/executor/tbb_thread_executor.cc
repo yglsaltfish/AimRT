@@ -16,10 +16,7 @@ struct convert<aimrt::runtime::core::executor::TBBThreadExecutor::Options> {
     node["thread_num"] = rhs.thread_num;
     node["thread_sched_policy"] = rhs.thread_sched_policy;
     node["thread_bind_cpu"] = rhs.thread_bind_cpu;
-    node["timeout_alarm_threshold_us"] = static_cast<uint64_t>(
-        std::chrono::duration_cast<std::chrono::microseconds>(
-            rhs.timeout_alarm_threshold_us)
-            .count());
+    node["queue_threshold"] = rhs.queue_threshold;
 
     return node;
   }
@@ -32,9 +29,8 @@ struct convert<aimrt::runtime::core::executor::TBBThreadExecutor::Options> {
       rhs.thread_sched_policy = node["thread_sched_policy"].as<std::string>();
     if (node["thread_bind_cpu"])
       rhs.thread_bind_cpu = node["thread_bind_cpu"].as<std::vector<uint32_t>>();
-    if (node["timeout_alarm_threshold_us"])
-      rhs.timeout_alarm_threshold_us = std::chrono::microseconds(
-          node["timeout_alarm_threshold_us"].as<uint64_t>());
+    if (node["queue_threshold"])
+      rhs.queue_threshold = node["queue_threshold"].as<uint32_t>();
 
     return true;
   }
@@ -52,6 +48,9 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
   name_ = std::string(name);
   if (options_node && !options_node.IsNull())
     options_ = options_node.as<Options>();
+
+  queue_threshold_ = options_.queue_threshold;
+  queue_warn_threshold_ = queue_threshold_ * 0.8;
 
   AIMRT_CHECK_ERROR_THROW(
       options_.thread_num > 0,
@@ -81,7 +80,10 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
       aimrt::executor::Task task;
       while (true) {
         try {
-          while (qu_.try_pop(task)) task();
+          while (qu_.try_pop(task)) {
+            task();
+            --queue_task_num_;
+          }
         } catch (const std::exception& e) {
           AIMRT_FATAL("Tbb thread executor '{}' run loop get exception, {}",
                       Name(), e.what());
@@ -92,6 +94,7 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
         try {
           qu_.pop(task);
           task();
+          --queue_task_num_;
         } catch (const tbb::user_abort& e) {
         } catch (const std::exception& e) {
           AIMRT_FATAL("Tbb thread executor '{}' run loop get exception, {}",
@@ -140,6 +143,29 @@ bool TBBThreadExecutor::IsInCurrentExecutor() const noexcept {
 }
 
 void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
+  if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
+    AIMRT_ERROR(
+        "Tbb thread executor '{}' can only execute task when state is 'Init' or 'Start'.",
+        Name());
+    return;
+  }
+
+  uint32_t cur_queue_task_num = ++queue_task_num_;
+
+  if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
+    AIMRT_ERROR(
+        "The number of tasks in the tbb thread executor '{}' has reached the threshold '{}', the task will not be delivered.",
+        Name(), queue_threshold_);
+    --queue_task_num_;
+    return;
+  }
+
+  if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
+    AIMRT_WARN(
+        "The number of tasks in the tbb thread executor '{}' is about to reach the threshold: '{} / {}'",
+        Name(), cur_queue_task_num, queue_threshold_);
+  }
+
   try {
     qu_.emplace(std::move(task));
   } catch (const std::exception& e) {

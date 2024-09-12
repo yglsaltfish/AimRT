@@ -75,9 +75,9 @@ add_subdirectory(src)
 include(FetchContent)
 
 FetchContent_Declare(
-  aimrt #
-  GIT_REPOSITORY http://code.agibot.com/agibot_aima/aimrt.git #
-  GIT_TAG v0.6.0)
+  aimrt
+  GIT_REPOSITORY https://github.com/AimRT/aimrt.git
+  GIT_TAG v1.x.x)
 
 FetchContent_GetProperties(aimrt)
 
@@ -275,14 +275,6 @@ aimrt:
     core_lvl: INFO # 内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
     backends: # 日志后端
       - type: console # 控制台日志
-        options:
-          color: true # 是否彩色打印
-      - type: rotate_file # 文件日志
-        options:
-          path: ./log # 日志文件路径
-          filename: helloworld.log # 日志文件名称
-          max_file_size_m: 4 # 日志文件最大尺寸，单位m
-          max_file_num: 10 # 最大日志文件数量，0代表无限
 
 # 模块自定义配置，框架会为每个模块生成临时配置文件，开发者通过Configurator接口获取该配置文件路径
 HelloWorldModule:

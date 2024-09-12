@@ -13,11 +13,6 @@ aimrt:
     backends:
       - type: console
   executor:
-    executors:
-      - name: subscribe_thread_pool
-        type: asio_thread
-        options:
-          thread_num: 4
   channel:
     backends:
       - type: iceoryx

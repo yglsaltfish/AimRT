@@ -17,6 +17,7 @@ class SimpleThreadExecutor : public ExecutorBase {
   struct Options {
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
+    uint32_t queue_threshold = 1000;
   };
 
   enum class State : uint32_t {
@@ -51,6 +52,8 @@ class SimpleThreadExecutor : public ExecutorBase {
   }
   void ExecuteAt(std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept override;
 
+  size_t CurrentTaskNum() noexcept override { return queue_task_num_.load(); }
+
   State GetState() const { return state_.load(); }
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) { logger_ptr_ = logger_ptr; }
@@ -61,6 +64,10 @@ class SimpleThreadExecutor : public ExecutorBase {
   Options options_;
   std::atomic<State> state_ = State::PreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
+
+  uint32_t queue_threshold_;
+  uint32_t queue_warn_threshold_;
+  std::atomic_uint32_t queue_task_num_ = 0;
 
   std::thread::id thread_id_;
 

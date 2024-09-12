@@ -29,7 +29,7 @@ concepts/core_design.md
 
 ## 接口概述
 
-您可以先通过概述章节了解一些通用信息。
+您可以先通过概述章节了解一些接口概念。
 
 ```{toctree}
 :maxdepth: 1
@@ -38,8 +38,6 @@ interface/interface.md
 ```
 
 ## CPP接口文档
-
-<!-- TODO, 本章节待整理-------- -->
 
 您可以通过以下文档了解逻辑开发阶段的 C++ 接口用法。
 
@@ -69,8 +67,6 @@ interface_cpp/runtime.md
 
 ## Python接口文档
 
-<!-- TODO, 本章节待整理-------- -->
-
 您可以通过以下文档了解逻辑开发阶段的 Python 接口用法。
 
 ```{toctree}
@@ -96,8 +92,6 @@ interface_py/runtime.md
 
 ## 配置文档
 
-<!-- TODO, 本章节待整理-------- -->
-
 您可以通过以下文档了解详细的配置方法。
 
 ```{toctree}
@@ -117,8 +111,6 @@ cfg/rpc.md
 
 ## 插件
 
-<!-- TODO, 本章节待整理-------- -->
-
 AimRT提供了大量官方插件，这部分文档将介绍这些插件的功能以及详细的配置选项。
 
 ```{toctree}
@@ -133,6 +125,8 @@ plugins/log_control_plugin.md
 plugins/opentelemetry_plugin.md
 plugins/record_playback_plugin.md
 plugins/zenoh_plugin.md
+plugins/grpc_plugin.md
+plugins/iceoryx_plugin.md
 ```
 
 如果开发者想定制开发自己的插件，可以参考以下文档。
@@ -144,8 +138,6 @@ plugins/how_to_dev_plugin.md
 
 
 ## CLI工具
-
-<!-- TODO, 本章节待整理-------- -->
 
 AimRT 提供了一个命令行工具，可以帮助开发者快速完成一些操作。
 
@@ -159,8 +151,6 @@ cli_tool/gen_prj.md
 
 ## 示例
 
-<!-- TODO, 本章节待整理-------- -->
-
 AimRT 提供了详细且全面的示例，开发者可以基于示例进行深入学习。
 
 ```{toctree}
@@ -171,8 +161,6 @@ examples/examples.md
 
 ## 常见问题
 
-<!-- TODO, 本章节待整理-------- -->
-
 常见的问题列表。
 
 ```{toctree}
@@ -180,4 +168,3 @@ examples/examples.md
 
 questions/questions.md
 ```
-
