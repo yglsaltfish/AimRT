@@ -3,6 +3,8 @@
 
 #pragma once
 #include <iomanip>
+#include "core/channel/channel_backend_tools.h"
+#include "core/channel/channel_msg_wrapper.h"
 #include "iceoryx_plugin/global.h"
 #include "iceoryx_posh/runtime/posh_runtime.hpp"
 
@@ -24,5 +26,9 @@ const iox::capro::ServiceDescription Url2ServiceDescription(std::string& url);
 std::string GetPid();
 
 std::string IntToFixedLengthString(int number, int length);
+
+using namespace aimrt::runtime::core::channel;
+std::pair<std::shared_ptr<aimrt::util::BufferArrayView>, size_t> SerializeMsgSupportedIceoryx(
+    MsgWrapper& msg_wrapper, std::string_view serialization_type, aimrt::util::BufferArrayAllocatorRef allocator);
 
 }  // namespace aimrt::plugins::iceoryx_plugin
