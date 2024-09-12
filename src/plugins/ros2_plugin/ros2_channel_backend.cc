@@ -187,7 +187,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
 
     // 前缀是ros2类型的消息
     if (CheckRosMsg(info.msg_type)) {
-      Key key{info.pkg_path, info.module_name};
+      Key key{info.topic_name, info.msg_type};
 
       if (ros2_publish_type_wrapper_map_.find(key) != ros2_publish_type_wrapper_map_.end()) {
         return true;
@@ -396,7 +396,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     // 前缀是ros2类型的消息
     if (CheckRosMsg(info.msg_type)) {
-      Key key{info.pkg_path, info.module_name};
+      Key key{info.topic_name, info.msg_type};
 
       auto finditr = ros2_publish_type_wrapper_map_.find(key);
       AIMRT_CHECK_ERROR_THROW(
