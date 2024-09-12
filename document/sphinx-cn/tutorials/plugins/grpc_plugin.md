@@ -100,6 +100,38 @@ grpcurl -plaintext \
 
 以上命令中，`-plaintext` 表示使用 h2c 协议（即 HTTP2 明文协议，不进行加密），`-import-path` 表示导入 gRPC 协议的目录，`-proto` 表示导入 gRPC 协议的文件，`-d` 表示发送的消息内容，`-max-time` 表示最大超时时间，`-vv` 表示输出详细信息。
 
+## 程序示例
+
+当前 **grpc_plugin** 的 rpc 后端可以与原生的 gRPC 服务进行无缝对接，以下是一个简单的示例，示例程序位于 `src/examples/plugins/grpc_plugin` 目录下，其中 assistant 目录下为使用 python 语言编写的原生 gRPC 程序，install 目录下为 **grpc_plugin** 的 AimRT 使用示例。
+
+要运行原生 gRPC 程序，需要先安装 `grpcio` 和 `grpcio-tools` 库，然后运行构建脚本：
+```shell
+pip install grpcio grpcio-tools
+cd src/examples/plugins/grpc_plugin/assistant
+./build_grpc_native_examples.sh
+```
+
+接下来启动原生 gRPC 程序：
+```shell
+./start_examples_plugins_grpc_plugin_native_server.sh
+./start_examples_plugins_grpc_plugin_native_client.sh
+```
+
+要运行 AimRT 中 grpc_plugin 支持的 grpc 后端，需要首先编译 AimRT 项目：
+```shell
+# under aimrt/
+./build.sh
+```
+
+然后运行以下命令：
+```shell
+cd build
+./start_examples_plugins_grpc_plugin_protobuf_rpc_server.sh
+./start_examples_plugins_grpc_plugin_protobuf_rpc_client.sh
+```
+
+要测试二者联通性，可以运行对应交叉的 client 和 server。
+
 ## 注意事项
 
 * 当前 gRPC 插件仅支持 HTTP2 明文协议，不支持 TLS 加密协议。
