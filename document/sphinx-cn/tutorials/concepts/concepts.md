@@ -93,13 +93,13 @@ AimRT 目前官方支持两种 IDL：
 
 
 ## AimRT 中的 "Filter" 概念
-Filter 是一层贴着 Interface 层的、用户可自定义的逻辑插接点，按照相对于 Interface 层的位置，分为框架侧 Filter（Framework Filter）和用户侧 Filter（User Filter）。按照服务的功能，又分为 RPC Filter 和 Channel Filter。
+AimRT 中提供了`Filter`功能，用以增强 RPC 或 Channel 的能力。Filter 是一层贴着 Interface 层的、用户可自定义的逻辑插接点，按照相对于 Interface 层的位置，分为框架侧 Filter（Framework Filter）和用户侧 Filter（User Filter）。按照服务的功能，又分为 RPC Filter 和 Channel Filter。
 
 
-Filter 在 RPC 或 Channel 每次被调用时触发，以一种类似洋葱的运行结构，在 RPC 或 Channel 调用前后做一些自定义动作，例如计算耗时、上报监控等。其运行时流程如下图所示：
+Filter 在 RPC 或 Channel 每次被调用时触发，以一种类似洋葱的运行结构，在 RPC 或 Channel 调用前后做一些自定义动作，例如计算耗时、上报监控等。以 RPC Filter 为例，其运行时流程如下图所示：
 
 
-**TODO**
+![RPC Filter](./picture/pic_7.png)
 
 
 ## AimRT 中的 "Executor" 概念
@@ -125,10 +125,10 @@ void ExecuteAfter(std::chrono::nanoseconds dt, std::function<void()>&& task);
 ## AimRT 中的 "Plugin" 概念
 `Plugin`指插件，是指一个可以向 AimRT 框架注册各种自定义功能的动态库，可以被框架运行时加载，或在用户自定义的可执行程序中通过硬编码的方式注册到框架中。AimRT 框架暴露了大量插接点和查询接口，例如：
 - 日志后端注册接口
-- Channel/Rpc后端注册接口
-- Channel/Rpc注册表查询接口
-- 各组件启动hook点
-- RPC/Channel调用过滤器
+- Channel/Rpc 后端注册接口
+- Channel/Rpc 注册表查询接口
+- 各组件启动 hook 点
+- RPC/Channel 调用过滤器
 - 模块信息查询接口
 - 执行器注册接口
 - 执行器查询接口

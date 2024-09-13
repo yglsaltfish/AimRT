@@ -405,8 +405,8 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
     }
   }
 
-  // 一次性吐出最多1s的数据，或最多256条数据
-  constexpr size_t max_record_size = 256;
+  // 一次性吐出最多1s的数据，或最多1000条数据
+  constexpr size_t max_record_size = 1000;
   uint64_t cur_start_timestamp = 0;
 
   std::vector<OneRecord> records;
