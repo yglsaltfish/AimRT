@@ -138,17 +138,17 @@ void SimpleThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   uint32_t cur_queue_task_num = ++queue_task_num_;
 
   if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
-    AIMRT_ERROR(
-        "The number of tasks in the simple thread executor '{}' has reached the threshold '{}', the task will not be delivered.",
-        Name(), queue_threshold_);
+    fprintf(stderr,
+            "The number of tasks in the simple thread executor '%s' has reached the threshold '%u', the task will not be delivered.",
+            Name().data(), queue_threshold_);
     --queue_task_num_;
     return;
   }
 
   if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
-    AIMRT_WARN(
-        "The number of tasks in the simple thread executor '{}' is about to reach the threshold: '{} / {}'",
-        Name(), cur_queue_task_num, queue_threshold_);
+    fprintf(stderr,
+            "The number of tasks in the simple thread executor '%s' is about to reach the threshold: '%u / %u'.",
+            Name().data(), cur_queue_task_num, queue_threshold_);
   }
 
   std::unique_lock<std::mutex> lck(mutex_);
