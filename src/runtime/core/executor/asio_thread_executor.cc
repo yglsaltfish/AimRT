@@ -133,9 +133,9 @@ bool AsioThreadExecutor::IsInCurrentExecutor() const noexcept {
 
 void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
-    AIMRT_ERROR(
-        "Asio thread executor '{}' can only execute task when state is 'Init' or 'Start'.",
-        Name());
+    fprintf(stderr,
+            "Asio thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
+            Name().data());
     return;
   }
 
@@ -143,7 +143,7 @@ void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
 
   if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
     fprintf(stderr,
-            "The number of tasks in the asio thread executor '%s' has reached the threshold '%u', the task will not be delivered.",
+            "The number of tasks in the asio thread executor '%s' has reached the threshold '%u', the task will not be delivered.\n",
             Name().data(), queue_threshold_);
     --queue_task_num_;
     return;
@@ -151,23 +151,23 @@ void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
 
   if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
     fprintf(stderr,
-            "The number of tasks in the asio thread executor '%s' is about to reach the threshold: '%u / %u'.",
+            "The number of tasks in the asio thread executor '%s' is about to reach the threshold: '%u / %u'.\n",
             Name().data(), cur_queue_task_num, queue_threshold_);
   }
 
   try {
     boost::asio::post(*io_ptr_, std::move(task));
   } catch (const std::exception& e) {
-    AIMRT_ERROR("{}", e.what());
+    fprintf(stderr, "Asio thread executor '%s' execute Task get exception: %s\n", Name().data(), e.what());
   }
 }
 
 void AsioThreadExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
-    AIMRT_ERROR(
-        "Asio thread executor '{}' can only execute task when state is 'Init' or 'Start'.",
-        Name());
+    fprintf(stderr,
+            "Asio thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
+            Name().data());
     return;
   }
 
@@ -175,7 +175,7 @@ void AsioThreadExecutor::ExecuteAt(
 
   if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
     fprintf(stderr,
-            "The number of tasks in the asio thread executor '%s' has reached the threshold '%u', the task will not be delivered.",
+            "The number of tasks in the asio thread executor '%s' has reached the threshold '%u', the task will not be delivered.\n",
             Name().data(), queue_threshold_);
     --queue_task_num_;
     return;
@@ -183,7 +183,7 @@ void AsioThreadExecutor::ExecuteAt(
 
   if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
     fprintf(stderr,
-            "The number of tasks in the asio thread executor '%s' is about to reach the threshold: '%u / %u'.",
+            "The number of tasks in the asio thread executor '%s' is about to reach the threshold: '%u / %u'.\n",
             Name().data(), cur_queue_task_num, queue_threshold_);
   }
 
@@ -210,7 +210,7 @@ void AsioThreadExecutor::ExecuteAt(
           options_.timeout_alarm_threshold_us);
     });
   } catch (const std::exception& e) {
-    AIMRT_ERROR("{}", e.what());
+    fprintf(stderr, "Asio thread executor '%s' execute Task get exception: %s\n", Name().data(), e.what());
   }
 }
 

@@ -138,7 +138,7 @@ void GuardThreadExecutor::Shutdown() {
 
 void GuardThreadExecutor::Execute(aimrt::executor::Task&& task) {
   if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
-    AIMRT_ERROR("Guard thread executor can only execute task when state is 'Init' or 'Start'.");
+    fprintf(stderr, "Guard thread executor can only execute task when state is 'Init' or 'Start'.\n");
     return;
   }
 
