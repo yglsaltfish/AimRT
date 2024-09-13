@@ -40,16 +40,6 @@ target_link_libraries(
   PRIVATE yaml-cpp::yaml-cpp
   PUBLIC aimrt::interface::aimrt_module_cpp_interface)
 
-# Set installation of target
-set_property(TARGET ${CUR_TARGET_NAME} PROPERTY EXPORT_NAME ${CUR_TARGET_ALIAS_NAME})
-install(
-  TARGETS ${CUR_TARGET_NAME}
-  EXPORT ${INSTALL_CONFIG_NAME}
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-          FILE_SET HEADERS
-          DESTINATION include/${CUR_DIR})
-
 # Set test of target
 if({{ project_name | upper }}_BUILD_TESTS AND test_files)
   add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})

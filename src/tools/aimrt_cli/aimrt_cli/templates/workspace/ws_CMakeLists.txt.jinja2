@@ -59,6 +59,7 @@ if({{ project_name | upper }}_BUILD_TESTS)
   enable_testing()
 endif()
 
+set(YAML_CPP_INSTALL ON)
 include(GetAimRT)
 {%- for depend in workspace.depends_std_modules %}
 include(Get{{ depend.std_depend_name }})
