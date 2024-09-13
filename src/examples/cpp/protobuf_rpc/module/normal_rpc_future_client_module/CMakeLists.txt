@@ -30,9 +30,6 @@ target_include_directories(
   ${CUR_TARGET_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
 
-# Set head files of target
-target_sources(${CUR_TARGET_NAME} INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES ${head_files})
-
 # Set link libraries of target
 target_link_libraries(
   ${CUR_TARGET_NAME}

@@ -7,12 +7,12 @@
 
 #include "boost/asio/ip/address_v4.hpp"
 #include "core/aimrt_core.h"
+#include "core/rpc/rpc_backend_base.h"
 #include "grpc_plugin/global.h"
 #include "grpc_plugin/grpc_rpc_backend.h"
 #include "grpc_plugin/server/server.h"
-#include "log_util.h"
 #include "net/asio_tools.h"
-#include "rpc/rpc_backend_base.h"
+#include "util/log_util.h"
 
 namespace YAML {
 template <>

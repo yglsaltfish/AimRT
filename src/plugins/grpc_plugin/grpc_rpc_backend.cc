@@ -14,20 +14,20 @@
 
 #include <boost/asio.hpp>
 
+#include "aimrt_module_c_interface/rpc/rpc_context_base.h"
+#include "aimrt_module_c_interface/rpc/rpc_status_base.h"
+#include "aimrt_module_c_interface/util/buffer_base.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_context.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "core/rpc/rpc_backend_tools.h"
+#include "core/rpc/rpc_invoke_wrapper.h"
 #include "grpc_plugin/client/options.h"
 #include "grpc_plugin/global.h"  // IWYU pragma: keep
 #include "grpc_plugin/grpc/message.h"
 #include "grpc_plugin/grpc/timeout.h"
 #include "grpc_plugin/http2/request.h"
 #include "grpc_plugin/http2/response.h"
-#include "log_util.h"
-#include "rpc/rpc_context.h"
-#include "rpc/rpc_context_base.h"
-#include "rpc/rpc_invoke_wrapper.h"
-#include "rpc/rpc_status.h"
-#include "rpc/rpc_status_base.h"
-#include "util/buffer_base.h"
+#include "util/log_util.h"
 #include "util/url_parser.h"
 
 namespace YAML {

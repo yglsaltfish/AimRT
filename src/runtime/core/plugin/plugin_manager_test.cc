@@ -3,7 +3,7 @@
 
 #include "core/plugin/plugin_manager.h"
 #include <gtest/gtest.h>
-#include "aimrt_core.h"
+#include "core/aimrt_core.h"
 
 namespace aimrt::runtime::core::plugin {
 

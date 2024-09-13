@@ -119,7 +119,7 @@ void RotateFileLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexce
 
     log_executor_.Execute(std::move(log_work));
   } catch (const std::exception& e) {
-    fprintf(stderr, "Log get exception: %s", e.what());
+    fprintf(stderr, "Log get exception: %s\n", e.what());
   }
 }
 
@@ -222,7 +222,7 @@ bool RotateFileLoggerBackend::CheckLog(const LogDataWrapper& log_data_wrapper) {
       if_log = true;
     }
   } catch (const std::exception& e) {
-    fprintf(stderr, "Regex get exception, expr: %s, string: %s, exception info: %s",
+    fprintf(stderr, "Regex get exception, expr: %s, string: %s, exception info: %s\n",
             options_.module_filter.c_str(), log_data_wrapper.module_name.data(), e.what());
   }
 
