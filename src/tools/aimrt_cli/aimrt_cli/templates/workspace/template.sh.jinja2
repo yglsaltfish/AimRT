@@ -1,5 +1,9 @@
 {# This is the template file, do not Edit it! -#}
 #!/bin/bash
+
+# exit on error and print each command
+set -ex
+
 # cmake
 cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
@@ -9,24 +13,9 @@ cmake -B build \
 {%- endfor %}
     $@
 
-if [ $? -ne 0 ]; then
-    echo "cmake failed"
-    exit 1
+if [ -d ./build/install ]; then
+    rm -rf ./build/install
 fi
 
-# make
-cd build
-make -j$(nproc)
-
-if [ $? -ne 0 ]; then
-    echo "make failed"
-    exit 1
-fi
-
-# install
-if [ -d install ]; then
-    rm -rf install
-fi
-
-make install
+cmake --build build --config Release --target install --parallel $(nproc)
 {# blank line #}
