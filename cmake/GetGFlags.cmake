@@ -9,7 +9,7 @@ set(gflags_DOWNLOAD_URL
     "https://github.com/gflags/gflags/archive/v2.2.2.tar.gz"
     CACHE STRING "")
 
-if(${gflags_LOCAL_SOURCE})
+if(gflags_LOCAL_SOURCE)
   FetchContent_Declare(
     gflags
     SOURCE_DIR ${gflags_LOCAL_SOURCE}

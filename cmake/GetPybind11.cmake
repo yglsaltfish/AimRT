@@ -9,7 +9,7 @@ set(pybind11_DOWNLOAD_URL
     "https://github.com/pybind/pybind11/archive/v2.13.1.tar.gz"
     CACHE STRING "")
 
-if(${pybind11_LOCAL_SOURCE})
+if(pybind11_LOCAL_SOURCE)
   FetchContent_Declare(
     pybind11
     SOURCE_DIR ${pybind11_LOCAL_SOURCE}

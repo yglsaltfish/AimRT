@@ -9,7 +9,7 @@ set(stdexec_DOWNLOAD_URL
     "https://github.com/NVIDIA/stdexec/archive/nvhpc-23.09.rc4.tar.gz"
     CACHE STRING "")
 
-if(${stdexec_LOCAL_SOURCE})
+if(stdexec_LOCAL_SOURCE)
   FetchContent_Declare(
     stdexec
     SOURCE_DIR ${stdexec_LOCAL_SOURCE}

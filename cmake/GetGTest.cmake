@@ -9,7 +9,7 @@ set(googletest_DOWNLOAD_URL
     "https://github.com/google/googletest/archive/v1.13.0.tar.gz"
     CACHE STRING "")
 
-if(${googletest_LOCAL_SOURCE})
+if(googletest_LOCAL_SOURCE)
   FetchContent_Declare(
     googletest
     SOURCE_DIR ${googletest_LOCAL_SOURCE}

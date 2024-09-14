@@ -9,7 +9,7 @@ set(opentelemetry_proto_DOWNLOAD_URL
     "https://github.com/open-telemetry/opentelemetry-proto/archive/v1.3.2.tar.gz"
     CACHE STRING "")
 
-if(${opentelemetry_proto_LOCAL_SOURCE})
+if(opentelemetry_proto_LOCAL_SOURCE)
   FetchContent_Declare(opentelemetry_proto SOURCE_DIR ${opentelemetry_proto_LOCAL_SOURCE})
 else()
   FetchContent_Declare(

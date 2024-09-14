@@ -9,7 +9,7 @@ set(tbb_DOWNLOAD_URL
     "https://github.com/oneapi-src/oneTBB/archive/v2021.13.0.tar.gz"
     CACHE STRING "")
 
-if(${tbb_LOCAL_SOURCE})
+if(tbb_LOCAL_SOURCE)
   FetchContent_Declare(
     tbb
     SOURCE_DIR ${tbb_LOCAL_SOURCE}

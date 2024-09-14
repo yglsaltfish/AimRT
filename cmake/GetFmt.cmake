@@ -9,7 +9,7 @@ set(fmt_DOWNLOAD_URL
     "https://github.com/fmtlib/fmt/archive/10.2.1.tar.gz"
     CACHE STRING "")
 
-if(${fmt_LOCAL_SOURCE})
+if(fmt_LOCAL_SOURCE)
   FetchContent_Declare(
     fmt
     SOURCE_DIR ${fmt_LOCAL_SOURCE}
