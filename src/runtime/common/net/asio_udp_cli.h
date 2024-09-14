@@ -97,7 +97,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_WARN("Method can only be called when state is 'Start'.");
+        AIMRT_WARN("Udp cli is closed, will not send current msg.");
         return;
       }
 
@@ -256,7 +256,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
           session_socket_strand_,
           [this, self, msg_buf_ptr]() -> Awaitable<void> {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_WARN("Method can only be called when state is 'Start'.");
+              AIMRT_WARN("Udp cli session is closed, will not send current msg.");
               co_return;
             }
 
@@ -420,7 +420,7 @@ class AsioUdpClientPool
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioUdpClient>> {
           if (state_.load() != State::Start) [[unlikely]] {
-            AIMRT_WARN("Method can only be called when state is 'Start'.");
+            AIMRT_WARN("Udp cli pool is closed, will not return cli instance.");
             co_return std::shared_ptr<AsioUdpClient>();
           }
 
@@ -441,8 +441,8 @@ class AsioUdpClientPool
                 client_map_.erase(itr++);
             }
 
-            AIMRT_CHECK_ERROR(client_map_.size() < options_.max_client_num,
-                              "Udp client num reach the upper limit.");
+            AIMRT_CHECK_WARN_THROW(client_map_.size() < options_.max_client_num,
+                                   "Udp client num reach the upper limit.");
           }
 
           auto client_ptr = std::make_shared<AsioUdpClient>(io_ptr_);

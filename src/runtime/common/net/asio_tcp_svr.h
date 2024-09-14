@@ -238,7 +238,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, ep, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_ERROR("Method can only be called when state is 'Start'.");
+        AIMRT_WARN("Tcp svr is closed, will not send current msg.");
         return;
       }
 
@@ -532,7 +532,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_ERROR("Method can only be called when state is 'Start'.");
+              AIMRT_WARN("Tcp svr session is closed, will not send current msg.");
               return;
             }
 

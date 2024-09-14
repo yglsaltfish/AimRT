@@ -120,9 +120,9 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
     return boost::asio::co_spawn(
         mgr_strand_,
         [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
-          AIMRT_CHECK_ERROR_THROW(
+          AIMRT_CHECK_WARN_THROW(
               state_.load() == State::Start,
-              "Method can only be called when state is 'Start'.");
+              "Http cli is closed, will not send request.");
 
           // 找可用session，没有就新建一个。同时清理已失效session
           std::shared_ptr<Session> session_ptr;
@@ -307,9 +307,9 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
       return boost::asio::co_spawn(
           session_socket_strand_,
           [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
-            AIMRT_CHECK_ERROR_THROW(
+            AIMRT_CHECK_WARN_THROW(
                 state_.load() == SessionState::Start,
-                "Method can only be called when state is 'Start'.");
+                "Http cli session is closed, will not send request.");
 
             try {
               namespace chrono = std::chrono;
@@ -542,7 +542,7 @@ class AsioHttpClientPool
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioHttpClient>> {
           if (state_.load() != State::Start) [[unlikely]] {
-            AIMRT_WARN("Method can only be called when state is 'Start'.");
+            AIMRT_WARN("Http cli pool is closed, will not return cli instance.");
             co_return std::shared_ptr<AsioHttpClient>();
           }
 
@@ -562,8 +562,8 @@ class AsioHttpClientPool
                 client_map_.erase(itr++);
             }
 
-            AIMRT_CHECK_ERROR_THROW(client_map_.size() < options_.max_client_num,
-                                    "Http client num reach the upper limit.");
+            AIMRT_CHECK_WARN_THROW(client_map_.size() < options_.max_client_num,
+                                   "Http client num reach the upper limit.");
           }
 
           auto client_ptr = std::make_shared<AsioHttpClient>(io_ptr_);

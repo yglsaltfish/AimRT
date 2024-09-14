@@ -111,7 +111,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_WARN("Method can only be called when state is 'Start'.");
+        AIMRT_WARN("Tcp cli is closed, will not send current msg.");
         return;
       }
 
@@ -280,7 +280,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
                             "Tcp cli session async read {} bytes from {} for head.",
                             read_data_size, RemoteAddr());
 
-                        AIMRT_CHECK_ERROR_THROW(
+                        AIMRT_CHECK_WARN_THROW(
                             read_data_size == HEAD_SIZE && head_buf[0] == HEAD_BYTE_1 && head_buf[1] == HEAD_BYTE_2,
                             "Get an invalid head, remote addr {}, read_data_size: {}, head_buf[0]: {}, head_buf[1]: {}.",
                             RemoteAddr(), read_data_size,
@@ -289,7 +289,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
 
                         uint32_t msg_len = aimrt::common::util::GetUint32FromBuf(&head_buf[2]);
 
-                        AIMRT_CHECK_ERROR_THROW(
+                        AIMRT_CHECK_WARN_THROW(
                             msg_len <= session_options_ptr_->max_recv_size,
                             "Msg too large, remote addr {}, size: {}.",
                             RemoteAddr(), msg_len);
@@ -381,7 +381,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_WARN("Method can only be called when state is 'Start'.");
+              AIMRT_WARN("Tcp cli session is closed, will not send current msg.");
               return;
             }
 
@@ -529,7 +529,7 @@ class AsioTcpClientPool
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioTcpClient>> {
           if (state_.load() != State::Start) [[unlikely]] {
-            AIMRT_WARN("Method can only be called when state is 'Start'.");
+            AIMRT_WARN("Tcp cli pool is closed, will not return cli instance.");
             co_return std::shared_ptr<AsioTcpClient>();
           }
 
@@ -550,8 +550,8 @@ class AsioTcpClientPool
                 client_map_.erase(itr++);
             }
 
-            AIMRT_CHECK_ERROR_THROW(client_map_.size() < options_.max_client_num,
-                                    "Tcp client num reach the upper limit.");
+            AIMRT_CHECK_WARN_THROW(client_map_.size() < options_.max_client_num,
+                                   "Tcp client num reach the upper limit.");
           }
 
           auto client_ptr = std::make_shared<AsioTcpClient>(io_ptr_);

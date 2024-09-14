@@ -1,12 +1,24 @@
 # Logger
 
-## AimRT中的独立日志组件
+## 相关链接
 
-相关链接：
+**独立日志组件**:
+
 - 代码文件：{{ '[util/log_util.h]({}/src/common/util/log_util.h)'.format(code_site_root_path_url) }}
 
 
-在AimRT框架中，有一个独立的通用日志组件，属于**aimrt::common::util**这个CMake Target，只需要`#include "util/log_util.h"`即可独立于接口层使用。其中提供了一些基础的日志宏，这些日志宏需要在调用时传入一个日志句柄，来定义日志打印行为的具体表现。日志句柄以模板concept的形式定义，只要是类似于以下这个示例、包含`GetLogLevel`和`Log`两个接口的C++类的实例都可以作为日志句柄：
+**日志句柄**:
+
+- 代码文件：{{ '[aimrt_module_cpp_interface/logger/logger.h]({}/src/interface/aimrt_module_cpp_interface/logger/logger.h)'.format(code_site_root_path_url) }}
+- 参考示例：{{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
+
+
+## AimRT 中的独立日志组件
+
+AimRT 提供了一个独立的通用日志组件，属于 **aimrt::common::util** 这个CMake Target，只需要`#include "util/log_util.h"`即可独立于 CPP 接口层使用。
+
+其中提供了一些基础的日志宏，这些日志宏需要在调用时传入一个`Logger`对象，来定义日志打印行为的具体表现。日志句柄以模板 Concept 的形式定义，只要是类似于以下这个示例、包含`GetLogLevel`和`Log`两个接口的 C++ 类的实例都可以作为日志句柄：
+
 ```cpp
 class YourLogger {
  public:
@@ -23,7 +35,7 @@ class YourLogger {
 };
 ```
 
-其中，日志等级分为以下6档：
+其中，日志等级分为以下 6 档：
 - Trace
 - Debug
 - Info
@@ -31,7 +43,19 @@ class YourLogger {
 - Error
 - Fatal
 
-在有了日志句柄之后，开发者可以直接基于日志句柄提供的`Log`方法打印日志，也可以使用提供的日志宏来更方便的打印日志。注意，提供的日志宏基于C++20 Format语法，关于C++20 Format语法的详细使用方式请参考[C++官方文档](https://en.cppreference.com/w/cpp/utility/format)。以下是一些使用示例：
+在有了日志句柄之后，开发者可以直接基于日志句柄提供的`Log`方法打印日志，也可以使用提供的日志宏来更方便的打印日志。注意，提供的日志宏基于 C++20 Format 语法，关于 C++20 Format 语法的详细使用方式请参考[C++官方文档](https://en.cppreference.com/w/cpp/utility/format)。
+
+AimRT 在`util/log_util.h`文件中，还提供了两种默认的`Logger`类型：
+- **SimpleLogger** ：一个简单的同步日志句柄；
+- **SimpleAsyncLogger** ： 一个简单的异步日志句柄；
+
+
+这两种日志句柄一般用于单元测试等未启动 AimRT 实例时的场景。
+
+
+## AimRT 中的独立日志组件使用示例
+
+以下是一些使用示例：
 ```cpp
 #include "util/log_util.h"
 
@@ -97,13 +121,10 @@ int Main() {
 }
 ```
 
-## 日志句柄
+## AimRT 运行时日志句柄
 
-相关链接：
-- 代码文件：{{ '[aimrt_module_cpp_interface/logger/logger.h]({}/src/interface/aimrt_module_cpp_interface/logger/logger.h)'.format(code_site_root_path_url) }}
-- 参考示例：{{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
-在AimRT中，模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`aimrt::logger::LoggerRef`句柄，这是一个包含`GetLogLevel`和`Log`接口的类，满足上一节中对日志句柄的要求，可以直接作为日志宏的参数。其核心接口如下：
+在 AimRT 中，模块可以通过调用`CoreRef`句柄的`GetLogger()`接口，获取`aimrt::logger::LoggerRef`句柄，这是一个包含`GetLogLevel`和`Log`接口的类，满足上一节中对日志句柄的要求，可以直接作为日志宏的参数。其核心接口如下：
 ```cpp
 namespace aimrt::logger {
 
@@ -120,6 +141,8 @@ class LoggerRef {
 
 }  // namespace aimrt::logger
 ```
+
+## AimRT 运行时日志句柄使用示例
 
 模块开发者可以直接参照以下示例的方式，使用分配给模块的日志句柄来打印日志：
 ```cpp
