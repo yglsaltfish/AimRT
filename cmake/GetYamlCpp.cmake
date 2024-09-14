@@ -9,7 +9,7 @@ set(yaml-cpp_DOWNLOAD_URL
     "https://github.com/jbeder/yaml-cpp/archive/0.8.0.tar.gz"
     CACHE STRING "")
 
-if(${yaml-cpp_LOCAL_SOURCE})
+if(yaml-cpp_LOCAL_SOURCE)
   FetchContent_Declare(
     yaml-cpp
     SOURCE_DIR ${yaml-cpp_LOCAL_SOURCE}

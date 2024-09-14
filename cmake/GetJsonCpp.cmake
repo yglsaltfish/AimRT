@@ -9,7 +9,7 @@ set(jsoncpp_DOWNLOAD_URL
     "https://github.com/open-source-parsers/jsoncpp/archive/1.9.5.tar.gz"
     CACHE STRING "")
 
-if(${jsoncpp_LOCAL_SOURCE})
+if(jsoncpp_LOCAL_SOURCE)
   FetchContent_Declare(
     jsoncpp
     SOURCE_DIR ${jsoncpp_LOCAL_SOURCE}

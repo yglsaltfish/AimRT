@@ -9,7 +9,7 @@ set(paho_mqtt_c_DOWNLOAD_URL
     "https://github.com/eclipse/paho.mqtt.c/archive/v1.3.13.tar.gz"
     CACHE STRING "")
 
-if(${paho_mqtt_c_LOCAL_SOURCE})
+if(paho_mqtt_c_LOCAL_SOURCE)
   FetchContent_Declare(
     paho_mqtt_c
     SOURCE_DIR ${paho_mqtt_c_LOCAL_SOURCE}

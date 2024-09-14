@@ -9,7 +9,7 @@ set(nghttp2_DOWNLOAD_URL
     "https://github.com/nghttp2/nghttp2/archive/refs/tags/v1.62.1.zip"
     CACHE STRING "")
 
-if(${nghttp2_LOCAL_SOURCE})
+if(nghttp2_LOCAL_SOURCE)
   FetchContent_Declare(
     nghttp2
     SOURCE_DIR ${nghttp2_LOCAL_SOURCE}

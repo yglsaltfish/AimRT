@@ -12,7 +12,7 @@ set(iceoryx_DOWNLOAD_URL
 
 set(DOWNLOAD_TOML_LIB OFF)
 
-if(${iceoryx_LOCAL_SOURCE})
+if(iceoryx_LOCAL_SOURCE)
   FetchContent_Declare(
     iceoryx
     SOURCE_DIR ${iceoryx_LOCAL_SOURCE}

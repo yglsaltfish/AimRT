@@ -10,7 +10,7 @@ set(zenohc_DOWNLOAD_URL
     "https://github.com/eclipse-zenoh/zenoh-c/archive/refs/tags/1.0.0.6.tar.gz"
     CACHE STRING "")
 
-if(${zenohc_LOCAL_SOURCE})
+if(zenohc_LOCAL_SOURCE)
   FetchContent_Declare(
     zenohc
     SOURCE_DIR ${zenohc_LOCAL_SOURCE}

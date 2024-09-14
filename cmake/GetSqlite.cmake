@@ -10,7 +10,7 @@ set(sqlite_DOWNLOAD_URL
     "https://www.sqlite.org/2023/sqlite-amalgamation-3420000.zip"
     CACHE STRING "")
 
-if(${sqlite_LOCAL_SOURCE})
+if(sqlite_LOCAL_SOURCE)
   FetchContent_Declare(
     sqlite
     SOURCE_DIR ${sqlite_LOCAL_SOURCE}

@@ -9,7 +9,7 @@ set(protobuf_DOWNLOAD_URL
     "https://github.com/protocolbuffers/protobuf/archive/v3.21.12.tar.gz"
     CACHE STRING "")
 
-if(${protobuf_LOCAL_SOURCE})
+if(protobuf_LOCAL_SOURCE)
   FetchContent_Declare(
     protobuf
     SOURCE_DIR ${protobuf_LOCAL_SOURCE}

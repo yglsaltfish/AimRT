@@ -9,7 +9,7 @@ set(nlohmann_json_DOWNLOAD_URL
     "https://github.com/nlohmann/json/archive/v3.11.3.tar.gz"
     CACHE STRING "")
 
-if(${nlohmann_json_LOCAL_SOURCE})
+if(nlohmann_json_LOCAL_SOURCE)
   FetchContent_Declare(
     nlohmann_json
     SOURCE_DIR ${nlohmann_json_LOCAL_SOURCE}

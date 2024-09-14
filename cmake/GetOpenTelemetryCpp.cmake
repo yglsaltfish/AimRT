@@ -9,7 +9,7 @@ set(opentelemetry_cpp_DOWNLOAD_URL
     "https://github.com/open-telemetry/opentelemetry-cpp/archive/v1.16.1.tar.gz"
     CACHE STRING "")
 
-if(${opentelemetry_cpp_LOCAL_SOURCE})
+if(opentelemetry_cpp_LOCAL_SOURCE)
   FetchContent_Declare(opentelemetry_cpp SOURCE_DIR ${opentelemetry_cpp_LOCAL_SOURCE})
 else()
   FetchContent_Declare(

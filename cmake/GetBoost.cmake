@@ -3,32 +3,47 @@
 
 include(FetchContent)
 
-message(STATUS "get boost ...")
+message(STATUS "Searching for Boost...")
 
+set(BOOST_VERSION 1.82.0)
 set(boost_DOWNLOAD_URL
-    "https://github.com/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.tar.xz"
+    "https://github.com/boostorg/boost/releases/download/boost-${BOOST_VERSION}/boost-${BOOST_VERSION}.tar.xz"
     CACHE STRING "")
 
-if(${boost_LOCAL_SOURCE})
-  FetchContent_Declare(
-    boost
-    SOURCE_DIR ${boost_LOCAL_SOURCE}
-    OVERRIDE_FIND_PACKAGE)
+find_package(Boost ${BOOST_VERSION} QUIET)
+
+if(Boost_FOUND)
+  if(Boost_VERSION VERSION_EQUAL ${BOOST_VERSION})
+    message(STATUS "Found compatible Boost version ${Boost_VERSION}")
+  else()
+    message(WARNING "Found newer Boost version ${Boost_VERSION}. Using local version, but this may cause issues.")
+  endif()
 else()
-  FetchContent_Declare(
-    boost
-    URL ${boost_DOWNLOAD_URL}
-    DOWNLOAD_EXTRACT_TIMESTAMP ON
-    OVERRIDE_FIND_PACKAGE)
-endif()
+  message(STATUS "Boost ${BOOST_VERSION} or greater not found locally. Downloading Boost ${BOOST_VERSION}")
 
-FetchContent_GetProperties(boost)
-if(NOT boost_POPULATED)
-  set(BOOST_INCLUDE_LIBRARIES beast asio)
+  message(STATUS "boost_LOCAL_SOURCE: ${boost_LOCAL_SOURCE}")
+  if(boost_LOCAL_SOURCE)
+    FetchContent_Declare(
+      boost
+      SOURCE_DIR ${boost_LOCAL_SOURCE}
+      OVERRIDE_FIND_PACKAGE)
+    message(STATUS "Using local Boost source")
+  else()
+    FetchContent_Declare(
+      boost
+      URL ${boost_DOWNLOAD_URL}
+      DOWNLOAD_EXTRACT_TIMESTAMP ON
+      OVERRIDE_FIND_PACKAGE)
+  endif()
 
-  set(Boost_USE_STATIC_LIBS
-      ON
-      CACHE BOOL "")
+  FetchContent_GetProperties(boost)
+  if(NOT boost_POPULATED)
+    set(BOOST_INCLUDE_LIBRARIES asio beast)
 
-  FetchContent_MakeAvailable(boost)
+    set(Boost_USE_STATIC_LIBS
+        ON
+        CACHE BOOL "")
+
+    FetchContent_MakeAvailable(boost)
+  endif()
 endif()

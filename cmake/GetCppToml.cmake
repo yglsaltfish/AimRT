@@ -10,7 +10,7 @@ set(cpptoml_DOWNLOAD_URL
     "https://github.com/skystrife/cpptoml/archive/refs/tags/v0.1.0.tar.gz"
     CACHE STRING "")
 
-if(${cpptoml_LOCAL_SOURCE})
+if(cpptoml_LOCAL_SOURCE)
   FetchContent_Declare(
     cpptoml
     SOURCE_DIR ${cpptoml_LOCAL_SOURCE}

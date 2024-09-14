@@ -9,7 +9,7 @@ set(libunifex_DOWNLOAD_URL
     "https://github.com/facebookexperimental/libunifex/archive/591ec09e7d51858ad05be979d4034574215f5971.tar.gz"
     CACHE STRING "")
 
-if(${libunifex_LOCAL_SOURCE})
+if(libunifex_LOCAL_SOURCE)
   FetchContent_Declare(
     libunifex
     SOURCE_DIR ${libunifex_LOCAL_SOURCE}
