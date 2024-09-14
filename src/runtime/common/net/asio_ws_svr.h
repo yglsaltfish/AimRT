@@ -236,7 +236,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, ep, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_ERROR("Method can only be called when state is 'Start'.");
+        AIMRT_WARN("WebSocket svr is closed, will not send current msg.");
         return;
       }
 
@@ -529,7 +529,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_ERROR("Method can only be called when state is 'Start'.");
+              AIMRT_WARN("WebSocket svr session is closed, will not send current msg.");
               return;
             }
 

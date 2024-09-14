@@ -123,7 +123,7 @@ class AsioWebSocketClient
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, msg_buf_ptr]() {
       if (state_.load() != State::Start) [[unlikely]] {
-        AIMRT_WARN("Method can only be called when state is 'Start'.");
+        AIMRT_WARN("WebSocket cli is closed, will not send current msg.");
         return;
       }
 
@@ -383,7 +383,7 @@ class AsioWebSocketClient
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
             if (state_.load() != SessionState::Start) [[unlikely]] {
-              AIMRT_WARN("Method can only be called when state is 'Start'.");
+              AIMRT_WARN("WebSocket cli session is closed, will not send current msg.");
               return;
             }
 
@@ -531,7 +531,7 @@ class AsioWebSocketClientPool
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioWebSocketClient>> {
           if (state_.load() != State::Start) [[unlikely]] {
-            AIMRT_WARN("Method can only be called when state is 'Start'.");
+            AIMRT_WARN("WebSocket cli pool is closed, will not return cli instance.");
             co_return std::shared_ptr<AsioWebSocketClient>();
           }
 
@@ -551,8 +551,8 @@ class AsioWebSocketClientPool
                 client_map_.erase(itr++);
             }
 
-            AIMRT_CHECK_ERROR_THROW(client_map_.size() < options_.max_client_num,
-                                    "WebSocket client num reach the upper limit.");
+            AIMRT_CHECK_WARN_THROW(client_map_.size() < options_.max_client_num,
+                                   "WebSocket client num reach the upper limit.");
           }
 
           auto client_ptr = std::make_shared<AsioWebSocketClient>(io_ptr_);
