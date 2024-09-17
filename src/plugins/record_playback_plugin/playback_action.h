@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "aimrt_module_cpp_interface/executor/executor.h"

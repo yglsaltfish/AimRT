@@ -357,7 +357,7 @@ co::Task<void> BenchmarkRpcClientModule::StartFixedFreqPlan(
       }
     }
 
-    cur_tp += std::chrono::nanoseconds(sleep_ns);
+    cur_tp += std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::nanoseconds(sleep_ns));
     co_await co::ScheduleAt(executor_scheduler, cur_tp);
   }
 

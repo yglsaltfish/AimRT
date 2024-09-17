@@ -196,7 +196,7 @@ void BenchmarkPublisherModule::StartSinglePlan(uint32_t plan_id, BenchPlan plan)
 
             aimrt::channel::Publish(publisher, msg);
 
-            cur_tp += std::chrono::nanoseconds(sleep_ns);
+            cur_tp += std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::nanoseconds(sleep_ns));
             std::this_thread::sleep_until(cur_tp);
           }
 
