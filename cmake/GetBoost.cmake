@@ -21,7 +21,6 @@ if(Boost_FOUND)
 else()
   message(STATUS "Boost ${BOOST_VERSION} or greater not found locally. Downloading Boost ${BOOST_VERSION}")
 
-  message(STATUS "boost_LOCAL_SOURCE: ${boost_LOCAL_SOURCE}")
   if(boost_LOCAL_SOURCE)
     FetchContent_Declare(
       boost
