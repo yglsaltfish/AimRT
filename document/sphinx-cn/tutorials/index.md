@@ -134,12 +134,12 @@ AimRT 提供了详细且全面的示例，开发者可以基于示例进行深�
 examples/examples.md
 ```
 
-## 常见问题
-
-常见的问题列表。
+## 其他
 
 ```{toctree}
 :maxdepth: 1
 
-questions/questions.md
+misc/perfomance.md
+misc/questions.md
+
 ```

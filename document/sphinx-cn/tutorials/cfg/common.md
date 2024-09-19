@@ -18,17 +18,17 @@ AimRT 的配置文件不区分业务代码的开发语言，无论是 Python 还
 AimRT 的配置文件中，在`aimrt`根节点下包含各个基本组件的配置节点，基本书写风格是小写字母+下划线，目前主要有以下这些基本组件可以配置，且所有的组件配置都是可选的：
 
 
-| 节点            |   作用 |
-| ----            | ---- |
-| configurator    |  配置工具的配置 |
-| plugin          |  插件配置 |
-| main_thread     |  主线程配置 |
-| guard_thread    |  守护线程配置 |
-| executor        |  执行器配置 |
-| log             |  日志配置 |
-| rpc             |  RPC 配置 |
-| channel         |  Channel 配置 |
-| module          |  模块配置 |
+| 节点            |   作用 |  文档 |
+| ----            | ---- | ---- |
+| configurator    |  配置工具的配置 | [configurator](./configurator.md) |
+| plugin          |  插件配置 | [plugin](./plugin.md) |
+| main_thread     |  主线程配置 | [main_thread](./main_thread.md) |
+| guard_thread    |  守护线程配置 | [guard_thread](./guard_thread.md) |
+| executor        |  执行器配置 | [executor](./executor.md) |
+| log             |  日志配置 | [log](./log.md) |
+| rpc             |  RPC 配置 | [rpc](./rpc.md) |
+| channel         |  Channel 配置 | [channel](./channel.md) |
+| module          |  模块配置 | [module](./module.md) |
 
 
 以下是一个简单的示例，先给读者一个感性的印象。关于各个组件的详细配置方法，请参考后续章节：

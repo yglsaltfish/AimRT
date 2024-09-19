@@ -1,11 +1,5 @@
-<table style="width: 100%; color: gray; font-size: 14px;">
-<tr>
-<td style="text-align: left;">NOTE: following tests were done in Sep. 2024, which may not reflect latest status of the package.</td>
-<td style="text-align: right;">智元机器人(AGIBOT)</td>
-</tr>
-</table>
 
-# AimRT&nbsp;性能测试报告
+# AimRT 性能测试
 
 
 ## 序言

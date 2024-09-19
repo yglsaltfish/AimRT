@@ -12,9 +12,7 @@ namespace aimrt::plugins::time_manipulator_plugin {
 
 class TimeManipulatorPlugin : public AimRTCorePluginBase {
  public:
-  struct Options {
-    bool enable_rpc = true;
-  };
+  struct Options {};
 
  public:
   TimeManipulatorPlugin() = default;

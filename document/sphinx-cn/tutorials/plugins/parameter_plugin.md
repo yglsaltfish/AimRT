@@ -1,51 +1,56 @@
-# 参数插件设计
+# 参数插件
 
+## 相关链接
+
+协议文件：
+- {{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}
+
+参考示例：
+- {{ '[parameter_plugin]({}/src/examples/plugins/parameter_plugin)'.format(code_site_root_path_url) }}
 
 
 ## 插件概述
 
 
-**parameter_plugin**中注册了一个基于protobuf协议定义的RPC：`ParameterService`，提供了针对Parameter的一些管理接口，协议文件为{{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}。请注意，**parameter_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的RPC通信后端一块使用，例如[net_plugin](./net_plugin.md)中的http RPC后端。
+**parameter_plugin**中注册了一个基于 protobuf 协议定义的 RPC，提供了针对 Parameter 的一些管理接口。请注意，**parameter_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的 RPC 后端一块使用，例如[net_plugin](./net_plugin.md)中的 http RPC 后端。
 
 
-在当前版本，本插件没有插件级的配置。以下是一个简单的配置示例，将**parameter_plugin**与**net_plugin**中的http RPC后端搭配使用：
+在当前版本，本插件没有插件级的配置。以下是一个简单的配置示例，将**parameter_plugin**与**net_plugin**中的 http RPC 后端搭配使用：
 
 ```yaml
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin # net插件，用于将parameter插件注册的RPC通过Http后端暴露给外部工具调用
+      - name: net_plugin
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
           http_options:
             listen_ip: 127.0.0.1
             listen_port: 50080
-      - name: parameter_plugin # parameter插件，没有任何额外配置
+      - name: parameter_plugin
         path: ./libaimrt_parameter_plugin.so
   rpc:
     backends:
       - type: http
     servers_options:
-      - func_name: "(.*)"
+      - func_name: "(pb:/aimrt.protocols.parameter_plugin.*)"
         enable_backends: [http]
 ```
 
 
-
 ## ParameterService
 
-在{{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}中，定义了一个`ParameterService`，提供了如下接口：
-- Set：设置参数
-- Get：获取参数
-- List：列出参数列表
-- Dump：导出所有参数
-- Load：加载一份参数，可以直接加载之前Dump的参数
-
+在{{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}协议文件中，定义了一个`ParameterService`，提供了如下接口：
+- **Set**：设置参数
+- **Get**：获取参数
+- **List**：列出参数列表
+- **Dump**：导出所有参数
+- **Load**：加载一份参数，可以直接加载之前 Dump 的参数
 
 ### Set
 
-`Set`接口用于为某个模块设置/更新一个Key-Val参数对，其接口定义如下：
+`Set`接口用于为某个模块设置/更新一个 Key-Val 参数对，其接口定义如下：
 ```proto
 message SetParameterReq {
   string module_name = 1;
@@ -66,7 +71,7 @@ service ParameterService {
 ```
 
 
-以下是一个基于**net_plugin**中的http RPC后端，使用curl工具通过Http方式调用该接口的一个示例：
+以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -74,7 +79,7 @@ curl -i \
     -d '{"module_name": "ParameterModule", "parameter_key": "key-1", "parameter_value": "val-abc"}'
 ```
 
-该示例命令为`ParameterModule`这个模块添加/更新了一对K-V参数，参数Key为`key-1`，参数Val为`val-abc`。如果设置成功，该命令返回值如下：
+该示例命令为`ParameterModule`这个模块添加/更新了一对 key-val 参数，参数 Key 为`key-1`，参数 Val 为`val-abc`。如果设置成功，该命令返回值如下：
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -86,7 +91,7 @@ Content-Length: 21
 
 ### Get
 
-`Get`接口用于从某个模块获取一个Key-Val参数对，其接口定义如下：
+`Get`接口用于从某个模块获取一个 Key-Val 参数对，其接口定义如下：
 ```proto
 message GetParameterReq {
   string module_name = 1;
@@ -107,7 +112,7 @@ service ParameterService {
 ```
 
 
-以下是一个基于**net_plugin**中的http RPC后端，使用curl工具通过Http方式调用该接口的一个示例：
+以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -115,7 +120,7 @@ curl -i \
     -d '{"module_name": "ParameterModule", "parameter_key": "key-1"}'
 ```
 
-该示例命令从`ParameterModule`这个模块中获取Key为`key-1`的参数的值。如果获取成功，该命令返回值如下：
+该示例命令从`ParameterModule`这个模块中获取 Key 为`key-1`的参数的值。如果获取成功，该命令返回值如下：
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -127,7 +132,7 @@ Content-Length: 47
 
 ### List
 
-`List`接口用于从某个模块获取所有参数的Key值，其接口定义如下：
+`List`接口用于从某个模块获取所有参数的 Key 值，其接口定义如下：
 ```proto
 message ListParameterReq {
   string module_name = 1;
@@ -146,7 +151,7 @@ service ParameterService {
 }
 ```
 
-以下是一个基于**net_plugin**中的http RPC后端，使用curl工具通过Http方式调用该接口的一个示例：
+以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -154,7 +159,7 @@ curl -i \
     -d '{"module_name": "ParameterModule"}'
 ```
 
-该示例命令从`ParameterModule`这个模块中列出所有key的值。如果获取成功，该命令返回值如下：
+该示例命令从`ParameterModule`这个模块中列出所有 key 的值。如果获取成功，该命令返回值如下：
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -165,8 +170,7 @@ Content-Length: 62
 
 ### Dump
 
-
-`Dump`接口用于从某个模块获取所有参数的Key和Val，其接口定义如下：
+`Dump`接口用于从某个模块获取所有参数的 Key 和 Val，其接口定义如下：
 ```proto
 message ParameterMap {
   map<string, string> value = 1;
@@ -191,7 +195,7 @@ service ParameterService {
 ```
 
 
-该接口支持一次性从多个模块中Dump所有数据。以下是一个基于**net_plugin**中的http RPC后端，使用curl工具通过Http方式调用该接口的一个示例：
+该接口支持一次性从多个模块中 Dump 所有数据。以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -253,7 +257,7 @@ service ParameterService {
 ```
 
 
-该接口支持一次性向多个模块中导入数据。以下是一个基于**net_plugin**中的http RPC后端，使用curl工具通过Http方式调用该接口的一个示例：
+该接口支持一次性向多个模块中导入数据。以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
 ```shell
 #!/bin/bash
 
