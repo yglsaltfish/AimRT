@@ -2,9 +2,11 @@
 
 ## 相关链接
 
+代码文件：
+- {{ '[aimrt_module_cpp_interface/parameter/parameter_handle.h]({}/src/interface/aimrt_module_cpp_interface/parameter/parameter_handle.h)'.format(code_site_root_path_url) }}
 
-- 代码文件：{{ '[aimrt_module_cpp_interface/parameter/parameter_handle.h]({}/src/interface/aimrt_module_cpp_interface/parameter/parameter_handle.h)'.format(code_site_root_path_url) }}
-- 参考示例：{{ '[parameter_module.cc]({}/src/examples/cpp/parameter/module/parameter_module/parameter_module.cc)'.format(code_site_root_path_url) }}
+参考示例：
+- {{ '[parameter_module.cc]({}/src/examples/cpp/parameter/module/parameter_module/parameter_module.cc)'.format(code_site_root_path_url) }}
 
 
 ## 接口概述
@@ -41,21 +43,24 @@ class ParameterHandleRef {
 
 一个简单的使用示例如下：
 ```cpp
-bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
-  auto parameter_handle = core_.GetParameterHandle();
+class HelloWorldModule : public aimrt::ModuleBase {
+ public:
+  bool Initialize(aimrt::CoreRef core) override {
+    auto parameter_handle = core.GetParameterHandle();
 
-  std::string key = "test key";
-  std::string val = "test val";
+    std::string key = "test key";
+    std::string val = "test val";
 
-  // Set
-  parameter_handle_.SetParameter(key, val);
+    // Set
+    parameter_handle.SetParameter(key, val);
 
-  // Get
-  std::string check_val = parameter_handle_.GetParameter(key);
+    // Get
+    std::string check_val = parameter_handle.GetParameter(key);
 
-  assert(val == check_val);
+    assert(val == check_val);
 
-  return true;
-}
+    return true;
+  }
+};
 ```
 

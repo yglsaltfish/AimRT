@@ -127,7 +127,6 @@ bool IceoryxChannelBackend::Subscribe(
                            auto val = buf_oper.GetString(util::BufferLenType::UINT16);
                            ctx_ptr->SetMetaValue(key, val);
                          }
-                         ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
                          ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
                          // get msg buffer

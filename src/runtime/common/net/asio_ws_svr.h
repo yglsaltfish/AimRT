@@ -149,7 +149,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
               session_ptr_map_.emplace(session_ptr->Socket().remote_endpoint(), session_ptr);
 
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "WebSocket svr accept connection get exception and exit, exception info: {}",
                   e.what());
             }
@@ -176,7 +176,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
                   session_ptr_map_.erase(itr++);
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "WebSocket svr timer get exception and exit, exception info: {}",
                   e.what());
             }

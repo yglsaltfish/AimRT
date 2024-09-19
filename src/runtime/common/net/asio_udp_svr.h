@@ -157,7 +157,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
               session_ptr->HandleMsg(std::move(msg_buf));
 
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "udp svr accept connection get exception and exit, exception info: {}",
                   e.what());
             }
@@ -184,7 +184,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
                   session_ptr_map_.erase(itr++);
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "udp svr timer get exception and exit, exception info: {}",
                   e.what());
             }

@@ -53,7 +53,7 @@ void GuardThreadExecutor::Initialize(YAML::Node options_node) {
   name_ = options_.name;
 
   queue_threshold_ = options_.queue_threshold;
-  queue_warn_threshold_ = queue_threshold_ * 0.8;
+  queue_warn_threshold_ = queue_threshold_ * 0.9;
 
   thread_ptr_ = std::make_unique<std::thread>([this]() {
     thread_id_ = std::this_thread::get_id();

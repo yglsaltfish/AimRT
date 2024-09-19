@@ -19,6 +19,7 @@ inline void ExportRpcStatus(pybind11::object m) {
       .value("OK", AIMRT_RPC_STATUS_OK)
       .value("UNKNOWN", AIMRT_RPC_STATUS_UNKNOWN)
       .value("TIMEOUT", AIMRT_RPC_STATUS_TIMEOUT)
+      // svr side
       .value("SVR_UNKNOWN", AIMRT_RPC_STATUS_SVR_UNKNOWN)
       .value("SVR_BACKEND_INTERNAL_ERROR", AIMRT_RPC_STATUS_SVR_BACKEND_INTERNAL_ERROR)
       .value("SVR_NOT_IMPLEMENTED", AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED)
@@ -28,6 +29,7 @@ inline void ExportRpcStatus(pybind11::object m) {
       .value("SVR_INVALID_DESERIALIZATION_TYPE", AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE)
       .value("SVR_DESERIALIZATION_FAILED", AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED)
       .value("SVR_HANDLE_FAILED", AIMRT_RPC_STATUS_SVR_HANDLE_FAILED)
+      // cli side
       .value("CLI_UNKNOWN", AIMRT_RPC_STATUS_CLI_UNKNOWN)
       .value("CLI_BACKEND_INTERNAL_ERROR", AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR)
       .value("CLI_INVALID_CONTEXT", AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT)
@@ -150,7 +152,7 @@ inline void ExportRpcServiceBase(pybind11::object m) {
   using namespace aimrt::rpc;
 
   pybind11::class_<ServiceBase>(m, "ServiceBase")
-      .def(pybind11::init<>())
+      .def(pybind11::init<std::string_view, std::string_view>())
       .def("RegisterServiceFunc", &PyRpcServiceBaseRegisterServiceFunc);
 }
 

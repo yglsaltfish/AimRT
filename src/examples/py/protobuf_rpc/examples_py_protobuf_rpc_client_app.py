@@ -19,15 +19,15 @@ def main():
 
     print("AimRT start.")
 
-    core = aimrt_py.Core()
+    aimrt_core = aimrt_py.Core()
 
     # Initialize
     core_options = aimrt_py.CoreOptions()
     core_options.cfg_file_path = args.cfg_file_path
-    core.Initialize(core_options)
+    aimrt_core.Initialize(core_options)
 
     # Create Module
-    module_handle = core.CreateModule("NormalRpcClientPyModule")
+    module_handle = aimrt_core.CreateModule("NormalRpcClientPyModule")
 
     # Register rpc client
     rpc_handle = module_handle.GetRpcHandle()
@@ -35,7 +35,7 @@ def main():
     assert ret, "Register client failed."
 
     # Start
-    thread = threading.Thread(target=core.Start)
+    thread = threading.Thread(target=aimrt_core.Start)
     thread.start()
 
     # Sleep for seconds
@@ -56,7 +56,7 @@ def main():
                   .format(status.ToString(), MessageToJson(req), MessageToJson(rsp)))
 
     # Shutdown
-    core.Shutdown()
+    aimrt_core.Shutdown()
 
     thread.join()
 

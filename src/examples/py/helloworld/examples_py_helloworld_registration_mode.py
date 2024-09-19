@@ -8,41 +8,17 @@ import sys
 import aimrt_py
 import helloworld_module
 
-global_core = None
+global_aimrt_core = None
 
 
 def signal_handler(sig, frame):
-    global global_core
+    global global_aimrt_core
 
-    if (global_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
-        global_core.Shutdown()
+    if (global_aimrt_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
+        global_aimrt_core.Shutdown()
         return
 
     sys.exit(0)
-
-
-def run_aimrt_core(args):
-    try:
-        core = aimrt_py.Core()
-
-        global global_core
-        global_core = core
-
-        module = helloworld_module.HelloWorldModule()
-        core.RegisterModule(module)
-
-        core_options = aimrt_py.CoreOptions()
-        core_options.cfg_file_path = args.cfg_file_path
-        core.Initialize(core_options)
-
-        core.Start()
-
-        core.Shutdown()
-
-        global_core = None
-    except Exception as e:
-        print("AimRT run with exception and exit. {}".format(e))
-        sys.exit(-1)
 
 
 def main():
@@ -55,9 +31,27 @@ def main():
 
     print("AimRT start.")
 
-    thread = threading.Thread(target=run_aimrt_core, kwargs={'args': args})
+    aimrt_core = aimrt_py.Core()
+
+    global global_aimrt_core
+    global_aimrt_core = aimrt_core
+
+    module = helloworld_module.HelloWorldModule()
+    aimrt_core.RegisterModule(module)
+
+    core_options = aimrt_py.CoreOptions()
+    core_options.cfg_file_path = args.cfg_file_path
+    aimrt_core.Initialize(core_options)
+
+    thread = threading.Thread(target=aimrt_core.Start)
     thread.start()
-    thread.join()
+
+    while thread.is_alive():
+        thread.join(1.0)
+
+    aimrt_core.Shutdown()
+
+    global_aimrt_core = None
 
     print("AimRT exit.")
 

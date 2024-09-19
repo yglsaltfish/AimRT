@@ -166,7 +166,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
               session_ptr_list_.emplace_back(session_ptr);
 
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "Http svr accept connection get exception and exit, exception info: {}",
                   e.what());
             }
@@ -193,7 +193,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                   session_ptr_list_.erase(itr++);
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "Http svr timer get exception and exit, exception info: {}",
                   e.what());
             }

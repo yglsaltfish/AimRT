@@ -41,6 +41,7 @@ class Status {
         {AIMRT_RPC_STATUS_OK, "OK"},
         {AIMRT_RPC_STATUS_UNKNOWN, "Unknown error"},
         {AIMRT_RPC_STATUS_TIMEOUT, "Timeout"},
+        // svr side
         {AIMRT_RPC_STATUS_SVR_UNKNOWN, "Server side unknown error"},
         {AIMRT_RPC_STATUS_SVR_BACKEND_INTERNAL_ERROR, "Server side backend internal error"},
         {AIMRT_RPC_STATUS_SVR_NOT_IMPLEMENTED, "Server not implemented"},
@@ -50,6 +51,7 @@ class Status {
         {AIMRT_RPC_STATUS_SVR_INVALID_DESERIALIZATION_TYPE, "Server side invalid deserialization type"},
         {AIMRT_RPC_STATUS_SVR_DESERIALIZATION_FAILED, "Server side deserialization failed"},
         {AIMRT_RPC_STATUS_SVR_HANDLE_FAILED, "Server handle failed"},
+        // cli side
         {AIMRT_RPC_STATUS_CLI_UNKNOWN, "Client side unknown error"},
         {AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR, "Client side backend internal error"},
         {AIMRT_RPC_STATUS_CLI_INVALID_CONTEXT, "Client side invalid context"},

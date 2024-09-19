@@ -151,7 +151,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
               session_ptr_map_.emplace(session_ptr->Socket().remote_endpoint(), session_ptr);
 
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "Tcp svr accept connection get exception and exit, exception info: {}",
                   e.what());
             }
@@ -178,7 +178,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
                   session_ptr_map_.erase(itr++);
               }
             } catch (const std::exception& e) {
-              AIMRT_WARN(
+              AIMRT_TRACE(
                   "Tcp svr timer get exception and exit, exception info: {}",
                   e.what());
             }

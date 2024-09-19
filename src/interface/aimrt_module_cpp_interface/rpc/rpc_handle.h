@@ -27,7 +27,6 @@ class ServiceBase {
   friend class RpcHandleRef;
 
  public:
-  ServiceBase() = default;
   ServiceBase(std::string_view rpc_type, std::string_view service_name)
       : rpc_type_(rpc_type), service_name_(service_name) {}
   virtual ~ServiceBase() = default;
@@ -37,6 +36,14 @@ class ServiceBase {
 
   void SetServiceName(std::string_view service_name) {
     service_name_ = service_name;
+  }
+
+  std::string_view RpcType() const {
+    return rpc_type_;
+  }
+
+  std::string_view ServiceName() const {
+    return service_name_;
   }
 
   void RegisterServiceFunc(
@@ -71,7 +78,6 @@ class ServiceBase {
 
 class CoServiceBase : public ServiceBase {
  public:
-  CoServiceBase() = default;
   CoServiceBase(std::string_view rpc_type, std::string_view service_name)
       : ServiceBase(rpc_type, service_name) {}
   virtual ~CoServiceBase() = default;
@@ -236,8 +242,6 @@ class RpcHandleRef {
 
 class ProxyBase {
  public:
-  explicit ProxyBase(RpcHandleRef rpc_handle_ref)
-      : rpc_handle_ref_(rpc_handle_ref) {}
   ProxyBase(RpcHandleRef rpc_handle_ref, std::string_view rpc_type, std::string_view service_name)
       : rpc_handle_ref_(rpc_handle_ref), rpc_type_(rpc_type), service_name_(service_name) {}
   virtual ~ProxyBase() = default;
@@ -247,6 +251,14 @@ class ProxyBase {
 
   void SetServiceName(std::string_view service_name) {
     service_name_ = service_name;
+  }
+
+  std::string_view RpcType() const {
+    return rpc_type_;
+  }
+
+  std::string_view ServiceName() const {
+    return service_name_;
   }
 
   std::shared_ptr<Context> NewContextSharedPtr(ContextRef ctx_ref = ContextRef()) const {
@@ -277,8 +289,6 @@ class ProxyBase {
 
 class CoProxyBase : public ProxyBase {
  public:
-  explicit CoProxyBase(RpcHandleRef rpc_handle_ref)
-      : ProxyBase(rpc_handle_ref) {}
   CoProxyBase(RpcHandleRef rpc_handle_ref, std::string_view rpc_type, std::string_view service_name)
       : ProxyBase(rpc_handle_ref, rpc_type, service_name) {}
   virtual ~CoProxyBase() = default;

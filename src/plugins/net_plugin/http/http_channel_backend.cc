@@ -208,7 +208,6 @@ bool HttpChannelBackend::Subscribe(
             aimrt::common::util::HttpHeaderDecode(field.value()));
       }
 
-      ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
       ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
       // 获取消息buf

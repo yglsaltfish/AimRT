@@ -19,6 +19,8 @@ class HelloWorldModule(aimrt_py.ModuleBase):
         return info
 
     def Initialize(self, core):
+        assert(isinstance(core, aimrt_py.CoreRef))
+
         self.core = core
         self.logger = self.core.GetLogger()
 
@@ -34,7 +36,7 @@ class HelloWorldModule(aimrt_py.ModuleBase):
 
             # executor
             self.work_executor = self.core.GetExecutorManager().GetExecutor("work_thread_pool")
-            if (not self.work_executor):
+            if (not self.work_executor or not self.work_executor.SupportTimerSchedule()):
                 aimrt_py.error(self.logger, "Get executor 'work_thread_pool' failed.")
                 return False
 

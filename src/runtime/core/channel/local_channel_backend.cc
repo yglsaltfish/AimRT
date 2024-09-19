@@ -158,7 +158,6 @@ void LocalChannelBackend::Publish(MsgWrapper& msg_wrapper) noexcept {
         ctx_ptr->SetMetaValue(item, msg_wrapper.ctx_ref.GetMetaValue(item));
       }
 
-      ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, pub_info.topic_name);
       ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
       if (cur_sub_pkg_path == pub_info.pkg_path) {

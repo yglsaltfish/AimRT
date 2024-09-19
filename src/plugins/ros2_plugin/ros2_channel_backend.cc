@@ -364,7 +364,6 @@ bool Ros2ChannelBackend::Subscribe(
               ctx_ptr->SetMetaValue(key, val);
             }
 
-            ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
             ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
             sub_tool_ptr->DoSubscribeCallback(

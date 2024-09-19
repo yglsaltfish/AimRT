@@ -18,15 +18,15 @@ def main():
 
     print("AimRT start.")
 
-    core = aimrt_py.Core()
+    aimrt_core = aimrt_py.Core()
 
     # Initialize
     core_options = aimrt_py.CoreOptions()
     core_options.cfg_file_path = args.cfg_file_path
-    core.Initialize(core_options)
+    aimrt_core.Initialize(core_options)
 
     # Create Module
-    module_handle = core.CreateModule("NormalPublisherPyModule")
+    module_handle = aimrt_core.CreateModule("NormalPublisherPyModule")
 
     # Read cfg
     module_cfg_file_path = module_handle.GetConfigurator().GetConfigFilePath()
@@ -41,7 +41,7 @@ def main():
     aimrt_py.RegisterPublishType(publisher, event_pb2.ExampleEventMsg)
 
     # Start
-    thread = threading.Thread(target=core.Start)
+    thread = threading.Thread(target=aimrt_core.Start)
     thread.start()
 
     # Sleep for seconds
@@ -61,7 +61,7 @@ def main():
     time.sleep(1)
 
     # Shutdown
-    core.Shutdown()
+    aimrt_core.Shutdown()
 
     thread.join()
 

@@ -26,7 +26,7 @@ class AsioThreadExecutor : public ExecutorBase {
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
     std::chrono::nanoseconds timeout_alarm_threshold_us = std::chrono::seconds(1);
-    uint32_t queue_threshold = 1000;
+    uint32_t queue_threshold = 10000;
   };
 
   enum class State : uint32_t {

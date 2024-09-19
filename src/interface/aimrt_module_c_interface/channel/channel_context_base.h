@@ -19,9 +19,6 @@ extern "C" {
 #define AIMRT_CHANNEL_CONTEXT_KEY_SERIALIZATION_TYPE "aimrt-serialization_type"
 
 /// eg: local/mqtt/http
-#define AIMRT_CHANNEL_CONTEXT_TOPIC_NAME "aimrt-topic"
-
-/// eg: local/mqtt/http
 #define AIMRT_CHANNEL_CONTEXT_KEY_BACKEND "aimrt-backend"
 
 typedef enum {
