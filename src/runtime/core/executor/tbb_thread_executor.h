@@ -17,7 +17,7 @@ class TBBThreadExecutor : public ExecutorBase {
     uint32_t thread_num = 1;
     std::string thread_sched_policy;
     std::vector<uint32_t> thread_bind_cpu;
-    uint32_t queue_threshold = 1000;
+    uint32_t queue_threshold = 10000;
   };
 
   enum class State : uint32_t {

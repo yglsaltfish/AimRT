@@ -27,6 +27,9 @@
 #include "opentelemetry/trace/tracer.h"
 #include "opentelemetry/trace/tracer_provider.h"
 
+#include "core/channel/channel_framework_async_filter.h"
+#include "core/rpc/rpc_framework_async_filter.h"
+
 namespace aimrt::plugins::opentelemetry_plugin {
 
 class OpenTelemetryPlugin : public AimRTCorePluginBase {
@@ -56,6 +59,18 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   void SetPluginLogger();
   void RegisterChannelFilter();
   void RegisterRpcFilter();
+
+  void ChannelFilter(
+      opentelemetry::trace::SpanKind kind,
+      bool upload_msg,
+      aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
+      aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h);
+
+  void RpcFilter(
+      opentelemetry::trace::SpanKind kind,
+      bool upload_msg,
+      const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+      aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h);
 
  private:
   runtime::core::AimRTCore* core_ptr_ = nullptr;

@@ -50,7 +50,7 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
     options_ = options_node.as<Options>();
 
   queue_threshold_ = options_.queue_threshold;
-  queue_warn_threshold_ = queue_threshold_ * 0.8;
+  queue_warn_threshold_ = queue_threshold_ * 0.9;
 
   AIMRT_CHECK_ERROR_THROW(
       options_.thread_num > 0,

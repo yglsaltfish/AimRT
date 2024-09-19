@@ -2,8 +2,11 @@
 
 ## 相关链接
 
-- 代码文件：{{ '[aimrt_module_cpp_interface/configurator/configurator.h]({}/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)'.format(code_site_root_path_url) }}
-- 参考示例：{{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
+代码文件：
+- {{ '[aimrt_module_cpp_interface/configurator/configurator.h]({}/src/interface/aimrt_module_cpp_interface/configurator/configurator.h)'.format(code_site_root_path_url) }}
+
+参考示例：
+- {{ '[helloworld_module.cc]({}/src/examples/cpp/helloworld/module/helloworld_module/helloworld_module.cc)'.format(code_site_root_path_url) }}
 
 ## 接口概述
 
@@ -31,18 +34,23 @@ class ConfiguratorRef {
 ```cpp
 #include "yaml-cpp/yaml.h"
 
-bool HelloWorldModule::Initialize(aimrt::CoreRef core) {
-  // Get configurator handle
-  auto configurator = core.GetConfigurator();
-
-  // Get cfg path
-  std::string_view cfg_file_path = configurator.GetConfigFilePath();
-
-  // Parse cfg file based on the actual format. In this example, parsing based on yaml
-  YAML::Node cfg_node = YAML::LoadFile(std::string(cfg_file_path));
-
+class HelloWorldModule : public aimrt::ModuleBase {
+ public:
   // ...
 
-  return true;
-}
+  bool Initialize(aimrt::CoreRef core) override {
+    // Get configurator handle
+    auto configurator = core.GetConfigurator();
+
+    // Get cfg path
+    std::string_view cfg_file_path = configurator.GetConfigFilePath();
+
+    // Parse cfg file based on the actual format. In this example, parsing based on yaml
+    YAML::Node cfg_node = YAML::LoadFile(std::string(cfg_file_path));
+
+    // ...
+
+    return true;
+  }
+};
 ```

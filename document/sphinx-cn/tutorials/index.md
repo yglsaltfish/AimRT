@@ -25,26 +25,18 @@ quick_start/helloworld_py.md
 concepts/cmake.md
 concepts/concepts.md
 concepts/core_design.md
-```
-
-## 接口概述
-
-您可以先通过概述章节了解一些接口概念。
-
-```{toctree}
-:maxdepth: 1
-
-interface/interface.md
+concepts/interface.md
 ```
 
 ## CPP接口文档
 
-您可以通过以下文档了解逻辑开发阶段的 C++ 接口用法。
+您可以通过以下文档了解 C++ 接口的用法。
 
 ```{toctree}
 :maxdepth: 1
 
 interface_cpp/common.md
+interface_cpp/runtime.md
 interface_cpp/core_ref.md
 interface_cpp/module_base.md
 interface_cpp/configurator.md
@@ -55,24 +47,15 @@ interface_cpp/channel.md
 interface_cpp/rpc.md
 ```
 
-您可以通过以下文档了解部署运行阶段的 C++ 接口用法。
-
-```{toctree}
-:maxdepth: 1
-
-interface_cpp/runtime.md
-```
-
-
-
 ## Python接口文档
 
-您可以通过以下文档了解逻辑开发阶段的 Python 接口用法。
+您可以通过以下文档了解 Python 接口的用法。
 
 ```{toctree}
 :maxdepth: 1
 
 interface_py/common.md
+interface_py/runtime.md
 interface_py/core_ref.md
 interface_py/module_base.md
 interface_py/configurator.md
@@ -82,17 +65,9 @@ interface_py/channel.md
 interface_py/rpc.md
 ```
 
-您可以通过以下文档了解部署运行阶段的 Python 接口用法。
-
-```{toctree}
-:maxdepth: 1
-
-interface_py/runtime.md
-```
-
 ## 配置文档
 
-您可以通过以下文档了解详细的配置方法。
+您可以通过以下文档了解各个组件详细的配置方法。
 
 ```{toctree}
 :maxdepth: 1
@@ -111,7 +86,7 @@ cfg/rpc.md
 
 ## 插件
 
-AimRT提供了大量官方插件，这部分文档将介绍这些插件的功能以及详细的配置选项。
+AimRT 提供了大量官方插件，您可以通过以下文档了解各个插件的功能和配置方法。
 
 ```{toctree}
 :maxdepth: 1

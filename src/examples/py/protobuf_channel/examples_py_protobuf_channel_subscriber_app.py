@@ -11,14 +11,14 @@ import yaml
 from google.protobuf.json_format import MessageToJson
 import event_pb2
 
-global_core = None
+global_aimrt_core = None
 
 
 def signal_handler(sig, frame):
-    global global_core
+    global global_aimrt_core
 
-    if (global_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
-        global_core.Shutdown()
+    if (global_aimrt_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
+        global_aimrt_core.Shutdown()
         return
 
     sys.exit(0)
@@ -34,18 +34,18 @@ def main():
 
     print("AimRT start.")
 
-    core = aimrt_py.Core()
+    aimrt_core = aimrt_py.Core()
 
-    global global_core
-    global_core = core
+    global global_aimrt_core
+    global_aimrt_core = aimrt_core
 
     # Initialize
     core_options = aimrt_py.CoreOptions()
     core_options.cfg_file_path = args.cfg_file_path
-    core.Initialize(core_options)
+    aimrt_core.Initialize(core_options)
 
     # Create Module
-    module_handle = core.CreateModule("NormalSubscriberPyModule")
+    module_handle = aimrt_core.CreateModule("NormalSubscriberPyModule")
 
     # Read cfg
     module_cfg_file_path = module_handle.GetConfigurator().GetConfigFilePath()
@@ -63,7 +63,7 @@ def main():
     aimrt_py.Subscribe(subscriber, event_pb2.ExampleEventMsg, EventHandle)
 
     # Start
-    thread = threading.Thread(target=core.Start)
+    thread = threading.Thread(target=aimrt_core.Start)
     thread.start()
 
     while thread.is_alive():

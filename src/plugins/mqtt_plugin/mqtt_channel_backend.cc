@@ -218,7 +218,6 @@ bool MqttChannelBackend::Subscribe(
             ctx_ptr->SetMetaValue(key, val);
           }
 
-          ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_TOPIC_NAME, topic_name);
           ctx_ptr->SetMetaValue(AIMRT_CHANNEL_CONTEXT_KEY_BACKEND, Name());
 
           // 获取消息buf

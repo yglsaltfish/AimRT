@@ -23,7 +23,7 @@ import {{py_package_name}}
 {{for service begin}}
 class {{service_name}}(aimrt_py.ServiceBase):
     def __init__(self):
-        super().__init__()
+        super().__init__("pb", "{{package_name}}.{{service_name}}")
 
 {{for method begin}}
         # {{rpc_func_name}}
@@ -67,7 +67,7 @@ class {{service_name}}(aimrt_py.ServiceBase):
 
             return (st, rsp_str)
 
-        self.RegisterServiceFunc("pb:/{{package_name}}.{{service_name}}/{{rpc_func_name}}",
+        self.RegisterServiceFunc("{{rpc_func_name}}",
                                  {{simple_rpc_req_name}}_aimrt_ts, {{simple_rpc_rsp_name}}_aimrt_ts, {{rpc_func_name}}AdapterFunc)
 
 {{method end}}

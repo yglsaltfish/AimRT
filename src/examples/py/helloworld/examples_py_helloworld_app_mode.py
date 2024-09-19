@@ -9,16 +9,16 @@ import aimrt_py
 import yaml
 import time
 
-global_core = None
+global_aimrt_core = None
 running_flag = True
 
 
 def signal_handler(sig, frame):
-    global global_core
+    global global_aimrt_core
     global running_flag
 
-    if (global_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
-        global_core.Shutdown()
+    if (global_aimrt_core and (sig == signal.SIGINT or sig == signal.SIGTERM)):
+        global_aimrt_core.Shutdown()
         running_flag = False
         return
 
@@ -35,16 +35,18 @@ def main():
 
     print("AimRT start.")
 
-    core = aimrt_py.Core()
+    aimrt_core = aimrt_py.Core()
 
-    global global_core
-    global_core = core
+    global global_aimrt_core
+    global_aimrt_core = aimrt_core
 
     core_options = aimrt_py.CoreOptions()
     core_options.cfg_file_path = args.cfg_file_path
-    core.Initialize(core_options)
+    aimrt_core.Initialize(core_options)
 
-    module_handle = core.CreateModule("HelloWorldPyModule")
+    module_handle = aimrt_core.CreateModule("HelloWorldPyModule")
+    assert(isinstance(module_handle, aimrt_py.CoreRef))
+
     aimrt_py.info(module_handle.GetLogger(), "This is an example log.")
 
     # Read cfg
@@ -54,7 +56,7 @@ def main():
         aimrt_py.info(module_handle.GetLogger(), str(data))
 
     # Start aimrt core
-    thread_start = threading.Thread(target=core.Start)
+    thread_start = threading.Thread(target=aimrt_core.Start)
     thread_start.start()
 
     time.sleep(1)
@@ -78,7 +80,7 @@ def main():
     while thread_loop.is_alive():
         thread_loop.join(1.0)
 
-    global_core = None
+    global_aimrt_core = None
 
     print("AimRT exit.")
 

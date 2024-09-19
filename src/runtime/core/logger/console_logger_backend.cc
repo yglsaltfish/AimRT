@@ -18,7 +18,7 @@
 
   #define CC_DEFAULT (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED)
 
-  #define CC_DBG (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED)
+  #define CC_DBG (FOREGROUND_BLUE)
   #define CC_INF (FOREGROUND_GREEN)
   #define CC_WRN (FOREGROUND_GREEN | FOREGROUND_RED)
   #define CC_ERR (FOREGROUND_BLUE | FOREGROUND_RED)
@@ -78,7 +78,7 @@ void set_console_window(void) {
   #define CC_HIDE "\033[8m"
   #define CC_CLEAR "\033[2J"
 
-  #define CC_DBG CC_WHITE
+  #define CC_DBG CC_BLUE
   #define CC_INF CC_GREEN
   #define CC_WRN CC_YELLOW
   #define CC_ERR CC_PURPLE
@@ -147,23 +147,20 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
     if (!CheckLog(log_data_wrapper)) [[unlikely]]
       return;
 
-    std::string log_data_str(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
+    auto log_data_str = ::aimrt_fmt::format(
+        "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]{}",
+        aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
+        (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
+        LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
+        log_data_wrapper.thread_id,
+        log_data_wrapper.module_name,
+        log_data_wrapper.file_name,
+        log_data_wrapper.line,
+        log_data_wrapper.column,
+        log_data_wrapper.function_name,
+        std::string_view(log_data_wrapper.log_data, log_data_wrapper.log_data_size));
 
-    auto log_work = [this, log_data_wrapper, log_data_str{std::move(log_data_str)}]() {
-      auto lvl = log_data_wrapper.lvl;
-
-      auto format_log_prefix_str = ::aimrt_fmt::format(
-          "[{}.{:0>6}][{}][{}][{}][{}:{}:{} @{}]",
-          aimrt::common::util::GetTimeStr(std::chrono::system_clock::to_time_t(log_data_wrapper.t)),
-          (aimrt::common::util::GetTimestampUs(log_data_wrapper.t) % 1000000),
-          LogLevelTool::GetLogLevelName(log_data_wrapper.lvl),
-          log_data_wrapper.thread_id,
-          log_data_wrapper.module_name,
-          log_data_wrapper.file_name,
-          log_data_wrapper.line,
-          log_data_wrapper.column,
-          log_data_wrapper.function_name);
-
+    auto log_work = [this, lvl = log_data_wrapper.lvl, log_data_str{std::move(log_data_str)}]() {
       if (options_.print_color) {
 #if defined(_WIN32)
         static constexpr WORD
@@ -171,10 +168,10 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
                 0, CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
         if (color_array[lvl] == 0) {
-          std::cout << format_log_prefix_str << log_data_str;
+          std::cout << log_data_str;
         } else {
           SetConsoleTextAttribute(g_hConsole, color_array[lvl]);
-          std::cout << format_log_prefix_str << log_data_str;
+          std::cout << log_data_str;
           SetConsoleTextAttribute(g_hConsole, CC_DEFAULT);
         }
 
@@ -184,13 +181,13 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
                 "", CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
         if (color_array[lvl].empty()) {
-          std::cout << format_log_prefix_str << log_data_str;
+          std::cout << log_data_str;
         } else {
-          std::cout << color_array[lvl] << format_log_prefix_str << log_data_str << CC_NONE;
+          std::cout << color_array[lvl] << log_data_str << CC_NONE;
         }
 #endif
       } else {
-        std::cout << format_log_prefix_str << log_data_str;
+        std::cout << log_data_str;
       }
       std::cout << std::endl;
     };

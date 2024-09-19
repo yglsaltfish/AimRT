@@ -20,4 +20,4 @@ aimrt:
 
 LoggerBenchModule:
   log_data_size: [64, 256, 1024, 4096]
-  log_bench_num: 10000
+  log_bench_num: 5000

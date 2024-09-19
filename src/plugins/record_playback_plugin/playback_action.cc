@@ -165,11 +165,10 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
 
   for (auto& item : metadata_.files) {
     const auto db_file_path = std::filesystem::path(options_.bag_path).concat(item.path);
-    std::string db_file_path_str = db_file_path.string();
 
     AIMRT_CHECK_ERROR_THROW(
-        std::filesystem::exists(db_file_path_str) && std::filesystem::is_regular_file(db_file_path_str),
-        "Can not find bag file '{}' in bag path '{}'.", db_file_path_str, options_.bag_path);
+        std::filesystem::exists(db_file_path) && std::filesystem::is_regular_file(db_file_path),
+        "Can not find bag file '{}' in bag path '{}'.", db_file_path.string(), options_.bag_path);
   }
 
   options_node = options_;
@@ -291,7 +290,6 @@ bool PlaybackAction::OpenNewDb() {
 
   const auto& file = metadata_.files[cur_db_file_index_];
   const auto db_file_path = std::filesystem::path(options_.bag_path).concat(file.path);
-  std::string db_file_path_str = db_file_path.string();
   ++cur_db_file_index_;
 
   uint64_t cur_db_start_timestamp = file.start_timestamp;
@@ -301,12 +299,12 @@ bool PlaybackAction::OpenNewDb() {
   }
 
   // open db
-  int ret = sqlite3_open(db_file_path_str.c_str(), &db_);
+  int ret = sqlite3_open(db_file_path.c_str(), &db_);
   AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
                           "Sqlite3 open db file failed, path: {}, ret: {}, error info: {}",
-                          db_file_path_str, ret, sqlite3_errmsg(db_));
+                          db_file_path.string(), ret, sqlite3_errmsg(db_));
 
-  AIMRT_TRACE("Open new db, path: {}", db_file_path_str);
+  AIMRT_TRACE("Open new db, path: {}", db_file_path.string());
 
   sqlite3_exec(db_, "PRAGMA synchronous = OFF; ", 0, 0, 0);
 
@@ -330,7 +328,7 @@ bool PlaybackAction::OpenNewDb() {
     sql += condition[ii];
   }
 
-  AIMRT_TRACE("Sql str: {}, db path: {}", sql, db_file_path_str);
+  AIMRT_TRACE("Sql str: {}, db path: {}", sql, db_file_path.string());
 
   ret = sqlite3_prepare_v3(db_, sql.c_str(), sql.size(), 0, &select_msg_stmt_, nullptr);
   AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
