@@ -133,31 +133,17 @@ endif()
 if(AIMRT_BUILD_CLI_TOOLS)
   find_package(Python3 REQUIRED)
 
-  execute_process(
-    COMMAND pip3 show pyinstaller
-    RESULT_VARIABLE PYINSTALLER_RESULT
-    OUTPUT_QUIET ERROR_QUIET)
-  if(NOT ${PYINSTALLER_RESULT} EQUAL 0)
-    set(AIMRT_BUILD_CLI_TOOLS OFF)
-    message(WARNING "Can not find pyinstaller in your python environment, will not compile aimrt_cli!")
-  endif()
+  include(CheckPythonPackage)
+  check_python_package(pyinstaller PYINSTALLER_FOUND)
+  check_python_package(jinja2 JINJA2_FOUND)
+  check_python_package(pyyaml PYYAML_FOUND)
 
-  execute_process(
-    COMMAND pip3 show jinja2
-    RESULT_VARIABLE JINJA_RESULT
-    OUTPUT_QUIET ERROR_QUIET)
-  if(NOT ${JINJA_RESULT} EQUAL 0)
+  if(NOT PYINSTALLER_FOUND
+     OR NOT JINJA2_FOUND
+     OR NOT PYYAML_FOUND)
     set(AIMRT_BUILD_CLI_TOOLS OFF)
-    message(WARNING "Can not find jinja2 in your python environment, will not compile aimrt_cli!")
-  endif()
-
-  execute_process(
-    COMMAND pip3 show pyyaml
-    RESULT_VARIABLE PYYAML_RESULT
-    OUTPUT_QUIET ERROR_QUIET)
-  if(NOT ${PYYAML_RESULT} EQUAL 0)
-    set(AIMRT_BUILD_CLI_TOOLS OFF)
-    message(WARNING "Can not find pyyaml in your python environment, will not compile aimrt_cli!")
+    message(WARNING "Can not find pyinstaller, jinja2 or pyyaml in your python environment, will not compile aimrt_cli!")
+    message(WARNING "try to install pyinstaller, jinja2 and pyyaml by `pip3 install pyinstaller jinja2 pyyaml --upgrade`")
   endif()
 endif()
 
@@ -206,22 +192,17 @@ if(AIMRT_BUILD_RUNTIME)
     include(GetPybind11)
 
     if(AIMRT_BUILD_PYTHON_PACKAGE)
-      execute_process(
-        COMMAND ${Python3_EXECUTABLE} -m pip show build
-        RESULT_VARIABLE BUILD_RESULT
-        OUTPUT_QUIET ERROR_QUIET)
-      if(NOT ${BUILD_RESULT} EQUAL 0)
-        message(WARNING "Can not find build in your python environment, will not generate aimrt_py package!")
-        set(AIMRT_BUILD_PYTHON_PACKAGE OFF)
-      endif()
+      include(CheckPythonPackage)
+      check_python_package(build BUILD_FOUND)
+      check_python_package(setuptools SETUPTOOLS_FOUND)
+      check_python_package(wheel WHEEL_FOUND)
 
-      execute_process(
-        COMMAND ${Python3_EXECUTABLE} -m pip show setuptools
-        RESULT_VARIABLE SETUPTOOLS_RESULT
-        OUTPUT_QUIET ERROR_QUIET)
-      if(NOT ${SETUPTOOLS_RESULT} EQUAL 0)
-        message(WARNING "Can not find setuptools in your python environment, will not generate aimrt_py package!")
+      if(NOT BUILD_FOUND
+         OR NOT SETUPTOOLS_FOUND
+         OR NOT WHEEL_FOUND)
         set(AIMRT_BUILD_PYTHON_PACKAGE OFF)
+        message(WARNING "Can not find build, setuptools or wheel in your python environment, will not generate aimrt_py package! ")
+        message(WARNING "try to install build, setuptools and wheel by `pip3 install build setuptools wheel --upgrade`")
       endif()
     endif()
   endif()

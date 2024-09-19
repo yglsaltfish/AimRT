@@ -6,9 +6,9 @@ file(GLOB_RECURSE AIMRT_CLI_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/*")
 
 add_custom_target(
   aimrt_cli ALL
-  COMMAND python3 -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/aimrt_cli.spec
+  COMMAND ${PYTHON_EXECUTABLE} -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/aimrt_cli.spec
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMENT "python3 -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/aimrt_cli.spec"
+  COMMENT "${PYTHON_EXECUTABLE} -m PyInstaller ${CMAKE_CURRENT_SOURCE_DIR}/aimrt_cli/aimrt_cli.spec"
   DEPENDS ${AIMRT_CLI_SRC_FILES})
 
 if(AIMRT_INSTALL)
