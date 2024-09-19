@@ -54,6 +54,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+file(READ "${CMAKE_SOURCE_DIR}/VERSION" AIMRT_VERSION)
+string(STRIP "${AIMRT_VERSION}" AIMRT_VERSION)
+
 set(INSTALL_CONFIG_NAME ${PROJECT_NAME}-config)
 
 # Master project configuration

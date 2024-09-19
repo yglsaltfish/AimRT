@@ -41,9 +41,7 @@ target_link_libraries(
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 
-# Add AIMRT_VERSION to target
-file(READ "${CMAKE_SOURCE_DIR}/VERSION" AIMRT_VERSION)
-string(STRIP "${AIMRT_VERSION}" AIMRT_VERSION)
+# Add version to target
 target_compile_definitions(${CUR_TARGET_NAME} PRIVATE AIMRT_VERSION="${AIMRT_VERSION}")
 
 # Set installation of target
