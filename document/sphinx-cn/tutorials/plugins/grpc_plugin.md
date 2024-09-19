@@ -16,11 +16,11 @@
 以下是一个简单的示例：
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
-      - name: grpc_plugin # 【必选】插件名称
-        path: ./libaimrt_grpc_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
-        options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
+  plugin:
+    plugins:
+      - name: grpc_plugin
+        path: ./libaimrt_grpc_plugin.so
+        options:
           thread_num: 4 # 【可选】grpc 插件需要使用的线程数
           listen_ip: 127.0.0.1 # 【可选】grpc 监听 IP
           listen_port: 50082 # 【可选】grpc 监听端口，端口不能被占用
@@ -46,11 +46,11 @@ aimrt:
 以下是一个简单的客户端的示例：
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
-      - name: grpc_plugin # 【必选】插件名称
-        path: ./libaimrt_grpc_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
-        options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
+  plugin:
+    plugins:
+      - name: grpc_plugin
+        path: ./libaimrt_grpc_plugin.so
+        options:
           thread_num: 4 # 【可选】grpc 插件需要使用的线程数
           listen_ip: 127.0.0.1 # 【可选】grpc 监听 IP
           listen_port: 50081 # 【可选】grpc 监听端口，端口不能被占用
@@ -69,11 +69,11 @@ aimrt:
 以下则是一个简单的服务端的示例：
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
-      - name: grpc_plugin # 【必选】插件名称
-        path: ./libaimrt_grpc_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
-        options: # 【可选】传递给插件的初始化配置，具体内容在各个插件章节介绍
+  plugin:
+    plugins:
+      - name: grpc_plugin
+        path: ./libaimrt_grpc_plugin.so
+        options:
           thread_num: 4 # 【可选】grpc 插件需要使用的线程数
           listen_ip: 127.0.0.1 # 【可选】grpc 监听 IP
           listen_port: 50080 # 【可选】grpc 监听端口，端口不能被占用

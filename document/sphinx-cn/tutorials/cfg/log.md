@@ -1,7 +1,7 @@
 # aimrt.log
 
 
-## 日志配置概述
+## 配置项概述
 
 `aimrt.log`配置项用于配置日志。其中的细节配置项说明如下：
 
@@ -22,19 +22,6 @@
 - Fatal
 - Off
 
-以下是一个简单的示例：
-```yaml
-aimrt:
-  log: # 【可选】log配置
-    core_lvl: INFO # 【可选】内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
-    default_module_lvl: INFO # 【可选】模块默认日志等级
-    backends: # 【可选】日志backends
-      - type: console # 【必选】日志后端类型
-      - type: rotate_file # 【必选】日志后端类型
-        options: # 【可选】具体日志后端的配置
-          path: ./log
-          filename: examples_cpp_executor_real_time.log
-```
 
 `aimrt.log`的配置说明如下：
 - `core_lvl`表示 AimRT 运行时内核的日志等级，内核日志一般设为 Info 级别即可。
@@ -42,6 +29,22 @@ aimrt:
 - `backends`是一个数组，用于注册各个日志后端。
   - `backends[i].type`是日志后端的类型。AimRT 官方提供了几种日志后端，部分插件也提供了一些日志后端类型。部分后端允许重复注册，详情请参考对应后端类型的文档。
   - `backends[i].options`是 AimRT 传递给各个日志后端的初始化参数，这部分配置格式由各个日志后端类型定义，请参考对应日志后端类型的文档。
+
+
+
+以下是一个简单的示例：
+```yaml
+aimrt:
+  log:
+    core_lvl: INFO
+    default_module_lvl: INFO
+    backends:
+      - type: console
+      - type: rotate_file
+        options:
+          path: ./log
+          filename: examples_cpp_executor_real_time.log
+```
 
 
 ## console 控制台日志后端
@@ -57,31 +60,32 @@ aimrt:
 | log_executor_name     | string            | 可选  | ""    | 日志执行器。默认使用主线程 |
 
 
-以下是一个简单的示例：
-```yaml
-aimrt:
-  executor:
-    executors:
-      - name: test_log_executor # 配置一个线程安全的执行器做日志执行器
-        type: tbb_thread
-        options:
-          thread_num: 1
-  log: # 【可选】log配置
-    core_lvl: INFO # 【可选】内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
-    default_module_lvl: INFO # 【可选】模块默认日志等级
-    backends: # 【可选】日志backends
-      - type: console # 【必选】日志后端类型
-        options: # 【可选】具体日志后端的配置
-          color: true # 【可选】是否要彩色打印
-          module_filter: "(.*)" # 【可选】模块过滤器
-          log_executor_name: test_log_executor.log # 【可选】日志执行器。默认使用主线程
-```
-
 使用注意点如下：
 - `console`日志后端不允许重复注册，一个 AimRT 实例中只允许注册一个。
 - `color`配置了是否要彩色打印。此项配置有可能在一些操作系统不支持。
 - `module_filter`支持以正则表达式的形式，来配置哪些模块的日志可以通过本后端处理。这与模块日志等级不同，模块日志等级是全局的、先决的、影响所有日志后端的，而这里的配置只影响本后端。
 - `log_executor_name`配置了日志执行器。要求日志执行器是线程安全的，如果没有配置，则默认使用主线程打印日志。
+
+
+以下是一个简单的示例：
+```yaml
+aimrt:
+  executor:
+    executors:
+      - name: test_log_executor
+        type: tbb_thread
+        options:
+          thread_num: 1
+  log:
+    core_lvl: INFO
+    default_module_lvl: INFO
+    backends:
+      - type: console
+        options:
+          color: true
+          module_filter: "(.*)"
+          log_executor_name: test_log_executor.log
+```
 
 
 ## rotate_file 滚动文件日志后端
@@ -99,28 +103,6 @@ aimrt:
 | log_executor_name     | string            | 可选  | ""    | 日志执行器。默认使用主线程 |
 
 
-以下是一个简单的示例：
-```yaml
-aimrt:
-  executor:
-    executors:
-      - name: test_log_executor # 配置一个线程安全的执行器做日志执行器
-        type: tbb_thread
-        options:
-          thread_num: 1
-  log: # 【可选】log配置
-    core_lvl: INFO # 【可选】内核日志等级，可选项：Trace/Debug/Info/Warn/Error/Fatal/Off，不区分大小写
-    default_module_lvl: INFO # 【可选】模块默认日志等级
-    backends: # 【可选】日志backends
-      - type: rotate_file # 【必选】日志后端类型
-        options: # 【可选】具体日志后端的配置
-          path: ./log # 【必选】日志文件存放目录
-          filename: example.log # 【必选】日志文件基础名称
-          max_file_size_m: 4 # 【可选】日志文件最大尺寸，单位：Mb
-          max_file_num: 10 # 【可选】日志文件最大数量。0表示无上限
-          module_filter: "(.*)" # 【可选】模块过滤器
-          log_executor_name: test_log_executor.log # 【可选】日志执行器。默认使用主线程
-```
 
 使用注意点如下：
 - `rotate_file`日志后端允许重复注册，业务可以基于这个特点，将不同模块的日志打印到不同文件中。
@@ -129,3 +111,28 @@ aimrt:
 - 当单个日志文件尺寸超过`max_file_size_m`配置的大小后，就会新建一个日志文件，同时将老的日志文件重命名，加上`_x`这样的后缀。
 - 当日志文件数量超过`max_file_num`配置的值后，就会将最老的日志文件删除。如果配置为 0，则表示永远不会删除。
 - `module_filter`支持以正则表达式的形式，来配置哪些模块的日志可以通过本后端处理。这与模块日志等级不同，模块日志等级是全局的、先决的、影响所有日志后端的，而这里的配置只影响本后端。
+
+
+
+以下是一个简单的示例：
+```yaml
+aimrt:
+  executor:
+    executors:
+      - name: test_log_executor
+        type: tbb_thread
+        options:
+          thread_num: 1
+  log:
+    core_lvl: INFO
+    default_module_lvl: INFO
+    backends:
+      - type: rotate_file
+        options:
+          path: ./log
+          filename: example.log
+          max_file_size_m: 4
+          max_file_num: 10
+          module_filter: "(.*)"
+          log_executor_name: test_log_executor.log
+```

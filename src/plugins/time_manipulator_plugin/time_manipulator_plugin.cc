@@ -16,15 +16,11 @@ struct convert<aimrt::plugins::time_manipulator_plugin::TimeManipulatorPlugin::O
   static Node encode(const Options& rhs) {
     Node node;
 
-    node["enable_rpc"] = rhs.enable_rpc;
-
     return node;
   }
 
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
-
-    rhs.enable_rpc = node["enable_rpc"].as<bool>();
 
     return true;
   }
@@ -63,10 +59,8 @@ bool TimeManipulatorPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexc
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitExecutor,
                                 [this] { RegisterTimeManipulatorExecutor(); });
 
-    if (options_.enable_rpc) {
-      core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitModules,
-                                  [this] { RegisterRpcService(); });
-    }
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitModules,
+                                [this] { RegisterRpcService(); });
 
     plugin_options_node = options_;
     return true;

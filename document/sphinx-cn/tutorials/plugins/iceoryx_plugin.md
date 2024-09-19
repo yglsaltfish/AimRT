@@ -24,10 +24,10 @@
 以下是一个简单的示例：
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
-      - name: iceoryx_plugin # 【必选】插件名称
-        path: ./libaimrt_iceoryx_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+  plugin:
+    plugins:
+      - name: iceoryx_plugin
+        path: ./libaimrt_iceoryx_plugin.so
         options:
           shm_init_size: 2048 # 【可选】初始向共享内存池中租赁的共享内存大小， 单位bytes
 ```
@@ -94,10 +94,10 @@ aimrt:
 以下是一个简单的发布端的示例：
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
+  plugin:
+    plugins:
       - name: iceoryx_plugin # 【必选】插件名
-        path: ./libaimrt_iceoryx_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_iceoryx_plugin.so
         options:
           shm_init_size: 2048 # 【可选】初始向共享内存池中租赁的共享内存大小， 单位bytes
   executor:
@@ -106,31 +106,31 @@ aimrt:
         type: asio_thread
         options:
           thread_num: 2
-  channel: # 【可选】Channel配置根节点
-    backends: # 【可选】Channel后端列表
-      - type: iceoryx # 【必选】Channel后端类型
-    pub_topics_options: # 【可选】Channel Pub Topic配置
-      - topic_name: "(.*)"  # 【必选】Channel Pub Topic名称，支持正则表达式
-        enable_backends: [iceoryx] # 【必选】Channel Pub Topic允许使用的Channel后端列表
+  channel:
+    backends:
+      - type: iceoryx
+    pub_topics_options:
+      - topic_name: "(.*)" 
+        enable_backends: [iceoryx]
 
 ```
 
 以下则是一个简单的订阅端的示例：
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
+  plugin:
+    plugins:
       - name: iceoryx_plugin # 【必选】插件名
-        path: ./libaimrt_iceoryx_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
+        path: ./libaimrt_iceoryx_plugin.so
         options:
           shm_init_size: 2048 # 【可选】初始向共享内存池中租赁的共享内存大小， 单位bytes
   executor:
-  channel: # 【可选】Channel配置根节点
-    backends: # 【可选】Channel后端列表
-      - type: iceoryx # 【必选】Channel后端类型
-    sub_topics_options: # 【可选】Channel Sub Topic配置
-      - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
-        enable_backends: [iceoryx] # 【必选】Channel Sub Topic允许使用的Channel后端列表
+  channel:
+    backends:
+      - type: iceoryx
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [iceoryx]
 ```
 
 

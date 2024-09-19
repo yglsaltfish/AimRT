@@ -16,9 +16,9 @@
 
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
-      - name: zenoh_plugin # 【必选】插件名称
+  plugin:
+    plugins:
+      - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so #【可选】插件路径。如果是硬编码注册的插件不需要填
 ```
 **zenoh_plugin**插件基于插件基于[zenoh.c](https://github.com/eclipse-zenoh/zenoh-c)开发的的。`请注意`，该插件在编译过程依赖于[Rust](https://www.rust-lang.org/)，请确保运行环境中存在Rust编译器，否则该插件将自动关闭，尽管在编译选项中是开启状态。
@@ -32,32 +32,32 @@ aimrt:
 以下是一个简单的发布端的示例：
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
-      - name: zenoh_plugin # 【必选】插件名称
-        path: ./libaimrt_zenoh_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
-  channel: # 【可选】Channel配置根节点
-    backends: # 【可选】Channel后端列表
-      - type: zenoh # 【必选】Channel后端类型
-    pub_topics_options: # 【可选】Channel Pub Topic配置
-      - topic_name: "(.*)"  # 【必选】Channel Pub Topic名称，支持正则表达式
-        enable_backends: [zenoh ] # 【必选】Channel Pub Topic允许使用的Channel后端列表
+  plugin:
+    plugins:
+      - name: zenoh_plugin
+        path: ./libaimrt_zenoh_plugin.so
+  channel:
+    backends:
+      - type: zenoh
+    pub_topics_options:
+      - topic_name: "(.*)" 
+        enable_backends: [zenoh ]
 ```
 
 
 以下是一个简单的订阅端的示例：
 ```yaml
 aimrt:
-  plugin: # 【可选】插件配置根节点
-    plugins: # 【可选】各个插件的配置
-      - name: zenoh_plugin # 【必选】插件名称
-        path: ./libaimrt_zenoh_plugin.so # 【可选】插件路径。如果是硬编码注册的插件不需要填
-channel: # 【可选】Channel配置根节点
-    backends: # 【可选】Channel后端列表
-      - type: zenoh # 【必选】Channel后端类型
-    sub_topics_options: # 【可选】Channel Sub Topic配置
-      - topic_name: "(.*)" # 【必选】Channel Sub Topic名称，支持正则表达式
-        enable_backends: [zenoh] # 【必选】Channel Sub Topic允许使用的Channel后端列表
+  plugin:
+    plugins:
+      - name: zenoh_plugin
+        path: ./libaimrt_zenoh_plugin.so
+channel:
+    backends:
+      - type: zenoh
+    sub_topics_options:
+      - topic_name: "(.*)"
+        enable_backends: [zenoh]
 ```
 以上示例中都使用zeonh的服务发现机制，即在统一网络中的两个端点可自动发现彼此并建立连接，因此在配置过程中不需要用户手动输入任何参数，降低使用复杂度。
 

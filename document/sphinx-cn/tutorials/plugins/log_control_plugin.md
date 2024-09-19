@@ -16,7 +16,7 @@
 aimrt:
   plugin:
     plugins:
-      - name: net_plugin # net插件，用于将parameter插件注册的RPC通过Http后端暴露给外部工具调用
+      - name: net_plugin
         path: ./libaimrt_net_plugin.so
         options:
           thread_num: 4
