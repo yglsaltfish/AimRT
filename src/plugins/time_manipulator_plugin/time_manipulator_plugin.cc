@@ -53,13 +53,13 @@ bool TimeManipulatorPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexc
 
     init_flag_ = true;
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitExecutor,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitExecutor,
                                 [this] { RegisterTimeManipulatorExecutor(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitModules,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitModules,
                                 [this] { RegisterRpcService(); });
 
     plugin_options_node = options_;

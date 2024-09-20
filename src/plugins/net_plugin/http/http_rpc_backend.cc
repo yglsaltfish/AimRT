@@ -67,7 +67,7 @@ namespace aimrt::plugins::net_plugin {
 
 void HttpRpcBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Http Rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -78,12 +78,12 @@ void HttpRpcBackend::Initialize(YAML::Node options_node) {
 
 void HttpRpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void HttpRpcBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   http_svr_ptr_->Shutdown();
@@ -93,7 +93,7 @@ void HttpRpcBackend::Shutdown() {
 bool HttpRpcBackend::RegisterServiceFunc(
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
       return false;
     }
@@ -258,7 +258,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 
       AIMRT_CHECK_ERROR_THROW(ret_code == 0, "Handle rpc failed, code: {}.", ret_code);
 
-      co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::OK;
+      co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::kOk;
     };
 
     http_svr_ptr_->RegisterHttpHandleFunc<http::dynamic_body>(
@@ -275,7 +275,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
 bool HttpRpcBackend::RegisterClientFunc(
     const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
       return false;
     }
@@ -308,7 +308,7 @@ bool HttpRpcBackend::RegisterClientFunc(
 void HttpRpcBackend::Invoke(
     const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
   try {
-    if (state_.load() != State::Start) [[unlikely]] {
+    if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;

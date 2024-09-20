@@ -22,11 +22,11 @@ class Ros2AdapterServer : public rclcpp::ServiceBase {
   void handle_request(std::shared_ptr<rmw_request_id_t> request_header,
                       std::shared_ptr<void> request) override;
 
-  void Start() { run_flag.store(true); }
-  void Shutdown() { run_flag.store(false); }
+  void Start() { run_flag_.store(true); }
+  void Shutdown() { run_flag_.store(false); }
 
  private:
-  std::atomic_bool run_flag = false;
+  std::atomic_bool run_flag_ = false;
   const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper_;
   std::string real_ros2_func_name_;
 };
@@ -44,14 +44,14 @@ class Ros2AdapterWrapperServer : public rclcpp::ServiceBase {
   void handle_request(std::shared_ptr<rmw_request_id_t> request_header,
                       std::shared_ptr<void> request) override;
 
-  void Start() { run_flag.store(true); }
-  void Shutdown() { run_flag.store(false); }
+  void Start() { run_flag_.store(true); }
+  void Shutdown() { run_flag_.store(false); }
 
  private:
   void ReturnRspWithStatusCode(std::shared_ptr<rmw_request_id_t> request_header, uint32_t code);
 
  private:
-  std::atomic_bool run_flag = false;
+  std::atomic_bool run_flag_ = false;
   const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper_;
   std::string real_ros2_func_name_;
 };

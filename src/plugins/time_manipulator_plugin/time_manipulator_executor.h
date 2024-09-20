@@ -27,10 +27,10 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
   };
 
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
  public:
@@ -94,7 +94,7 @@ class TimeManipulatorExecutor : public aimrt::runtime::core::executor::ExecutorB
  private:
   std::string name_;
   Options options_;
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   std::function<aimrt::executor::ExecutorRef(std::string_view)> get_executor_func_;
   executor::ExecutorRef bind_executor_ref_;

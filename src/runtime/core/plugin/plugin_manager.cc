@@ -53,7 +53,7 @@ void PluginManager::Initialize(YAML::Node options_node) {
       "AimRT core point is not set before PluginManager initialize.");
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Plugin manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -134,14 +134,14 @@ void PluginManager::Initialize(YAML::Node options_node) {
 
 void PluginManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   AIMRT_INFO("Plugin manager start completed.");
 }
 
 void PluginManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Plugin manager shutdown.");
@@ -158,7 +158,7 @@ void PluginManager::Shutdown() {
 
 void PluginManager::RegisterPlugin(AimRTCorePluginBase* plugin) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   AIMRT_CHECK_ERROR_THROW(plugin != nullptr, "Register invalid plugin");
@@ -168,7 +168,7 @@ void PluginManager::RegisterPlugin(AimRTCorePluginBase* plugin) {
 
 void PluginManager::RegisterCorePtr(AimRTCore* core_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   core_ptr_ = core_ptr;
@@ -176,7 +176,7 @@ void PluginManager::RegisterCorePtr(AimRTCore* core_ptr) {
 
 YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   auto finditr = std::find_if(
@@ -192,7 +192,7 @@ YAML::Node PluginManager::GetPluginOptionsNode(std::string_view plugin_name) con
 
 std::list<std::pair<std::string, std::string>> PluginManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   std::vector<std::vector<std::string>> plugin_info_table =
@@ -217,7 +217,7 @@ std::list<std::pair<std::string, std::string>> PluginManager::GenInitializationR
 
 const std::vector<AimRTCorePluginBase*>& PluginManager::GetUsedPlugin() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
   return used_plugin_vec_;
 }

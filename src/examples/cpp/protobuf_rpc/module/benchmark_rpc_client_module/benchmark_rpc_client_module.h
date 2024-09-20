@@ -38,11 +38,11 @@ class BenchmarkRpcClientModule : public aimrt::ModuleBase {
 
   struct BenchPlan {
     enum class PerfMod : uint8_t {
-      Bench,
-      FixedFreq
+      kBench,
+      kFixedFreq
     };
 
-    PerfMod mode = PerfMod::Bench;
+    PerfMod mode = PerfMod::kBench;
 
     uint32_t freq;
     uint32_t msg_size;

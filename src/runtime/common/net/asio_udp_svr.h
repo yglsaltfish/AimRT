@@ -82,7 +82,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -92,7 +92,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     requires std::constructible_from<MsgHandle, Args...>
   void RegisterMsgHandle(Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     msg_handle_ptr_ = std::make_shared<MsgHandle>(std::forward<Args>(args)...);
@@ -104,7 +104,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
         "Msg handle is not set before initialize.");
 
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
@@ -113,7 +113,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
 
     auto self = shared_from_this();
@@ -123,7 +123,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
           sock_.open(options_.ep.protocol());
           sock_.bind(options_.ep);
 
-          while (state_.load() == State::Start) {
+          while (state_.load() == State::kStart) {
             try {
               // 如果链接数达到上限，则等待一段时间再试
               if (session_ptr_map_.size() >= options_.max_session_num) {
@@ -172,7 +172,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     boost::asio::co_spawn(
         mgr_strand_,
         [this, self]() -> Awaitable<void> {
-          while (state_.load() == State::Start) {
+          while (state_.load() == State::kStart) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
               co_await mgr_timer_.async_wait(boost::asio::use_awaitable);
@@ -198,7 +198,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -272,7 +272,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
+          std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
@@ -280,7 +280,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
+          std::atomic_exchange(&state_, SessionState::kStart) == SessionState::kInit,
           "Method can only be called when state is 'Init'.");
 
       auto self = shared_from_this();
@@ -290,7 +290,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
             try {
-              while (state_.load() == SessionState::Start) {
+              while (state_.load() == SessionState::kStart) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
                 co_await timer_.async_wait(boost::asio::use_awaitable);
 
@@ -318,7 +318,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     }
 
     void Shutdown() {
-      if (std::atomic_exchange(&state_, SessionState::Shutdown) == SessionState::Shutdown)
+      if (std::atomic_exchange(&state_, SessionState::kShutdown) == SessionState::kShutdown)
         return;
 
       auto self = shared_from_this();
@@ -357,14 +357,14 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
     const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-    bool IsRunning() const { return state_.load() == SessionState::Start; }
+    bool IsRunning() const { return state_.load() == SessionState::kStart; }
 
    private:
     enum class SessionState : uint32_t {
-      PreInit,
-      Init,
-      Start,
-      Shutdown,
+      kPreInit,
+      kInit,
+      kStart,
+      kShutdown,
     };
 
     // IO CTX
@@ -382,7 +382,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
     // 状态
-    std::atomic<SessionState> state_ = SessionState::PreInit;
+    std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
     Udp::endpoint remote_ep_;
@@ -391,10 +391,10 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   // IO CTX
@@ -415,7 +415,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   Options options_;
 
   // 状态
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;

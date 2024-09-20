@@ -45,7 +45,7 @@ class LoggerRef {
 };
 
 inline LoggerRef GetSimpleLoggerRef() {
-  static constexpr aimrt_logger_base_t simple_logger{
+  static constexpr aimrt_logger_base_t kSimpleLogger{
       .get_log_level = [](void* impl) -> aimrt_log_level_t {
         return static_cast<aimrt_log_level_t>(aimrt::common::util::SimpleLogger::GetLogLevel());
       },
@@ -56,7 +56,7 @@ inline LoggerRef GetSimpleLoggerRef() {
             static_cast<uint32_t>(lvl), line, column, file_name, function_name, log_data, log_data_size);  //
       }};
 
-  return LoggerRef(&simple_logger);
+  return LoggerRef(&kSimpleLogger);
 }
 
 }  // namespace aimrt::logger

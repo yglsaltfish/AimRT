@@ -18,8 +18,8 @@ namespace aimrt::plugins::iceoryx_plugin {
 
 using IdString_t = iox::capro::IdString_t;
 
-constexpr unsigned int FIXED_LEN = 20;        // FIXED_LEN represents the length of the pkg_size's string， which is enough to the max value of uint64_t
-constexpr uint64_t IOX_SHM_INIT_SIZE = 1024;  // default vaule of shm_init_size for iceoryx
+constexpr unsigned int kFixedLen = 20;      // FIXED_LEN represents the length of the pkg_size's string， which is enough to the max value of uint64_t
+constexpr uint64_t kIoxShmInitSize = 1024;  // default vaule of shm_init_size for iceoryx
 
 const iox::capro::ServiceDescription Url2ServiceDescription(std::string& url);
 

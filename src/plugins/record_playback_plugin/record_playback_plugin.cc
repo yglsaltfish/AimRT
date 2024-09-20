@@ -188,14 +188,14 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
     }
 
     core_ptr_->RegisterHookFunc(
-        runtime::core::AimRTCore::State::PostInitLog,
+        runtime::core::AimRTCore::State::kPostInitLog,
         [this] {
           SetLogger(aimrt::logger::LoggerRef(
               core_ptr_->GetLoggerManager().GetLoggerProxy().NativeHandle()));
         });
 
     core_ptr_->RegisterHookFunc(
-        runtime::core::AimRTCore::State::PreInitModules,
+        runtime::core::AimRTCore::State::kPreInitModules,
         [this] {
           RegisterRpcService();
           RegisterRecordChannel();
@@ -203,7 +203,7 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
         });
 
     core_ptr_->RegisterHookFunc(
-        runtime::core::AimRTCore::State::PostStart,
+        runtime::core::AimRTCore::State::kPostStart,
         [this] {
           for (auto& itr : record_action_map_) {
             itr.second->InitExecutor();
@@ -217,7 +217,7 @@ bool RecordPlaybackPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexce
         });
 
     core_ptr_->RegisterHookFunc(
-        runtime::core::AimRTCore::State::PreShutdown,
+        runtime::core::AimRTCore::State::kPreShutdown,
         [this] {
           for (auto& itr : playback_action_map_)
             itr.second->Shutdown();

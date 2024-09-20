@@ -48,14 +48,14 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
 
  private:
   enum class ErrorCode : uint32_t {
-    SUC = 0,
-    INVALID_ACTION_NAME = 1,
-    INVALID_ACTION_MODE = 2,
-    START_RECORD_FAILED = 3,
-    START_PLAYBACK_FAILED = 4,
+    kSuc = 0,
+    kInvalidActionName = 1,
+    kInvalidActionMode = 2,
+    kStartRecordFailed = 3,
+    kStartPlaybackFailed = 4,
   };
 
-  static constexpr std::string_view error_info_array[] = {
+  static constexpr std::string_view kErrorInfoArray[] = {
       "",
       "INVALID_ACTION_NAME",
       "INVALID_ACTION_MODE",
@@ -65,7 +65,7 @@ class RecordPlaybackServiceImpl : public aimrt::protocols::record_playback_plugi
   template <typename T>
   void SetErrorCode(ErrorCode code, T& rsp) {
     rsp.set_code(static_cast<uint32_t>(code));
-    rsp.set_msg(std::string(error_info_array[static_cast<uint32_t>(code)]));
+    rsp.set_msg(std::string(kErrorInfoArray[static_cast<uint32_t>(code)]));
   }
 
   std::unordered_map<std::string_view, std::unique_ptr<RecordAction>>* record_action_map_ptr_ = nullptr;

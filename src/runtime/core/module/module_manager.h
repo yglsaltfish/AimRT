@@ -45,10 +45,10 @@ class ModuleManager {
   };
 
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   using CoreProxyConfigurator = std::function<void(const util::ModuleDetailInfo&, CoreProxy&)>;
@@ -105,7 +105,7 @@ class ModuleManager {
 
  private:
   Options options_;
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   CoreProxyConfigurator module_proxy_configurator_;

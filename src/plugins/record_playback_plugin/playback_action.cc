@@ -18,9 +18,9 @@ struct convert<aimrt::plugins::record_playback_plugin::PlaybackAction::Options> 
 
     node["bag_path"] = rhs.bag_path;
 
-    if (rhs.mode == Options::Mode::IMD) {
+    if (rhs.mode == Options::Mode::kImd) {
       node["mode"] = "imd";
-    } else if (rhs.mode == Options::Mode::SIGNAL) {
+    } else if (rhs.mode == Options::Mode::kSignal) {
       node["mode"] = "signal";
     }
 
@@ -46,9 +46,9 @@ struct convert<aimrt::plugins::record_playback_plugin::PlaybackAction::Options> 
 
     auto mode = aimrt::common::util::StrToLower(node["mode"].as<std::string>());
     if (mode == "imd") {
-      rhs.mode = Options::Mode::IMD;
+      rhs.mode = Options::Mode::kImd;
     } else if (mode == "signal") {
-      rhs.mode = Options::Mode::SIGNAL;
+      rhs.mode = Options::Mode::kSignal;
     } else {
       throw aimrt::common::util::AimRTException("Invalid record mode: " + mode);
     }
@@ -80,7 +80,7 @@ namespace aimrt::plugins::record_playback_plugin {
 
 void PlaybackAction::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Local channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -176,14 +176,14 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
 
 void PlaybackAction::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   // start imd mode
-  if (options_.mode == Options::Mode::IMD) {
+  if (options_.mode == Options::Mode::kImd) {
     std::lock_guard<std::mutex> lck(playback_state_mutex_);
-    if (playback_state_ == PlayBackState::ReadyToPlay) {
-      playback_state_ = PlayBackState::Playing;
+    if (playback_state_ == PlayBackState::kReadyToPlay) {
+      playback_state_ = PlayBackState::kPlaying;
       playback_state_mutex_.unlock();
       StartPlaybackImpl(options_.skip_duration_s, options_.play_duration_s);
     }
@@ -191,17 +191,17 @@ void PlaybackAction::Start() {
 }
 
 void PlaybackAction::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   std::lock_guard<std::mutex> lck(playback_state_mutex_);
-  if (playback_state_ == PlayBackState::Playing)
-    playback_state_ = PlayBackState::GetStopSignal;
+  if (playback_state_ == PlayBackState::kPlaying)
+    playback_state_ = PlayBackState::kGetStopSignal;
 }
 
 void PlaybackAction::InitExecutor() {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   AIMRT_CHECK_ERROR_THROW(
@@ -219,7 +219,7 @@ void PlaybackAction::InitExecutor() {
 void PlaybackAction::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
@@ -228,7 +228,7 @@ void PlaybackAction::RegisterGetExecutorFunc(
 void PlaybackAction::RegisterGetTypeSupportFunc(
     const std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   get_type_support_func_ = get_type_support_func;
@@ -236,7 +236,7 @@ void PlaybackAction::RegisterGetTypeSupportFunc(
 
 void PlaybackAction::RegisterPubRecordFunc(std::function<void(const OneRecord&)>&& func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   pub_record_func_ = std::move(func);
@@ -244,18 +244,18 @@ void PlaybackAction::RegisterPubRecordFunc(std::function<void(const OneRecord&)>
 
 bool PlaybackAction::StartSignalPlayback(uint64_t skip_duration_s, uint64_t play_duration_s) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Start,
+      state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
 
-  if (options_.mode != Options::Mode::SIGNAL) [[unlikely]] {
+  if (options_.mode != Options::Mode::kSignal) [[unlikely]] {
     AIMRT_WARN("Cur action mode is not signal mode.");
     return false;
   }
 
   {
     std::lock_guard<std::mutex> lck(playback_state_mutex_);
-    if (playback_state_ == PlayBackState::ReadyToPlay) {
-      playback_state_ = PlayBackState::Playing;
+    if (playback_state_ == PlayBackState::kReadyToPlay) {
+      playback_state_ = PlayBackState::kPlaying;
       playback_state_mutex_.unlock();
       StartPlaybackImpl(skip_duration_s, play_duration_s);
       return true;
@@ -268,17 +268,17 @@ bool PlaybackAction::StartSignalPlayback(uint64_t skip_duration_s, uint64_t play
 
 void PlaybackAction::StopSignalPlayback() {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Start,
+      state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
 
-  if (options_.mode != Options::Mode::SIGNAL) [[unlikely]] {
+  if (options_.mode != Options::Mode::kSignal) [[unlikely]] {
     AIMRT_WARN("Cur action mode is not signal mode.");
     return;
   }
 
   std::lock_guard<std::mutex> lck(playback_state_mutex_);
-  if (playback_state_ == PlayBackState::Playing)
-    playback_state_ = PlayBackState::GetStopSignal;
+  if (playback_state_ == PlayBackState::kPlaying)
+    playback_state_ = PlayBackState::kGetStopSignal;
 }
 
 bool PlaybackAction::OpenNewDb() {
@@ -379,7 +379,7 @@ void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_d
       nullptr,
       [this](...) {
         std::lock_guard<std::mutex> lck(playback_state_mutex_);
-        playback_state_ = PlayBackState::ReadyToPlay;
+        playback_state_ = PlayBackState::kReadyToPlay;
       });
 
   AddPlaybackTasks(task_counter_ptr);
@@ -389,7 +389,7 @@ void PlaybackAction::StartPlaybackImpl(uint64_t skip_duration_s, uint64_t play_d
 void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_ptr) {
   {
     std::lock_guard<std::mutex> lck(playback_state_mutex_);
-    if (playback_state_ == PlayBackState::GetStopSignal) [[unlikely]] {
+    if (playback_state_ == PlayBackState::kGetStopSignal) [[unlikely]] {
       return;
     }
   }
@@ -400,17 +400,17 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
     // first record
     if (!OpenNewDb()) {
       std::lock_guard<std::mutex> lck(playback_state_mutex_);
-      playback_state_ = PlayBackState::GetStopSignal;
+      playback_state_ = PlayBackState::kGetStopSignal;
       return;
     }
   }
 
   // 一次性吐出最多1s的数据，或最多1000条数据
-  constexpr size_t max_record_size = 1000;
+  constexpr size_t kMaxRecordSize = 1000;
   uint64_t cur_start_timestamp = 0;
 
   std::vector<OneRecord> records;
-  records.reserve(max_record_size);
+  records.reserve(kMaxRecordSize);
 
   while (true) {
     int ret = sqlite3_step(select_msg_stmt_);
@@ -420,7 +420,7 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
 
       if (stop_playback_timestamp_ && timestamp >= stop_playback_timestamp_) [[unlikely]] {
         std::lock_guard<std::mutex> lck(playback_state_mutex_);
-        playback_state_ = PlayBackState::GetStopSignal;
+        playback_state_ = PlayBackState::kGetStopSignal;
         break;
       }
 
@@ -447,13 +447,13 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
 
       if (cur_start_timestamp == 0) [[unlikely]] {
         cur_start_timestamp = timestamp;
-      } else if ((timestamp - cur_start_timestamp) >= 1000000000 || records.size() >= max_record_size) [[unlikely]] {
+      } else if ((timestamp - cur_start_timestamp) >= 1000000000 || records.size() >= kMaxRecordSize) [[unlikely]] {
         break;
       }
     } else {
       if (!OpenNewDb()) {
         std::lock_guard<std::mutex> lck(playback_state_mutex_);
-        playback_state_ = PlayBackState::GetStopSignal;
+        playback_state_ = PlayBackState::kGetStopSignal;
         break;
       }
     }
@@ -465,7 +465,7 @@ void PlaybackAction::AddPlaybackTasks(const std::shared_ptr<void>& task_counter_
 
   if (records.empty()) [[unlikely]] {
     std::lock_guard<std::mutex> lck(playback_state_mutex_);
-    playback_state_ = PlayBackState::GetStopSignal;
+    playback_state_ = PlayBackState::kGetStopSignal;
     return;
   }
 

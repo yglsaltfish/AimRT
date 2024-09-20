@@ -95,7 +95,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
   RegisterDebugLogFilter();
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Channel manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -175,7 +175,7 @@ void ChannelManager::Initialize(YAML::Node options_node) {
 
 void ChannelManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   channel_backend_manager_.Start();
@@ -185,7 +185,7 @@ void ChannelManager::Start() {
 }
 
 void ChannelManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Channel manager shutdown.");
@@ -206,7 +206,7 @@ void ChannelManager::Shutdown() {
 
 std::list<std::pair<std::string, std::string>> ChannelManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   std::vector<std::vector<std::string>> pub_topic_info_table =
@@ -303,7 +303,7 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
 void ChannelManager::RegisterChannelBackend(
     std::unique_ptr<ChannelBackendBase>&& channel_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   channel_backend_vec_.emplace_back(std::move(channel_backend_ptr));
@@ -312,7 +312,7 @@ void ChannelManager::RegisterChannelBackend(
 void ChannelManager::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
@@ -321,7 +321,7 @@ void ChannelManager::RegisterGetExecutorFunc(
 const ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   auto itr = channel_handle_proxy_wrap_map_.find(module_info.name);
@@ -343,35 +343,35 @@ const ChannelHandleProxy& ChannelManager::GetChannelHandleProxy(
 
 void ChannelManager::RegisterPublishFilter(std::string_view name, FrameworkAsyncChannelFilter&& filter) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   publish_filter_manager_.RegisterFilter(name, std::move(filter));
 }
 
 void ChannelManager::RegisterSubscribeFilter(std::string_view name, FrameworkAsyncChannelFilter&& filter) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   subscribe_filter_manager_.RegisterFilter(name, std::move(filter));
 }
 
 void ChannelManager::SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   passed_context_meta_keys_.insert(keys.begin(), keys.end());
 }
 
 const ChannelRegistry* ChannelManager::GetChannelRegistry() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
   return channel_registry_ptr_.get();
 }
 
 const std::vector<ChannelBackendBase*>& ChannelManager::GetUsedChannelBackend() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
   return used_channel_backend_vec_;
 }

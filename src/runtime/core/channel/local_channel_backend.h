@@ -20,10 +20,10 @@ class LocalChannelBackend : public ChannelBackendBase {
   };
 
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
  public:
@@ -57,7 +57,7 @@ class LocalChannelBackend : public ChannelBackendBase {
 
  private:
   Options options_;
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   const ChannelRegistry* channel_registry_ptr_ = nullptr;

@@ -13,7 +13,7 @@ aimrt::co::Task<aimrt::rpc::Status> TimeManipulatorServiceImpl::SetTimeRatio(
     ::aimrt::protocols::time_manipulator_plugin::CommonRsp& rsp) {
   auto itr = executor_map_.find(req.executor_name());
   if (itr == executor_map_.end()) [[unlikely]] {
-    SetErrorCode(ErrorCode::INVALID_EXECUTOR_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidExecutorName, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -29,7 +29,7 @@ aimrt::co::Task<aimrt::rpc::Status> TimeManipulatorServiceImpl::Pause(
     ::aimrt::protocols::time_manipulator_plugin::CommonRsp& rsp) {
   auto itr = executor_map_.find(req.executor_name());
   if (itr == executor_map_.end()) [[unlikely]] {
-    SetErrorCode(ErrorCode::INVALID_EXECUTOR_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidExecutorName, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -45,7 +45,7 @@ aimrt::co::Task<aimrt::rpc::Status> TimeManipulatorServiceImpl::GetTimeRatio(
     ::aimrt::protocols::time_manipulator_plugin::CommonRsp& rsp) {
   auto itr = executor_map_.find(req.executor_name());
   if (itr == executor_map_.end()) [[unlikely]] {
-    SetErrorCode(ErrorCode::INVALID_EXECUTOR_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidExecutorName, rsp);
     co_return aimrt::rpc::Status();
   }
 

@@ -127,7 +127,7 @@ namespace aimrt::plugins::ros2_plugin {
 
 void Ros2RpcBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Ros2 Rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -155,7 +155,7 @@ void Ros2RpcBackend::Initialize(YAML::Node options_node) {
 
 void Ros2RpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   for (auto& itr : ros2_adapter_client_map_)
@@ -172,7 +172,7 @@ void Ros2RpcBackend::Start() {
 }
 
 void Ros2RpcBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   for (auto& itr : ros2_adapter_client_map_)
@@ -246,7 +246,7 @@ rclcpp::QoS Ros2RpcBackend::GetQos(const Options::QosOptions& qos_option) {
 bool Ros2RpcBackend::RegisterServiceFunc(
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
       return false;
     }
@@ -336,7 +336,7 @@ bool Ros2RpcBackend::RegisterServiceFunc(
 bool Ros2RpcBackend::RegisterClientFunc(
     const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
       return false;
     }
@@ -428,7 +428,7 @@ bool Ros2RpcBackend::RegisterClientFunc(
 void Ros2RpcBackend::Invoke(
     const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
   try {
-    if (state_.load() != State::Start) [[unlikely]] {
+    if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
@@ -503,7 +503,7 @@ void Ros2RpcBackend::Invoke(
 void Ros2RpcBackend::RegisterGetExecutorFunc(
     const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   get_executor_func_ = get_executor_func;
 }

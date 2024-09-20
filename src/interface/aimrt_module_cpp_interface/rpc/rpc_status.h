@@ -37,7 +37,7 @@ class Status {
   }
 
   static std::string_view GetCodeMsg(uint32_t code) {
-    static const std::unordered_map<uint32_t, std::string_view> code_msg_map{
+    static const std::unordered_map<uint32_t, std::string_view> kCodeMsgMap{
         {AIMRT_RPC_STATUS_OK, "OK"},
         {AIMRT_RPC_STATUS_UNKNOWN, "Unknown error"},
         {AIMRT_RPC_STATUS_TIMEOUT, "Timeout"},
@@ -64,8 +64,8 @@ class Status {
         {AIMRT_RPC_STATUS_CLI_SEND_REQ_FAILED, "Client side send req failed"},
         {AIMRT_RPC_STATUS_CLI_FUNC_NOT_REGISTERED, "Client side function not registered"}};
 
-    auto finditr = code_msg_map.find(code);
-    return (finditr != code_msg_map.end()) ? finditr->second : "Unknown code";
+    auto finditr = kCodeMsgMap.find(code);
+    return (finditr != kCodeMsgMap.end()) ? finditr->second : "Unknown code";
   }
 
  private:

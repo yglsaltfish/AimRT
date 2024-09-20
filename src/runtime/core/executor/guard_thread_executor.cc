@@ -44,7 +44,7 @@ namespace aimrt::runtime::core::executor {
 
 void GuardThreadExecutor::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "GuardThreadExecutor can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -67,13 +67,13 @@ void GuardThreadExecutor::Initialize(YAML::Node options_node) {
                  Name(), e.what());
     }
 
-    while (state_.load() != State::Shutdown) {
+    while (state_.load() != State::kShutdown) {
       // 多生产-单消费优化
       std::queue<aimrt::executor::Task> tmp_queue;
 
       {
         std::unique_lock<std::mutex> lck(mutex_);
-        cond_.wait(lck, [this] { return !queue_.empty() || state_.load() == State::Shutdown; });
+        cond_.wait(lck, [this] { return !queue_.empty() || state_.load() == State::kShutdown; });
         queue_.swap(tmp_queue);
       }
 
@@ -115,12 +115,12 @@ void GuardThreadExecutor::Initialize(YAML::Node options_node) {
 
 void GuardThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void GuardThreadExecutor::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   {
@@ -137,7 +137,7 @@ void GuardThreadExecutor::Shutdown() {
 }
 
 void GuardThreadExecutor::Execute(aimrt::executor::Task&& task) {
-  if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
+  if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
     fprintf(stderr, "Guard thread executor can only execute task when state is 'Init' or 'Start'.\n");
     return;
   }

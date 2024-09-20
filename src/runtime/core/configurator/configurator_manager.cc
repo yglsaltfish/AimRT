@@ -38,7 +38,7 @@ namespace aimrt::runtime::core::configurator {
 void ConfiguratorManager::Initialize(
     const std::filesystem::path& cfg_file_path) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Configurator manager can only be initialized once.");
 
   cfg_file_path_ = cfg_file_path;
@@ -89,14 +89,14 @@ void ConfiguratorManager::Initialize(
 
 void ConfiguratorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   AIMRT_INFO("Configurator manager start completed.");
 }
 
 void ConfiguratorManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Configurator manager shutdown.");
@@ -119,7 +119,7 @@ YAML::Node ConfiguratorManager::GetUserRootOptionsNode() const {
 const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   AIMRT_TRACE("Get configurator proxy for module '{}'.", module_info.name);
@@ -160,12 +160,12 @@ const ConfiguratorProxy& ConfiguratorManager::GetConfiguratorProxy(
     return *(emplace_ret.first->second);
   }
 
-  return default_cfg_proxy;
+  return default_cfg_proxy_;
 }
 
 YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   auto& ori_root_options_node = *ori_root_options_node_ptr_;
@@ -176,7 +176,7 @@ YAML::Node ConfiguratorManager::GetAimRTOptionsNode(std::string_view key) {
 
 std::list<std::pair<std::string, std::string>> ConfiguratorManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   auto check_msg = util::CheckYamlNodes(

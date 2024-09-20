@@ -46,11 +46,11 @@ class Ros2AdapterSubscription : public rclcpp::SubscriptionBase {
   void return_serialized_message(
       std::shared_ptr<rclcpp::SerializedMessage>& message) override;
 
-  void Start() { run_flag.store(true); }
-  void Shutdown() { run_flag.store(false); }
+  void Start() { run_flag_.store(true); }
+  void Shutdown() { run_flag_.store(false); }
 
  private:
-  std::atomic_bool run_flag = false;
+  std::atomic_bool run_flag_ = false;
   const runtime::core::channel::SubscribeWrapper& subscribe_wrapper_;
   const aimrt::runtime::core::channel::SubscribeTool& sub_tool_;
 };

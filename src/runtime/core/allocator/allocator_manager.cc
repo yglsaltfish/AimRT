@@ -26,7 +26,7 @@ namespace aimrt::runtime::core::allocator {
 
 void AllocatorManager::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "AllocatorManager manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -39,14 +39,14 @@ void AllocatorManager::Initialize(YAML::Node options_node) {
 
 void AllocatorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   AIMRT_INFO("Allocator manager start completed.");
 }
 
 void AllocatorManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Allocator manager shutdown.");
@@ -54,7 +54,7 @@ void AllocatorManager::Shutdown() {
 
 const AllocatorProxy& AllocatorManager::GetAllocatorProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   return allocator_proxy_;
@@ -62,7 +62,7 @@ const AllocatorProxy& AllocatorManager::GetAllocatorProxy(const util::ModuleDeta
 
 std::list<std::pair<std::string, std::string>> AllocatorManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   return {};

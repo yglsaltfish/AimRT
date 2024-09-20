@@ -69,7 +69,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
 
   void Initialize(std::shared_ptr<const ConnectionOptions>& options_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, ConnectionState::Init) == ConnectionState::PreInit,
+        std::atomic_exchange(&state_, ConnectionState::kInit) == ConnectionState::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ptr_ = options_ptr;
@@ -78,7 +78,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, ConnectionState::Start) == ConnectionState::Init,
+        std::atomic_exchange(&state_, ConnectionState::kStart) == ConnectionState::kInit,
         "Method can only be called when state is 'Init'.");
 
     auto self = this->shared_from_this();
@@ -87,7 +87,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
         mgr_strand_,
         [this, self]() -> Awaitable<void> {
           try {
-            while (state_.load() == ConnectionState::Start) {
+            while (state_.load() == ConnectionState::kStart) {
               timer_.expires_after(options_ptr_->max_no_data_duration);
               co_await timer_.async_wait(boost::asio::use_awaitable);
 
@@ -113,7 +113,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, ConnectionState::Shutdown) == ConnectionState::Shutdown)
+    if (std::atomic_exchange(&state_, ConnectionState::kShutdown) == ConnectionState::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -144,7 +144,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
         socket_strand_,
         [this, &req_ptr, timeout]() -> Awaitable<ResponsePtr> {
           AIMRT_CHECK_ERROR_THROW(
-              state_.load() == ConnectionState::Start,
+              state_.load() == ConnectionState::kStart,
               "Method can only be called when state is 'Start'.");
 
           try {
@@ -244,7 +244,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
 
   bool CheckIdleAndUse() {
     bool is_idle = std::atomic_exchange(&idle_flag_, false);
-    return is_idle && state_ == ConnectionState::Start;
+    return is_idle && state_ == ConnectionState::kStart;
   }
 
   std::string_view RemoteAddr() const {
@@ -252,15 +252,15 @@ class Connection : public std::enable_shared_from_this<Connection> {
   }
 
   bool IsRunning() const {
-    return state_ == ConnectionState::Start;
+    return state_ == ConnectionState::kStart;
   }
 
  private:
   enum class ConnectionState : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   std::shared_ptr<IOCtx> io_ptr_;
@@ -273,7 +273,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
 
   std::shared_ptr<const ConnectionOptions> options_ptr_;
 
-  std::atomic<ConnectionState> state_ = ConnectionState::PreInit;
+  std::atomic<ConnectionState> state_ = ConnectionState::kPreInit;
 
   std::atomic_bool idle_flag_ = false;
   std::string remote_addr_;

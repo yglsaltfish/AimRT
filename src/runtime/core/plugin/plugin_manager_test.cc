@@ -9,10 +9,10 @@ namespace aimrt::runtime::core::plugin {
 
 // 测试没有注册AimRT core时会初始化失败
 TEST(PluginManagerTest, Initialize1) {
-  PluginManager plugin_manager_;
+  PluginManager plugin_manager;
   YAML::Node options_node_test = YAML::Load(R"str(
 )str");
-  EXPECT_THROW(plugin_manager_.Initialize(options_node_test), aimrt::common::util::AimRTException);
+  EXPECT_THROW(plugin_manager.Initialize(options_node_test), aimrt::common::util::AimRTException);
 }
 
 // 测试注册AimRT core后初始化成功,且可以通过直接注册容器的方式注册插件并调用该插件的接口 并成功运行
@@ -30,10 +30,10 @@ TEST(PluginManagerTest, Initialize2) {
     bool is_initialized_ = false;
     bool is_shutdown_ = false;
   };
-  std::shared_ptr<MockPlugin> mock_plugin_ptr_ = std::make_shared<MockPlugin>();
-  AimRTCore* core_ptr_ = new AimRTCore;
+  std::shared_ptr<MockPlugin> mock_plugin_ptr = std::make_shared<MockPlugin>();
+  AimRTCore* core_ptr = new AimRTCore;
 
-  PluginManager plugin_manager_;
+  PluginManager plugin_manager;
 
   YAML::Node options_node_test = YAML::Load(R"str(
 plugins: 
@@ -41,15 +41,15 @@ plugins:
       path: ""
 )str");
 
-  plugin_manager_.RegisterCorePtr(core_ptr_);
-  plugin_manager_.RegisterPlugin(mock_plugin_ptr_.get());
-  EXPECT_EQ(plugin_manager_.GetState(), PluginManager::State::PreInit);
-  plugin_manager_.Initialize(options_node_test);
-  EXPECT_EQ(plugin_manager_.GetState(), PluginManager::State::Init);
-  EXPECT_TRUE(mock_plugin_ptr_->is_initialized_);
+  plugin_manager.RegisterCorePtr(core_ptr);
+  plugin_manager.RegisterPlugin(mock_plugin_ptr.get());
+  EXPECT_EQ(plugin_manager.GetState(), PluginManager::State::kPreInit);
+  plugin_manager.Initialize(options_node_test);
+  EXPECT_EQ(plugin_manager.GetState(), PluginManager::State::kInit);
+  EXPECT_TRUE(mock_plugin_ptr->is_initialized_);
 
-  plugin_manager_.Start();
-  EXPECT_EQ(plugin_manager_.GetState(), PluginManager::State::Start);
+  plugin_manager.Start();
+  EXPECT_EQ(plugin_manager.GetState(), PluginManager::State::kStart);
 }
 
 }  // namespace aimrt::runtime::core::plugin

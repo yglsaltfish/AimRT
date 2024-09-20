@@ -8,9 +8,9 @@
 namespace aimrt::plugins::grpc_plugin::grpc {
 
 std::optional<std::chrono::nanoseconds> ParseTimeout(const std::string& timeout_str) {
-  static const std::regex timeout_regex(R"((\d+)([HMSmun]))");
+  static const std::regex kTimeoutRegex(R"((\d+)([HMSmun]))");
   std::smatch match;
-  if (std::regex_match(timeout_str, match, timeout_regex)) {
+  if (std::regex_match(timeout_str, match, kTimeoutRegex)) {
     int64_t value = std::stoll(match[1].str());
     char unit = match[2].str()[0];
 

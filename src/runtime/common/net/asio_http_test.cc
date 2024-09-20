@@ -400,7 +400,7 @@ TEST(NET_TEST, Http_server_handle) {
 
     AIMRT_INFO("handle rsp:\n{}", aimrt::common::util::SSToString(rsp));
 
-    co_return AsioHttpServer::HttpHandleStatus::OK;
+    co_return AsioHttpServer::HttpHandleStatus::kOk;
   };
 
   auto http_svr_ptr = std::make_shared<AsioHttpServer>(svr_sys_ptr->IO());

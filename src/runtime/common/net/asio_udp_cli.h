@@ -59,7 +59,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -67,7 +67,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
@@ -76,12 +76,12 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -96,7 +96,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
   void SendMsg(const std::shared_ptr<Streambuf>& msg_buf_ptr) {
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, msg_buf_ptr]() {
-      if (state_.load() != State::Start) [[unlikely]] {
+      if (state_.load() != State::kStart) [[unlikely]] {
         AIMRT_WARN("Udp cli is closed, will not send current msg.");
         return;
       }
@@ -117,7 +117,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  bool IsRunning() const { return state_.load() == State::Start; }
+  bool IsRunning() const { return state_.load() == State::kStart; }
 
  private:
   struct SessionOptions {
@@ -147,7 +147,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
+          std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
@@ -155,7 +155,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
+          std::atomic_exchange(&state_, SessionState::kStart) == SessionState::kInit,
           "Method can only be called when state is 'Init'.");
 
       sock_.open(boost::asio::ip::udp::v4());
@@ -167,7 +167,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
             try {
-              while (state_.load() == SessionState::Start) {
+              while (state_.load() == SessionState::kStart) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
                 co_await timer_.async_wait(boost::asio::use_awaitable);
 
@@ -194,7 +194,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
     }
 
     void Shutdown() {
-      if (std::atomic_exchange(&state_, SessionState::Shutdown) == SessionState::Shutdown)
+      if (std::atomic_exchange(&state_, SessionState::kShutdown) == SessionState::kShutdown)
         return;
 
       auto self = shared_from_this();
@@ -255,7 +255,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self, msg_buf_ptr]() -> Awaitable<void> {
-            if (state_.load() != SessionState::Start) [[unlikely]] {
+            if (state_.load() != SessionState::kStart) [[unlikely]] {
               AIMRT_WARN("Udp cli session is closed, will not send current msg.");
               co_return;
             }
@@ -285,14 +285,14 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
     const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-    bool IsRunning() const { return state_.load() == SessionState::Start; }
+    bool IsRunning() const { return state_.load() == SessionState::kStart; }
 
    private:
     enum class SessionState : uint32_t {
-      PreInit,
-      Init,
-      Start,
-      Shutdown,
+      kPreInit,
+      kInit,
+      kStart,
+      kShutdown,
     };
 
     // IO CTX
@@ -309,7 +309,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
     // 状态
-    std::atomic<SessionState> state_ = SessionState::PreInit;
+    std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
     std::atomic_bool tick_has_data_ = false;
@@ -317,10 +317,10 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   // IO CTX
@@ -334,7 +334,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
   Options options_;
 
   // 状态
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
@@ -376,7 +376,7 @@ class AsioUdpClientPool
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -384,7 +384,7 @@ class AsioUdpClientPool
 
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
@@ -392,12 +392,12 @@ class AsioUdpClientPool
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -419,7 +419,7 @@ class AsioUdpClientPool
     return boost::asio::co_spawn(
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioUdpClient>> {
-          if (state_.load() != State::Start) [[unlikely]] {
+          if (state_.load() != State::kStart) [[unlikely]] {
             AIMRT_WARN("Udp cli pool is closed, will not return cli instance.");
             co_return std::shared_ptr<AsioUdpClient>();
           }
@@ -460,10 +460,10 @@ class AsioUdpClientPool
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   // IO CTX
@@ -477,7 +477,7 @@ class AsioUdpClientPool
   Options options_;
 
   // 状态
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   // client管理
   std::unordered_map<size_t, std::shared_ptr<AsioUdpClient>> client_map_;

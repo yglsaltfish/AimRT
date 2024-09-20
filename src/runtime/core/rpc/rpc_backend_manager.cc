@@ -14,13 +14,13 @@ namespace aimrt::runtime::core::rpc {
 
 void RpcBackendManager::Initialize() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Rpc backend manager can only be initialized once.");
 }
 
 void RpcBackendManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   for (auto& backend : rpc_backend_index_vec_) {
@@ -30,7 +30,7 @@ void RpcBackendManager::Start() {
 }
 
 void RpcBackendManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   for (auto& backend : rpc_backend_index_vec_) {
@@ -41,21 +41,21 @@ void RpcBackendManager::Shutdown() {
 
 void RpcBackendManager::SetRpcRegistry(RpcRegistry* rpc_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   rpc_registry_ptr_ = rpc_registry_ptr;
 }
 
 void RpcBackendManager::SetClientFrameworkAsyncRpcFilterManager(FrameworkAsyncRpcFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   client_filter_manager_ptr_ = ptr;
 }
 
 void RpcBackendManager::SetServerFrameworkAsyncRpcFilterManager(FrameworkAsyncRpcFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   server_filter_manager_ptr_ = ptr;
 }
@@ -63,7 +63,7 @@ void RpcBackendManager::SetServerFrameworkAsyncRpcFilterManager(FrameworkAsyncRp
 void RpcBackendManager::SetClientsFiltersRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   clients_filters_rules_ = rules;
 }
@@ -71,7 +71,7 @@ void RpcBackendManager::SetClientsFiltersRules(
 void RpcBackendManager::SetServersFiltersRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   servers_filters_rules_ = rules;
 }
@@ -79,7 +79,7 @@ void RpcBackendManager::SetServersFiltersRules(
 void RpcBackendManager::SetClientsBackendsRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   clients_backends_rules_ = rules;
 }
@@ -87,14 +87,14 @@ void RpcBackendManager::SetClientsBackendsRules(
 void RpcBackendManager::SetServersBackendsRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   servers_backends_rules_ = rules;
 }
 
 void RpcBackendManager::RegisterRpcBackend(RpcBackendBase* rpc_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   rpc_backend_index_vec_.emplace_back(rpc_backend_ptr);
@@ -102,7 +102,7 @@ void RpcBackendManager::RegisterRpcBackend(RpcBackendBase* rpc_backend_ptr) {
 }
 
 bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::Init) {
+  if (state_.load() != State::kInit) {
     AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
     return false;
   }
@@ -169,7 +169,7 @@ bool RpcBackendManager::RegisterServiceFunc(RegisterServiceFuncProxyInfoWrapper&
 }
 
 bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::Init) {
+  if (state_.load() != State::kInit) {
     AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
     return false;
   }
@@ -212,7 +212,7 @@ bool RpcBackendManager::RegisterClientFunc(RegisterClientFuncProxyInfoWrapper&& 
 }
 
 void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::Start) [[unlikely]] {
+  if (state_.load() != State::kStart) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
     return;
   }

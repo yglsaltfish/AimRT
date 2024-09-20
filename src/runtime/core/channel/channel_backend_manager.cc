@@ -14,13 +14,13 @@ namespace aimrt::runtime::core::channel {
 
 void ChannelBackendManager::Initialize() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Channel backend manager can only be initialized once.");
 }
 
 void ChannelBackendManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   for (auto& backend : channel_backend_index_vec_) {
@@ -30,7 +30,7 @@ void ChannelBackendManager::Start() {
 }
 
 void ChannelBackendManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   for (auto& backend : channel_backend_index_vec_) {
@@ -41,21 +41,21 @@ void ChannelBackendManager::Shutdown() {
 
 void ChannelBackendManager::SetChannelRegistry(ChannelRegistry* channel_registry_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   channel_registry_ptr_ = channel_registry_ptr;
 }
 
 void ChannelBackendManager::SetPublishFrameworkAsyncChannelFilterManager(FrameworkAsyncChannelFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   publish_filter_manager_ptr_ = ptr;
 }
 
 void ChannelBackendManager::SetSubscribeFrameworkAsyncChannelFilterManager(FrameworkAsyncChannelFilterManager* ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   subscribe_filter_manager_ptr_ = ptr;
 }
@@ -63,7 +63,7 @@ void ChannelBackendManager::SetSubscribeFrameworkAsyncChannelFilterManager(Frame
 void ChannelBackendManager::SetPublishFiltersRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   publish_filters_rules_ = rules;
 }
@@ -71,7 +71,7 @@ void ChannelBackendManager::SetPublishFiltersRules(
 void ChannelBackendManager::SetSubscribeFiltersRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   subscribe_filters_rules_ = rules;
 }
@@ -79,7 +79,7 @@ void ChannelBackendManager::SetSubscribeFiltersRules(
 void ChannelBackendManager::SetPubTopicsBackendsRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   pub_topics_backends_rules_ = rules;
 }
@@ -87,7 +87,7 @@ void ChannelBackendManager::SetPubTopicsBackendsRules(
 void ChannelBackendManager::SetSubTopicsBackendsRules(
     const std::vector<std::pair<std::string, std::vector<std::string>>>& rules) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   sub_topics_backends_rules_ = rules;
 }
@@ -95,14 +95,14 @@ void ChannelBackendManager::SetSubTopicsBackendsRules(
 void ChannelBackendManager::RegisterChannelBackend(
     ChannelBackendBase* channel_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   channel_backend_index_vec_.emplace_back(channel_backend_ptr);
 }
 
 bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::Init) {
+  if (state_.load() != State::kInit) {
     AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
     return false;
   }
@@ -185,7 +185,7 @@ bool ChannelBackendManager::Subscribe(SubscribeProxyInfoWrapper&& wrapper) {
 
 bool ChannelBackendManager::RegisterPublishType(
     RegisterPublishTypeProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::Init) {
+  if (state_.load() != State::kInit) {
     AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
     return false;
   }
@@ -230,7 +230,7 @@ bool ChannelBackendManager::RegisterPublishType(
 }
 
 void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
-  if (state_.load() != State::Start) [[unlikely]] {
+  if (state_.load() != State::kStart) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
     return;
   }
@@ -292,7 +292,7 @@ void ChannelBackendManager::Publish(PublishProxyInfoWrapper&& wrapper) {
 }
 
 bool ChannelBackendManager::Subscribe(SubscribeWrapper&& wrapper) {
-  if (state_.load() != State::Init) {
+  if (state_.load() != State::kInit) {
     AIMRT_ERROR("Msg can only be subscribed when state is 'Init'.");
     return false;
   }
@@ -351,7 +351,7 @@ bool ChannelBackendManager::Subscribe(SubscribeWrapper&& wrapper) {
 }
 
 bool ChannelBackendManager::RegisterPublishType(PublishTypeWrapper&& wrapper) {
-  if (state_.load() != State::Init) {
+  if (state_.load() != State::kInit) {
     AIMRT_ERROR("Publish type can only be registered when state is 'Init'.");
     return false;
   }
@@ -388,7 +388,7 @@ bool ChannelBackendManager::RegisterPublishType(PublishTypeWrapper&& wrapper) {
 }
 
 void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
-  if (state_.load() != State::Start) [[unlikely]] {
+  if (state_.load() != State::kStart) [[unlikely]] {
     AIMRT_WARN("Method can only be called when state is 'Start'.");
     return;
   }

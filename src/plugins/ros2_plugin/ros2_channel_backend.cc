@@ -115,7 +115,7 @@ namespace aimrt::plugins::ros2_plugin {
 
 void Ros2ChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Ros2 channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -126,7 +126,7 @@ void Ros2ChannelBackend::Initialize(YAML::Node options_node) {
 
 void Ros2ChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   for (auto& itr : ros2_subscribe_wrapper_map_) {
@@ -135,7 +135,7 @@ void Ros2ChannelBackend::Start() {
 }
 
 void Ros2ChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   for (auto& itr : ros2_publish_type_wrapper_map_) {
@@ -161,7 +161,7 @@ void Ros2ChannelBackend::Shutdown() {
 bool Ros2ChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     const auto& info = publish_type_wrapper.info;
@@ -249,7 +249,7 @@ bool Ros2ChannelBackend::RegisterPublishType(
 bool Ros2ChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     const auto& info = subscribe_wrapper.info;
@@ -392,7 +392,7 @@ bool Ros2ChannelBackend::Subscribe(
 
 void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Start,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart,
                             "Method can only be called when state is 'Start'.");
 
     const auto& info = msg_wrapper.info;

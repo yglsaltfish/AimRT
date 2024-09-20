@@ -24,10 +24,10 @@ class PlaybackAction {
     std::string bag_path;
 
     enum class Mode {
-      IMD,
-      SIGNAL,
+      kImd,
+      kSignal,
     };
-    Mode mode = Mode::IMD;
+    Mode mode = Mode::kImd;
 
     std::string executor;
 
@@ -83,15 +83,15 @@ class PlaybackAction {
   void AddPlaybackTasks(const std::shared_ptr<void>& task_counter_ptr);
 
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
  private:
   Options options_;
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef executor_;
@@ -115,11 +115,11 @@ class PlaybackAction {
   std::mutex db_mutex_;
 
   enum class PlayBackState {
-    ReadyToPlay,
-    Playing,
-    GetStopSignal,
+    kReadyToPlay,
+    kPlaying,
+    kGetStopSignal,
   };
-  PlayBackState playback_state_ = PlayBackState::ReadyToPlay;
+  PlayBackState playback_state_ = PlayBackState::kReadyToPlay;
   std::mutex playback_state_mutex_;
 };
 

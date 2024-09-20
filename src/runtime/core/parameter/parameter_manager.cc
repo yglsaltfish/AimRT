@@ -26,7 +26,7 @@ namespace aimrt::runtime::core::parameter {
 
 void ParameterManager::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "ParameterManager manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -39,14 +39,14 @@ void ParameterManager::Initialize(YAML::Node options_node) {
 
 void ParameterManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   AIMRT_INFO("Parameter manager start completed.");
 }
 
 void ParameterManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Parameter manager shutdown.");
@@ -57,7 +57,7 @@ void ParameterManager::Shutdown() {
 const ParameterHandleProxy& ParameterManager::GetParameterHandleProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   auto itr = parameter_handle_proxy_wrap_map_.find(module_info.name);
@@ -75,7 +75,7 @@ const ParameterHandleProxy& ParameterManager::GetParameterHandleProxy(
 
 ParameterHandle* ParameterManager::GetParameterHandle(std::string_view module_name) const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Start,
+      state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
 
   auto itr = parameter_handle_proxy_wrap_map_.find(module_name);
@@ -86,7 +86,7 @@ ParameterHandle* ParameterManager::GetParameterHandle(std::string_view module_na
 
 std::list<std::pair<std::string, std::string>> ParameterManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   return {};

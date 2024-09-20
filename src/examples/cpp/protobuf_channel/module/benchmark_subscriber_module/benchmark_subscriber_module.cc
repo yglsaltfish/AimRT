@@ -74,7 +74,7 @@ void BenchmarkSubscriberModule::BenchmarkSignalHandle(
   try {
     if (data->status() == aimrt::protocols::example::BenchmarkStatus::Begin) {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&run_state_, State::Running) == State::ReadyToRun,
+          std::atomic_exchange(&run_state_, State::kRunning) == State::kReadyToRun,
           "Invalid state!");
 
       cur_bench_plan_id_ = data->bench_plan_id();
@@ -95,13 +95,13 @@ void BenchmarkSubscriberModule::BenchmarkSignalHandle(
 
     } else if (data->status() == aimrt::protocols::example::BenchmarkStatus::End) {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&run_state_, State::Evaluating) == State::Running,
+          std::atomic_exchange(&run_state_, State::kEvaluating) == State::kRunning,
           "Invalid state!");
 
       Evaluate();
 
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&run_state_, State::ReadyToRun) == State::Evaluating,
+          std::atomic_exchange(&run_state_, State::kReadyToRun) == State::kEvaluating,
           "Invalid state!");
     }
   } catch (const std::exception& e) {
@@ -116,7 +116,7 @@ void BenchmarkSubscriberModule::BenchmarkMessageHandle(
 
   auto& topic_record = topic_record_vec_[topic_index];
 
-  if (run_state_.load() != State::Running) [[unlikely]] {
+  if (run_state_.load() != State::kRunning) [[unlikely]] {
     AIMRT_WARN("Topic '{}' is end bench.", topic_record.topic_name);
     return;
   }

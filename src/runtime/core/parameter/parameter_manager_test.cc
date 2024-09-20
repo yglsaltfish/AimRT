@@ -10,13 +10,13 @@ class ParameterManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
     YAML::Node options_node_test = YAML::Load(R"str()str");
-    EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::PreInit);
+    EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::kPreInit);
     EXPECT_NO_THROW(parametre_manager_.Initialize(options_node_test));
-    EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::Init);
+    EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::kInit);
   }
   void TearDown() override {
     EXPECT_NO_THROW(parametre_manager_.Shutdown());
-    EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::Shutdown);
+    EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::kShutdown);
   }
 
   ParameterManager parametre_manager_;
@@ -25,7 +25,7 @@ class ParameterManagerTest : public ::testing::Test {
 // 测试Start 和 GetParameterHandle
 TEST_F(ParameterManagerTest, GetParameterHandle) {
   EXPECT_NO_THROW(parametre_manager_.Start());
-  EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::Start);
+  EXPECT_EQ(parametre_manager_.GetState(), ParameterManager::State::kStart);
   EXPECT_EQ(parametre_manager_.GetParameterHandle("test_module"), nullptr);
 }
 

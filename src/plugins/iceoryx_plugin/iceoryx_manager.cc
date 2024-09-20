@@ -22,10 +22,10 @@ void IceoryxManager::Shutdown() {
 // The url format is /XX/YY/ZZ, which is expected to be "service name", "instance", "specific Object"
 bool IceoryxManager::RegisterPublisher(std::string& url) {
   if (is_initialized_.load(std::memory_order_relaxed) == false) {
-    char APP_NAME[iox::MAX_RUNTIME_NAME_LENGTH];
-    std::snprintf(APP_NAME, iox::MAX_RUNTIME_NAME_LENGTH, "pub%s", pid_.c_str());
+    char app_name[iox::MAX_RUNTIME_NAME_LENGTH];
+    std::snprintf(app_name, iox::MAX_RUNTIME_NAME_LENGTH, "pub%s", pid_.c_str());
 
-    iox::runtime::PoshRuntime::initRuntime(APP_NAME);
+    iox::runtime::PoshRuntime::initRuntime(app_name);
 
     is_initialized_.store(true, std::memory_order_relaxed);
   }
@@ -44,10 +44,10 @@ bool IceoryxManager::RegisterPublisher(std::string& url) {
 }
 bool IceoryxManager::RegisterSubscriber(std::string& url, MsgHandleFunc&& handle) {
   if (is_initialized_.load(std::memory_order_relaxed) == false) {
-    char APP_NAME[iox::MAX_RUNTIME_NAME_LENGTH];
-    std::snprintf(APP_NAME, iox::MAX_RUNTIME_NAME_LENGTH, "sub%s", pid_.c_str());
+    char app_name[iox::MAX_RUNTIME_NAME_LENGTH];
+    std::snprintf(app_name, iox::MAX_RUNTIME_NAME_LENGTH, "sub%s", pid_.c_str());
 
-    iox::runtime::PoshRuntime::initRuntime(APP_NAME);
+    iox::runtime::PoshRuntime::initRuntime(app_name);
 
     is_initialized_.store(true, std::memory_order_relaxed);
   }

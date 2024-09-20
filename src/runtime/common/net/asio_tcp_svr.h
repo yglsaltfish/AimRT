@@ -82,7 +82,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -92,7 +92,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     requires std::constructible_from<MsgHandle, Args...>
   void RegisterMsgHandle(Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     msg_handle_ptr_ = std::make_shared<MsgHandle>(std::forward<Args>(args)...);
@@ -104,7 +104,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
         "Msg handle is not set before initialize.");
 
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
@@ -116,7 +116,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
 
     auto self = shared_from_this();
@@ -128,7 +128,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           acceptor_.bind(options_.ep);
           acceptor_.listen();
 
-          while (state_.load() == State::Start) {
+          while (state_.load() == State::kStart) {
             try {
               // 如果链接数达到上限，则等待一段时间再试
               if (session_ptr_map_.size() >= options_.max_session_num) {
@@ -166,7 +166,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     boost::asio::co_spawn(
         mgr_strand_,
         [this, self]() -> Awaitable<void> {
-          while (state_.load() == State::Start) {
+          while (state_.load() == State::kStart) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
               co_await mgr_timer_.async_wait(boost::asio::use_awaitable);
@@ -192,7 +192,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -237,7 +237,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   void SendMsg(const Tcp::endpoint& ep, const std::shared_ptr<Streambuf>& msg_buf_ptr) {
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, ep, msg_buf_ptr]() {
-      if (state_.load() != State::Start) [[unlikely]] {
+      if (state_.load() != State::kStart) [[unlikely]] {
         AIMRT_WARN("Tcp svr is closed, will not send current msg.");
         return;
       }
@@ -258,13 +258,13 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  bool IsRunning() const { return state_.load() == State::Start; }
+  bool IsRunning() const { return state_.load() == State::kStart; }
 
  private:
   // 包头结构：| 2byte magicnum | 4byte msglen |
-  static constexpr size_t HEAD_SIZE = 6;
-  static constexpr char HEAD_BYTE_1 = 'Y';
-  static constexpr char HEAD_BYTE_2 = 'T';
+  static constexpr size_t kHeadSize = 6;
+  static constexpr char kHeadByte1 = 'Y';
+  static constexpr char kHeadByte2 = 'T';
 
   static bool CheckListenAddr(const Tcp::endpoint& ep) {
     try {
@@ -306,7 +306,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
     void Initialize(const std::shared_ptr<const SessionOptions>& session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
+          std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
@@ -314,7 +314,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
+          std::atomic_exchange(&state_, SessionState::kStart) == SessionState::kInit,
           "Method can only be called when state is 'Init'.");
 
       remote_addr_ = aimrt::common::util::SSToString(sock_.remote_endpoint());
@@ -326,23 +326,23 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
             try {
-              while (state_.load() == SessionState::Start) {
-                while (!data_list.empty()) {
+              while (state_.load() == SessionState::kStart) {
+                while (!data_list_.empty()) {
                   std::list<std::shared_ptr<Streambuf>> tmp_data_list;
-                  tmp_data_list.swap(data_list);
+                  tmp_data_list.swap(data_list_);
 
-                  std::vector<char> head_buf(tmp_data_list.size() * HEAD_SIZE);
+                  std::vector<char> head_buf(tmp_data_list.size() * kHeadSize);
 
                   std::vector<boost::asio::const_buffer> data_buf_vec;
                   data_buf_vec.reserve(tmp_data_list.size() * 2);
                   size_t ct = 0;
                   for (auto& itr : tmp_data_list) {
-                    head_buf[ct * HEAD_SIZE] = HEAD_BYTE_1;
-                    head_buf[ct * HEAD_SIZE + 1] = HEAD_BYTE_2;
-                    aimrt::common::util::SetBufFromUint32(&head_buf[ct * HEAD_SIZE + 2],
+                    head_buf[ct * kHeadSize] = kHeadByte1;
+                    head_buf[ct * kHeadSize + 1] = kHeadByte2;
+                    aimrt::common::util::SetBufFromUint32(&head_buf[ct * kHeadSize + 2],
                                                           static_cast<uint32_t>(itr->size()));
                     data_buf_vec.emplace_back(
-                        boost::asio::const_buffer(&head_buf[ct * HEAD_SIZE], HEAD_SIZE));
+                        boost::asio::const_buffer(&head_buf[ct * kHeadSize], kHeadSize));
                     ++ct;
 
                     data_buf_vec.emplace_back(itr->data());
@@ -381,13 +381,13 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
             try {
-              std::vector<char> head_buf(HEAD_SIZE);
-              boost::asio::mutable_buffer asio_head_buf(head_buf.data(), HEAD_SIZE);
+              std::vector<char> head_buf(kHeadSize);
+              boost::asio::mutable_buffer asio_head_buf(head_buf.data(), kHeadSize);
 
-              while (state_.load() == SessionState::Start) {
+              while (state_.load() == SessionState::kStart) {
                 size_t read_data_size = co_await boost::asio::async_read(
                     sock_, asio_head_buf,
-                    boost::asio::transfer_exactly(HEAD_SIZE),
+                    boost::asio::transfer_exactly(kHeadSize),
                     boost::asio::use_awaitable);
                 AIMRT_TRACE(
                     "Tcp svr session async read {} bytes from {} for head.",
@@ -395,7 +395,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
                 tick_has_data_ = true;
 
                 AIMRT_CHECK_ERROR_THROW(
-                    read_data_size == HEAD_SIZE && head_buf[0] == HEAD_BYTE_1 && head_buf[1] == HEAD_BYTE_2,
+                    read_data_size == kHeadSize && head_buf[0] == kHeadByte1 && head_buf[1] == kHeadByte2,
                     "Get an invalid head, remote addr {}, read_data_size: {}, head_buf[0]: {}, head_buf[1]: {}.",
                     RemoteAddr(), read_data_size,
                     static_cast<uint8_t>(head_buf[0]),
@@ -439,7 +439,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
             try {
-              while (state_.load() == SessionState::Start) {
+              while (state_.load() == SessionState::kStart) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
                 co_await timer_.async_wait(boost::asio::use_awaitable);
 
@@ -467,7 +467,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     }
 
     void Shutdown() {
-      if (std::atomic_exchange(&state_, SessionState::Shutdown) == SessionState::Shutdown)
+      if (std::atomic_exchange(&state_, SessionState::kShutdown) == SessionState::kShutdown)
         return;
 
       auto self = shared_from_this();
@@ -531,12 +531,12 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
       boost::asio::dispatch(
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
-            if (state_.load() != SessionState::Start) [[unlikely]] {
+            if (state_.load() != SessionState::kStart) [[unlikely]] {
               AIMRT_WARN("Tcp svr session is closed, will not send current msg.");
               return;
             }
 
-            data_list.emplace_back(msg_buf_ptr);
+            data_list_.emplace_back(msg_buf_ptr);
             send_sig_timer_.cancel();
           });
     }
@@ -547,14 +547,14 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
     std::string_view RemoteAddr() const { return remote_addr_; }
 
-    bool IsRunning() const { return state_.load() == SessionState::Start; }
+    bool IsRunning() const { return state_.load() == SessionState::kStart; }
 
    private:
     enum class SessionState : uint32_t {
-      PreInit,
-      Init,
-      Start,
-      Shutdown,
+      kPreInit,
+      kInit,
+      kStart,
+      kShutdown,
     };
 
     // IO CTX
@@ -575,20 +575,20 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
     // 状态
-    std::atomic<SessionState> state_ = SessionState::PreInit;
+    std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
     std::string remote_addr_;
     std::atomic_bool tick_has_data_ = false;
-    std::list<std::shared_ptr<Streambuf>> data_list;
+    std::list<std::shared_ptr<Streambuf>> data_list_;
   };
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   // IO CTX
@@ -608,7 +608,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   Options options_;
 
   // 状态
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;

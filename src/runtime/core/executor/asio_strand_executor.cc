@@ -43,7 +43,7 @@ void AsioStrandExecutor::Initialize(std::string_view name,
                           "Get asio handle is not set before initialize.");
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "AsioStrandExecutor can only be initialized once.");
 
   name_ = std::string(name);
@@ -68,12 +68,12 @@ void AsioStrandExecutor::Initialize(std::string_view name,
 
 void AsioStrandExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void AsioStrandExecutor::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 }
 
@@ -88,17 +88,17 @@ void AsioStrandExecutor::Execute(aimrt::executor::Task&& task) noexcept {
 void AsioStrandExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
   try {
-    auto timer_ptr_ = std::make_shared<boost::asio::system_timer>(*strand_ptr_);
-    timer_ptr_->expires_at(tp);
-    timer_ptr_->async_wait([this, timer_ptr_,
-                            task{std::move(task)}](boost::system::error_code ec) {
+    auto timer_ptr = std::make_shared<boost::asio::system_timer>(*strand_ptr_);
+    timer_ptr->expires_at(tp);
+    timer_ptr->async_wait([this, timer_ptr,
+                           task{std::move(task)}](boost::system::error_code ec) {
       if (ec) [[unlikely]] {
         AIMRT_ERROR("Asio strand executor '{}' timer get err, code '{}', msg: {}",
                     Name(), ec.value(), ec.message());
         return;
       }
 
-      auto dif_time = std::chrono::system_clock::now() - timer_ptr_->expiry();
+      auto dif_time = std::chrono::system_clock::now() - timer_ptr->expiry();
 
       task();
 
@@ -116,7 +116,7 @@ void AsioStrandExecutor::ExecuteAt(
 
 void AsioStrandExecutor::RegisterGetAsioHandle(GetAsioHandle&& handle) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   get_asio_handle_ = std::move(handle);

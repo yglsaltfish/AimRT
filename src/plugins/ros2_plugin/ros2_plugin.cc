@@ -80,13 +80,13 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     ros2_thread_ptr_ = std::make_unique<std::thread>(
         [this]() { ros2_node_executor_ptr_->spin(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitRpc,
                                 [this] { RegisterRos2RpcBackend(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitChannel,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterRos2ChannelBackend(); });
 
     plugin_options_node = options_;

@@ -49,7 +49,7 @@ namespace aimrt::runtime::core::executor {
 void AsioThreadExecutor::Initialize(std::string_view name,
                                     YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "AsioThreadExecutor can only be initialized once.");
 
   name_ = std::string(name);
@@ -105,12 +105,12 @@ void AsioThreadExecutor::Initialize(std::string_view name,
 
 void AsioThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void AsioThreadExecutor::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   if (work_guard_ptr_) work_guard_ptr_->reset();
@@ -132,7 +132,7 @@ bool AsioThreadExecutor::IsInCurrentExecutor() const noexcept {
 }
 
 void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
-  if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
+  if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
     fprintf(stderr,
             "Asio thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
             Name().data());
@@ -164,7 +164,7 @@ void AsioThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
 
 void AsioThreadExecutor::ExecuteAt(
     std::chrono::system_clock::time_point tp, aimrt::executor::Task&& task) noexcept {
-  if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
+  if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
     fprintf(stderr,
             "Asio thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
             Name().data());
@@ -188,17 +188,17 @@ void AsioThreadExecutor::ExecuteAt(
   }
 
   try {
-    auto timer_ptr_ = std::make_shared<boost::asio::system_timer>(*io_ptr_);
-    timer_ptr_->expires_at(tp);
-    timer_ptr_->async_wait([this, timer_ptr_,
-                            task{std::move(task)}](boost::system::error_code ec) {
+    auto timer_ptr = std::make_shared<boost::asio::system_timer>(*io_ptr_);
+    timer_ptr->expires_at(tp);
+    timer_ptr->async_wait([this, timer_ptr,
+                           task{std::move(task)}](boost::system::error_code ec) {
       if (ec) [[unlikely]] {
         AIMRT_ERROR("Asio thread executor '{}' timer get err, code '{}', msg: {}",
                     Name(), ec.value(), ec.message());
         return;
       }
 
-      auto dif_time = std::chrono::system_clock::now() - timer_ptr_->expiry();
+      auto dif_time = std::chrono::system_clock::now() - timer_ptr->expiry();
 
       task();
 

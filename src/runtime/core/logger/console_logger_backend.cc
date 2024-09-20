@@ -177,13 +177,13 @@ void ConsoleLoggerBackend::Log(const LogDataWrapper& log_data_wrapper) noexcept 
 
 #else
         static constexpr std::string_view
-            color_array[aimrt_log_level_t::AIMRT_LOG_LEVEL_OFF] = {
+            kColorArray[aimrt_log_level_t::AIMRT_LOG_LEVEL_OFF] = {
                 "", CC_DBG, CC_INF, CC_WRN, CC_ERR, CC_FATAL};
 
-        if (color_array[lvl].empty()) {
+        if (kColorArray[lvl].empty()) {
           std::cout << log_data_str;
         } else {
-          std::cout << color_array[lvl] << log_data_str << CC_NONE;
+          std::cout << kColorArray[lvl] << log_data_str << CC_NONE;
         }
 #endif
       } else {

@@ -76,16 +76,16 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
 
     asio_executor_ptr_ = std::make_shared<runtime::common::net::AsioExecutor>(options_.thread_num);
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
     http2_svr_ptr_ = std::make_shared<server::AsioHttp2Server>(asio_executor_ptr_->IO());
     http2_cli_pool_ptr_ = std::make_shared<client::AsioHttp2ClientPool>(asio_executor_ptr_->IO());
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitRpc,
                                 [this] { RegisterGrpcRpcBackend(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreStart, [this] {
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreStart, [this] {
       http2_cli_pool_ptr_->SetLogger(WrapAimRTLoggerRef(GetLogger()));
       http2_cli_pool_ptr_->Initialize(client::ClientPoolOptions{.max_client_num = 100});
       http2_cli_pool_ptr_->Start();
@@ -101,14 +101,14 @@ bool GrpcPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
       http2_svr_ptr_->Start();
     });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostShutdown, [this] {
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostShutdown, [this] {
       http2_cli_pool_ptr_->Shutdown();
       http2_svr_ptr_->Shutdown();
     });
 
     asio_executor_ptr_->Start();
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostShutdown, [this] {
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostShutdown, [this] {
       asio_executor_ptr_->Shutdown();
       asio_executor_ptr_->Join();
     });

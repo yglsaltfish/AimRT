@@ -69,7 +69,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -77,7 +77,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
@@ -86,12 +86,12 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -121,7 +121,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
         mgr_strand_,
         [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
           AIMRT_CHECK_WARN_THROW(
-              state_.load() == State::Start,
+              state_.load() == State::kStart,
               "Http cli is closed, will not send request.");
 
           // 找可用session，没有就新建一个。同时清理已失效session
@@ -157,7 +157,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  bool IsRunning() const { return state_.load() == State::Start; }
+  bool IsRunning() const { return state_.load() == State::kStart; }
 
  private:
   struct SessionOptions {
@@ -189,7 +189,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
     void Initialize(const std::shared_ptr<const SessionOptions>& session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
+          std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
@@ -197,7 +197,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
+          std::atomic_exchange(&state_, SessionState::kStart) == SessionState::kInit,
           "Method can only be called when state is 'Init'.");
 
       auto self = shared_from_this();
@@ -207,7 +207,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
             try {
-              while (state_.load() == SessionState::Start) {
+              while (state_.load() == SessionState::kStart) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
                 co_await timer_.async_wait(boost::asio::use_awaitable);
 
@@ -235,7 +235,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
     }
 
     void Shutdown() {
-      if (std::atomic_exchange(&state_, SessionState::Shutdown) == SessionState::Shutdown)
+      if (std::atomic_exchange(&state_, SessionState::kShutdown) == SessionState::kShutdown)
         return;
 
       auto self = shared_from_this();
@@ -308,7 +308,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
           session_socket_strand_,
           [this, &req, timeout]() -> Awaitable<Response<RspBodyType>> {
             AIMRT_CHECK_WARN_THROW(
-                state_.load() == SessionState::Start,
+                state_.load() == SessionState::kStart,
                 "Http cli session is closed, will not send request.");
 
             try {
@@ -397,20 +397,20 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
     bool CheckIdleAndUse() {
       bool is_idle = std::atomic_exchange(&idle_flag_, false);
-      if (!is_idle || state_ != SessionState::Start) return false;
+      if (!is_idle || state_ != SessionState::kStart) return false;
       return true;
     }
 
     std::string_view RemoteAddr() const { return remote_addr_; }
 
-    bool IsRunning() const { return state_.load() == SessionState::Start; }
+    bool IsRunning() const { return state_.load() == SessionState::kStart; }
 
    private:
     enum class SessionState : uint32_t {
-      PreInit,
-      Init,
-      Start,
-      Shutdown,
+      kPreInit,
+      kInit,
+      kStart,
+      kShutdown,
     };
 
     // IO CTX
@@ -427,7 +427,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
     // 状态
-    std::atomic<SessionState> state_ = SessionState::PreInit;
+    std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
     std::atomic_bool idle_flag_ = false;
@@ -439,10 +439,10 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   // IO CTX
@@ -456,7 +456,7 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
   Options options_;
 
   // 状态
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
@@ -498,7 +498,7 @@ class AsioHttpClientPool
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -506,7 +506,7 @@ class AsioHttpClientPool
 
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
@@ -514,12 +514,12 @@ class AsioHttpClientPool
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -541,7 +541,7 @@ class AsioHttpClientPool
     return boost::asio::co_spawn(
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioHttpClient>> {
-          if (state_.load() != State::Start) [[unlikely]] {
+          if (state_.load() != State::kStart) [[unlikely]] {
             AIMRT_WARN("Http cli pool is closed, will not return cli instance.");
             co_return std::shared_ptr<AsioHttpClient>();
           }
@@ -581,10 +581,10 @@ class AsioHttpClientPool
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   // IO CTX
@@ -598,7 +598,7 @@ class AsioHttpClientPool
   Options options_;
 
   // 状态
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   // client管理
   std::unordered_map<std::string, std::shared_ptr<AsioHttpClient>> client_map_;

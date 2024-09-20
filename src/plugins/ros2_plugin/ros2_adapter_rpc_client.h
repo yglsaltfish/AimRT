@@ -32,11 +32,11 @@ class Ros2AdapterClient : public rclcpp::ClientBase {
   void Invoke(
       const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr);
 
-  void Start() { run_flag.store(true); }
-  void Shutdown() { run_flag.store(false); }
+  void Start() { run_flag_.store(true); }
+  void Shutdown() { run_flag_.store(false); }
 
  private:
-  std::atomic_bool run_flag = false;
+  std::atomic_bool run_flag_ = false;
   const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper_;
   std::string real_ros2_func_name_;
 
@@ -63,11 +63,11 @@ class Ros2AdapterWrapperClient : public rclcpp::ClientBase {
   void Invoke(
       const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr);
 
-  void Start() { run_flag.store(true); }
-  void Shutdown() { run_flag.store(false); }
+  void Start() { run_flag_.store(true); }
+  void Shutdown() { run_flag_.store(false); }
 
  private:
-  std::atomic_bool run_flag = false;
+  std::atomic_bool run_flag_ = false;
   const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper_;
   std::string real_ros2_func_name_;
 

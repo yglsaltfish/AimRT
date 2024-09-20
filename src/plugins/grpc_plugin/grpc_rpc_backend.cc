@@ -131,7 +131,7 @@ void GrpcRpcBackend::Initialize(YAML::Node options_node) {
   AIMRT_DEBUG("Initialize grpc rpc backend.");
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Http Rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -142,19 +142,19 @@ void GrpcRpcBackend::Initialize(YAML::Node options_node) {
 
 void GrpcRpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void GrpcRpcBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 }
 
 bool GrpcRpcBackend::RegisterServiceFunc(
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
       return false;
     }
@@ -289,7 +289,7 @@ bool GrpcRpcBackend::RegisterServiceFunc(
 }
 
 bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper) noexcept {
-  if (state_.load() != State::Init) {
+  if (state_.load() != State::kInit) {
     AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
     return false;
   }
@@ -323,7 +323,7 @@ bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrap
 void GrpcRpcBackend::Invoke(
     const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
   try {
-    if (state_.load() != State::Start) [[unlikely]] {
+    if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
       client_invoke_wrapper_ptr->callback(rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;

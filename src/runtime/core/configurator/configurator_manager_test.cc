@@ -10,12 +10,12 @@
 
 namespace aimrt::runtime::core::configurator {
 
-const std::filesystem::path configurator_manager_test_path = "./configurator_manager_test_cfg.yaml";
+const std::filesystem::path kConfiguratorManagerTestPath = "./configurator_manager_test_cfg.yaml";
 
 class ConfiguratorManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    configurator_manager_.Initialize(configurator_manager_test_path);
+    configurator_manager_.Initialize(kConfiguratorManagerTestPath);
 
     YAML::Node configurator_options_node = configurator_manager_.GetAimRTOptionsNode("configurator");
     EXPECT_EQ(configurator_options_node.IsNull(), false);
@@ -41,7 +41,7 @@ ConfiguratorManagerTest:
 )str";
 
     std::ofstream outfile;
-    outfile.open(configurator_manager_test_path, std::ios::out);
+    outfile.open(kConfiguratorManagerTestPath, std::ios::out);
     outfile << cfg_content;
 
     outfile.close();
@@ -49,10 +49,10 @@ ConfiguratorManagerTest:
 
   static void TearDownTestCase() {
     std::error_code error;
-    auto file_status = std::filesystem::status(configurator_manager_test_path, error);
+    auto file_status = std::filesystem::status(kConfiguratorManagerTestPath, error);
 
     if (std::filesystem::exists(file_status)) {
-      std::filesystem::remove(configurator_manager_test_path);
+      std::filesystem::remove(kConfiguratorManagerTestPath);
     }
   }
 

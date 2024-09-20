@@ -12,7 +12,7 @@ namespace aimrt::runtime::core {
 
 AimRTCore::AimRTCore()
     : logger_ptr_(std::make_shared<aimrt::common::util::LoggerWrapper>()) {
-  hook_task_vec_array_.resize(static_cast<uint32_t>(State::MaxStateNum));
+  hook_task_vec_array_.resize(static_cast<uint32_t>(State::kMaxStateNum));
 }
 
 AimRTCore::~AimRTCore() {
@@ -26,198 +26,198 @@ AimRTCore::~AimRTCore() {
 }
 
 void AimRTCore::Initialize(const Options& options) {
-  EnterState(State::PreInit);
+  EnterState(State::kPreInit);
 
   options_ = options;
 
   // Init configurator
-  EnterState(State::PreInitConfigurator);
+  EnterState(State::kPreInitConfigurator);
   configurator_manager_.SetLogger(logger_ptr_);
   configurator_manager_.Initialize(options_.cfg_file_path);
-  EnterState(State::PostInitConfigurator);
+  EnterState(State::kPostInitConfigurator);
 
   // Init plugin
-  EnterState(State::PreInitPlugin);
+  EnterState(State::kPreInitPlugin);
   plugin_manager_.SetLogger(logger_ptr_);
   plugin_manager_.RegisterCorePtr(this);
   plugin_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("plugin"));
-  EnterState(State::PostInitPlugin);
+  EnterState(State::kPostInitPlugin);
 
   // Init main thread executor
-  EnterState(State::PreInitMainThread);
+  EnterState(State::kPreInitMainThread);
   main_thread_executor_.SetLogger(logger_ptr_);
   main_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("main_thread"));
-  EnterState(State::PostInitMainThread);
+  EnterState(State::kPostInitMainThread);
 
   // Init guard thread executor
-  EnterState(State::PreInitGuardThread);
+  EnterState(State::kPreInitGuardThread);
   guard_thread_executor_.SetLogger(logger_ptr_);
   guard_thread_executor_.Initialize(configurator_manager_.GetAimRTOptionsNode("guard_thread"));
-  EnterState(State::PostInitGuardThread);
+  EnterState(State::kPostInitGuardThread);
 
   // Init executor
-  EnterState(State::PreInitExecutor);
+  EnterState(State::kPreInitExecutor);
   executor_manager_.SetLogger(logger_ptr_);
   executor_manager_.SetUsedExecutorName(main_thread_executor_.Name());
   executor_manager_.SetUsedExecutorName(guard_thread_executor_.Name());
   executor_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("executor"));
-  EnterState(State::PostInitExecutor);
+  EnterState(State::kPostInitExecutor);
 
   // Init log
-  EnterState(State::PreInitLog);
+  EnterState(State::kPreInitLog);
   logger_manager_.SetLogger(logger_ptr_);
   logger_manager_.RegisterGetExecutorFunc(
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
   SetCoreLogger();
-  EnterState(State::PostInitLog);
+  EnterState(State::kPostInitLog);
 
   // Init allocator
-  EnterState(State::PreInitAllocator);
+  EnterState(State::kPreInitAllocator);
   allocator_manager_.SetLogger(logger_ptr_);
   allocator_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("allocator"));
-  EnterState(State::PostInitAllocator);
+  EnterState(State::kPostInitAllocator);
 
   // Init rpc
-  EnterState(State::PreInitRpc);
+  EnterState(State::kPreInitRpc);
   rpc_manager_.SetLogger(logger_ptr_);
   rpc_manager_.RegisterGetExecutorFunc(
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   rpc_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("rpc"));
-  EnterState(State::PostInitRpc);
+  EnterState(State::kPostInitRpc);
 
   // Init channel
-  EnterState(State::PreInitChannel);
+  EnterState(State::kPreInitChannel);
   channel_manager_.SetLogger(logger_ptr_);
   channel_manager_.RegisterGetExecutorFunc(
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   channel_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("channel"));
-  EnterState(State::PostInitChannel);
+  EnterState(State::kPostInitChannel);
 
   // Init parameter
-  EnterState(State::PreInitParameter);
+  EnterState(State::kPreInitParameter);
   parameter_manager_.SetLogger(logger_ptr_);
   parameter_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("parameter"));
-  EnterState(State::PostInitParameter);
+  EnterState(State::kPostInitParameter);
 
   // Init modules
-  EnterState(State::PreInitModules);
+  EnterState(State::kPreInitModules);
   module_manager_.SetLogger(logger_ptr_);
   module_manager_.RegisterCoreProxyConfigurator(
       std::bind(&AimRTCore::InitCoreProxy, this, std::placeholders::_1, std::placeholders::_2));
   module_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("module"));
-  EnterState(State::PostInitModules);
+  EnterState(State::kPostInitModules);
 
   // Check cfg file
   CheckCfgFile();
 
-  EnterState(State::PostInit);
+  EnterState(State::kPostInit);
 }
 
 void AimRTCore::StartImpl() {
   AIMRT_INFO("Gen initialization report:\n{}", GenInitializationReport());
 
-  EnterState(State::PreStart);
+  EnterState(State::kPreStart);
 
-  EnterState(State::PreStartConfigurator);
+  EnterState(State::kPreStartConfigurator);
   configurator_manager_.Start();
-  EnterState(State::PostStartConfigurator);
+  EnterState(State::kPostStartConfigurator);
 
-  EnterState(State::PreStartPlugin);
+  EnterState(State::kPreStartPlugin);
   plugin_manager_.Start();
-  EnterState(State::PostStartPlugin);
+  EnterState(State::kPostStartPlugin);
 
-  EnterState(State::PreStartMainThread);
+  EnterState(State::kPreStartMainThread);
   main_thread_executor_.Start();
-  EnterState(State::PostStartMainThread);
+  EnterState(State::kPostStartMainThread);
 
-  EnterState(State::PreStartGuardThread);
+  EnterState(State::kPreStartGuardThread);
   guard_thread_executor_.Start();
-  EnterState(State::PostStartGuardThread);
+  EnterState(State::kPostStartGuardThread);
 
-  EnterState(State::PreStartExecutor);
+  EnterState(State::kPreStartExecutor);
   executor_manager_.Start();
-  EnterState(State::PostStartExecutor);
+  EnterState(State::kPostStartExecutor);
 
-  EnterState(State::PreStartLog);
+  EnterState(State::kPreStartLog);
   logger_manager_.Start();
-  EnterState(State::PostStartLog);
+  EnterState(State::kPostStartLog);
 
-  EnterState(State::PreStartAllocator);
+  EnterState(State::kPreStartAllocator);
   allocator_manager_.Start();
-  EnterState(State::PostStartAllocator);
+  EnterState(State::kPostStartAllocator);
 
-  EnterState(State::PreStartRpc);
+  EnterState(State::kPreStartRpc);
   rpc_manager_.Start();
-  EnterState(State::PostStartRpc);
+  EnterState(State::kPostStartRpc);
 
-  EnterState(State::PreStartChannel);
+  EnterState(State::kPreStartChannel);
   channel_manager_.Start();
-  EnterState(State::PostStartChannel);
+  EnterState(State::kPostStartChannel);
 
-  EnterState(State::PreStartParameter);
+  EnterState(State::kPreStartParameter);
   parameter_manager_.Start();
-  EnterState(State::PostStartParameter);
+  EnterState(State::kPostStartParameter);
 
-  EnterState(State::PreStartModules);
+  EnterState(State::kPreStartModules);
   module_manager_.Start();
-  EnterState(State::PostStartModules);
+  EnterState(State::kPostStartModules);
 
-  EnterState(State::PostStart);
+  EnterState(State::kPostStart);
 }
 
 void AimRTCore::ShutdownImpl() {
   if (std::atomic_exchange(&shutdown_impl_flag_, true)) return;
 
-  EnterState(State::PreShutdown);
+  EnterState(State::kPreShutdown);
 
-  EnterState(State::PreShutdownModules);
+  EnterState(State::kPreShutdownModules);
   module_manager_.Shutdown();
-  EnterState(State::PostShutdownModules);
+  EnterState(State::kPostShutdownModules);
 
-  EnterState(State::PreShutdownParameter);
+  EnterState(State::kPreShutdownParameter);
   parameter_manager_.Shutdown();
-  EnterState(State::PostShutdownParameter);
+  EnterState(State::kPostShutdownParameter);
 
-  EnterState(State::PreShutdownChannel);
+  EnterState(State::kPreShutdownChannel);
   channel_manager_.Shutdown();
-  EnterState(State::PostShutdownChannel);
+  EnterState(State::kPostShutdownChannel);
 
-  EnterState(State::PreShutdownRpc);
+  EnterState(State::kPreShutdownRpc);
   rpc_manager_.Shutdown();
-  EnterState(State::PostShutdownRpc);
+  EnterState(State::kPostShutdownRpc);
 
-  EnterState(State::PreShutdownAllocator);
+  EnterState(State::kPreShutdownAllocator);
   allocator_manager_.Shutdown();
-  EnterState(State::PostShutdownAllocator);
+  EnterState(State::kPostShutdownAllocator);
 
-  EnterState(State::PreShutdownLog);
+  EnterState(State::kPreShutdownLog);
   ResetCoreLogger();
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
   logger_manager_.Shutdown();
-  EnterState(State::PostShutdownLog);
+  EnterState(State::kPostShutdownLog);
 
-  EnterState(State::PreShutdownExecutor);
+  EnterState(State::kPreShutdownExecutor);
   executor_manager_.Shutdown();
-  EnterState(State::PostShutdownExecutor);
+  EnterState(State::kPostShutdownExecutor);
 
-  EnterState(State::PreShutdownGuardThread);
+  EnterState(State::kPreShutdownGuardThread);
   guard_thread_executor_.Shutdown();
-  EnterState(State::PostShutdownGuardThread);
+  EnterState(State::kPostShutdownGuardThread);
 
-  EnterState(State::PreShutdownMainThread);
+  EnterState(State::kPreShutdownMainThread);
   main_thread_executor_.Shutdown();
-  EnterState(State::PostShutdownMainThread);
+  EnterState(State::kPostShutdownMainThread);
 
-  EnterState(State::PreShutdownPlugin);
+  EnterState(State::kPreShutdownPlugin);
   plugin_manager_.Shutdown();
-  EnterState(State::PostShutdownPlugin);
+  EnterState(State::kPostShutdownPlugin);
 
-  EnterState(State::PreShutdownConfigurator);
+  EnterState(State::kPreShutdownConfigurator);
   configurator_manager_.Shutdown();
-  EnterState(State::PostShutdownConfigurator);
+  EnterState(State::kPostShutdownConfigurator);
 
-  EnterState(State::PostShutdown);
+  EnterState(State::kPostShutdown);
 }
 
 void AimRTCore::Start() {
@@ -315,7 +315,7 @@ void AimRTCore::CheckCfgFile() const {
 }
 
 std::string AimRTCore::GenInitializationReport() const {
-  AIMRT_CHECK_ERROR_THROW(state_ == State::PostInit,
+  AIMRT_CHECK_ERROR_THROW(state_ == State::kPostInit,
                           "Initialization report can only be generated after initialization is complete.");
 
   std::list<std::pair<std::string, std::string>> report;

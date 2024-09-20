@@ -46,7 +46,7 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -54,7 +54,7 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
 
   void RegisterHttpHandleFunc(std::string_view pattern, HttpHandle handle) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     dispatcher_ptr_->RegisterHttpHandle(pattern, std::move(handle));
@@ -62,7 +62,7 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
 
   void Initialize(const ServerOptions& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = ServerOptions::Verify(options);
@@ -71,7 +71,7 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
 
     auto self = this->shared_from_this();
@@ -83,7 +83,7 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
           acceptor_.bind(options_.ep);
           acceptor_.listen();
 
-          while (state_.load() == State::Start) {
+          while (state_.load() == State::kStart) {
             try {
               if (connection_ptr_list_.size() >= options_.max_connection_num) {
                 acceptor_timer_.expires_after(options_.mgr_timer_dt);
@@ -115,7 +115,7 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
     boost::asio::co_spawn(
         mgr_strand_,
         [this, self]() -> Awaitable<void> {
-          while (state_.load() == State::Start) {
+          while (state_.load() == State::kStart) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
               co_await mgr_timer_.async_wait(boost::asio::use_awaitable);
@@ -141,7 +141,7 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown) {
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown) {
       return;
     }
 
@@ -175,10 +175,10 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   std::shared_ptr<IOCtx> io_ptr_;
@@ -192,7 +192,7 @@ class AsioHttp2Server : public std::enable_shared_from_this<AsioHttp2Server> {
   std::shared_ptr<Dispatcher> dispatcher_ptr_;
   ServerOptions options_;
 
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   std::shared_ptr<ConnectionOptions> connection_options_ptr_;
   std::list<std::shared_ptr<Connection>> connection_ptr_list_;

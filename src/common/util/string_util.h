@@ -775,10 +775,10 @@ inline bool EndsWith(std::string_view str,
  * @return uint64_t hash值
  */
 inline uint64_t Hash64Fnv1a(const char* data, size_t len) {
-  constexpr uint64_t prime = 0x100000001b3;
+  constexpr uint64_t kPrime = 0x100000001b3;
   uint64_t hash = 0xcbf29ce484222325;
   for (size_t i = 0; i < len; ++i) {
-    hash = (hash ^ static_cast<uint8_t>(data[i])) * prime;
+    hash = (hash ^ static_cast<uint8_t>(data[i])) * kPrime;
   }
   return hash;
 }
@@ -791,10 +791,10 @@ inline uint64_t Hash64Fnv1a(const char* data, size_t len) {
  * @return uint32_t hash值
  */
 inline uint32_t Hash32Fnv1a(const char* data, size_t len) {
-  constexpr uint32_t prime = 0x1000193;
+  constexpr uint32_t kPrime = 0x1000193;
   uint32_t hash = 0x811c9dc5;
   for (size_t i = 0; i < len; ++i) {
-    hash = (hash ^ static_cast<uint8_t>(data[i])) * prime;
+    hash = (hash ^ static_cast<uint8_t>(data[i])) * kPrime;
   }
   return hash;
 }

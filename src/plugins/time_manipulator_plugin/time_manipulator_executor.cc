@@ -55,7 +55,7 @@ void TimeManipulatorExecutor::Initialize(std::string_view name,
       "Get executor function is not set before initialize.");
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "TimeManipulatorExecutor can only be initialized once.");
 
   name_ = std::string(name);
@@ -115,7 +115,7 @@ void TimeManipulatorExecutor::Initialize(std::string_view name,
 
 void TimeManipulatorExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   timer_thread_ptr_ = std::make_unique<std::thread>(std::bind(&TimeManipulatorExecutor::TimerLoop, this));
@@ -124,7 +124,7 @@ void TimeManipulatorExecutor::Start() {
 }
 
 void TimeManipulatorExecutor::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   if (timer_thread_ptr_ && timer_thread_ptr_->joinable())
@@ -202,7 +202,7 @@ void TimeManipulatorExecutor::ExecuteAt(
 void TimeManipulatorExecutor::RegisterGetExecutorFunc(
     const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   get_executor_func_ = get_executor_func;
 }
@@ -262,7 +262,7 @@ void TimeManipulatorExecutor::TimerLoop() {
   start_flag_.store(true);
   start_flag_.notify_all();
 
-  while (state_.load() != State::Shutdown) {
+  while (state_.load() != State::kShutdown) {
     try {
       // 获取时间比例。注意：调速只能在下一个tick生效
       ratio_mutex_.lock_shared();
@@ -282,13 +282,13 @@ void TimeManipulatorExecutor::TimerLoop() {
       auto real_dt = ratio_direction ? options_.dt : (options_.dt * real_ratio);
       do {
         // 最长sleep时间
-        static constexpr auto max_sleep_dt = std::chrono::seconds(1);
+        static constexpr auto kMaxSleepDt = std::chrono::seconds(1);
 
-        auto sleep_time = (real_dt > max_sleep_dt) ? max_sleep_dt : real_dt;
+        auto sleep_time = (real_dt > kMaxSleepDt) ? kMaxSleepDt : real_dt;
         real_dt -= sleep_time;
 
         // 一个小优化，防止real_dt太小
-        if (real_dt.count() && options_.dt < max_sleep_dt && real_dt <= options_.dt) {
+        if (real_dt.count() && options_.dt < kMaxSleepDt && real_dt <= options_.dt) {
           sleep_time += real_dt;
           real_dt -= real_dt;
         }
@@ -297,7 +297,7 @@ void TimeManipulatorExecutor::TimerLoop() {
             last_loop_time_point +=
             std::chrono::duration_cast<std::chrono::system_clock::time_point::duration>(sleep_time));
 
-      } while (state_.load() != State::Shutdown && real_dt.count());
+      } while (state_.load() != State::kShutdown && real_dt.count());
 
       // 走时间轮
 

@@ -80,7 +80,7 @@ namespace aimrt::plugins::mqtt_plugin {
 
 void MqttChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Mqtt channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -91,14 +91,14 @@ void MqttChannelBackend::Initialize(YAML::Node options_node) {
 
 void MqttChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   SubscribeMqttTopic();
 }
 
 void MqttChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   UnSubscribeMqttTopic();
@@ -109,7 +109,7 @@ void MqttChannelBackend::Shutdown() {
 bool MqttChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     namespace util = aimrt::common::util;
@@ -158,7 +158,7 @@ bool MqttChannelBackend::RegisterPublishType(
 bool MqttChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     namespace util = aimrt::common::util;
@@ -207,14 +207,14 @@ bool MqttChannelBackend::Subscribe(
           // 解析mqtt包
           util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 
-          std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+          std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
           ctx_ptr->SetSerializationType(serialization_type);
 
           // 获取context
           size_t ctx_num = buf_oper.GetUint8();
           for (size_t ii = 0; ii < ctx_num; ++ii) {
-            auto key = buf_oper.GetString(util::BufferLenType::UINT16);
-            auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+            auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
+            auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
             ctx_ptr->SetMetaValue(key, val);
           }
 
@@ -242,7 +242,7 @@ bool MqttChannelBackend::Subscribe(
 
 void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Start,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart,
                             "Method can only be called when state is 'Start'.");
 
     namespace util = aimrt::common::util;
@@ -302,11 +302,11 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
 
-    buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+    buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
 
     buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
     for (const auto& s : context_meta_kv) {
-      buf_oper.SetString(s, util::BufferLenType::UINT16);
+      buf_oper.SetString(s, util::BufferLenType::kUInt16);
     }
 
     // data

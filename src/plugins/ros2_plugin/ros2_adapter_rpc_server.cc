@@ -78,7 +78,7 @@ std::shared_ptr<rmw_request_id_t> Ros2AdapterServer::create_request_header() {
 
 void Ros2AdapterServer::handle_request(
     std::shared_ptr<rmw_request_id_t> request_header, std::shared_ptr<void> request) {
-  if (!run_flag.load()) return;
+  if (!run_flag_.load()) return;
 
   AIMRT_TRACE("Handle ros2 req, func name '{}', seq num '{}'",
               service_func_wrapper_.info.func_name, request_header->sequence_number);
@@ -187,7 +187,7 @@ std::shared_ptr<rmw_request_id_t> Ros2AdapterWrapperServer::create_request_heade
 
 void Ros2AdapterWrapperServer::handle_request(
     std::shared_ptr<rmw_request_id_t> request_header, std::shared_ptr<void> request) {
-  if (!run_flag.load()) return;
+  if (!run_flag_.load()) return;
 
   AIMRT_TRACE("Handle ros2 req, func name '{}', seq num '{}'",
               service_func_wrapper_.info.func_name, request_header->sequence_number);

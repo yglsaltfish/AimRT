@@ -82,10 +82,10 @@ inline uint16_t GetUint16FromBuf(const char *p) {
 }
 
 enum class BufferLenType : size_t {
-  UINT8 = 1,
-  UINT16 = 2,
-  UINT32 = 4,
-  UINT64 = 8
+  kUInt8 = 1,
+  kUInt16 = 2,
+  kUInt32 = 4,
+  kUInt64 = 8
 };
 
 class BufferOperator {
@@ -137,32 +137,32 @@ class BufferOperator {
     SetBuffer(buffer.data(), buffer.size());
   }
 
-  void SetString(std::string_view s, BufferLenType len_type = BufferLenType::UINT64) {
+  void SetString(std::string_view s, BufferLenType len_type = BufferLenType::kUInt64) {
     size_t str_len = s.size();
 
     if (cur_ + static_cast<size_t>(len_type) + str_len > end_) [[unlikely]]
       throw std::runtime_error("Out of bounds when 'SetString'.");
 
     switch (len_type) {
-      case BufferLenType::UINT8:
+      case BufferLenType::kUInt8:
         if (str_len > std::numeric_limits<uint8_t>::max()) [[unlikely]] {
           throw std::runtime_error("String length out of range.");
         }
         SetUint8(static_cast<uint8_t>(str_len));
         break;
-      case BufferLenType::UINT16:
+      case BufferLenType::kUInt16:
         if (str_len > std::numeric_limits<uint16_t>::max()) [[unlikely]] {
           throw std::runtime_error("String length out of range.");
         }
         SetUint16(static_cast<uint16_t>(str_len));
         break;
-      case BufferLenType::UINT32:
+      case BufferLenType::kUInt32:
         if (str_len > std::numeric_limits<uint32_t>::max()) [[unlikely]] {
           throw std::runtime_error("String length out of range.");
         }
         SetUint32(static_cast<uint32_t>(str_len));
         break;
-      case BufferLenType::UINT64:
+      case BufferLenType::kUInt64:
         if (str_len > std::numeric_limits<uint64_t>::max()) [[unlikely]] {
           throw std::runtime_error("String length out of range.");
         }
@@ -243,19 +243,19 @@ class ConstBufferOperator {
     cur_ += len;
   }
 
-  std::string_view GetString(BufferLenType len_type = BufferLenType::UINT64) {
+  std::string_view GetString(BufferLenType len_type = BufferLenType::kUInt64) {
     size_t str_len;
     switch (len_type) {
-      case BufferLenType::UINT8:
+      case BufferLenType::kUInt8:
         str_len = GetUint8();
         break;
-      case BufferLenType::UINT16:
+      case BufferLenType::kUInt16:
         str_len = GetUint16();
         break;
-      case BufferLenType::UINT32:
+      case BufferLenType::kUInt32:
         str_len = GetUint32();
         break;
-      case BufferLenType::UINT64:
+      case BufferLenType::kUInt64:
         str_len = GetUint64();
         break;
       default:

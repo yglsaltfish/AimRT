@@ -44,7 +44,7 @@ class MockChannelBackend : public ChannelBackendBase {
 class ChannelBackendManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::PreInit);
+    EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::kPreInit);
     channel_backend_manager_.RegisterChannelBackend(mock_backend_ptr_.get());
 
     channel_backend_manager_.SetPubTopicsBackendsRules({
@@ -56,13 +56,13 @@ class ChannelBackendManagerTest : public ::testing::Test {
 
     channel_backend_manager_.SetChannelRegistry(channel_registry_test_ptr_.get());
     channel_backend_manager_.Initialize();
-    EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::Init);
+    EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::kInit);
   }
 
   // 测试用例结束后清理工作 测试Shutdown
   void TearDown() override {
     channel_backend_manager_.Shutdown();
-    EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::Shutdown);
+    EXPECT_EQ(channel_backend_manager_.GetState(), ChannelBackendManager::State::kShutdown);
   }
 
   std::unique_ptr<MockChannelBackend> mock_backend_ptr_ = std::make_unique<MockChannelBackend>();

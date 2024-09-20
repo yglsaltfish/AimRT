@@ -29,118 +29,118 @@ class AimRTCore {
   };
 
   enum class State : uint32_t {
-    PreInit,
+    kPreInit,
 
-    PreInitConfigurator,
-    PostInitConfigurator,
+    kPreInitConfigurator,
+    kPostInitConfigurator,
 
-    PreInitPlugin,
-    PostInitPlugin,
+    kPreInitPlugin,
+    kPostInitPlugin,
 
-    PreInitMainThread,
-    PostInitMainThread,
+    kPreInitMainThread,
+    kPostInitMainThread,
 
-    PreInitGuardThread,
-    PostInitGuardThread,
+    kPreInitGuardThread,
+    kPostInitGuardThread,
 
-    PreInitExecutor,
-    PostInitExecutor,
+    kPreInitExecutor,
+    kPostInitExecutor,
 
-    PreInitLog,
-    PostInitLog,
+    kPreInitLog,
+    kPostInitLog,
 
-    PreInitAllocator,
-    PostInitAllocator,
+    kPreInitAllocator,
+    kPostInitAllocator,
 
-    PreInitRpc,
-    PostInitRpc,
+    kPreInitRpc,
+    kPostInitRpc,
 
-    PreInitChannel,
-    PostInitChannel,
+    kPreInitChannel,
+    kPostInitChannel,
 
-    PreInitParameter,
-    PostInitParameter,
+    kPreInitParameter,
+    kPostInitParameter,
 
-    PreInitModules,
-    PostInitModules,
+    kPreInitModules,
+    kPostInitModules,
 
-    PostInit,
+    kPostInit,
 
-    PreStart,
+    kPreStart,
 
-    PreStartConfigurator,
-    PostStartConfigurator,
+    kPreStartConfigurator,
+    kPostStartConfigurator,
 
-    PreStartPlugin,
-    PostStartPlugin,
+    kPreStartPlugin,
+    kPostStartPlugin,
 
-    PreStartMainThread,
-    PostStartMainThread,
+    kPreStartMainThread,
+    kPostStartMainThread,
 
-    PreStartGuardThread,
-    PostStartGuardThread,
+    kPreStartGuardThread,
+    kPostStartGuardThread,
 
-    PreStartExecutor,
-    PostStartExecutor,
+    kPreStartExecutor,
+    kPostStartExecutor,
 
-    PreStartLog,
-    PostStartLog,
+    kPreStartLog,
+    kPostStartLog,
 
-    PreStartAllocator,
-    PostStartAllocator,
+    kPreStartAllocator,
+    kPostStartAllocator,
 
-    PreStartRpc,
-    PostStartRpc,
+    kPreStartRpc,
+    kPostStartRpc,
 
-    PreStartChannel,
-    PostStartChannel,
+    kPreStartChannel,
+    kPostStartChannel,
 
-    PreStartParameter,
-    PostStartParameter,
+    kPreStartParameter,
+    kPostStartParameter,
 
-    PreStartModules,
-    PostStartModules,
+    kPreStartModules,
+    kPostStartModules,
 
-    PostStart,
+    kPostStart,
 
-    PreShutdown,
+    kPreShutdown,
 
-    PreShutdownModules,
-    PostShutdownModules,
+    kPreShutdownModules,
+    kPostShutdownModules,
 
-    PreShutdownParameter,
-    PostShutdownParameter,
+    kPreShutdownParameter,
+    kPostShutdownParameter,
 
-    PreShutdownChannel,
-    PostShutdownChannel,
+    kPreShutdownChannel,
+    kPostShutdownChannel,
 
-    PreShutdownRpc,
-    PostShutdownRpc,
+    kPreShutdownRpc,
+    kPostShutdownRpc,
 
-    PreShutdownAllocator,
-    PostShutdownAllocator,
+    kPreShutdownAllocator,
+    kPostShutdownAllocator,
 
-    PreShutdownLog,
-    PostShutdownLog,
+    kPreShutdownLog,
+    kPostShutdownLog,
 
-    PreShutdownExecutor,
-    PostShutdownExecutor,
+    kPreShutdownExecutor,
+    kPostShutdownExecutor,
 
-    PreShutdownGuardThread,
-    PostShutdownGuardThread,
+    kPreShutdownGuardThread,
+    kPostShutdownGuardThread,
 
-    PreShutdownMainThread,
-    PostShutdownMainThread,
+    kPreShutdownMainThread,
+    kPostShutdownMainThread,
 
-    PreShutdownPlugin,
-    PostShutdownPlugin,
+    kPreShutdownPlugin,
+    kPostShutdownPlugin,
 
-    PreShutdownConfigurator,
-    PostShutdownConfigurator,
+    kPreShutdownConfigurator,
+    kPostShutdownConfigurator,
 
-    PostShutdown,
+    kPostShutdown,
 
-    MaxStateNum,
+    kMaxStateNum,
   };
 
   using HookTask = std::function<void()>;
@@ -217,7 +217,7 @@ class AimRTCore {
 
  private:
   Options options_;
-  State state_ = State::PreInit;
+  State state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::atomic_bool shutdown_flag_ = false;

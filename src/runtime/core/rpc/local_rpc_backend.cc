@@ -32,7 +32,7 @@ namespace aimrt::runtime::core::rpc {
 
 void LocalRpcBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Local rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -69,12 +69,12 @@ void LocalRpcBackend::Initialize(YAML::Node options_node) {
 
 void LocalRpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void LocalRpcBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   service_func_register_index_.clear();
@@ -87,7 +87,7 @@ void LocalRpcBackend::Shutdown() {
 bool LocalRpcBackend::RegisterServiceFunc(
     const ServiceFuncWrapper& service_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
       return false;
     }
@@ -106,7 +106,7 @@ bool LocalRpcBackend::RegisterServiceFunc(
 bool LocalRpcBackend::RegisterClientFunc(
     const ClientFuncWrapper& client_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
       return false;
     }
@@ -121,7 +121,7 @@ bool LocalRpcBackend::RegisterClientFunc(
 void LocalRpcBackend::Invoke(
     const std::shared_ptr<InvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
   try {
-    if (state_.load() != State::Start) [[unlikely]] {
+    if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
@@ -387,7 +387,7 @@ void LocalRpcBackend::Invoke(
 void LocalRpcBackend::RegisterGetExecutorFunc(
     const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   get_executor_func_ = get_executor_func;
 }

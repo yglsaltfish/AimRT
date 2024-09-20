@@ -121,7 +121,7 @@ class Context {
 
  private:
   static const aimrt_rpc_context_base_ops_t* GenOpsBase() {
-    static constexpr aimrt_rpc_context_base_ops_t ops{
+    static constexpr aimrt_rpc_context_base_ops_t kOps{
         .check_used = [](void* impl) -> bool {
           return static_cast<Context*>(impl)->used_;
         },
@@ -160,7 +160,7 @@ class Context {
               .len = meta_keys_vec.size()};
         }};
 
-    return &ops;
+    return &kOps;
   }
 
  private:

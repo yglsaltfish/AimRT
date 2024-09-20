@@ -27,10 +27,10 @@ class RecordAction {
     uint32_t max_bag_num = 0;
 
     enum class Mode {
-      IMD,
-      SIGNAL,
+      kImd,
+      kSignal,
     };
-    Mode mode = Mode::IMD;
+    Mode mode = Mode::kImd;
 
     uint64_t max_preparation_duration_s = 0;
     std::string executor;
@@ -83,15 +83,15 @@ class RecordAction {
   void CloseDb();
 
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
  private:
   Options options_;
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   std::function<executor::ExecutorRef(std::string_view)> get_executor_func_;
   aimrt::executor::ExecutorRef executor_;

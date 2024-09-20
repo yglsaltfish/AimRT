@@ -44,11 +44,11 @@ class BenchmarkSubscriberModule : public aimrt::ModuleBase {
   std::vector<aimrt::channel::SubscriberRef> subscribers_;  // name: test_topic_x
 
   enum class State : uint32_t {
-    ReadyToRun,
-    Running,
-    Evaluating,
+    kReadyToRun,
+    kRunning,
+    kEvaluating,
   };
-  std::atomic<State> run_state_ = State::ReadyToRun;
+  std::atomic<State> run_state_ = State::kReadyToRun;
 
   uint32_t cur_bench_plan_id_ = 0;
   uint32_t cur_bench_topic_number_ = 0;

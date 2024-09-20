@@ -18,10 +18,10 @@ class MainThreadExecutor {
   };
 
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
  public:
@@ -42,7 +42,7 @@ class MainThreadExecutor {
 
  private:
   Options options_;
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   std::string name_;

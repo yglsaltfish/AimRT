@@ -39,12 +39,12 @@ class SimpleLogger {
                   const char* function_name,
                   const char* log_data,
                   size_t log_data_size) {
-    static constexpr std::string_view lvl_name_array[] = {
+    static constexpr std::string_view kLvlNameArray[] = {
         "Trace", "Debug", "Info", "Warn", "Error", "Fatal"};
 
-    static constexpr uint32_t lvl_name_array_size =
-        sizeof(lvl_name_array) / sizeof(lvl_name_array[0]);
-    if (lvl >= lvl_name_array_size) lvl = lvl_name_array_size;
+    static constexpr uint32_t kLvlNameArraySize =
+        sizeof(kLvlNameArray) / sizeof(kLvlNameArray[0]);
+    if (lvl >= kLvlNameArraySize) lvl = kLvlNameArraySize;
 
 #if defined(_WIN32)
     thread_local size_t tid(std::hash<std::thread::id>{}(std::this_thread::get_id()));
@@ -57,7 +57,7 @@ class SimpleLogger {
         "[{}.{:0>6}][{}][{}][{}:{}:{} @{}]{}",
         GetTimeStr(std::chrono::system_clock::to_time_t(t)),
         (GetTimestampUs(t) % 1000000),
-        lvl_name_array[lvl],
+        kLvlNameArray[lvl],
         tid,
         file_name,
         line,
@@ -91,13 +91,13 @@ class SimpleAsyncLogger {
            const char* function_name,
            const char* log_data,
            size_t log_data_size) const {
-    static constexpr std::string_view lvl_name_array[] = {
+    static constexpr std::string_view kLvlNameArray[] = {
         "Trace", "Debug", "Info", "Warn", "Error", "Fatal"};
 
-    static constexpr uint32_t lvl_name_array_size =
-        sizeof(lvl_name_array) / sizeof(lvl_name_array[0]);
-    if (lvl >= lvl_name_array_size) [[unlikely]]
-      lvl = lvl_name_array_size;
+    static constexpr uint32_t kLvlNameArraySize =
+        sizeof(kLvlNameArray) / sizeof(kLvlNameArray[0]);
+    if (lvl >= kLvlNameArraySize) [[unlikely]]
+      lvl = kLvlNameArraySize;
 
 #if defined(_WIN32)
     thread_local size_t tid(std::hash<std::thread::id>{}(std::this_thread::get_id()));
@@ -110,7 +110,7 @@ class SimpleAsyncLogger {
         "[{}.{:0>6}][{}][{}][{}:{}:{} @{}]{}",
         GetTimeStr(std::chrono::system_clock::to_time_t(t)),
         (GetTimestampUs(t) % 1000000),
-        lvl_name_array[lvl],
+        kLvlNameArray[lvl],
         tid,
         file_name,
         line,

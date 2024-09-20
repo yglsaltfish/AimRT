@@ -25,12 +25,12 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
   static const aimrt_string_view_t kChannelRos2SerializationTypesSupportedList[] = {
       aimrt::util::ToAimRTStringView("ros2"), aimrt::util::ToAimRTStringView("json")};
 
-  static const std::string msg_type_name =
+  static const std::string kMsgTypeName =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
 
-  static const aimrt_type_support_base_t ts{
+  static const aimrt_type_support_base_t kTs{
       .type_name = [](void* impl) -> aimrt_string_view_t {
-        return aimrt::util::ToAimRTStringView(msg_type_name);
+        return aimrt::util::ToAimRTStringView(kMsgTypeName);
       },
       .create = [](void* impl) -> void* {
         return new MsgType();
@@ -128,7 +128,7 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
         return rosidl_typesupport_cpp::get_message_type_support_handle<MsgType>();
       },
       .impl = nullptr};
-  return &ts;
+  return &kTs;
 }
 
 }  // namespace aimrt
