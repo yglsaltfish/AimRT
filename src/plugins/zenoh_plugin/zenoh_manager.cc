@@ -34,15 +34,15 @@ void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
 
-  z_owned_publisher_t z_pub_;
+  z_owned_publisher_t z_pub;
   z_publisher_put_options_default(&z_pub_options_);
 
-  if (z_declare_publisher(&z_pub_, z_loan(z_session_), z_loan(key), NULL) < 0) {
+  if (z_declare_publisher(&z_pub, z_loan(z_session_), z_loan(key), NULL) < 0) {
     AIMRT_ERROR("Unable to declare Publisher!");
     return;
   }
 
-  z_pub_registry_.emplace(keyexpr, std::move(z_pub_));
+  z_pub_registry_.emplace(keyexpr, std::move(z_pub));
   AIMRT_TRACE("Publisher with keyexpr: {} registered successfully.", keyexpr.c_str());
 
   return;
@@ -51,11 +51,11 @@ void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
 void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc handle) {
   z_view_keyexpr_t key;
   z_view_keyexpr_from_str(&key, keyexpr.c_str());
-  z_owned_closure_sample_t z_callback_;
+  z_owned_closure_sample_t z_callback;
   auto function_ptr = std::make_shared<MsgHandleFunc>(std::move(handle));
 
   z_closure(
-      &z_callback_,
+      &z_callback,
       [](const z_loaned_sample_t *sample, void *arg) { (*reinterpret_cast<MsgHandleFunc *>(arg))(sample); },
 
       nullptr,
@@ -64,14 +64,14 @@ void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc 
 
   msg_handle_vec_.emplace_back(std::move(function_ptr));
 
-  z_owned_subscriber_t z_sub_;
+  z_owned_subscriber_t z_sub;
 
-  if (z_declare_subscriber(&z_sub_, z_loan(z_session_), z_loan(key), z_move(z_callback_), NULL) < 0) {
+  if (z_declare_subscriber(&z_sub, z_loan(z_session_), z_loan(key), z_move(z_callback), NULL) < 0) {
     AIMRT_ERROR("Unable to declare Subscriber!");
     return;
   }
 
-  z_sub_registry_.emplace(keyexpr, std::move(z_sub_));
+  z_sub_registry_.emplace(keyexpr, std::move(z_sub));
   AIMRT_TRACE("Subscriber with keyexpr: {} registered successfully.", keyexpr.c_str());
 
   return;
@@ -84,10 +84,10 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
     return;
   }
 
-  z_owned_bytes_t z_payload_;
+  z_owned_bytes_t z_payload;
 
-  z_bytes_from_buf(&z_payload_, reinterpret_cast<uint8_t *>(serialized_data_ptr), serialized_data_len, NULL, NULL);
-  z_publisher_put(z_loan(z_pub_iter->second), z_move(z_payload_), &z_pub_options_);
+  z_bytes_from_buf(&z_payload, reinterpret_cast<uint8_t *>(serialized_data_ptr), serialized_data_len, NULL, NULL);
+  z_publisher_put(z_loan(z_pub_iter->second), z_move(z_payload), &z_pub_options_);
 
   return;
 }
