@@ -5,8 +5,16 @@
 
 namespace aimrt::plugins::zenoh_plugin {
 
-void ZenohManager::Initialize() {
-  z_config_default(&z_config_);
+void ZenohManager::Initialize(std::string &native_cfg_file_path) {
+  if (!native_cfg_file_path.empty() && native_cfg_file_path.c_str() != nullptr) {
+    if (zc_config_from_file(&z_config_, native_cfg_file_path.c_str()) != Z_OK) {
+      AIMRT_ERROR("Unable to load configuration file: {}", native_cfg_file_path);
+      return;
+    }
+    PrintZenohCgf(z_config_);
+  } else {
+    z_config_default(&z_config_);
+  }
 
   if (z_open(&z_session_, z_move(z_config_)) < 0) {
     AIMRT_ERROR("Unable to open zenoh session!");

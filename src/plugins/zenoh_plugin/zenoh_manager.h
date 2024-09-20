@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "json/json.h"
 #include "zenoh.h"
 #include "zenoh_plugin/global.h"
 
@@ -17,7 +18,7 @@ class ZenohManager {
   ZenohManager(const ZenohManager&) = delete;
   ZenohManager& operator=(const ZenohManager&) = delete;
 
-  void Initialize();
+  void Initialize(std::string& native_cfg_file_path);
   void Shutdown();
 
   void RegisterSubscriber(const std::string& url, MsgHandleFunc handle);
@@ -26,6 +27,24 @@ class ZenohManager {
   void Publish(const std::string& url, char* serialized_data_ptr, uint64_t serialized_data_len);
 
  private:
+  void PrintZenohCgf(z_owned_config_t z_config) {
+    z_owned_string_t out_config_string;
+    zc_config_to_string(z_loan(z_config), &out_config_string);
+
+    Json::CharReaderBuilder reader_builder;
+    Json::Value json_data;
+
+    std::istringstream s(z_string_data(z_loan(out_config_string)));
+    Json::parseFromStream(reader_builder, s, &json_data, nullptr);
+    Json::StreamWriterBuilder writer_builder;
+    writer_builder["indentation"] = "    ";
+    std::string pretty_json = Json::writeString(writer_builder, json_data);
+
+    AIMRT_INFO("Using Custom Native Zenoh configuration: {}", pretty_json);
+
+    z_drop(z_move(out_config_string));
+  }
+
   std::unordered_map<std::string, z_owned_publisher_t> z_pub_registry_;
   std::unordered_map<std::string, z_owned_subscriber_t> z_sub_registry_;
   std::vector<std::shared_ptr<MsgHandleFunc>> msg_handle_vec_;

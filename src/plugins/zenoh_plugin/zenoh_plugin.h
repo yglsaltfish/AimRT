@@ -13,7 +13,9 @@
 namespace aimrt::plugins::zenoh_plugin {
 class ZenohPlugin : public AimRTCorePluginBase {
  public:
-  struct Options {};
+  struct Options {
+    std::string native_cfg_file_path;
+  };
 
  public:
   ZenohPlugin() = default;

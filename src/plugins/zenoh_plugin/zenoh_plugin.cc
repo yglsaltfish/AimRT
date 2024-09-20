@@ -11,11 +11,17 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohPlugin::Options> {
   static Node encode(const Options &rhs) {
     Node node;
 
+    node["native_cfg_file_path"] = rhs.native_cfg_file_path;
+
     return node;
   }
 
   static bool decode(const Node &node, Options &rhs) {
     if (!node.IsMap()) return false;
+
+    if (node["native_cfg_file_path"])
+      rhs.native_cfg_file_path = node["native_cfg_file_path"].as<std::string>();
+
     return true;
   }
 };
@@ -36,7 +42,7 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     init_flag_ = true;
 
     // todo remove role
-    zenoh_manager_ptr_->Initialize();
+    zenoh_manager_ptr_->Initialize(options_.native_cfg_file_path);
 
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
