@@ -9,6 +9,7 @@
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "core/aimrt_core.h"
 #include "zenoh_plugin/zenoh_channel_backend.h"
+#include "zenoh_plugin/zenoh_rpc_backend.h"
 
 namespace aimrt::plugins::zenoh_plugin {
 class ZenohPlugin : public AimRTCorePluginBase {
@@ -29,7 +30,7 @@ class ZenohPlugin : public AimRTCorePluginBase {
  private:
   void SetPluginLogger();
   void RegisterZenohChannelBackend();
-  void RegisterZenohRpcBackend() {}  // todo
+  void RegisterZenohRpcBackend();
 
  private:
   runtime::core::AimRTCore *core_ptr_ = nullptr;

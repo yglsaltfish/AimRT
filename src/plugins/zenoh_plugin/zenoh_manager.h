@@ -11,7 +11,8 @@ namespace aimrt::plugins::zenoh_plugin {
 class ZenohManager {
  public:
   using MsgHandleFunc = std::function<void(const z_loaned_sample_t* message)>;
-
+  using MsgQueryFunc = std::function<void(const z_loaned_query_t* query)>;
+  using MsgReplyFunc = std::function<void(const z_loaned_reply_t* reply)>;
   ZenohManager() = default;
   ~ZenohManager() = default;
 
@@ -24,7 +25,14 @@ class ZenohManager {
   void RegisterSubscriber(const std::string& url, MsgHandleFunc handle);
   void RegisterPublisher(const std::string& url);
 
+  void RegisterServicer(const std::string& keyexpr, MsgQueryFunc handle);
+  void RegisterClient(const std::string& keyexpr, MsgReplyFunc handle);
+
   void Publish(const std::string& url, char* serialized_data_ptr, uint64_t serialized_data_len);
+
+  bool Query(const std::string& keyexpr, char* serialized_data_ptr, uint64_t serialized_data_len);
+  void Reply(const std::string& keyexpr, char* serialized_data_ptr, uint64_t serialized_data_len,
+             const z_loaned_query_t* query);
 
  private:
   void PrintZenohCgf(z_owned_config_t z_config) {
@@ -52,6 +60,8 @@ class ZenohManager {
   z_publisher_put_options_t z_pub_options_;
   z_owned_session_t z_session_;
   z_owned_config_t z_config_;
+
+  std::unordered_map<std::string, z_owned_queryable_t> z_srv_registry_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin

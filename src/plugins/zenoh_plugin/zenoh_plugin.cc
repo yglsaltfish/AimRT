@@ -50,6 +50,9 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterZenohChannelBackend(); });
 
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
+                                [this] { RegisterZenohRpcBackend(); });
+
     plugin_options_node = options_;
 
     return true;
@@ -83,6 +86,19 @@ void ZenohPlugin::RegisterZenohChannelBackend() {
       std::make_unique<ZenohChannelBackend>(zenoh_manager_ptr_);
 
   core_ptr_->GetChannelManager().RegisterChannelBackend(std::move(zenoh_channel_backend_ptr));
+}
+
+void ZenohPlugin::RegisterZenohRpcBackend() {
+  std::unique_ptr<runtime::core::rpc::RpcBackendBase> zenoh_rpc_backend_ptr =
+      std::make_unique<ZenohRpcBackend>(zenoh_manager_ptr_);
+
+  static_cast<ZenohRpcBackend *>(zenoh_rpc_backend_ptr.get())
+      ->RegisterGetExecutorFunc(
+          [this](std::string_view executor_name) -> aimrt::executor::ExecutorRef {
+            return core_ptr_->GetExecutorManager().GetExecutor(executor_name);
+          });
+
+  core_ptr_->GetRpcManager().RegisterRpcBackend(std::move(zenoh_rpc_backend_ptr));
 }
 
 }  // namespace aimrt::plugins::zenoh_plugin
