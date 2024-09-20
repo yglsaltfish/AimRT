@@ -4,6 +4,7 @@
 #include "record_playback_plugin/record_action.h"
 
 #include <fstream>
+#include <future>
 
 #include "record_playback_plugin/global.h"
 #include "util/string_util.h"
@@ -167,6 +168,8 @@ void RecordAction::Initialize(YAML::Node options) {
   max_bag_size_ = options_.max_bag_size_m * 1024 * 1024;
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
+  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+
   options = options_;
 }
 
@@ -179,6 +182,13 @@ void RecordAction::Start() {
 void RecordAction::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
+
+  std::promise<void> stop_promise;
+  executor_.Execute([this, &stop_promise]() {
+    CloseDb();
+    stop_promise.set_value();
+  });
+  stop_promise.get_future().wait();
 }
 
 void RecordAction::InitExecutor() {
@@ -222,10 +232,18 @@ void RecordAction::AddRecord(OneRecord&& record) {
 
   if (options_.mode == Options::Mode::kImd) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
+      if (state_.load() != State::kStart) [[unlikely]] {
+        return;
+      }
+
       AddRecordImpl(std::move(record));
     });
   } else if (options_.mode == Options::Mode::kSignal) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
+      if (state_.load() != State::kStart) [[unlikely]] {
+        return;
+      }
+
       uint64_t cur_timestamp = record.timestamp;
 
       if (recording_flag_) {
@@ -267,6 +285,10 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
 
   executor_.Execute(
       [this, preparation_duration_s, record_duration_s]() {
+        if (state_.load() != State::kStart) [[unlikely]] {
+          return;
+        }
+
         if (recording_flag_) {
           AIMRT_WARN("Recording is already in progress");
           return;
@@ -349,26 +371,46 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
     OpenNewDb(record.timestamp);
   }
 
+  if (cur_exec_count_ == 0) [[unlikely]] {
+    sqlite3_exec(db_, "BEGIN", 0, 0, 0);
+  }
+
+  sqlite3_reset(insert_msg_stmt_);
+
   // insert data
   sqlite3_bind_int64(insert_msg_stmt_, 1, record.topic_index);
   sqlite3_bind_int64(insert_msg_stmt_, 2, record.timestamp);
 
-  auto& buffer_array_view = *record.buffer_view_ptr;
+  const auto& buffer_array_view = *record.buffer_view_ptr;
 
   if (buffer_array_view.Size() == 1) {
     auto data = buffer_array_view.Data()[0];
     sqlite3_bind_blob(insert_msg_stmt_, 3, data.data, data.len, SQLITE_STATIC);
+    sqlite3_step(insert_msg_stmt_);
+
+    buf_array_view_cache_.emplace_back(std::move(record.buffer_view_ptr));
+
     cur_data_size_ += data.len;
   } else {
-    const std::string& data_str = buffer_array_view.JoinToString();
-    sqlite3_bind_blob(insert_msg_stmt_, 3, data_str.c_str(), data_str.size(), SQLITE_STATIC);
-    cur_data_size_ += data_str.size();
+    // TODO: is that safe?
+    std::vector<char> buf = buffer_array_view.JoinToCharVector();
+    sqlite3_bind_blob(insert_msg_stmt_, 3, buf.data(), buf.size(), SQLITE_STATIC);
+    sqlite3_step(insert_msg_stmt_);
+
+    buf_cache_.emplace_back(std::move(buf));
+
+    cur_data_size_ += buf.size();
   }
 
-  sqlite3_step(insert_msg_stmt_);
-  sqlite3_reset(insert_msg_stmt_);
-
   cur_data_size_ += 24;  // id + topic_id + timestamp
+  ++cur_exec_count_;
+
+  if (cur_exec_count_ >= 1000) [[unlikely]] {
+    cur_exec_count_ = 0;
+    sqlite3_exec(db_, "COMMIT", 0, 0, 0);
+    buf_array_view_cache_.clear();
+    buf_cache_.clear();
+  }
 }
 
 void RecordAction::OpenNewDb(uint64_t start_timestamp) {
@@ -388,7 +430,7 @@ void RecordAction::OpenNewDb(uint64_t start_timestamp) {
 
   AIMRT_TRACE("Open new db, path: {}", db_file_path);
 
-  sqlite3_exec(db_, "PRAGMA synchronous = OFF; ", 0, 0, 0);
+  // sqlite3_exec(db_, "PRAGMA synchronous = OFF; ", 0, 0, 0);
 
   // create table
   std::string sql = R"str(
@@ -436,6 +478,13 @@ data        BLOB NOT NULL);
 void RecordAction::CloseDb() {
   if (db_ != nullptr) {
     if (insert_msg_stmt_ != nullptr) {
+      if (cur_exec_count_ > 0) {
+        cur_exec_count_ = 0;
+        sqlite3_exec(db_, "COMMIT", 0, 0, 0);
+        buf_array_view_cache_.clear();
+        buf_cache_.clear();
+      }
+
       sqlite3_finalize(insert_msg_stmt_);
       insert_msg_stmt_ = nullptr;
     }
