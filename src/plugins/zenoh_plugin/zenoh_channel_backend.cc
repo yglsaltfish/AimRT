@@ -24,7 +24,7 @@ namespace aimrt::plugins::zenoh_plugin {
 
 void ZenohChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Zenoh channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -35,19 +35,19 @@ void ZenohChannelBackend::Initialize(YAML::Node options_node) {
 
 void ZenohChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void ZenohChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 }
 
 bool ZenohChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     const auto& info = publish_type_wrapper.info;
@@ -72,7 +72,7 @@ bool ZenohChannelBackend::RegisterPublishType(
 bool ZenohChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     const auto& info = subscribe_wrapper.info;
@@ -107,13 +107,13 @@ bool ZenohChannelBackend::Subscribe(
 
             if (z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size) >= 0) {
               util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
-              std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+              std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
               ctx_ptr->SetSerializationType(serialization_type);
 
               size_t ctx_num = buf_oper.GetUint8();
               for (size_t ii = 0; ii < ctx_num; ++ii) {
-                auto key = buf_oper.GetString(util::BufferLenType::UINT16);
-                auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+                auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
+                auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
                 ctx_ptr->SetMetaValue(key, val);
               }
 
@@ -142,7 +142,7 @@ bool ZenohChannelBackend::Subscribe(
 
 void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Start,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart,
                             "Method can only be called when state is 'Start'.");
 
     namespace util = aimrt::common::util;
@@ -184,11 +184,11 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
 
     std::vector<char> serialized_data(pkg_size);
     util::BufferOperator buf_oper(serialized_data.data(), pkg_size);
-    buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+    buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
 
     buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
     for (const auto& s : context_meta_kv) {
-      buf_oper.SetString(s, util::BufferLenType::UINT16);
+      buf_oper.SetString(s, util::BufferLenType::kUInt16);
     }
 
     for (size_t ii = 0; ii < buffer_array_len; ++ii) {

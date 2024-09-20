@@ -38,10 +38,10 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     // todo remove role
     zenoh_manager_ptr_->Initialize();
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitChannel,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterZenohChannelBackend(); });
 
     plugin_options_node = options_;
