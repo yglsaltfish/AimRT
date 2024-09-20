@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <charconv>
 #include <cstdint>
 #include <cstring>
 #include <iomanip>
@@ -379,11 +380,21 @@ inline int CmpVersion(std::string_view ver1, std::string_view ver2) {
 
   size_t idx = 0;
   for (idx = 0; idx < version1_detail.size() && idx < version2_detail.size(); ++idx) {
-    int ver1 = atoi(version1_detail[idx].data());
-    int ver2 = atoi(version2_detail[idx].data());
-    if (ver1 < ver2)
+    int ver1_num = 0, ver2_num = 0;
+    auto [ptr1, ec1] = std::from_chars(version1_detail[idx].data(),
+                                       version1_detail[idx].data() + version1_detail[idx].size(),
+                                       ver1_num);
+    auto [ptr2, ec2] = std::from_chars(version2_detail[idx].data(),
+                                       version2_detail[idx].data() + version2_detail[idx].size(),
+                                       ver2_num);
+    if (ec1 != std::errc() || ec2 != std::errc() ||
+        ptr1 != version1_detail[idx].data() + version1_detail[idx].size() ||
+        ptr2 != version2_detail[idx].data() + version2_detail[idx].size()) {
+      throw std::runtime_error("Invalid version format");
+    }
+    if (ver1_num < ver2_num)
       return -1;
-    else if (ver1 > ver2)
+    if (ver1_num > ver2_num)
       return 1;
   }
   if (idx == version1_detail.size() && idx == version2_detail.size()) {

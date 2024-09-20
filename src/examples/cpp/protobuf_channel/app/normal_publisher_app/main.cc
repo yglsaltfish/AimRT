@@ -53,7 +53,7 @@ int32_t main(int32_t argc, char** argv) {
     // Read cfg
     auto file_path = module_handle.GetConfigurator().GetConfigFilePath();
     if (!file_path.empty()) {
-      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+      YAML::Node cfg_node = YAML::LoadFile(std::string(file_path));
       topic_name = cfg_node["topic_name"].as<std::string>();
       channel_frq = cfg_node["channel_frq"].as<double>();
     }

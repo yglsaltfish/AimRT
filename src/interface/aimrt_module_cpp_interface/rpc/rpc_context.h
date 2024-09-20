@@ -254,14 +254,14 @@ class ContextRef {
     return GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
   }
   void SetToAddr(std::string_view val) {
-    SetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR, val.data());
+    SetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR, val);
   }
 
   std::string_view GetSerializationType() const {
     return GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
   }
   void SetSerializationType(std::string_view val) {
-    SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, val.data());
+    SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, val);
   }
 
   std::string_view GetFunctionName() const {

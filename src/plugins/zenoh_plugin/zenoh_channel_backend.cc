@@ -152,7 +152,7 @@ void ZenohChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrappe
 
     auto serialization_type = msg_wrapper.ctx_ref.GetSerializationType();
     if (serialization_type.empty()) {
-      serialization_type = aimrt::util::ToStdString(publish_type_support_ref.SerializationTypesSupportedList()[0]);
+      serialization_type = publish_type_support_ref.DefaultSerializationType();
     }
 
     auto buffer_array_view_ptr = aimrt::runtime::core::channel::SerializeMsgWithCache(msg_wrapper, serialization_type);

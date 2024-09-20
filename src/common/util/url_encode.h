@@ -9,41 +9,42 @@
 namespace aimrt::common::util {
 
 inline unsigned char ToHex(unsigned char x, bool up) {
-  return x > 9 ? x + (up ? 55 : 87) : x + 48;
+  return x > 9 ? x + (up ? 'A' : 'a') - 10 : (x + '0');
 }
 
 inline unsigned char FromHex(unsigned char x) {
-  unsigned char y = 0;
-  if (x >= 'A' && x <= 'Z')
-    y = x - 55;
-  else if (x >= 'a' && x <= 'z')
-    y = x - 87;
-  else if (x >= '0' && x <= '9')
-    y = x - '0';
-  return y;
+  if (x >= '0' && x <= '9') {
+    return x - '0';
+  }
+  if (x >= 'A' && x <= 'F') {
+    return x - 'A' + 10;
+  }
+  if (x >= 'a' && x <= 'f') {
+    return x - 'a' + 10;
+  }
+  return 0;
 }
 
 /**
  * @brief UrlEncode
  *
- * @param[in] str 待编码字符串
- * @param[in] up 是否转码为大写字符
- * @return std::string 转码后的结果字符串
+ * @param[in] str string to be encoded
+ * @param[in] up whether to encode to uppercase
+ * @return std::string encoded string
  */
 inline std::string UrlEncode(std::string_view str, bool up = true) {
   std::string ret_str;
-  size_t len = str.length();
-  ret_str.reserve(len << 1);
-  for (size_t i = 0; i < len; ++i) {
-    if (isalnum((unsigned char)str[i]) || (str[i] == '-') || (str[i] == '_') ||
-        (str[i] == '.') || (str[i] == '~')) {
-      ret_str += str[i];
-    } else if (str[i] == ' ') {
+  ret_str.reserve(str.length() * 3);
+
+  for (unsigned char c : str) {
+    if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      ret_str += static_cast<char>(c);
+    } else if (c == ' ') {
       ret_str += '+';
     } else {
       ret_str += '%';
-      ret_str += ToHex((unsigned char)str[i] >> 4, up);
-      ret_str += ToHex((unsigned char)str[i] & 15, up);
+      ret_str += static_cast<char>(ToHex(c >> 4, up));
+      ret_str += static_cast<char>(ToHex(c & 0xF, up));
     }
   }
   return ret_str;
@@ -52,20 +53,20 @@ inline std::string UrlEncode(std::string_view str, bool up = true) {
 /**
  * @brief UrlDecode
  *
- * @param[in] str 待解码字符串
- * @return std::string 解码后的结果字符串
+ * @param[in] str string to be decoded
+ * @return std::string decoded string
  */
 inline std::string UrlDecode(std::string_view str) {
   std::string ret_str;
-  size_t len = str.length();
-  ret_str.reserve(len);
-  for (size_t i = 0; i < len; ++i) {
+  ret_str.reserve(str.length());
+
+  for (size_t i = 0; i < str.length(); ++i) {
     if (str[i] == '+') {
       ret_str += ' ';
     } else if (str[i] == '%') {
-      if (i + 2 < len) {
-        unsigned char c = (FromHex((unsigned char)str[++i])) << 4;
-        ret_str += (c | FromHex((unsigned char)str[++i]));
+      if (i + 2 < str.length()) {
+        ret_str += static_cast<char>((FromHex(str[i + 1]) << 4) | FromHex(str[i + 2]));
+        i += 2;
       } else {
         break;
       }
@@ -73,20 +74,21 @@ inline std::string UrlDecode(std::string_view str) {
       ret_str += str[i];
     }
   }
+
   return ret_str;
 }
 
 inline std::string HttpHeaderEncode(std::string_view str, bool up = true) {
   std::string ret_str;
-  size_t len = str.length();
-  ret_str.reserve(len << 1);
-  for (size_t i = 0; i < len; ++i) {
-    if (isalnum((unsigned char)str[i]) || (str[i] == '-')) {
-      ret_str += str[i];
+  ret_str.reserve(str.length() * 3);
+
+  for (unsigned char c : str) {
+    if (std::isalnum(c) || c == '-') {
+      ret_str += static_cast<char>(c);
     } else {
       ret_str += '%';
-      ret_str += ToHex((unsigned char)str[i] >> 4, up);
-      ret_str += ToHex((unsigned char)str[i] & 15, up);
+      ret_str += static_cast<char>(ToHex(c >> 4, up));
+      ret_str += static_cast<char>(ToHex(c & 0xF, up));
     }
   }
   return ret_str;
@@ -94,13 +96,13 @@ inline std::string HttpHeaderEncode(std::string_view str, bool up = true) {
 
 inline std::string HttpHeaderDecode(std::string_view str) {
   std::string ret_str;
-  size_t len = str.length();
-  ret_str.reserve(len);
-  for (size_t i = 0; i < len; ++i) {
+  ret_str.reserve(str.length());
+
+  for (size_t i = 0; i < str.length(); ++i) {
     if (str[i] == '%') {
-      if (i + 2 < len) {
-        unsigned char c = (FromHex((unsigned char)str[++i])) << 4;
-        ret_str += (c | FromHex((unsigned char)str[++i]));
+      if (i + 2 < str.length()) {
+        ret_str += static_cast<char>((FromHex(str[i + 1]) << 4) | FromHex(str[i + 2]));
+        i += 2;
       } else {
         break;
       }
