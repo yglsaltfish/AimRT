@@ -192,6 +192,18 @@ class BufferArrayView {
     return result;
   }
 
+  std::vector<char> JoinToCharVector() const {
+    std::vector<char> result;
+    result.resize(BufferSize());
+
+    char* p = result.data();
+    for (size_t ii = 0; ii < buffer_array_view_.len; ++ii) {
+      memcpy(p, buffer_array_view_.data[ii].data, buffer_array_view_.data[ii].len);
+      p += buffer_array_view_.data[ii].len;
+    }
+    return result;
+  }
+
  private:
   void SyncCType() {
     buffer_array_view_.data = buffer_array_view_vec_.data();

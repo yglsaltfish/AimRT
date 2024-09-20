@@ -164,7 +164,7 @@ void PlaybackAction::Initialize(YAML::Node options_node) {
                           "Empty bag! bag path: {}", options_.bag_path);
 
   for (auto& item : metadata_.files) {
-    const auto db_file_path = std::filesystem::path(options_.bag_path).concat(item.path);
+    const auto db_file_path = std::filesystem::path(options_.bag_path) / item.path;
 
     AIMRT_CHECK_ERROR_THROW(
         std::filesystem::exists(db_file_path) && std::filesystem::is_regular_file(db_file_path),
@@ -289,7 +289,7 @@ bool PlaybackAction::OpenNewDb() {
   }
 
   const auto& file = metadata_.files[cur_db_file_index_];
-  const auto db_file_path = std::filesystem::path(options_.bag_path).concat(file.path);
+  const auto db_file_path = (std::filesystem::path(options_.bag_path) / file.path).string();
   ++cur_db_file_index_;
 
   uint64_t cur_db_start_timestamp = file.start_timestamp;
@@ -302,11 +302,9 @@ bool PlaybackAction::OpenNewDb() {
   int ret = sqlite3_open(db_file_path.c_str(), &db_);
   AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
                           "Sqlite3 open db file failed, path: {}, ret: {}, error info: {}",
-                          db_file_path.string(), ret, sqlite3_errmsg(db_));
+                          db_file_path, ret, sqlite3_errmsg(db_));
 
-  AIMRT_TRACE("Open new db, path: {}", db_file_path.string());
-
-  sqlite3_exec(db_, "PRAGMA synchronous = OFF; ", 0, 0, 0);
+  AIMRT_TRACE("Open new db, path: {}", db_file_path);
 
   // create select stmt
   std::string sql = "SELECT topic_id, timestamp, data FROM messages";
@@ -328,7 +326,7 @@ bool PlaybackAction::OpenNewDb() {
     sql += condition[ii];
   }
 
-  AIMRT_TRACE("Sql str: {}, db path: {}", sql, db_file_path.string());
+  AIMRT_TRACE("Sql str: {}, db path: {}", sql, db_file_path);
 
   ret = sqlite3_prepare_v3(db_, sql.c_str(), sql.size(), 0, &select_msg_stmt_, nullptr);
   AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
