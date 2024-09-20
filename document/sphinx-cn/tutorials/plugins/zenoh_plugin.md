@@ -7,16 +7,27 @@
 - {{ '[zenoh_plugin]({}/src/examples/plugins/zenoh_plugin)'.format(code_site_root_path_url) }}
 
 
-## 插件概述
+## 概述
 
-**zenoh_plugin**是一个基于[zenoh.c](https://github.com/eclipse-zenoh/zenoh-c)实现的轻量级的、高效的、实时的数据传输插件，它旨在为分布式系统提供低延迟、高吞吐量的数据传输和处理能力。此插件提供了以下组件：
-- `zenoh`类型 Channel 后端
-
-
-在当前版本，本插件没有插件级的配置。由于 zenoh 自带的服务发现机制，用户不必手动配置对端地址。
+**zenoh_plugin**是一个轻量级的、高效的、实时的数据传输插件，它旨在为分布式系统提供低延迟、高吞吐量的数据传输和处理能力。此插件为AimRT提供以下组件：
+- `zenoh`类型Channel后端
 
 
-**请注意**，该插件在编译过程依赖于[Rust](https://www.rust-lang.org/)，请确保运行环境中存在 Rust 编译器，否则该插件将不会编译。
+## 适用场景
+- 需要服务发现机制的任务系统
+- 高效的跨机数据传输
+
+
+## 配置
+插件的配置项如下：
+
+|         节点         |  类型  | 是否可选 | 默认值 |            作用             |
+| :------------------: | :----: | :------: | :----: | :-------------------------: |
+| native_cfg_file_path | string |   可选   |   ""   | 使用原生zenoh提供的配置文件 |
+
+
+关于**mqtt_plugin**的配置，使用注意点如下：
+- `native_cfg_file_path` 表示原生zenoh提供的配置文件的路径，如果不填写则默认使用zenoh官方提供的默认配置，具体配置内容请参考zenoh官方关于[configuration](https://zenoh.io/docs/manual/configuration/)的说明。
 
 
 以下是一个简单的示例：
@@ -26,13 +37,14 @@ aimrt:
   plugin:
     plugins:
       - name: zenoh_plugin
-        path: ./libaimrt_zenoh_plugin.so
+        path: ./libaimrt_zenoh_plugin.so #【可选】插件路径。如果是硬编码注册的插件不需要填
+        options:
+          native_cfg_file_path: ./DEFAULT_CONFIG.json5 #【可选】使用原生zenoh提供的配置文件。
 ```
 
 ## zenoh 类型 Channel 后端
 
-`zenoh`类型的 Channel 后端是**zenoh_plugin**中提供的一种 Channel 后端，主要用来构建发布和订阅模型，当前版本暂时没有可配置项。
-
+`zenoh`类型的Channel后端是**zenoh_plugin**中提供的一种Channel后端，主要用来构建发布和订阅模型。
 
 以下是一个简单的发布端的示例：
 ```yaml
@@ -41,6 +53,8 @@ aimrt:
     plugins:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
+        options:
+          native_cfg_file_path: ./DEFAULT_CONFIG.json5 
   channel:
     backends:
       - type: zenoh
@@ -57,6 +71,8 @@ aimrt:
     plugins:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
+        options:
+          native_cfg_file_path: ./DEFAULT_CONFIG.json5 
 channel:
     backends:
       - type: zenoh
