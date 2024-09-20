@@ -14,7 +14,7 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Set(
     ::aimrt::protocols::parameter_plugin::SetParameterRsp& rsp) {
   auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(req.module_name());
   if (parameter_handle_ptr == nullptr) {
-    SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidModuleName, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -29,7 +29,7 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Get(
     ::aimrt::protocols::parameter_plugin::GetParameterRsp& rsp) {
   auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(req.module_name());
   if (parameter_handle_ptr == nullptr) {
-    SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidModuleName, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -48,7 +48,7 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::List(
     ::aimrt::protocols::parameter_plugin::ListParameterRsp& rsp) {
   auto* parameter_handle_ptr = parameter_manager_ptr_->GetParameterHandle(req.module_name());
   if (parameter_handle_ptr == nullptr) {
-    SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidModuleName, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -68,7 +68,7 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Dump(
 
     // 检查module name合法性
     if (parameter_handle_ptr == nullptr) {
-      SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+      SetErrorCode(ErrorCode::kInvalidModuleName, rsp);
       co_return aimrt::rpc::Status();
     }
 
@@ -101,7 +101,7 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Load(
 
     // 检查module name合法性
     if (parameter_handle_ptr == nullptr) {
-      SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+      SetErrorCode(ErrorCode::kInvalidModuleName, rsp);
       co_return aimrt::rpc::Status();
     }
 

@@ -23,19 +23,19 @@ class BufferArrayZeroCopyOutputStream
   virtual ~BufferArrayZeroCopyOutputStream() = default;
 
   bool Next(void** data, int* size) override {
-    if (cur_buf_used_size_ == cur_block_size) {
+    if (cur_buf_used_size_ == cur_block_size_) {
       aimrt_buffer_t new_buffer = allocator_ptr_->allocate(
-          allocator_ptr_->impl, buffer_array_ptr_, cur_block_size <<= 1);
+          allocator_ptr_->impl, buffer_array_ptr_, cur_block_size_ <<= 1);
       if (new_buffer.data == nullptr) [[unlikely]]
         return false;
       *data = new_buffer.data;
-      byte_count_ += (*size = cur_buf_used_size_ = cur_block_size);
+      byte_count_ += (*size = cur_buf_used_size_ = cur_block_size_);
     } else {
       *data =
           static_cast<char*>(buffer_array_ptr_->data[buffer_array_ptr_->len - 1].data) +
           cur_buf_used_size_;
-      byte_count_ += (*size = cur_block_size - cur_buf_used_size_);
-      cur_buf_used_size_ = cur_block_size;
+      byte_count_ += (*size = cur_block_size_ - cur_buf_used_size_);
+      cur_buf_used_size_ = cur_block_size_;
     }
     return true;
   }
@@ -58,7 +58,7 @@ class BufferArrayZeroCopyOutputStream
 
   aimrt_buffer_array_t* buffer_array_ptr_;
   const aimrt_buffer_array_allocator_t* allocator_ptr_;
-  size_t cur_block_size = kInitBlockSize / 2;
+  size_t cur_block_size_ = kInitBlockSize / 2;
   size_t cur_buf_used_size_ = kInitBlockSize / 2;
   int64_t byte_count_ = 0;
 };

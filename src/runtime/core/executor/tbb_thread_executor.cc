@@ -42,7 +42,7 @@ namespace aimrt::runtime::core::executor {
 
 void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "TBBThreadExecutor can only be initialized once.");
 
   name_ = std::string(name);
@@ -60,7 +60,7 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
 
   for (uint32_t ii = 0; ii < options_.thread_num; ++ii) {
     threads_.emplace_back([this, ii] {
-      ++work_thread_num;
+      ++work_thread_num_;
 
       thread_id_vec_[ii] = std::this_thread::get_id();
 
@@ -89,7 +89,7 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
                       Name(), e.what());
         }
 
-        if (state_.load() == State::Shutdown) break;
+        if (state_.load() == State::kShutdown) break;
 
         try {
           qu_.pop(task);
@@ -104,7 +104,7 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
 
       thread_id_vec_[ii] = std::thread::id();
 
-      --work_thread_num;
+      --work_thread_num_;
     });
   }
 
@@ -113,15 +113,15 @@ void TBBThreadExecutor::Initialize(std::string_view name, YAML::Node options_nod
 
 void TBBThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void TBBThreadExecutor::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
-  while (work_thread_num.load()) {
+  while (work_thread_num_.load()) {
     qu_.abort();
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
@@ -143,7 +143,7 @@ bool TBBThreadExecutor::IsInCurrentExecutor() const noexcept {
 }
 
 void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
-  if (state_.load() != State::Init && state_.load() != State::Start) [[unlikely]] {
+  if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
     fprintf(stderr,
             "Tbb thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
             Name().data());

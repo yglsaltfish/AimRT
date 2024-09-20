@@ -94,7 +94,7 @@ namespace aimrt::plugins::mqtt_plugin {
 
 void MqttRpcBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Mqtt Rpc backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -131,14 +131,14 @@ void MqttRpcBackend::Initialize(YAML::Node options_node) {
 
 void MqttRpcBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   SubscribeMqttTopic();
 }
 
 void MqttRpcBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   UnSubscribeMqttTopic();
@@ -151,7 +151,7 @@ void MqttRpcBackend::Shutdown() {
 bool MqttRpcBackend::RegisterServiceFunc(
     const runtime::core::rpc::ServiceFuncWrapper& service_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
       return false;
     }
@@ -194,10 +194,10 @@ bool MqttRpcBackend::RegisterServiceFunc(
         // 获取字段
         util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 
-        std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+        std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
         ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
 
-        std::string mqtt_pub_topic(buf_oper.GetString(util::BufferLenType::UINT8));
+        std::string mqtt_pub_topic(buf_oper.GetString(util::BufferLenType::kUInt8));
 
         char req_id_buf[4];
         buf_oper.GetBuffer(req_id_buf, 4);
@@ -205,8 +205,8 @@ bool MqttRpcBackend::RegisterServiceFunc(
         // 获取context
         size_t ctx_num = buf_oper.GetUint8();
         for (size_t ii = 0; ii < ctx_num; ++ii) {
-          auto key = buf_oper.GetString(util::BufferLenType::UINT16);
-          auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+          auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
+          auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
           ctx_ptr->SetMetaValue(key, val);
         }
 
@@ -288,7 +288,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
               std::vector<char> msg_buf_vec(mqtt_pkg_size);
               util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
 
-              buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+              buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
               buf_oper.SetBuffer(req_id_buf, sizeof(req_id_buf));
               buf_oper.SetUint32(0);
 
@@ -346,7 +346,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
 bool MqttRpcBackend::RegisterClientFunc(
     const runtime::core::rpc::ClientFuncWrapper& client_func_wrapper) noexcept {
   try {
-    if (state_.load() != State::Init) {
+    if (state_.load() != State::kInit) {
       AIMRT_ERROR("Client func can only be registered when state is 'Init'.");
       return false;
     }
@@ -401,7 +401,7 @@ bool MqttRpcBackend::RegisterClientFunc(
           try {
             util::ConstBufferOperator buf_oper(static_cast<const char*>(message->payload), message->payloadlen);
 
-            std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+            std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
             uint32_t req_id = buf_oper.GetUint32();
             uint32_t code = buf_oper.GetUint32();
 
@@ -462,7 +462,7 @@ bool MqttRpcBackend::RegisterClientFunc(
 void MqttRpcBackend::Invoke(
     const std::shared_ptr<runtime::core::rpc::InvokeWrapper>& client_invoke_wrapper_ptr) noexcept {
   try {
-    if (state_.load() != State::Start) [[unlikely]] {
+    if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
@@ -580,13 +580,13 @@ void MqttRpcBackend::Invoke(
 
     util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
 
-    buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
-    buf_oper.SetString(mqtt_sub_topic, util::BufferLenType::UINT8);
+    buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
+    buf_oper.SetString(mqtt_sub_topic, util::BufferLenType::kUInt8);
     buf_oper.SetUint32(cur_req_id);
 
     buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
     for (const auto& s : context_meta_kv) {
-      buf_oper.SetString(s, util::BufferLenType::UINT16);
+      buf_oper.SetString(s, util::BufferLenType::kUInt16);
     }
 
     // data
@@ -627,7 +627,7 @@ void MqttRpcBackend::Invoke(
 void MqttRpcBackend::RegisterGetExecutorFunc(
     const std::function<aimrt::executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   get_executor_func_ = get_executor_func;
 }
@@ -660,7 +660,7 @@ void MqttRpcBackend::ReturnRspWithStatusCode(
   std::vector<char> msg_buf_vec(1 + serialization_type.size() + 4 + 4);
   util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
 
-  buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+  buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
   buf_oper.SetBuffer(req_id_buf, 4);
   buf_oper.SetUint32(code);
 

@@ -46,7 +46,7 @@ class AsioExecutor {
    * @param[in] start_func
    */
   void RegisterSvrStartFunc(std::function<void()>&& start_func) {
-    if (state_.load() != State::PreStart) [[unlikely]]
+    if (state_.load() != State::kPreStart) [[unlikely]]
       throw std::runtime_error("Method can only be called when state is 'PreStart'.");
 
     start_func_vec_.emplace_back(std::move(start_func));
@@ -58,7 +58,7 @@ class AsioExecutor {
    * @param[in] stop_func
    */
   void RegisterSvrStopFunc(std::function<void()>&& stop_func) {
-    if (state_.load() != State::PreStart) [[unlikely]]
+    if (state_.load() != State::kPreStart) [[unlikely]]
       throw std::runtime_error("Method can only be called when state is 'PreStart'.");
 
     stop_func_vec_.emplace_back(std::move(stop_func));
@@ -80,7 +80,7 @@ class AsioExecutor {
    * @note 异步，会调用注册的start方法并启动指定数量的线程
    */
   void Start() {
-    if (std::atomic_exchange(&state_, State::Start) != State::PreStart) [[unlikely]]
+    if (std::atomic_exchange(&state_, State::kStart) != State::kPreStart) [[unlikely]]
       throw std::runtime_error("Method can only be called when state is 'PreStart'.");
 
     std::for_each(start_func_vec_.begin(), start_func_vec_.end(),
@@ -119,7 +119,7 @@ class AsioExecutor {
    * @note 异步，会调用注册的stop方法
    */
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown) [[unlikely]]
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown) [[unlikely]]
       return;
 
     // 并不需要调用io_.stop()。当io_上所有任务都运行完毕后，会自动停止
@@ -138,7 +138,7 @@ class AsioExecutor {
    *
    */
   void EnableStopSignal() {
-    if (state_.load() != State::PreStart) [[unlikely]]
+    if (state_.load() != State::kPreStart) [[unlikely]]
       throw std::runtime_error("Method can only be called when state is 'PreStart'.");
 
     auto sig_ptr = std::make_shared<boost::asio::signal_set>(*io_ptr_, SIGINT, SIGTERM);
@@ -169,14 +169,14 @@ class AsioExecutor {
 
  private:
   enum class State : uint32_t {
-    PreStart,
-    Start,
-    Shutdown,
+    kPreStart,
+    kStart,
+    kShutdown,
   };
 
   const uint32_t threads_num_;
 
-  std::atomic<State> state_ = State::PreStart;
+  std::atomic<State> state_ = State::kPreStart;
 
   std::shared_ptr<boost::asio::io_context> io_ptr_;
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard_;

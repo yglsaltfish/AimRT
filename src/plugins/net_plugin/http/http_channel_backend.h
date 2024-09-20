@@ -57,14 +57,14 @@ class HttpChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   Options options_;
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   const runtime::core::channel::ChannelRegistry* channel_registry_ptr_ = nullptr;
 

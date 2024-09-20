@@ -45,7 +45,7 @@ def main():
     aimrt_core.Initialize(core_options)
 
     module_handle = aimrt_core.CreateModule("HelloWorldPyModule")
-    assert(isinstance(module_handle, aimrt_py.CoreRef))
+    assert (isinstance(module_handle, aimrt_py.CoreRef))
 
     aimrt_py.info(module_handle.GetLogger(), "This is an example log.")
 

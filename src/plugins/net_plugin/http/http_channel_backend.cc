@@ -63,7 +63,7 @@ namespace aimrt::plugins::net_plugin {
 
 void HttpChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Http channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -74,12 +74,12 @@ void HttpChannelBackend::Initialize(YAML::Node options_node) {
 
 void HttpChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void HttpChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   http_svr_ptr_->Shutdown();
@@ -89,7 +89,7 @@ void HttpChannelBackend::Shutdown() {
 bool HttpChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     namespace util = aimrt::common::util;
@@ -139,7 +139,7 @@ bool HttpChannelBackend::RegisterPublishType(
 bool HttpChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     namespace asio = boost::asio;
@@ -224,7 +224,7 @@ bool HttpChannelBackend::Subscribe(
 
       sub_tool_ptr->DoSubscribeCallback(ctx_ptr, serialization_type, buffer_array_view);
 
-      co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::OK;
+      co_return runtime::common::net::AsioHttpServer::HttpHandleStatus::kOk;
     };
 
     http_svr_ptr_->RegisterHttpHandleFunc<http::dynamic_body>(
@@ -241,7 +241,7 @@ bool HttpChannelBackend::Subscribe(
 
 void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Start,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart,
                             "Method can only be called when state is 'Start'.");
 
     namespace asio = boost::asio;

@@ -18,7 +18,7 @@
 namespace aimrt::examples::cpp::protobuf_rpc::benchmark_rpc_client_module {
 
 std::string GenerateRandomString(int min_length, int max_length) {
-  static constexpr std::string_view chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  static constexpr std::string_view kChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   srand(time(nullptr));
 
   int length = rand() % (max_length - min_length + 1) + min_length;
@@ -27,7 +27,7 @@ std::string GenerateRandomString(int min_length, int max_length) {
   result.reserve(length);
 
   for (int i = 0; i < length; ++i) {
-    result += chars[rand() % chars.length()];
+    result += kChars[rand() % kChars.length()];
   }
 
   return result;
@@ -53,14 +53,14 @@ bool BenchmarkRpcClientModule::Initialize(aimrt::CoreRef core) {
 
           auto perf_mode = bench_plan_node["perf_mode"].as<std::string>();
           if (perf_mode == "fixed-freq") {
-            bench_plan.mode = BenchPlan::PerfMod::FixedFreq;
+            bench_plan.mode = BenchPlan::PerfMod::kFixedFreq;
           } else if (perf_mode == "bench") {
-            bench_plan.mode = BenchPlan::PerfMod::Bench;
+            bench_plan.mode = BenchPlan::PerfMod::kBench;
           } else {
             throw aimrt::common::util::AimRTException("Unsupport perf mode: " + perf_mode);
           }
 
-          if (bench_plan.mode == BenchPlan::PerfMod::FixedFreq) {
+          if (bench_plan.mode == BenchPlan::PerfMod::kFixedFreq) {
             bench_plan.freq = bench_plan_node["freq"].as<uint32_t>();
           }
 
@@ -209,7 +209,7 @@ co::Task<void> BenchmarkRpcClientModule::StartSinglePlan(uint32_t plan_id, Bench
 
   // start coro
   for (uint32_t ii = 0; ii < plan.parallel; ii++) {
-    if (plan.mode == BenchPlan::PerfMod::FixedFreq) {
+    if (plan.mode == BenchPlan::PerfMod::kFixedFreq) {
       bench_scope.spawn(co::On(co::InlineScheduler(), StartFixedFreqPlan(ii, plan, perf_datas[ii])));
     } else {
       bench_scope.spawn(co::On(co::InlineScheduler(), StartBenchPlan(ii, plan, perf_datas[ii])));
@@ -248,7 +248,7 @@ co::Task<void> BenchmarkRpcClientModule::StartSinglePlan(uint32_t plan_id, Bench
       std::accumulate<std::vector<uint32_t>::iterator, uint64_t>(gather_vec.begin(), gather_vec.end(), 0);
   uint32_t avg_latency = sum_latency / correct_count;
 
-  if (plan.mode == BenchPlan::PerfMod::FixedFreq) {
+  if (plan.mode == BenchPlan::PerfMod::kFixedFreq) {
     AIMRT_INFO(
         R"str(Benchmark plan {} completed, report:
 mode: fixed-freq

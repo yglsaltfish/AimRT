@@ -88,21 +88,21 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
     opts.url = options_.trace_otlp_http_exporter_url;
     auto exporter = otlp::OtlpHttpExporterFactory::Create(opts);
 
-    trace_sdk::BatchSpanProcessorOptions bspOpts{};
-    auto processor = trace_sdk::BatchSpanProcessorFactory::Create(std::move(exporter), bspOpts);
+    trace_sdk::BatchSpanProcessorOptions bsp_opts{};
+    auto processor = trace_sdk::BatchSpanProcessorFactory::Create(std::move(exporter), bsp_opts);
 
     provider_ = trace_sdk::TracerProviderFactory::Create(std::move(processor), resource);
 
     propagator_ = std::make_shared<trace_api::propagation::HttpTraceContext>();
 
     // register hook
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitChannel,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterChannelFilter(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitRpc,
                                 [this] { RegisterRpcFilter(); });
 
     plugin_options_node = options_;

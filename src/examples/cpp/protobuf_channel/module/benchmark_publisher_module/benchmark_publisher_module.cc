@@ -13,7 +13,7 @@
 namespace aimrt::examples::cpp::protobuf_channel::benchmark_publisher_module {
 
 std::string GenerateRandomString(int min_length, int max_length) {
-  static constexpr std::string_view chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  static constexpr std::string_view kChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   srand(time(nullptr));
 
   int length = rand() % (max_length - min_length + 1) + min_length;
@@ -22,7 +22,7 @@ std::string GenerateRandomString(int min_length, int max_length) {
   result.reserve(length);
 
   for (int i = 0; i < length; ++i) {
-    result += chars[rand() % chars.length()];
+    result += kChars[rand() % kChars.length()];
   }
 
   return result;

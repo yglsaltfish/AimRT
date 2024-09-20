@@ -89,13 +89,13 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     msg_handle_registry_ptr_ = std::make_shared<MsgHandleRegistry>();
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitRpc,
                                 [this] { RegisterMqttRpcBackend(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitChannel,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterMqttChannelBackend(); });
 
     plugin_options_node = options_;

@@ -64,10 +64,10 @@ class ModuleLoader {
 
   // 创建一个枚举类，用于标识pkgs模块使用情况(UseNone:全部使用, UseEnable:使用启用的模块, UseDisable:使用禁用的模块,默认使用UseNone)
   enum class Enable_or_Disable : uint32_t {
-    UseNone,
-    UseEnable,
-    UseDisable,
-  } enable_or_disable_for_pkg_ = Enable_or_Disable::UseNone;
+    kUseNone,
+    kUseEnable,
+    kUseDisable,
+  } enable_or_disable_for_pkg_ = Enable_or_Disable::kUseNone;
 };
 
 }  // namespace aimrt::runtime::core::module

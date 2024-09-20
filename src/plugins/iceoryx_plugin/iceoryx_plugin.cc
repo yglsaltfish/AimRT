@@ -43,10 +43,10 @@ bool IceoryxPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     iceoryx_manager_ptr_->Initialize();
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PostInitLog,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
                                 [this] { SetPluginLogger(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitChannel,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterIceoryxChannelBackend(); });
 
     plugin_options_node = options_;

@@ -27,7 +27,7 @@ aimrt::co::Task<aimrt::rpc::Status> LogControlServiceImpl::GetModuleLogLevel(
   for (const auto& module_name : req.module_names()) {
     auto finditr = log_lvl_map.find(module_name);
     if (finditr == log_lvl_map.end()) {
-      SetErrorCode(ErrorCode::INVALID_MODULE_NAME, rsp);
+      SetErrorCode(ErrorCode::kInvalidModuleName, rsp);
       co_return aimrt::rpc::Status();
     }
 

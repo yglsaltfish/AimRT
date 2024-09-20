@@ -19,7 +19,7 @@
 
 namespace aimrt::common::ros2_util {
 
-namespace __json_convert_impl__ {
+namespace json_convert_impl {
 
 inline bool IsSequence(const rosidl_typesupport_introspection_cpp::MessageMember &member) {
   return ((member.is_array_ && member.array_size_ == 0) || member.is_upper_bound_);
@@ -247,7 +247,7 @@ static void JsonToMessageImpl(
   }
 }
 
-struct fake_vector {
+struct FakeVector {
   void *begin;
   void *end;
   void *end_capacity;
@@ -256,7 +256,7 @@ struct fake_vector {
 union vector_union {
   // The <Type> here doesn't matter because the memory layout (see fake_vector) is always the same.
   std::vector<int> *std;
-  fake_vector *fake;
+  FakeVector *fake;
 };
 
 inline size_t GetVectorSize(const uint8_t *vector, size_t element_size) {
@@ -608,7 +608,7 @@ static void MessageToJsonImpl(
   }
 }
 
-}  // namespace __json_convert_impl__
+}  // namespace json_convert_impl
 
 /**
  * @brief use typesupport convert json to ros msg
@@ -623,7 +623,7 @@ inline bool JsonToMessage(
     const std::string &json_str,
     const rosidl_message_type_support_t *typesupport,
     void *message) {
-  using namespace __json_convert_impl__;
+  using namespace json_convert_impl;
 
   if (message == nullptr) [[unlikely]]
     return false;
@@ -662,7 +662,7 @@ inline bool MessageToJson(
     const void *message,
     const rosidl_message_type_support_t *typesupport,
     std::string &json_str_res) {
-  using namespace __json_convert_impl__;
+  using namespace json_convert_impl;
 
   if (message == nullptr) [[unlikely]]
     return false;

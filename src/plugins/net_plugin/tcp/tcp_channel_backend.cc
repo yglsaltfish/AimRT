@@ -50,7 +50,7 @@ namespace aimrt::plugins::net_plugin {
 
 void TcpChannelBackend::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Tcp channel backend can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -61,12 +61,12 @@ void TcpChannelBackend::Initialize(YAML::Node options_node) {
 
 void TcpChannelBackend::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void TcpChannelBackend::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   tcp_svr_ptr_->Shutdown();
@@ -77,7 +77,7 @@ void TcpChannelBackend::Shutdown() {
 bool TcpChannelBackend::RegisterPublishType(
     const runtime::core::channel::PublishTypeWrapper& publish_type_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     namespace util = aimrt::common::util;
@@ -134,7 +134,7 @@ bool TcpChannelBackend::RegisterPublishType(
 bool TcpChannelBackend::Subscribe(
     const runtime::core::channel::SubscribeWrapper& subscribe_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Init,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kInit,
                             "Method can only be called when state is 'Init'.");
 
     namespace util = aimrt::common::util;
@@ -167,16 +167,16 @@ bool TcpChannelBackend::Subscribe(
           static_cast<const char*>(msg_buf_ptr->data().data()),
           msg_buf_ptr->size());
 
-      auto pattern = buf_oper.GetString(util::BufferLenType::UINT8);
+      auto pattern = buf_oper.GetString(util::BufferLenType::kUInt8);
 
-      std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+      std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
       ctx_ptr->SetSerializationType(serialization_type);
 
       // 获取context
       size_t ctx_num = buf_oper.GetUint8();
       for (size_t ii = 0; ii < ctx_num; ++ii) {
-        auto key = buf_oper.GetString(util::BufferLenType::UINT16);
-        auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+        auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
+        auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
         ctx_ptr->SetMetaValue(key, val);
       }
 
@@ -202,7 +202,7 @@ bool TcpChannelBackend::Subscribe(
 
 void TcpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper) noexcept {
   try {
-    AIMRT_CHECK_ERROR_THROW(state_.load() == State::Start,
+    AIMRT_CHECK_ERROR_THROW(state_.load() == State::kStart,
                             "Method can only be called when state is 'Start'.");
 
     namespace util = aimrt::common::util;
@@ -268,12 +268,12 @@ void TcpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
 
     util::BufferOperator buf_oper(static_cast<char*>(buf.data()), buf.size());
 
-    buf_oper.SetString(pattern, util::BufferLenType::UINT8);
-    buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+    buf_oper.SetString(pattern, util::BufferLenType::kUInt8);
+    buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
 
     buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
     for (const auto& s : context_meta_kv) {
-      buf_oper.SetString(s, util::BufferLenType::UINT16);
+      buf_oper.SetString(s, util::BufferLenType::kUInt16);
     }
 
     // data

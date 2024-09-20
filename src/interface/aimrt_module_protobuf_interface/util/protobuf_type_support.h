@@ -27,11 +27,11 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
       aimrt::util::ToAimRTStringView("pb"),
       aimrt::util::ToAimRTStringView("json")};
 
-  static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
+  static const std::string kMsgTypeName = "pb:" + MsgType().GetTypeName();
 
-  static const aimrt_type_support_base_t ts{
+  static const aimrt_type_support_base_t kTs{
       .type_name = [](void* impl) -> aimrt_string_view_t {
-        return aimrt::util::ToAimRTStringView(msg_type_name);
+        return aimrt::util::ToAimRTStringView(kMsgTypeName);
       },
       .create = [](void* impl) -> void* {
         return new MsgType();
@@ -154,7 +154,7 @@ const aimrt_type_support_base_t* GetProtobufMessageTypeSupport() {
         return nullptr;
       },
       .impl = nullptr};
-  return &ts;
+  return &kTs;
 }
 
 }  // namespace aimrt

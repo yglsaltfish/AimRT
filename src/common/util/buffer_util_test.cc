@@ -35,25 +35,25 @@ TEST(BufferOperatorTest, base) {
   BufferOperator op(buf, sizeof(buf));
 
   op.SetUint8(n8);
-  op.SetString(s, BufferLenType::UINT8);
+  op.SetString(s, BufferLenType::kUInt8);
   op.SetUint16(n16);
-  op.SetString(s, BufferLenType::UINT16);
+  op.SetString(s, BufferLenType::kUInt16);
   op.SetUint32(n32);
-  op.SetString(s, BufferLenType::UINT32);
+  op.SetString(s, BufferLenType::kUInt32);
   op.SetUint64(n64);
-  op.SetString(s, BufferLenType::UINT64);
+  op.SetString(s, BufferLenType::kUInt64);
 
   op.SetBuffer(std::span<const char>(s.data(), s.size()));
 
   ConstBufferOperator cop(buf, sizeof(buf));
   ASSERT_EQ(cop.GetUint8(), n8);
-  ASSERT_EQ(cop.GetString(BufferLenType::UINT8), s);
+  ASSERT_EQ(cop.GetString(BufferLenType::kUInt8), s);
   ASSERT_EQ(cop.GetUint16(), n16);
-  ASSERT_EQ(cop.GetString(BufferLenType::UINT16), s);
+  ASSERT_EQ(cop.GetString(BufferLenType::kUInt16), s);
   ASSERT_EQ(cop.GetUint32(), n32);
-  ASSERT_EQ(cop.GetString(BufferLenType::UINT32), s);
+  ASSERT_EQ(cop.GetString(BufferLenType::kUInt32), s);
   ASSERT_EQ(cop.GetUint64(), n64);
-  ASSERT_EQ(cop.GetString(BufferLenType::UINT64), s);
+  ASSERT_EQ(cop.GetString(BufferLenType::kUInt64), s);
 
   auto buf_span = cop.GetBuffer(s.size());
   ASSERT_EQ(std::string_view(buf_span.data(), buf_span.size()), s);

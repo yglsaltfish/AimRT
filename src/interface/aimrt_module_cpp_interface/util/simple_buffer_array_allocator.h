@@ -54,7 +54,7 @@ class SimpleBufferArrayAllocator {
   }
 
   static const aimrt_buffer_array_allocator_t* NativeHandle() {
-    static constexpr aimrt_buffer_array_allocator_t simple_buffer_array_allocator{
+    static constexpr aimrt_buffer_array_allocator_t kSimpleBufferArrayAllocator{
         .reserve = [](void* impl, aimrt_buffer_array_t* buffer_array, size_t new_cap) {
           Reserve(buffer_array, new_cap);  //
         },
@@ -66,7 +66,7 @@ class SimpleBufferArrayAllocator {
         },
         .impl = nullptr};
 
-    return &simple_buffer_array_allocator;
+    return &kSimpleBufferArrayAllocator;
   }
 };
 

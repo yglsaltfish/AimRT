@@ -13,14 +13,14 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StartRecord(
     ::aimrt::protocols::record_playback_plugin::CommonRsp& rsp) {
   auto finditr = record_action_map_ptr_->find(req.action_name());
   if (finditr == record_action_map_ptr_->end()) {
-    SetErrorCode(ErrorCode::INVALID_ACTION_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidActionName, rsp);
     co_return aimrt::rpc::Status();
   }
 
   auto& action_wrapper = *(finditr->second);
 
-  if (action_wrapper.GetOptions().mode != RecordAction::Options::Mode::SIGNAL) {
-    SetErrorCode(ErrorCode::INVALID_ACTION_MODE, rsp);
+  if (action_wrapper.GetOptions().mode != RecordAction::Options::Mode::kSignal) {
+    SetErrorCode(ErrorCode::kInvalidActionMode, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -29,7 +29,7 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StartRecord(
 
   bool ret = action_wrapper.StartSignalRecord(preparation_duration_s, record_duration_s);
   if (!ret) {
-    SetErrorCode(ErrorCode::START_RECORD_FAILED, rsp);
+    SetErrorCode(ErrorCode::kStartRecordFailed, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -42,14 +42,14 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StopRecord(
     ::aimrt::protocols::record_playback_plugin::CommonRsp& rsp) {
   auto finditr = record_action_map_ptr_->find(req.action_name());
   if (finditr == record_action_map_ptr_->end()) {
-    SetErrorCode(ErrorCode::INVALID_ACTION_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidActionName, rsp);
     co_return aimrt::rpc::Status();
   }
 
   auto& action_wrapper = *(finditr->second);
 
-  if (action_wrapper.GetOptions().mode != RecordAction::Options::Mode::SIGNAL) {
-    SetErrorCode(ErrorCode::INVALID_ACTION_MODE, rsp);
+  if (action_wrapper.GetOptions().mode != RecordAction::Options::Mode::kSignal) {
+    SetErrorCode(ErrorCode::kInvalidActionMode, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -64,14 +64,14 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StartPlayback(
     ::aimrt::protocols::record_playback_plugin::CommonRsp& rsp) {
   auto finditr = playback_action_map_ptr_->find(req.action_name());
   if (finditr == playback_action_map_ptr_->end()) {
-    SetErrorCode(ErrorCode::INVALID_ACTION_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidActionName, rsp);
     co_return aimrt::rpc::Status();
   }
 
   auto& action_wrapper = *(finditr->second);
 
-  if (action_wrapper.GetOptions().mode != PlaybackAction::Options::Mode::SIGNAL) {
-    SetErrorCode(ErrorCode::INVALID_ACTION_MODE, rsp);
+  if (action_wrapper.GetOptions().mode != PlaybackAction::Options::Mode::kSignal) {
+    SetErrorCode(ErrorCode::kInvalidActionMode, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -80,7 +80,7 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StartPlayback(
 
   bool ret = action_wrapper.StartSignalPlayback(skip_duration_s, play_duration_s);
   if (!ret) {
-    SetErrorCode(ErrorCode::START_PLAYBACK_FAILED, rsp);
+    SetErrorCode(ErrorCode::kStartPlaybackFailed, rsp);
     co_return aimrt::rpc::Status();
   }
 
@@ -93,14 +93,14 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::StopPlayback(
     ::aimrt::protocols::record_playback_plugin::CommonRsp& rsp) {
   auto finditr = playback_action_map_ptr_->find(req.action_name());
   if (finditr == playback_action_map_ptr_->end()) {
-    SetErrorCode(ErrorCode::INVALID_ACTION_NAME, rsp);
+    SetErrorCode(ErrorCode::kInvalidActionName, rsp);
     co_return aimrt::rpc::Status();
   }
 
   auto& action_wrapper = *(finditr->second);
 
-  if (action_wrapper.GetOptions().mode != PlaybackAction::Options::Mode::SIGNAL) {
-    SetErrorCode(ErrorCode::INVALID_ACTION_MODE, rsp);
+  if (action_wrapper.GetOptions().mode != PlaybackAction::Options::Mode::kSignal) {
+    SetErrorCode(ErrorCode::kInvalidActionMode, rsp);
     co_return aimrt::rpc::Status();
   }
 

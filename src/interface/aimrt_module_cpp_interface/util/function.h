@@ -21,7 +21,7 @@ struct InvokerTraitsHelper;
 
 template <typename R, typename... Args>
 struct InvokerTraitsHelper<R (*)(void*, Args...)> {
-  static constexpr size_t ArgCount = sizeof...(Args);
+  static constexpr size_t kArgCount = sizeof...(Args);
   using ReturnType = R;
   using ArgsTuple = std::tuple<Args...>;
 };
@@ -58,7 +58,7 @@ class Function<Ops> {
   using InvokerTypeHelper = InvokerTraitsHelper<decltype(OpsType::invoker)>;
   using R = typename InvokerTypeHelper::ReturnType;
   using ArgsTuple = typename InvokerTypeHelper::ArgsTuple;
-  using Indices = std::make_index_sequence<InvokerTypeHelper::ArgCount>;
+  using Indices = std::make_index_sequence<InvokerTypeHelper::kArgCount>;
 
  public:
   Function() { base_.ops = nullptr; }
@@ -146,7 +146,7 @@ class Function<Ops> {
     using Decayed = std::decay_t<T>;
 
     if constexpr (sizeof(Decayed) <= sizeof(base_.object_buf)) {
-      static constexpr OpsType ops = {
+      static constexpr OpsType kOps = {
           .invoker = [](void* object, std::tuple_element_t<Idx, ArgsTuple>... args) -> R {
             if constexpr (std::is_void_v<R>) {
               std::invoke(*static_cast<Decayed*>(object), args...);
@@ -159,12 +159,12 @@ class Function<Ops> {
                 static_cast<Decayed*>(from)->~Decayed(); },
           .destroyer = [](void* object) { static_cast<Decayed*>(object)->~Decayed(); }};
 
-      base_.ops = &ops;
+      base_.ops = &kOps;
       new (&(base_.object_buf)) Decayed(std::forward<T>(action));
     } else {
       using Stored = Decayed*;
 
-      static constexpr OpsType ops = {
+      static constexpr OpsType kOps = {
           .invoker = [](void* object, std::tuple_element_t<Idx, ArgsTuple>... args) -> R {
             if constexpr (std::is_void_v<R>) {
               std::invoke(**static_cast<Stored*>(object), args...);
@@ -175,7 +175,7 @@ class Function<Ops> {
           .relocator = [](void* from, void* to) { new (to) Stored(*static_cast<Stored*>(from)); },
           .destroyer = [](void* object) { delete *static_cast<Stored*>(object); }};
 
-      base_.ops = &ops;
+      base_.ops = &kOps;
       new (&(base_.object_buf)) Stored(new Decayed(std::forward<T>(action)));
     }
   }

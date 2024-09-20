@@ -98,7 +98,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
       "Module proxy configurator is not set before initialize.");
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Module manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -219,7 +219,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
 
 void ModuleManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   for (const auto& module_name : module_init_order_) {
@@ -240,7 +240,7 @@ void ModuleManager::Start() {
 }
 
 void ModuleManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Module manager shutdown.");
@@ -274,7 +274,7 @@ void ModuleManager::Shutdown() {
 void ModuleManager::RegisterModule(
     std::string_view pkg, const aimrt_module_base_t* module) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   AIMRT_CHECK_ERROR_THROW(module != nullptr, "Register invalid module");
@@ -285,7 +285,7 @@ void ModuleManager::RegisterModule(
 const aimrt_core_base_t* ModuleManager::CreateModule(
     std::string_view pkg, aimrt_module_info_t module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   const std::string& module_name = aimrt::util::ToStdString(module_info.name);
@@ -327,7 +327,7 @@ const aimrt_core_base_t* ModuleManager::CreateModule(
 void ModuleManager::RegisterCoreProxyConfigurator(
     CoreProxyConfigurator&& module_proxy_configurator) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   module_proxy_configurator_ = std::move(module_proxy_configurator);
@@ -335,7 +335,7 @@ void ModuleManager::RegisterCoreProxyConfigurator(
 
 const std::vector<std::string>& ModuleManager::GetModuleNameList() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   return module_init_order_;
@@ -343,7 +343,7 @@ const std::vector<std::string>& ModuleManager::GetModuleNameList() const {
 
 const std::vector<const util::ModuleDetailInfo*>& ModuleManager::GetModuleDetailInfoList() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   return module_detail_info_vec_;
@@ -395,7 +395,7 @@ void ModuleManager::InitModule(ModuleWrapper* module_wrapper_ptr) {
 
 std::list<std::pair<std::string, std::string>> ModuleManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   std::vector<std::vector<std::string>> module_info_table =

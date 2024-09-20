@@ -68,7 +68,7 @@ class Response {
   Headers headers_;
   Trailers trailers_;
   SimpleBuffer body_;
-  HttpStatus http_status_ = HttpStatus::Ok;
+  HttpStatus http_status_ = HttpStatus::kOk;
 };
 using ResponsePtr = std::shared_ptr<Response>;
 

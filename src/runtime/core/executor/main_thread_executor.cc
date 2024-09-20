@@ -40,7 +40,7 @@ namespace aimrt::runtime::core::executor {
 
 void MainThreadExecutor::Initialize(YAML::Node options_node) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Main thread executor can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -65,12 +65,12 @@ void MainThreadExecutor::Initialize(YAML::Node options_node) {
 
 void MainThreadExecutor::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Main thread executor can only run when state is 'Init'.");
 }
 
 void MainThreadExecutor::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Main thread executor shutdown.");

@@ -17,7 +17,7 @@ Ros2AdapterSubscription::create_serialized_message() {
 
 void Ros2AdapterSubscription::handle_message(
     std::shared_ptr<void>& message, const rclcpp::MessageInfo& message_info) {
-  if (!run_flag.load()) return;
+  if (!run_flag_.load()) return;
 
   try {
     auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);

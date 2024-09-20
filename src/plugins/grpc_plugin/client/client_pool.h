@@ -34,7 +34,7 @@ class AsioHttp2ClientPool
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -42,7 +42,7 @@ class AsioHttp2ClientPool
 
   void Initialize(const ClientPoolOptions& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = ClientPoolOptions::Verify(options);
@@ -50,12 +50,12 @@ class AsioHttp2ClientPool
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -73,7 +73,7 @@ class AsioHttp2ClientPool
     return boost::asio::co_spawn(
         mgr_strand_,
         [this, &client_options]() -> Awaitable<std::shared_ptr<AsioHttp2Client>> {
-          if (state_.load() != State::Start) [[unlikely]] {
+          if (state_.load() != State::kStart) [[unlikely]] {
             AIMRT_WARN("Method can only be called when state is 'Start'.");
             co_return std::shared_ptr<AsioHttp2Client>();
           }
@@ -112,10 +112,10 @@ class AsioHttp2ClientPool
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   std::shared_ptr<IOCtx> io_ptr_;
@@ -125,7 +125,7 @@ class AsioHttp2ClientPool
 
   ClientPoolOptions options_;
 
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   // Client map, the key is the client's host and service
   std::unordered_map<std::string, std::shared_ptr<AsioHttp2Client>> client_map_;

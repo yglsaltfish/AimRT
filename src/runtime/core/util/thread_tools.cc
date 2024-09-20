@@ -62,12 +62,12 @@ void BindCpuForCurrentThread(const std::vector<uint32_t>& cpu_set) {
   throw aimrt::common::util::AimRTException(
       "BindCpuForCurrentThread currently not supported on the Windows platform.");
 #else
-  static const uint32_t max_cpu_idx = std::thread::hardware_concurrency();
+  static const uint32_t kMaxCpuIdx = std::thread::hardware_concurrency();
   for (auto cpu_idx : cpu_set) {
-    if (cpu_idx >= max_cpu_idx) {
+    if (cpu_idx >= kMaxCpuIdx) {
       throw aimrt::common::util::AimRTException(::aimrt_fmt::format(
           "Invalid cpu index '{}', max cpu idx is '{}'.",
-          cpu_idx, max_cpu_idx));
+          cpu_idx, kMaxCpuIdx));
     }
   }
 

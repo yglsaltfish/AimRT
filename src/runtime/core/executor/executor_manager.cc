@@ -60,7 +60,7 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
   RegisterTImeWheelExecutorGenFunc();
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Executor manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -102,7 +102,7 @@ void ExecutorManager::Initialize(YAML::Node options_node) {
 
 void ExecutorManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   for (auto& itr : executor_vec_) {
@@ -113,7 +113,7 @@ void ExecutorManager::Start() {
 }
 
 void ExecutorManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Executor manager shutdown.");
@@ -132,7 +132,7 @@ void ExecutorManager::Shutdown() {
 void ExecutorManager::RegisterExecutorGenFunc(
     std::string_view type, ExecutorGenFunc&& executor_gen_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   executor_gen_func_map_.emplace(type, std::move(executor_gen_func));
@@ -141,7 +141,7 @@ void ExecutorManager::RegisterExecutorGenFunc(
 const ExecutorManagerProxy& ExecutorManager::GetExecutorManagerProxy(
     const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   auto itr = executor_manager_proxy_map_.find(module_info.name);
@@ -224,7 +224,7 @@ void ExecutorManager::RegisterTImeWheelExecutorGenFunc() {
 
 std::list<std::pair<std::string, std::string>> ExecutorManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   std::vector<std::string> executor_type_vec;

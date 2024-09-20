@@ -24,18 +24,18 @@ inline bool RegisterPublishType(PublisherRef publisher) {
 
 template <Ros2MsgType MsgType>
 inline void Publish(PublisherRef publisher, ContextRef ctx_ref, const MsgType& msg) {
-  static const std::string msg_type_name =
+  static const std::string kMsgTypeName =
       std::string("ros2:") + rosidl_generator_traits::name<MsgType>();
 
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("ros2");
-    publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+    publisher.Publish(kMsgTypeName, ctx_ref, static_cast<const void*>(&msg));
     return;
   }
 
   Context ctx;
   ctx.SetSerializationType("ros2");
-  publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
+  publisher.Publish(kMsgTypeName, ctx, static_cast<const void*>(&msg));
 }
 
 template <Ros2MsgType MsgType>

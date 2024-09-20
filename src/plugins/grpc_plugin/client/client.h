@@ -40,7 +40,7 @@ class AsioHttp2Client : public std::enable_shared_from_this<AsioHttp2Client> {
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -48,7 +48,7 @@ class AsioHttp2Client : public std::enable_shared_from_this<AsioHttp2Client> {
 
   void Initialize(const ClientOptions& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = ClientOptions::Verify(options);
@@ -57,12 +57,12 @@ class AsioHttp2Client : public std::enable_shared_from_this<AsioHttp2Client> {
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -80,7 +80,7 @@ class AsioHttp2Client : public std::enable_shared_from_this<AsioHttp2Client> {
         mgr_strand_,
         [this, &req_ptr, timeout]() -> Awaitable<ResponsePtr> {
           AIMRT_CHECK_ERROR_THROW(
-              state_.load() == State::Start,
+              state_.load() == State::kStart,
               "Method can only be called when state is 'Start'.");
 
           std::shared_ptr<Connection> connection_ptr;
@@ -112,14 +112,14 @@ class AsioHttp2Client : public std::enable_shared_from_this<AsioHttp2Client> {
 
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  bool IsRunning() const { return state_.load() == State::Start; }
+  bool IsRunning() const { return state_.load() == State::kStart; }
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   std::shared_ptr<IOCtx> io_ptr_;
@@ -129,7 +129,7 @@ class AsioHttp2Client : public std::enable_shared_from_this<AsioHttp2Client> {
 
   ClientOptions options_;
 
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   std::shared_ptr<const ConnectionOptions> connection_options_ptr_;
   std::list<std::shared_ptr<Connection>> connection_ptr_list_;

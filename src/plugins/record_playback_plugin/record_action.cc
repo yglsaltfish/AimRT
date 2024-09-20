@@ -21,9 +21,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     node["max_bag_size_m"] = rhs.max_bag_size_m;
     node["max_bag_num"] = rhs.max_bag_num;
 
-    if (rhs.mode == Options::Mode::IMD) {
+    if (rhs.mode == Options::Mode::kImd) {
       node["mode"] = "imd";
-    } else if (rhs.mode == Options::Mode::SIGNAL) {
+    } else if (rhs.mode == Options::Mode::kSignal) {
       node["mode"] = "signal";
     }
 
@@ -55,9 +55,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
 
     auto mode = aimrt::common::util::StrToLower(node["mode"].as<std::string>());
     if (mode == "imd") {
-      rhs.mode = Options::Mode::IMD;
+      rhs.mode = Options::Mode::kImd;
     } else if (mode == "signal") {
-      rhs.mode = Options::Mode::SIGNAL;
+      rhs.mode = Options::Mode::kSignal;
     } else {
       throw aimrt::common::util::AimRTException("Invalid record mode: " + mode);
     }
@@ -90,7 +90,7 @@ namespace aimrt::plugins::record_playback_plugin {
 
 void RecordAction::Initialize(YAML::Node options) {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Local channel backend can only be initialized once.");
 
   if (options && !options.IsNull())
@@ -172,18 +172,18 @@ void RecordAction::Initialize(YAML::Node options) {
 
 void RecordAction::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 }
 
 void RecordAction::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 }
 
 void RecordAction::InitExecutor() {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   AIMRT_CHECK_ERROR_THROW(
@@ -200,7 +200,7 @@ void RecordAction::InitExecutor() {
 void RecordAction::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
@@ -209,22 +209,22 @@ void RecordAction::RegisterGetExecutorFunc(
 void RecordAction::RegisterGetTypeSupportFunc(
     const std::function<aimrt::util::TypeSupportRef(std::string_view)>& get_type_support_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   get_type_support_func_ = get_type_support_func;
 }
 
 void RecordAction::AddRecord(OneRecord&& record) {
-  if (state_.load() != State::Start) [[unlikely]] {
+  if (state_.load() != State::kStart) [[unlikely]] {
     return;
   }
 
-  if (options_.mode == Options::Mode::IMD) {
+  if (options_.mode == Options::Mode::kImd) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
       AddRecordImpl(std::move(record));
     });
-  } else if (options_.mode == Options::Mode::SIGNAL) {
+  } else if (options_.mode == Options::Mode::kSignal) {
     executor_.Execute([this, record{std::move(record)}]() mutable {
       uint64_t cur_timestamp = record.timestamp;
 
@@ -252,10 +252,10 @@ void RecordAction::AddRecord(OneRecord&& record) {
 
 bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Start,
+      state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
 
-  if (options_.mode == Options::Mode::SIGNAL) [[unlikely]] {
+  if (options_.mode == Options::Mode::kSignal) [[unlikely]] {
     AIMRT_WARN("Cur action mode is not signal mode.");
     return false;
   }
@@ -328,10 +328,10 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
 
 void RecordAction::StopSignalRecord() {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Start,
+      state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
 
-  if (options_.mode == Options::Mode::SIGNAL) [[unlikely]] {
+  if (options_.mode == Options::Mode::kSignal) [[unlikely]] {
     AIMRT_WARN("Cur action mode is not signal mode.");
     return;
   }

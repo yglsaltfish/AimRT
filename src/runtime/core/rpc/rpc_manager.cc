@@ -95,7 +95,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
   RegisterDebugLogFilter();
 
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Init) == State::PreInit,
+      std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
       "Rpc manager can only be initialized once.");
 
   if (options_node && !options_node.IsNull())
@@ -175,7 +175,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
 
 void RpcManager::Start() {
   AIMRT_CHECK_ERROR_THROW(
-      std::atomic_exchange(&state_, State::Start) == State::Init,
+      std::atomic_exchange(&state_, State::kStart) == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   rpc_backend_manager_.Start();
@@ -184,7 +184,7 @@ void RpcManager::Start() {
 }
 
 void RpcManager::Shutdown() {
-  if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+  if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
   AIMRT_INFO("Rpc manager Shutdown.");
@@ -205,7 +205,7 @@ void RpcManager::Shutdown() {
 
 std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationReport() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   std::vector<std::vector<std::string>> client_info_table =
@@ -300,7 +300,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
 void RpcManager::RegisterRpcBackend(
     std::unique_ptr<RpcBackendBase>&& rpc_backend_ptr) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   rpc_backend_vec_.emplace_back(std::move(rpc_backend_ptr));
@@ -309,7 +309,7 @@ void RpcManager::RegisterRpcBackend(
 void RpcManager::RegisterGetExecutorFunc(
     const std::function<executor::ExecutorRef(std::string_view)>& get_executor_func) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
 
   get_executor_func_ = get_executor_func;
@@ -317,7 +317,7 @@ void RpcManager::RegisterGetExecutorFunc(
 
 const RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo& module_info) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
 
   auto itr = rpc_handle_proxy_map_.find(module_info.name);
@@ -334,35 +334,35 @@ const RpcHandleProxy& RpcManager::GetRpcHandleProxy(const util::ModuleDetailInfo
 
 void RpcManager::RegisterClientFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   client_filter_manager_.RegisterFilter(name, std::move(filter));
 }
 
 void RpcManager::RegisterServerFilter(std::string_view name, FrameworkAsyncRpcFilter&& filter) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   server_filter_manager_.RegisterFilter(name, std::move(filter));
 }
 
 void RpcManager::SetPassedContextMetaKeys(const std::unordered_set<std::string>& keys) {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::PreInit,
+      state_.load() == State::kPreInit,
       "Method can only be called when state is 'PreInit'.");
   passed_context_meta_keys_.insert(keys.begin(), keys.end());
 }
 
 const RpcRegistry* RpcManager::GetRpcRegistry() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
   return rpc_registry_ptr_.get();
 }
 
 const std::vector<RpcBackendBase*>& RpcManager::GetUsedRpcBackend() const {
   AIMRT_CHECK_ERROR_THROW(
-      state_.load() == State::Init,
+      state_.load() == State::kInit,
       "Method can only be called when state is 'Init'.");
   return used_rpc_backend_vec_;
 }

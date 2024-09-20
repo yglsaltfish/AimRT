@@ -19,7 +19,7 @@ class HelloWorldModule(aimrt_py.ModuleBase):
         return info
 
     def Initialize(self, core):
-        assert(isinstance(core, aimrt_py.CoreRef))
+        assert (isinstance(core, aimrt_py.CoreRef))
 
         self.core = core
         self.logger = self.core.GetLogger()

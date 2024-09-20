@@ -87,7 +87,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
   void SetLogger(const std::shared_ptr<aimrt::common::util::LoggerWrapper>& logger_ptr) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     logger_ptr_ = logger_ptr;
@@ -97,7 +97,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     requires std::constructible_from<MsgHandle, Args...>
   void RegisterMsgHandle(Args&&... args) {
     AIMRT_CHECK_ERROR_THROW(
-        state_.load() == State::PreInit,
+        state_.load() == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     msg_handle_ptr_ = std::make_shared<MsgHandle>(std::forward<Args>(args)...);
@@ -105,7 +105,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
   void Initialize(const Options& options) {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Init) == State::PreInit,
+        std::atomic_exchange(&state_, State::kInit) == State::kPreInit,
         "Method can only be called when state is 'PreInit'.");
 
     options_ = Options::Verify(options);
@@ -117,7 +117,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
   void Start() {
     AIMRT_CHECK_ERROR_THROW(
-        std::atomic_exchange(&state_, State::Start) == State::Init,
+        std::atomic_exchange(&state_, State::kStart) == State::kInit,
         "Method can only be called when state is 'Init'.");
 
     auto self = shared_from_this();
@@ -129,7 +129,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           acceptor_.bind(options_.ep);
           acceptor_.listen();
 
-          while (state_.load() == State::Start) {
+          while (state_.load() == State::kStart) {
             try {
               // 如果链接数达到上限，则等待一段时间再试
               if (session_ptr_map_.size() >= options_.max_session_num) {
@@ -164,7 +164,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     boost::asio::co_spawn(
         mgr_strand_,
         [this, self]() -> Awaitable<void> {
-          while (state_.load() == State::Start) {
+          while (state_.load() == State::kStart) {
             try {
               mgr_timer_.expires_after(options_.mgr_timer_dt);
               co_await mgr_timer_.async_wait(boost::asio::use_awaitable);
@@ -190,7 +190,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   }
 
   void Shutdown() {
-    if (std::atomic_exchange(&state_, State::Shutdown) == State::Shutdown)
+    if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
       return;
 
     auto self = shared_from_this();
@@ -235,7 +235,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   void SendMsg(const Tcp::endpoint& ep, const std::shared_ptr<Streambuf>& msg_buf_ptr) {
     auto self = shared_from_this();
     boost::asio::dispatch(mgr_strand_, [this, self, ep, msg_buf_ptr]() {
-      if (state_.load() != State::Start) [[unlikely]] {
+      if (state_.load() != State::kStart) [[unlikely]] {
         AIMRT_WARN("WebSocket svr is closed, will not send current msg.");
         return;
       }
@@ -256,7 +256,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
   const aimrt::common::util::LoggerWrapper& GetLogger() const { return *logger_ptr_; }
 
-  bool IsRunning() const { return state_.load() == State::Start; }
+  bool IsRunning() const { return state_.load() == State::kStart; }
 
  private:
   static bool CheckListenAddr(const Tcp::endpoint& ep) {
@@ -301,7 +301,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
     void Initialize(std::shared_ptr<const SessionOptions> session_options_ptr) {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Init) == SessionState::PreInit,
+          std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
       session_options_ptr_ = session_options_ptr;
@@ -309,7 +309,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
     void Start() {
       AIMRT_CHECK_ERROR_THROW(
-          std::atomic_exchange(&state_, SessionState::Start) == SessionState::Init,
+          std::atomic_exchange(&state_, SessionState::kStart) == SessionState::kInit,
           "Method can only be called when state is 'Init'.");
 
       remote_addr_ = aimrt::common::util::SSToString(stream_.next_layer().socket().remote_endpoint());
@@ -343,16 +343,16 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
                     try {
-                      while (state_.load() == SessionState::Start) {
-                        while (!data_list.empty()) {
-                          auto data_itr = data_list.begin();
+                      while (state_.load() == SessionState::kStart) {
+                        while (!data_list_.empty()) {
+                          auto data_itr = data_list_.begin();
 
                           tick_has_data_ = true;
                           size_t write_data_size = co_await stream_.async_write(
                               (*data_itr)->data(), boost::asio::use_awaitable);
                           AIMRT_TRACE("WebSocket svr session async write {} bytes to {}.",
                                       write_data_size, RemoteAddr());
-                          data_list.erase(data_itr);
+                          data_list_.erase(data_itr);
                         }
 
                         try {
@@ -381,7 +381,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
                     try {
-                      while (state_.load() == SessionState::Start) {
+                      while (state_.load() == SessionState::kStart) {
                         auto msg_buf = std::make_shared<Streambuf>();
 
                         size_t read_data_size = co_await stream_.async_read(
@@ -422,7 +422,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
             try {
-              while (state_.load() == SessionState::Start) {
+              while (state_.load() == SessionState::kStart) {
                 timer_.expires_after(session_options_ptr_->max_no_data_duration);
                 co_await timer_.async_wait(boost::asio::use_awaitable);
 
@@ -452,7 +452,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     }
 
     void Shutdown() {
-      if (std::atomic_exchange(&state_, SessionState::Shutdown) == SessionState::Shutdown)
+      if (std::atomic_exchange(&state_, SessionState::kShutdown) == SessionState::kShutdown)
         return;
 
       auto self = shared_from_this();
@@ -528,12 +528,12 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
       boost::asio::dispatch(
           session_socket_strand_,
           [this, self, msg_buf_ptr]() {
-            if (state_.load() != SessionState::Start) [[unlikely]] {
+            if (state_.load() != SessionState::kStart) [[unlikely]] {
               AIMRT_WARN("WebSocket svr session is closed, will not send current msg.");
               return;
             }
 
-            data_list.emplace_back(msg_buf_ptr);
+            data_list_.emplace_back(msg_buf_ptr);
             send_sig_timer_.cancel();
           });
     }
@@ -544,14 +544,14 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
     std::string_view RemoteAddr() const { return remote_addr_; }
 
-    bool IsRunning() const { return state_.load() == SessionState::Start; }
+    bool IsRunning() const { return state_.load() == SessionState::kStart; }
 
    private:
     enum class SessionState : uint32_t {
-      PreInit,
-      Init,
-      Start,
-      Shutdown,
+      kPreInit,
+      kInit,
+      kStart,
+      kShutdown,
     };
 
     // IO CTX
@@ -572,20 +572,20 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
     // 状态
-    std::atomic<SessionState> state_ = SessionState::PreInit;
+    std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
     std::string remote_addr_;
     std::atomic_bool tick_has_data_ = false;
-    std::list<std::shared_ptr<Streambuf>> data_list;
+    std::list<std::shared_ptr<Streambuf>> data_list_;
   };
 
  private:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
   // IO CTX
@@ -605,7 +605,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   Options options_;
 
   // 状态
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
 
   // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;

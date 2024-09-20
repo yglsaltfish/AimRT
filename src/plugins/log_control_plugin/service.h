@@ -30,18 +30,18 @@ class LogControlServiceImpl : public aimrt::protocols::log_control_plugin::LogCo
 
  private:
   enum class ErrorCode : uint32_t {
-    SUC = 0,
-    INVALID_MODULE_NAME = 1,
+    kSuc = 0,
+    kInvalidModuleName = 1,
   };
 
-  static constexpr std::string_view error_info_array[] = {
+  static constexpr std::string_view kErrorInfoArray[] = {
       "",
       "INVALID_MODULE_NAME"};
 
   template <typename T>
   void SetErrorCode(ErrorCode code, T& rsp) {
     rsp.set_code(static_cast<uint32_t>(code));
-    rsp.set_msg(std::string(error_info_array[static_cast<uint32_t>(code)]));
+    rsp.set_msg(std::string(kErrorInfoArray[static_cast<uint32_t>(code)]));
   }
 
   aimrt::runtime::core::logger::LoggerManager* logger_manager_ptr_ = nullptr;

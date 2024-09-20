@@ -37,11 +37,11 @@ class TimeManipulatorServiceImpl : public aimrt::protocols::time_manipulator_plu
 
  private:
   enum class ErrorCode : uint32_t {
-    SUC = 0,
-    INVALID_EXECUTOR_NAME = 1,
+    kSuc = 0,
+    kInvalidExecutorName = 1,
   };
 
-  static constexpr std::string_view error_info_array[] = {
+  static constexpr std::string_view kErrorInfoArray[] = {
       "",
       "INVALID_EXECUTOR_NAME"};
 
@@ -49,7 +49,7 @@ class TimeManipulatorServiceImpl : public aimrt::protocols::time_manipulator_plu
       ErrorCode code,
       ::aimrt::protocols::time_manipulator_plugin::CommonRsp& rsp) {
     rsp.set_code(static_cast<uint32_t>(code));
-    rsp.set_msg(std::string(error_info_array[static_cast<uint32_t>(code)]));
+    rsp.set_msg(std::string(kErrorInfoArray[static_cast<uint32_t>(code)]));
   }
 
   std::unordered_map<std::string_view, TimeManipulatorExecutor*> executor_map_;

@@ -45,10 +45,10 @@ struct SubscribeProxyInfoWrapper {
 class ChannelBackendManager {
  public:
   enum class State : uint32_t {
-    PreInit,
-    Init,
-    Start,
-    Shutdown,
+    kPreInit,
+    kInit,
+    kStart,
+    kShutdown,
   };
 
  public:
@@ -109,7 +109,7 @@ class ChannelBackendManager {
       const std::vector<std::pair<std::string, std::vector<std::string>>>& rules);
 
  private:
-  std::atomic<State> state_ = State::PreInit;
+  std::atomic<State> state_ = State::kPreInit;
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   ChannelRegistry* channel_registry_ptr_;

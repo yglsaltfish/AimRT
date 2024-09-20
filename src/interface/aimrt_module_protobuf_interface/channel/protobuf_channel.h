@@ -24,17 +24,17 @@ inline bool RegisterPublishType(PublisherRef publisher) {
 
 template <std::derived_from<google::protobuf::Message> MsgType>
 inline void Publish(PublisherRef publisher, ContextRef ctx_ref, const MsgType& msg) {
-  static const std::string msg_type_name = "pb:" + MsgType().GetTypeName();
+  static const std::string kMsgTypeName = "pb:" + MsgType().GetTypeName();
 
   if (ctx_ref) {
     if (ctx_ref.GetSerializationType().empty()) ctx_ref.SetSerializationType("pb");
-    publisher.Publish(msg_type_name, ctx_ref, static_cast<const void*>(&msg));
+    publisher.Publish(kMsgTypeName, ctx_ref, static_cast<const void*>(&msg));
     return;
   }
 
   Context ctx;
   ctx.SetSerializationType("pb");
-  publisher.Publish(msg_type_name, ctx, static_cast<const void*>(&msg));
+  publisher.Publish(kMsgTypeName, ctx, static_cast<const void*>(&msg));
 }
 
 template <std::derived_from<google::protobuf::Message> MsgType>

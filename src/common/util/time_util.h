@@ -11,17 +11,17 @@
 namespace aimrt::common::util {
 
 enum TimeConstant {
-  SECOND_PER_MINUTE = 60,
-  MINUTE_PER_HOUR = 60,
-  SECOND_PER_HOUR = 3600,
-  HOUR_PER_DAY = 24,
-  SECOND_PER_DAY = 86400,
-  MS_PER_SECOND = 1000,
-  US_PER_MS = 1000,
-  US_PER_SECOND = 1000000,
-  DAY_PER_MONTH = 30,
-  DAY_PER_WEEK = 7,
-  MONTH_PER_YEAR = 12,
+  kSecondPerMinute = 60,
+  kMinutePerHour = 60,
+  kSecondPerHour = 3600,
+  kHourPerDay = 24,
+  kSecondPerDay = 86400,
+  kMsPerSecond = 1000,
+  kUsPerMs = 1000,
+  kUsPerSecond = 1000000,
+  kDayPerMonth = 30,
+  kDayPerWeek = 7,
+  kMonthPerYear = 12,
 };
 
 /**
@@ -256,7 +256,7 @@ inline bool IsLeapYear(uint32_t year) {
  * @return uint32_t
  */
 inline uint32_t GetMonthDayCount(uint32_t year, uint32_t month) {
-  static constexpr uint32_t month_day_count[] = {
+  static constexpr uint32_t kMonthDayCount[] = {
       31,  // Jan
       28,  // Feb
       31,  // Mar
@@ -270,7 +270,7 @@ inline uint32_t GetMonthDayCount(uint32_t year, uint32_t month) {
       30,  // Nov
       31,  // Dec
   };
-  return (month == 1 && IsLeapYear(year)) ? 29 : month_day_count[month];
+  return (month == 1 && IsLeapYear(year)) ? 29 : kMonthDayCount[month];
 }
 
 /**
@@ -306,8 +306,8 @@ inline int32_t GetLocalTimeZone() {
  * @return false
  */
 inline bool IsPassDay(time_t l_time, time_t r_time, int32_t time_zone) {
-  time_t l_day = static_cast<time_t>((l_time + time_zone) / SECOND_PER_DAY);
-  time_t r_day = static_cast<time_t>((r_time + time_zone) / SECOND_PER_DAY);
+  time_t l_day = static_cast<time_t>((l_time + time_zone) / kSecondPerDay);
+  time_t r_day = static_cast<time_t>((r_time + time_zone) / kSecondPerDay);
   return (l_day > r_day);
 }
 
@@ -345,7 +345,7 @@ inline uint32_t GetWeekDay(time_t t) {
  * @return uint32_t
  */
 inline uint32_t GetWeekStartTime(time_t t) {
-  return GetDayStartTime(t - (GetWeekDay(t) - 1) * SECOND_PER_DAY);
+  return GetDayStartTime(t - (GetWeekDay(t) - 1) * kSecondPerDay);
 }
 
 /**
@@ -357,7 +357,7 @@ inline uint32_t GetWeekStartTime(time_t t) {
  * @return int32_t
  */
 inline int32_t GetDayCount(time_t l_time, time_t r_time, int32_t time_zone) {
-  return (l_time + time_zone - r_time) / SECOND_PER_DAY;
+  return (l_time + time_zone - r_time) / kSecondPerDay;
 }
 
 }  // namespace aimrt::common::util
