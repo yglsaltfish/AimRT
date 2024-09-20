@@ -39,7 +39,7 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
     // Read cfg
     auto file_path = core_.GetConfigurator().GetConfigFilePath();
     if (!file_path.empty()) {
-      YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+      YAML::Node cfg_node = YAML::LoadFile(std::string(file_path));
       max_topic_number_ = cfg_node["max_topic_number"].as<uint32_t>();
 
       if (cfg_node["bench_plans"] && cfg_node["bench_plans"].IsSequence()) {

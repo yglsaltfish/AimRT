@@ -146,7 +146,7 @@ void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   if (state_.load() != State::kInit && state_.load() != State::kStart) [[unlikely]] {
     fprintf(stderr,
             "Tbb thread executor '%s' can only execute task when state is 'Init' or 'Start'.\n",
-            Name().data());
+            name_.c_str());
     return;
   }
 
@@ -155,7 +155,7 @@ void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   if (cur_queue_task_num > queue_threshold_) [[unlikely]] {
     fprintf(stderr,
             "The number of tasks in the tbb thread executor '%s' has reached the threshold '%u', the task will not be delivered.\n",
-            Name().data(), queue_threshold_);
+            name_.c_str(), queue_threshold_);
     --queue_task_num_;
     return;
   }
@@ -163,13 +163,13 @@ void TBBThreadExecutor::Execute(aimrt::executor::Task&& task) noexcept {
   if (cur_queue_task_num > queue_warn_threshold_) [[unlikely]] {
     fprintf(stderr,
             "The number of tasks in the tbb thread executor '%s' is about to reach the threshold: '%u / %u'.\n",
-            Name().data(), cur_queue_task_num, queue_threshold_);
+            name_.c_str(), cur_queue_task_num, queue_threshold_);
   }
 
   try {
     qu_.emplace(std::move(task));
   } catch (const std::exception& e) {
-    fprintf(stderr, "Tbb thread executor '%s' execute task get exception: %s\n", Name().data(), e.what());
+    fprintf(stderr, "Tbb thread executor '%s' execute task get exception: %s\n", name_.c_str(), e.what());
   }
 }
 

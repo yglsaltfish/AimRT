@@ -16,7 +16,7 @@ bool LoggerBenchModule::Initialize(aimrt::CoreRef core) {
   // Read cfg
   auto file_path = core_.GetConfigurator().GetConfigFilePath();
   if (!file_path.empty()) {
-    YAML::Node cfg_node = YAML::LoadFile(file_path.data());
+    YAML::Node cfg_node = YAML::LoadFile(std::string(file_path));
     log_data_size_vec_ = cfg_node["log_data_size"].as<std::vector<uint32_t>>();
     log_bench_num_ = cfg_node["log_bench_num"].as<uint32_t>();
   }
