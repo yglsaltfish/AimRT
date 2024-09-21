@@ -1,7 +1,7 @@
 #!/bin/bash
 
 data='{
-	"action_name": "my_signal_record"
+    "action_name": "my_signal_record"
 }'
 
 curl -i \

@@ -45,7 +45,7 @@ aimrt:
 ```
 
 
-## ros2 RPC 后端
+## ros2 类型 RPC 后端
 
 
 `ros2`类型的 RPC 后端是**ros2_plugin**中提供的一种 RPC 后端，用于通过 ROS2 RPC 的方式来调用和处理 AimRT RPC 请求。其所有的配置项如下：
@@ -166,7 +166,7 @@ byte[]  data
 基于以上特性，`ros2`类型的 RPC 后端可以用于打通与原生 ROS2 节点的 RPC 链路，从而实现 AimRT 对 ROS2 的兼容。
 
 
-## ros2 Channel 后端
+## ros2 类型 Channel 后端
 
 `ros2`类型的 Channel 后端是**ros2_plugin**中提供的一种 Channel 后端，用于通过 ROS2 Topic 的方式来发布和订阅 AimRT Channel 消息。其所有的配置如下:
 
@@ -277,3 +277,6 @@ byte[]  data
 例如，如果 AimRT Topic 名称是`test_topic`，AimRT Msg 名称为`pb:aaa.bbb.ccc`，则最终 ROS2 Topic 值就是`test_topic/pb_3Aaaa_2Ebbb_2Eccc`。具体值也会在 ros2_plugin 启动时打印出来。
 
 基于这个特性，`ros2`类型的 Channel 后端可以用于打通与原生 ROS2 节点的 Channel 链路，从而实现 AimRT 对 ROS2 的兼容。
+
+
+开发者还可以参考{{ '[ros2_plugin]({}/src/examples/plugins/ros2_plugin)'.format(code_site_root_path_url) }}中的示例，与原生 ros2 humble 节点进行通信。

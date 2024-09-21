@@ -32,8 +32,12 @@ struct convert<aimrt::plugins::grpc_plugin::GrpcPlugin::Options> {
   static bool decode(const Node& node, Options& rhs) {
     if (!node.IsMap()) return false;
 
-    rhs.thread_num = node["thread_num"].as<uint32_t>();
-    rhs.listen_ip = node["listen_ip"].as<std::string>();
+    if (node["thread_num"])
+      rhs.thread_num = node["thread_num"].as<uint32_t>();
+
+    if (node["listen_ip"])
+      rhs.listen_ip = node["listen_ip"].as<std::string>();
+
     rhs.listen_port = node["listen_port"].as<uint16_t>();
 
     return true;

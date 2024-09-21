@@ -1,7 +1,7 @@
 #!/bin/bash
 
 data='{
-	"action_name": "my_signal_record",
+    "action_name": "my_signal_record",
     "preparation_duration_s": 5,
     "record_duration_s": 10
 }'

@@ -4,7 +4,6 @@
 #include "parameter_plugin/parameter_plugin.h"
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
-#include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 #include "core/aimrt_core.h"
 #include "parameter_plugin/global.h"
 
@@ -28,18 +27,6 @@ struct convert<aimrt::plugins::parameter_plugin::ParameterPlugin::Options> {
 }  // namespace YAML
 
 namespace aimrt::plugins::parameter_plugin {
-
-co::Task<aimrt::rpc::Status> DebugLogServerFilter(
-    aimrt::rpc::ContextRef ctx, const void* req_ptr, void* rsp_ptr,
-    const aimrt::rpc::CoRpcHandle& next) {
-  AIMRT_TRACE("Svr get new rpc call. req: {}",
-              aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(req_ptr)));
-  const auto& status = co_await next(ctx, req_ptr, rsp_ptr);
-  AIMRT_TRACE("Svr handle rpc completed, status: {}, rsp: {}",
-              status.ToString(),
-              aimrt::Pb2CompactJson(*static_cast<const google::protobuf::Message*>(rsp_ptr)));
-  co_return status;
-}
 
 bool ParameterPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
   try {
@@ -85,7 +72,6 @@ void ParameterPlugin::SetPluginLogger() {
 void ParameterPlugin::RegisterRpcService() {
   // 注册rpc服务
   service_ptr_ = std::make_unique<ParameterServiceImpl>();
-  service_ptr_->RegisterFilter(DebugLogServerFilter);
 
   service_ptr_->SetParameterManager(&(core_ptr_->GetParameterManager()));
 
