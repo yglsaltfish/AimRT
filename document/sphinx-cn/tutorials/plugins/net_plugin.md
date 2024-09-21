@@ -72,7 +72,7 @@ aimrt:
 ```
 
 
-## http RPC 后端
+## http 类型 RPC 后端
 
 
 `http`类型的 RPC 后端是**net_plugin**中提供的一种 RPC 后端，用于通过 HTTP 的方式来调用和处理 RPC 请求。其所有的配置项如下：
@@ -154,7 +154,7 @@ curl -i \
 基于这个特性，`http`类型的 RPC 后端常用于调试开发或测试阶段，可以通过辅助工具快速触发某个 Server 处理函数，或通过抓包工具来检查上下游之间的通信内容。
 
 
-## http Channel 后端
+## http 类型 Channel 后端
 
 
 `http`类型的 Channel 后端是**net_plugin**中提供的一种 Channel 后端，用于将消息通过 HTTP 的方式来发布和订阅消息。其所有的配置项如下：
@@ -235,7 +235,7 @@ curl -i \
 
 
 
-## tcp Channel后端
+## tcp 类型 Channel后端
 
 
 `tcp`类型的 Channel 后端是**net_plugin**中提供的一种 Channel 后端，用于将消息通过 tcp 的方式来发布和订阅消息。其所有的配置项如下：
@@ -297,7 +297,7 @@ aimrt:
 
 
 
-## udp Channel后端
+## udp 类型 Channel后端
 
 
 `udp`类型的 Channel 后端是**net_plugin**中提供的一种 Channel 后端，用于将消息通过 udp 的方式来发布和订阅消息。其所有的配置项如下：

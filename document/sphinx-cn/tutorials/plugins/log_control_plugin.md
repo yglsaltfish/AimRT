@@ -2,14 +2,26 @@
 # 日志动态控制插件
 
 
+## 相关链接
+
+协议文件：
+- {{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}
+
+参考示例：
+- {{ '[log_control_plugin]({}/src/examples/plugins/log_control_plugin)'.format(code_site_root_path_url) }}
+
+
+## 插件概述
+
+
+**log_control_plugin**中注册了一个基于 protobuf 协议定义的 RPC，提供了针对 Log 的一些运行时管理接口。请注意，**log_control_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的 RPC 后端一块使用，例如[net_plugin](./net_plugin.md)中的 http RPC 后端。
 
 
 
-**log_control_plugin**中注册了一个基于protobuf协议定义的RPC：`LogControlService`，提供了针对Log的一些运行时管理接口，协议文件为{{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}。请注意，**log_control_plugin**没有提供任何通信后端，因此本插件一般要搭配其他通信插件的RPC通信后端一块使用，例如[net_plugin](./net_plugin.md)中的http RPC后端。
+在当前版本，本插件没有插件级的配置。
 
 
-
-在当前版本，本插件没有插件级的配置。以下是一个简单的配置示例，将**log_control_plugin**与**net_plugin**中的http RPC后端搭配使用：
+以下是一个简单的配置示例，将**log_control_plugin**与**net_plugin**中的 http RPC 后端搭配使用：
 
 
 ```yaml
@@ -23,7 +35,7 @@ aimrt:
           http_options:
             listen_ip: 127.0.0.1
             listen_port: 50080
-      - name: log_control_plugin # parameter插件，没有任何额外配置
+      - name: log_control_plugin
         path: ./libaimrt_log_control_plugin.so
   rpc:
     backends:
@@ -37,8 +49,8 @@ aimrt:
 ## LogControlService
 
 在{{ '[log_control.proto]({}/src/protocols/plugins/log_control_plugin/log_control.proto)'.format(code_site_root_path_url) }}中，定义了一个`LogControlService`，提供了如下接口：
-- GetModuleLogLevel：获取模块日志等级
-- SetModuleLogLevel：设置模块日志等级
+- **GetModuleLogLevel**：获取模块日志等级；
+- **SetModuleLogLevel**：设置模块日志等级；
 
 
 ### GetModuleLogLevel
@@ -66,7 +78,7 @@ service ParameterService {
 开发者在请求包`GetModuleLogLevelReq`中填入想要查询日志等级的模块。如果为空则返回所有模块。
 
 
-以下是一个基于**net_plugin**中的http RPC后端，使用curl工具通过Http方式调用该接口的一个示例：
+以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
 ```shell
 curl -i \
     -H 'content-type:application/json' \
@@ -85,7 +97,6 @@ Content-Length: 84
 
 
 ### SetModuleLogLevel
-
 
 
 `SetModuleLogLevel`接口用于设置某个或某些模块的日志等级，其接口定义如下：
@@ -110,7 +121,7 @@ service ParameterService {
 开发者在请求包`SetModuleLogLevelReq`中填入想要设置日志等级的模块以及对应的日志等级。
 
 
-以下是一个基于**net_plugin**中的http RPC后端，使用curl工具通过Http方式调用该接口的一个示例：
+以下是一个基于**net_plugin**中的 http RPC 后端，使用 curl 工具通过 Http 方式调用该接口的一个示例：
 ```shell
 #!/bin/bash
 

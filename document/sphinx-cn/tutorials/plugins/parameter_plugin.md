@@ -42,11 +42,11 @@ aimrt:
 ## ParameterService
 
 在{{ '[parameter.proto]({}/src/protocols/plugins/parameter_plugin/parameter.proto)'.format(code_site_root_path_url) }}协议文件中，定义了一个`ParameterService`，提供了如下接口：
-- **Set**：设置参数
-- **Get**：获取参数
-- **List**：列出参数列表
-- **Dump**：导出所有参数
-- **Load**：加载一份参数，可以直接加载之前 Dump 的参数
+- **Set**：设置参数；
+- **Get**：获取参数；
+- **List**：列出参数列表；
+- **Dump**：导出所有参数；
+- **Load**：加载一份参数，可以直接加载之前 Dump 的参数；
 
 ### Set
 

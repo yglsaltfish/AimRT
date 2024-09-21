@@ -273,7 +273,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
       state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
 
-  if (options_.mode == Options::Mode::kSignal) [[unlikely]] {
+  if (options_.mode != Options::Mode::kSignal) [[unlikely]] {
     AIMRT_WARN("Cur action mode is not signal mode.");
     return false;
   }
@@ -353,7 +353,7 @@ void RecordAction::StopSignalRecord() {
       state_.load() == State::kStart,
       "Method can only be called when state is 'Start'.");
 
-  if (options_.mode == Options::Mode::kSignal) [[unlikely]] {
+  if (options_.mode != Options::Mode::kSignal) [[unlikely]] {
     AIMRT_WARN("Cur action mode is not signal mode.");
     return;
   }

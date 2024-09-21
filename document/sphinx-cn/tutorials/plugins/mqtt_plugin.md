@@ -47,7 +47,7 @@ aimrt:
 ```
 
 
-## mqtt RPC 后端
+## mqtt 类型 RPC 后端
 
 
 `mqtt`类型的 RPC 后端是**mqtt_plugin**中提供的一种 RPC 后端，用于通过 mqtt 的方式来调用和处理 AimRT RPC 请求。其所有的配置项如下：
@@ -148,7 +148,7 @@ auto status = proxy->Foo(ctx_ptr, req, rsp);
 
 
 
-Client -> Server 的 Mqtt 数据包格式整体分5段:
+Client -> Server 的 Mqtt 数据包格式整体分 5 段:
 - 序列化类型，一般是`pb`或`json`
 - client 端想要 server 端回复 rsp 的 mqtt topic 名称。client 端自己需要订阅这个 mqtt topic
 - msg id，4 字节，server 端会原封不动的封装到 rsp 包里，供 client 端定位 rsp 对应哪个 req
@@ -172,7 +172,7 @@ Client -> Server 的 Mqtt 数据包格式整体分5段:
 | msg data [remaining byte]
 ```
 
-Server -> Client 的 Mqtt 数据包格式整体分4段:
+Server -> Client 的 Mqtt 数据包格式整体分 4 段:
 - 序列化类型，一般是`pb`或`json`
 - msg id，4 字节，req 中的 msg id
 - status code，4 字节，框架错误码，如果这个部分不为零，则代表服务端发生了错误，数据段将没有内容
@@ -186,7 +186,7 @@ Server -> Client 的 Mqtt 数据包格式整体分4段:
 ```
 
 
-## mqtt Channel 后端
+## mqtt 类型 Channel 后端
 
 
 `mqtt`类型的 Channel 后端是**mqtt_plugin**中提供的一种 Channel 后端，用于通过 mqtt 的方式来发布和订阅消息。其所有的配置项如下：

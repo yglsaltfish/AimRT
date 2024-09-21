@@ -1,18 +1,34 @@
 
 # opentelemetry插件
 
+## 相关链接
+
+参考示例：
+- {{ '[opentelemetry_plugin]({}/src/examples/plugins/opentelemetry_plugin)'.format(code_site_root_path_url) }}
+
+
 ## 插件概述
 
 
-**opentelemetry_plugin**是一个基于[OpenTelemetry](https://opentelemetry.io/)的插件，为 AimRT 提供框架层面的可观测性功能。它提供了一些 RPC/Channel Framework Filter：
-- client filter:
-  - otp_trace：用于进行 client 端 rpc 链路追踪
-- server filter:
-  - otp_trace：用于进行 server 端 rpc 链路追踪
-- Publish filter:
-  - otp_trace：用于进行 publish 端 channel 链路追踪
-- Subscribe filter:
-  - otp_trace：用于进行 subscribe 端 channel 链路追踪
+**opentelemetry_plugin**是一个基于[OpenTelemetry](https://opentelemetry.io/)的插件，为 AimRT 提供框架层面的可观测性功能。它主要基于 AimRT 中的 RPC/Channel Framework Filter 进行工作，关于 Filter 的概念请参考[AimRT 中的基本概念](../concepts/concepts.md)文档中的相关章节。
+
+
+当前版本，**opentelemetry_plugin**仅支持了 trace 功能，后续还计划完善 mertric 等功能。
+
+
+**opentelemetry_plugin**提供了以下这些 RPC/Channel Framework Filter：
+- **Client filter**:
+  - **otp_trace**：用于进行 RPC Client 端链路追踪，会上报 req、rsp 等数据，比较重；
+  - **otp_simple_trace**：用于进行 RPC Client 端链路追踪，不会上报 req、rsp 等数据，比较轻量，对性能影响较小；
+- **Server filter**:
+  - **otp_trace**：用于进行 RPC Server 端链路追踪，会上报 req、rsp 等数据，比较重；
+  - **otp_simple_trace**：用于进行 RPC Server 端链路追踪，不会上报 req、rsp 等数据，比较轻量，对性能影响较小；
+- **Publish filter**:
+  - **otp_trace**：用于进行 Channel Publish 端链路追踪，会上报 msg 数据，比较重；
+  - **otp_simple_trace**：用于进行 Channel Publish 端链路追踪，不会上报 msg 数据，比较轻量，对性能影响较小；
+- **Subscribe filter**:
+  - **otp_trace**：用于进行 Channel Subscribe 端链路追踪，会上报 msg 数据，比较重；
+  - **otp_simple_trace**：用于进行 Channel Subscribe 端链路追踪，不会上报 msg 数据，比较轻量，对性能影响较小；
 
 
 插件的配置项如下：
@@ -22,12 +38,15 @@
 | node_name                 | string    | 必选  | ""          | 上报时的节点名称，不可为空 |
 | trace_otlp_http_exporter_url  | string    | 必选  | ""          | 基于 otlp http exporter 上报 trace 时的 url |
 | force_trace               | bool      | 可选  | false       | 是否强制上报 trace |
-| attributes                | array     | 可选  | []          | kv 属性数组 |
+| attributes                | array     | 可选  | []          | 本节点上报时附带的 kv 属性列表 |
 | attributes[i].key         | string    | 必选  | ""          | 属性的 key 值 |
 | attributes[i].val         | string    | 必选  | ""          | 属性的 val 值 |
 
 
-在配置了插件后，还需要在`rpc`/`channel`节点下的的 filter 配置中注册`otp_trace`类型的过滤器，才能在 rpc/channel 调用前后进行 trace 跟踪。以下是一个简单的示例：
+在配置了插件后，还需要在`rpc`/`channel`节点下的的`enable_filters`配置中注册`otp_trace`或`otp_simple_trace`类型的过滤器，才能在 rpc/channel 调用前后进行 trace 跟踪。
+
+
+以下是一个简单的基于 local 后端进行 RPC、Channel 通信，并进行 trace 跟踪的示例：
 ```yaml
 aimrt:
   plugin:
@@ -35,15 +54,15 @@ aimrt:
       - name: opentelemetry_plugin
         path: ./libaimrt_opentelemetry_plugin.so
         options:
-          node_name: example_node # 【必选】上报时的节点名称，不可为空
-          trace_otlp_http_exporter_url: http://localhost:4318/v1/traces # 【必选】基于otlp http exporter上报时的url
-          force_trace: true # 【可选】是否强制上报 trace
-          attributes: # 【可选】kv属性数组
-            - key: sn # 【必选】属性的key值
-              val: 123456 # 【必选】属性的val值
+          node_name: example_node
+          trace_otlp_http_exporter_url: http://localhost:4318/v1/traces
+          force_trace: true
+          attributes:
+            - key: sn
+              val: 123456
   rpc:
     backends:
-      - type: local # 此处以local后端为例
+      - type: local
     clients_options:
       - func_name: "(.*)"
         enable_backends: [local]
@@ -54,10 +73,9 @@ aimrt:
         enable_filters: [otp_trace]
   channel:
     backends:
-      - type: local # 此处以local后端为例
+      - type: local
         options:
-          subscriber_use_inline_executor: false
-          subscriber_executor: work_thread_pool
+          subscriber_use_inline_executor: true
     pub_topics_options:
       - topic_name: "(.*)"
         enable_backends: [local]
@@ -70,10 +88,9 @@ aimrt:
     # ...
 ```
 
+RPC/Channel 的 trace 功能开启方式分为以下几种情况：
 
-在完成配置后，使用者还需要在希望进行链路追踪的地方设置 RPC/Channel 的 Context，分为几种情况：
-
-1. 强制让开启一个节点下所有 client/server 的 trace，此时可以将插件配置中的 `force_trace` 选项设置为 `true`。
+1. 强制开启一个节点下所有的 trace：此时可以将插件配置中的 `force_trace` 选项设置为 `true`。
 
 2. 从一个 RPC Clinet 或一个 Channel Publish 强制开启链路追踪，此时需要向 Context 的 Meta 信息中设置`aimrt_otp-start_new_trace`为`True`，例如：
   - RPC:
@@ -93,7 +110,7 @@ aimrt:
   // ...
   ```
 
-3. 从一个 RPC Clinet 或一个 Channel Publish 跟随上层 RPC Server/Channel Subscribe 继续追踪一个链路，此时需要继承上游的 RPC Server/Channel Subscribe 的 Context，例如：
+3. 从一个 RPC Clinet 或一个 Channel Publish 跟随上层 RPC Server 或 Channel Subscribe 继续追踪一个链路，此时需要继承上游的 RPC Server/Channel Subscribe 的 Context，例如：
   - RPC:
   ```cpp
   // RPC Server Handle
@@ -125,8 +142,7 @@ aimrt:
 
 ## 常用实践
 
-OpenTelemetry 的自身定位很明确：数据采集和标准规范的统一，对于数据如何去使用、存储、展示、告警，官方是不涉及的，我们目前推荐使用 Prometheus + Grafana 做 Metrics 存储、展示，使用 Jaeger 做分布式跟踪的存储和展示。
-
+OpenTelemetry 的自身定位很明确：数据采集和标准规范的统一，对于数据如何去使用、存储、展示、告警，官方是不涉及的，我们目前推荐使用 Prometheus + Grafana 做 Metrics 存储、展示，使用 Jaeger 做分布式跟踪的存储和展示。关于 OpenTelemetry、Prometheus、Jaeger 的详细介绍，请参考对应组件的官网。
 
 
 ### collector
@@ -140,9 +156,9 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:4317 # 本地收集地址
+        endpoint: 0.0.0.0:4317
       http:
-        endpoint: 0.0.0.0:4318 # 本地收集地址
+        endpoint: 0.0.0.0:4318
 
 processors:
   batch:
@@ -151,7 +167,7 @@ processors:
 
 exporters:
   otlphttp:
-    endpoint: http://xx.xx.xx.xx:4318 # 远端上报地址
+    endpoint: http://xx.xx.xx.xx:4318
 
 service:
   pipelines:
