@@ -89,7 +89,8 @@
 ## executor real time
 
 一个最基本的 cpp executor real time 示例，演示内容包括：
-- 如何通过配置文件设置执行器的线程调度方案；
+- 如何通过配置文件设置CPU调度策：SCHED_OTHER 、 SCHED_FIFO 和 SCHED_RR；
+- 如何通过配置文件为执行器绑定到指定CPU；
 
 核心代码：
 - [real_time_module.cc](./module/real_time_module/real_time_module.cc)
@@ -108,6 +109,6 @@
 
 说明：
 - 此示例创建了一个 `RealTimeModule`，会在`Initialize`时读取配置并打印出来；
-- 在 `Start`的阶会依次以三种不同调度策略异步开启三个执行器，并在终端打印其循环次数、调度方案，当前使用的CPU等信息：
+- 在 `Start`的阶会依次以三种不同调度策略异步开启三个执行器，并在终端打印其循环次数、调度策略，当前使用的CPU等信息：
 - 此示例将 `RealTimeModule` 集成到 `libexecutor_pkg` 中，并在配置文件中加载此 Pkg；
 
