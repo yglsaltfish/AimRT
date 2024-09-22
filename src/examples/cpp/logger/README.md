@@ -4,7 +4,7 @@
 ## logger
 
 一个最基本的 cpp logger 示例，演示内容包括：
-- 如何创建一个 LoggerModule 并使用AimRT自带的 Log 功能；
+- 如何创建一个 LoggerModule 并使用AimRT自带的 Log 后端功能；
 - 不同的日志级别演示示例；
 
 
@@ -31,8 +31,7 @@
 ## logger rotate file
 
 一个最基本的 cpp logger rotate  示例，演示内容包括：
-- 如何将生成的日志保存到指定目录下；
--  如何使用 Log rotate 功能并了解其配置项；
+-  如何使用 Log 后端的rotate 功能并了解其配置项；
 
 核心代码：
 - [logger_module.cc](./module/logger_module/logger_module.cc)
