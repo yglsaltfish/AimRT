@@ -111,4 +111,29 @@
 - 此示例创建了一个 `RealTimeModule`，会在`Initialize`时读取配置并打印出来；
 - 在 `Start`的阶会依次以三种不同调度策略异步开启三个执行器，并在终端打印其循环次数、调度策略，当前使用的CPU等信息：
 - 此示例将 `RealTimeModule` 集成到 `libexecutor_pkg` 中，并在配置文件中加载此 Pkg；
+- 具体在配置文件中配置方法可参考如下：
+  ```yaml
+    executors:
+      - name: sched_fifo_thread
+        type: asio_thread
+        options:
+          thread_num: 1
+          thread_sched_policy: SCHED_FIFO:80 # SCHED_OTHER | SCHED_FIFO:xx | SCHED_RR:xx
+          thread_bind_cpu: [0, 1] # cpu index
+          timeout_alarm_threshold_us: 100
+      - name: sched_other_thread
+        type: asio_thread
+        options:
+          thread_num: 1
+          thread_sched_policy: SCHED_OTHER # SCHED_OTHER | SCHED_FIFO:xx | SCHED_RR:xx
+          thread_bind_cpu: [2, 3] # cpu index
+          timeout_alarm_threshold_us: 100
+      - name: sched_rr_thread
+        type: asio_thread
+        options:
+          thread_num: 1
+          thread_sched_policy: SCHED_RR:80 # SCHED_OTHER | SCHED_FIFO:xx | SCHED_RR:xx
+          thread_bind_cpu: [4, 5, 6] # cpu index
+          timeout_alarm_threshold_us: 100
+  ```
 
