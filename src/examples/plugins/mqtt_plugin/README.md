@@ -1,6 +1,6 @@
 # mqtt plugin examples
 
-## protobuf rpc
+## protobuf rpc co
 
 一个基于 protobuf 协议、协程型接口与 mqtt 后端的 rpc 示例，演示内容包括：
 - 如何在配置文件中设置，以使用 mqtt 类型的 rpc 后端；
@@ -119,7 +119,7 @@
 
 ## ros2 channel
 
-一个最基本的、基于 ros2 msg 协议与 local 后端的 channel 示例，演示内容包括：
+一个最基本的、基于 ros2 msg 协议与 ros2 后端的 channel 示例，演示内容包括：
 
 - 如何在配置文件中设置，以使用 mqtt 类型的 channel 后端；
 
@@ -150,6 +150,5 @@
   - `NormalPublisherModule`：会基于 `work_thread_pool` 执行器，以配置的频率、向配置的 topic 中发布 `RosTestMsg` 类型的消息；
   - `NormalSubscriberModule`：会订阅配置的 topic 下的 `RosTestMsg` 类型的消息；
 - 此示例将 `NormalPublisherModule` 和 `NormalSubscriberModule` 分别集成到 `ros2_channel_pub_pkg` 和 `ros2_channel_sub_pkg` 两个 Pkg 中，并在配置文件中加载这两个 Pkg 到一个 AimRT 进程中；
-- 此示例使用 local 类型的 channel 后端进行通信；
 - 此示例使用 mqtt 类型的 channel 后端进行通信,并配置"tcp://127.0.0.1:1883"作为broker；
 - 在配置文件中，新增了 plugin 配置项用来配置 mqtt 插件， 此外还要在 channel 配置项中引入 mqtt 插件
