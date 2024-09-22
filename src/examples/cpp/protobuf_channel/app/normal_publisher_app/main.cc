@@ -14,13 +14,11 @@
 
 using namespace aimrt::runtime::core;
 
-AimRTCore* global_core_ptr = nullptr;
 bool run_flag = true;
 
 void SignalHandler(int sig) {
-  if (global_core_ptr && (sig == SIGINT || sig == SIGTERM)) {
+  if (sig == SIGINT || sig == SIGTERM) {
     run_flag = false;
-    global_core_ptr->Shutdown();
     return;
   }
 
@@ -35,7 +33,6 @@ int32_t main(int32_t argc, char** argv) {
 
   try {
     AimRTCore core;
-    global_core_ptr = &core;
 
     // Initialize
     AimRTCore::Options options;
@@ -87,13 +84,12 @@ int32_t main(int32_t argc, char** argv) {
       publisher_proxy.Publish(msg);
     }
 
-    // Wait
-    fu.wait();
-
     // Shutdown
     core.Shutdown();
 
-    global_core_ptr = nullptr;
+    // Wait
+    fu.wait();
+
   } catch (const std::exception& e) {
     std::cout << "AimRT run with exception and exit. " << e.what()
               << std::endl;

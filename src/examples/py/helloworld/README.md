@@ -15,7 +15,7 @@
 - [examples_py_helloworld_app_mode_cfg.yaml](./cfg/examples_py_helloworld_app_mode_cfg.yaml)
 
 
-运行方式：
+运行方式（linux）：
 - 安装 `aimrt_py` 包；
 - 直接运行本目录下[start_examples_py_helloworld_app_mode.sh](./start_examples_py_helloworld_app_mode.sh)脚本启动进程；
 - 键入`ctrl-c`停止进程；
@@ -44,7 +44,7 @@
 - [examples_py_helloworld_registration_mode_cfg.yaml](./cfg/examples_py_helloworld_registration_mode_cfg.yaml)
 
 
-运行方式：
+运行方式（linux）：
 - 安装 `aimrt_py` 包；
 - 直接运行本目录下[start_examples_py_helloworld_registration_mode.sh](./start_examples_py_helloworld_registration_mode.sh)脚本启动进程；
 - 键入`ctrl-c`停止进程；
