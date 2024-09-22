@@ -186,10 +186,9 @@ void TimeManipulatorExecutor::ExecuteAt(
         timing_wheel_vec_[ii].wheel[pos].emplace_back(
             TaskWithTimestamp{virtual_tp / dt_count_, std::move(task)});
         return;
-      } else {
-        diff_tick_count /= options_.wheel_size[ii];
-        temp_current_tick_count /= options_.wheel_size[ii];
       }
+      diff_tick_count /= options_.wheel_size[ii];
+      temp_current_tick_count /= options_.wheel_size[ii];
     }
 
     timing_task_map_[diff_tick_count + temp_current_tick_count].emplace_back(

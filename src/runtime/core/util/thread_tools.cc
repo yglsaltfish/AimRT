@@ -110,7 +110,7 @@ void SetCpuSchedForCurrentThread(std::string_view sched) {
     }
     auto sched_policy_str = sched.substr(0, pos);
 
-    int policy;
+    int policy = 0;
 
     if (sched_policy_str == "SCHED_FIFO") {
       policy = SCHED_FIFO;
@@ -140,7 +140,7 @@ void SetCpuSchedForCurrentThread(std::string_view sched) {
           "Call 'pthread_setschedparam' get error, ret code '{}'", ret));
     }
 
-    int check_policy;
+    int check_policy = 0;
     struct sched_param check_param;
     ret = pthread_getschedparam(pthread_self(), &check_policy, &check_param);
     if (ret) {
