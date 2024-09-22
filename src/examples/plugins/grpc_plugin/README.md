@@ -34,7 +34,7 @@
   - `NormalRpcCoClientModule`：会基于 `work_thread_pool` 执行器，以配置的频率，通过协程 Client 接口，向 `ExampleService` 发起 RPC 请求；
   - `NormalRpcCoServerModule`：会注册 `ExampleService` 服务端，通过协程 Server 接口，提供 echo 功能；
 - 此示例在 Rpc Client 端和 Server 端分别注册了两个 Filter 用于打印请求日志和计算耗时；
-- 此示例将 `NormalRpcCoClientModule` 和 `NormalRpcCoServerModule` 分别集成到 `protobuf_rpc_client_pkg` 和 `protobuf_rpc_server_pkg` 两个 Pkg 中，并在配置文件中加载这两个 Pkg 到一个 AimRT 进程中；
+- 此示例将 `NormalRpcCoClientModule` 和 `NormalRpcCoServerModule` 分别集成到 `protobuf_rpc_client_pkg` 和 `protobuf_rpc_server_pkg` 两个 Pkg 中, 并在两个配置文件中分别加载对应的 Pkg 到 srv 和 cli 进程中；
 - 此示例使用 grpc 类型的 rpc 后端进行通信，并配置"127.0.0.1:50051"作为客户端地址， "127.0.0.1:50050"作为服务端地址；
 - 在配置文件中，新增了 plugin 配置项用来配置 grpc 插件， 此外还要在 rpc 配置项中引入 grpc 插件；
 

@@ -15,8 +15,8 @@
 - [protobuf_channel_sub_pkg/pkg_main.cc](./pkg/protobuf_channel_sub_pkg/pkg_main.cc)
 
 配置文件：
-- [examples_plugins_zenoh_plugin_protobuf_channel_benchmark_pub_cfg.yaml](./install/linux/bin/cfg/examples_plugins_zenoh_plugin_protobuf_channel_benchmark_pub_cfg.yaml)
-- [examples_plugins_zenoh_plugin_protobuf_channel_benchmark_sub_cfg.yaml](./install/linux/bin/cfg/examples_plugins_zenoh_plugin_protobuf_channel_benchmark_sub_cfg.yaml)
+- [examples_plugins_zenoh_plugin_protobuf_channel_pub_cfg.yaml](./install/linux/bin/cfg/examples_plugins_zenoh_plugin_protobuf_channel_pub_cfg.yaml)
+- [examples_plugins_zenoh_plugin_protobuf_channel_sub_cfg.yaml](./install/linux/bin/cfg/examples_plugins_zenoh_plugin_protobuf_channel_sub_cfg.yaml)
 
 运行方式（linux）：
 - 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
