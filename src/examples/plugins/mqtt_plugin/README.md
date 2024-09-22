@@ -65,8 +65,8 @@
 - 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
 - 开启 `AIMRT_BUILD_MQTT_PLUGIN` 选项编译 AimRT；
 - 编译成功后启动emqx； 
-- 在终端运行 build 目录下`start_examples_plugins_mqtt_plugin_protobuf_rpc_server.sh`脚本启动服务端（srv进程）；
-- 开启新的终端运行 build 目录下`start_examples_plugins_mqtt_plugin_protobuf_rpc_client.sh`脚本启动客户端（cli进程）；
+- 在终端运行 build 目录下`start_examples_plugins_mqtt_plugin_ros2_rpc_server.sh`脚本启动服务端（srv进程）；
+- 开启新的终端运行 build 目录下`start_examples_plugins_mqtt_plugin_ros2_rpc_client.sh`脚本启动客户端（cli进程）；
 - 分别在两个终端键入`ctrl-c`停止对应进程；
 
 
