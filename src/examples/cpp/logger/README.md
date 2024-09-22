@@ -46,6 +46,12 @@
 - 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
 - 直接运行 build 目录下`start_examples_cpp_logger_rotate_file.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
+
+
+
+说明：
+- 此示例创建了一个 `LoggerModule`，会在`Initialize`时读取配置并打印出来，同时还会在其 `Start`的阶段循环打印各种等级的日志；
+- 此示例会在配置文件指定的目录中 "./log" 生成的日志文件 "examples_cpp_logger_rotate_file.log" 文件并将日志写如其中；
 - 可以看到在该配置文件中多了如下配置：
 ```yaml
       - type: rotate_file       #指明日志记录的类型为“rotate_file”
@@ -55,11 +61,6 @@
           max_file_size_m: 4    #定义了单个日志文件的最大大小，单位为MB。这里指定为4MB，意味着当日志文件达到或超过这个大小时，就会触发轮替
           max_file_num: 10      #指定了要保留的最大日志文件数量。在这个配置中，最多会保留10个日志文件，包括当前正在使用的那个文件。
 ```
-
-说明：
-- 此示例创建了一个 `LoggerModule`，会在`Initialize`时读取配置并打印出来，同时还会在其 `Start`的阶段循环打印各种等级的日志；
-- 此示例会在配置文件指定的目录中 "./log" 生成的日志文件 "examples_cpp_logger_rotate_file.log" 文件并将日志写如其中；
-
 
 ## logger specify executor
 
