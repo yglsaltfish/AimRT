@@ -54,7 +54,8 @@ const aimrt_type_support_base_t* GetRos2MessageTypeSupport() {
             Ros2RclSerializedMessageAdapter serialized_msg_adapter(&bawa);
             rcl_ret_t ret = rmw_serialize(msg, ts_ptr, serialized_msg_adapter.GetRclSerializedMessage());
             return (ret == RMW_RET_OK);
-          } else if (aimrt::util::ToStdStringView(serialization_type) == "json") {
+          }
+          if (aimrt::util::ToStdStringView(serialization_type) == "json") {
             std::string msg_data;
             bool ret = common::ros2_util::MessageToJson(msg, ts_ptr, msg_data);
             if (!ret) return false;

@@ -97,7 +97,7 @@ void Ros2AdapterClient::Invoke(
   auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
   auto record_ptr = client_invoke_wrapper_ptr;
 
-  int64_t sequence_number;
+  int64_t sequence_number = 0;
   rcl_ret_t ret = rcl_send_request(
       get_client_handle().get(), client_invoke_wrapper_ptr->req_ptr, &sequence_number);
 
@@ -260,7 +260,7 @@ void Ros2AdapterWrapperClient::Invoke(
   auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
   auto record_ptr = client_invoke_wrapper_ptr;
 
-  int64_t sequence_number;
+  int64_t sequence_number = 0;
   rcl_ret_t ret = rcl_send_request(
       get_client_handle().get(), &wrapper_req, &sequence_number);
 

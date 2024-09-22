@@ -425,7 +425,7 @@ inline void DynamicArrayToJson(
     case rosidl_typesupport_introspection_cpp::ROS_TYPE_MESSAGE:
       auto cur_member_info =
           reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(member_info.members_->data);
-      uint8_t *element_data;
+      uint8_t *element_data = nullptr;
       memcpy(&element_data, member_data, sizeof(void *));
       size_t element_size = cur_member_info->size_of_;
       size_t element_count = GetVectorSize(member_data, element_size);

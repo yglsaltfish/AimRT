@@ -62,7 +62,7 @@ inline std::map<StringType, StringType> SplitToMap(std::string_view source,
 
   if (source.empty() || vsep.empty() || msep.empty() || vsep == msep)
     return result;
-  size_t v_pos_end, v_pos_start = 0;
+  size_t v_pos_end = 0, v_pos_start = 0;
   do {
     v_pos_end = source.find(vsep, v_pos_start);
     if (v_pos_end == std::string_view::npos) v_pos_end = source.length();
@@ -201,9 +201,8 @@ inline std::string_view GetValueFromStrKV(std::string_view str,
       if (trim) {
         auto re = str.substr(val_start_pos, val_end_pos - val_start_pos);
         return Trim(re);
-      } else {
-        return str.substr(val_start_pos, val_end_pos - val_start_pos);
       }
+      return str.substr(val_start_pos, val_end_pos - val_start_pos);
     }
 
     key_pos = str.find(key, msep_pos + msep.length());
@@ -230,7 +229,7 @@ inline std::vector<StringType> SplitToVec(std::string_view source,
   std::vector<StringType> result;
   if (source.empty() || sep.empty()) return result;
 
-  size_t pos_end, pos_start = 0;
+  size_t pos_end = 0, pos_start = 0;
   do {
     pos_end = source.find(sep, pos_start);
     if (pos_end == std::string_view::npos) pos_end = source.length();
@@ -285,7 +284,7 @@ inline std::set<StringType> SplitToSet(std::string_view source,
   std::set<StringType> result;
   if (source.empty() || sep.empty()) return result;
 
-  size_t pos_end, pos_start = 0;
+  size_t pos_end = 0, pos_start = 0;
   do {
     pos_end = source.find(sep, pos_start);
     if (pos_end == std::string_view::npos) pos_end = source.length();
@@ -740,12 +739,11 @@ inline bool StartsWith(std::string_view str,
       if (tolower(pattern[i]) != tolower(str[i])) return false;
     }
     return true;
-  } else {
-    for (size_t i = 0; i < pattern_len; ++i) {
-      if (pattern[i] != str[i]) return false;
-    }
-    return true;
   }
+  for (size_t i = 0; i < pattern_len; ++i) {
+    if (pattern[i] != str[i]) return false;
+  }
+  return true;
 }
 
 /**
@@ -770,12 +768,11 @@ inline bool EndsWith(std::string_view str,
       if (tolower(pattern[i]) != tolower(str[begin_pos + i])) return false;
     }
     return true;
-  } else {
-    for (size_t i = 0; i < pattern_len; i++) {
-      if (pattern[i] != str[begin_pos + i]) return false;
-    }
-    return true;
   }
+  for (size_t i = 0; i < pattern_len; i++) {
+    if (pattern[i] != str[begin_pos + i]) return false;
+  }
+  return true;
 }
 
 /**

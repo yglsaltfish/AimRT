@@ -177,7 +177,7 @@ inline void LogImpl(const Logger& logger,
                     const char* function_name,
                     ::aimrt_fmt::format_string<Args...> fmt,
                     Args&&... args) {
-  std::string log_str = ::aimrt_fmt::format(fmt, (Args &&) args...);
+  std::string log_str = ::aimrt_fmt::format(fmt, std::forward<Args>(args)...);
   logger.Log(lvl, line, column, file_name, function_name, log_str.c_str(), log_str.size());
 }
 

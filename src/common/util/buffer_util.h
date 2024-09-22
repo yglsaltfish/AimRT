@@ -244,7 +244,7 @@ class ConstBufferOperator {
   }
 
   std::string_view GetString(BufferLenType len_type = BufferLenType::kUInt64) {
-    size_t str_len;
+    size_t str_len = 0;
     switch (len_type) {
       case BufferLenType::kUInt8:
         str_len = GetUint8();

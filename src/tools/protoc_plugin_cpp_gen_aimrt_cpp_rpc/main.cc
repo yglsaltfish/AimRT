@@ -28,7 +28,7 @@ std::vector<std::string> SplitToVec(const std::string& source,
   std::vector<std::string> result;
   if (source.empty() || sep.empty()) return result;
 
-  size_t pos_end, pos_start = 0;
+  size_t pos_end = 0, pos_start = 0;
   do {
     pos_end = source.find(sep, pos_start);
     if (pos_end == std::string::npos) pos_end = source.length();

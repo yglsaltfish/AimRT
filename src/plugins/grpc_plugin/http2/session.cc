@@ -166,7 +166,7 @@ int Session::ParseRecvMessage(std::string_view in) {
 
 int Session::GetSendMessage(SimpleBuffer& out) {
   while (true) {
-    const uint8_t* buffer;
+    const uint8_t* buffer = nullptr;
     ssize_t nwrite = nghttp2_session_mem_send(session_, &buffer);
     if (nwrite < 0) {
       AIMRT_DEBUG("nghttp2_session_mem_send error: {}, {}", nwrite, nghttp2_strerror(nwrite));

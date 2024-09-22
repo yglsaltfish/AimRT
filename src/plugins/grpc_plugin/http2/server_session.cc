@@ -38,7 +38,7 @@ int OnFrameNotSendCallback(nghttp2_session* session, const nghttp2_frame* frame,
 }  // namespace
 
 int ServerSession::InitSession(Http2Settings settings) {
-  nghttp2_session_callbacks* callbacks;
+  nghttp2_session_callbacks* callbacks = nullptr;
   auto new_ok = nghttp2_session_callbacks_new(&callbacks);
   if (new_ok != 0) {
     AIMRT_ERROR("nghttp2_session_callbacks_new failed: {}", new_ok);

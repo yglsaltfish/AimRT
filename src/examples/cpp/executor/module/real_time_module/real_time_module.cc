@@ -61,7 +61,7 @@ co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
     pthread_getname_np(pthread_self(), thread_name, sizeof(thread_name));
 
     // Get thread sched param
-    int policy;
+    int policy = 0;
     struct sched_param param;
     pthread_getschedparam(pthread_self(), &policy, &param);
 
@@ -99,7 +99,7 @@ co::Task<void> RealTimeModule::WorkLoop(aimrt::executor::ExecutorRef executor) {
       cur_cpuset_str = cur_cpuset_str.substr(0, cur_cpuset_str.size() - 2);
 
       // Get cpu index used by the current code
-      unsigned int current_cpu, current_node;
+      unsigned int current_cpu = 0, current_node = 0;
       int getcpu_ret = getcpu(&current_cpu, &current_node);
       AIMRT_CHECK_ERROR_THROW(getcpu_ret == 0, "Call 'getcpu' get error: {}", getcpu_ret);
 

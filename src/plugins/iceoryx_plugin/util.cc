@@ -7,18 +7,18 @@ namespace aimrt::plugins::iceoryx_plugin {
 
 // iceoryx rules each part of the service name should be less than 100 characters :IdString_t = cxx::string<100>;
 std::string TruncateString(const std::string& input) {
-  if (input.length() <= iox::MAX_RUNTIME_NAME_LENGTH) {
+  if (input.length() <= iox::MAX_RUNTIME_NAME_LENGTH) [[likely]] {
     return input;
-  } else [[unlikely]] {
-    size_t ellipsis_length = 3;
-    size_t prefix_length = (iox::MAX_RUNTIME_NAME_LENGTH - ellipsis_length) / 2;
-    size_t suffix_length = iox::MAX_RUNTIME_NAME_LENGTH - ellipsis_length - prefix_length;
-
-    std::string truncated_string = input.substr(0, prefix_length) + "..." + input.substr(input.length() - suffix_length);
-    AIMRT_WARN("Input url is too long. Each part should be less than {} characters. The input :{} has been truncated to :{}, which may lead to potential risks.", iox::MAX_RUNTIME_NAME_LENGTH, input, truncated_string);
-
-    return truncated_string;
   }
+
+  size_t ellipsis_length = 3;
+  size_t prefix_length = (iox::MAX_RUNTIME_NAME_LENGTH - ellipsis_length) / 2;
+  size_t suffix_length = iox::MAX_RUNTIME_NAME_LENGTH - ellipsis_length - prefix_length;
+
+  std::string truncated_string = input.substr(0, prefix_length) + "..." + input.substr(input.length() - suffix_length);
+  AIMRT_WARN("Input url is too long. Each part should be less than {} characters. The input :{} has been truncated to :{}, which may lead to potential risks.", iox::MAX_RUNTIME_NAME_LENGTH, input, truncated_string);
+
+  return truncated_string;
 }
 
 // iceoryx uses the iox::cxx::TruncateToCapacity_t to limit the length of the string to 100 characters
@@ -27,19 +27,18 @@ IdString_t String2IdString(const std::string& str) {
 
   iox::cxx::TruncateToCapacity_t truncate_to_capacity;
 
-  return IdString_t(truncate_to_capacity, truncated_str.c_str(), truncated_str.length());
+  return {truncate_to_capacity, truncated_str.c_str(), truncated_str.length()};
 }
 
 // The iox description has three parts: "service name", "instance", "specific object"
-const iox::capro::ServiceDescription Url2ServiceDescription(std::string& url) {
+iox::capro::ServiceDescription Url2ServiceDescription(std::string& url) {
   size_t first_slash_pos = url.find('/');
   size_t second_slash_pos = url.find('/', first_slash_pos + 1);
   size_t third_slash_pos = url.find('/', second_slash_pos + 1);
 
-  const iox::capro::ServiceDescription service_description({String2IdString(url.substr(0, second_slash_pos - 0)),
-                                                            String2IdString(url.substr(second_slash_pos, third_slash_pos - second_slash_pos)),
-                                                            String2IdString(url.substr(third_slash_pos))});
-  return service_description;
+  return iox::capro::ServiceDescription{String2IdString(url.substr(0, second_slash_pos - 0)),
+                                        String2IdString(url.substr(second_slash_pos, third_slash_pos - second_slash_pos)),
+                                        String2IdString(url.substr(third_slash_pos))};
 }
 
 // Use PID as the unique name for each application/process

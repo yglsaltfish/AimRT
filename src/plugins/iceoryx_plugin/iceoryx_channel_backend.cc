@@ -105,7 +105,7 @@ bool IceoryxChannelBackend::Subscribe(
         [this, topic_name = info.topic_name, sub_tool_ptr](iox::popo::UntypedSubscriber* subscriber) {
           try {
             auto ctx_ptr = std::make_shared<aimrt::channel::Context>(aimrt_channel_context_type_t::AIMRT_CHANNEL_SUBSCRIBER_CONTEXT);
-            const char* msg;
+            const char* msg = nullptr;
 
             // read data from shared memory : pkg_size | serialization_type | ctx_num | ctx_key1 | ctx_val1 | ... | ctx_keyN | ctx_valN | msg_buffer
             // use while struck to make sure all packages are read

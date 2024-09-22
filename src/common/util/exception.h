@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <stdexcept>
+#include <fmt/format.h>
 #include <string>
 
 #include "util/format.h"
@@ -17,9 +17,9 @@ class AimRTException : public std::exception {
   AimRTException(Args... args)
       : err_msg_(std::forward<Args>(args)...) {}
 
-  ~AimRTException() noexcept {}
+  ~AimRTException() noexcept override {}
 
-  const char* what() const noexcept { return err_msg_.c_str(); }
+  const char* what() const noexcept override { return err_msg_.c_str(); }
 
  private:
   std::string err_msg_;
