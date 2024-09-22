@@ -21,7 +21,7 @@ class LogLevelTool {
         continue;
       }
 #if defined(_WIN32)
-      if (_strnicmp(lvl_name.data(), lvl_name_array_[ii].data(), lvl_name.size()) == 0)
+      if (_strnicmp(lvl_name.data(), kLvlNameArray[ii].data(), lvl_name.size()) == 0)
         return static_cast<aimrt_log_level_t>(ii);
 #else
       if (strncasecmp(lvl_name.data(), kLvlNameArray[ii].data(), lvl_name.size()) == 0)
