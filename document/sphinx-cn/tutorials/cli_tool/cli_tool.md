@@ -42,9 +42,9 @@ export PATH=<path_to_your_aimrt_cli>:$PATH
 
 ### 直接pip安装
 
-***TODO建设中***
+***TODO***
 
 ### 从Release中下载可执行文件
 
-***TODO建设中***
+***TODO***
 

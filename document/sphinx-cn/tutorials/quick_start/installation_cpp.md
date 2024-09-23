@@ -59,16 +59,6 @@ target_link_libraries(
   PUBLIC aimrt::interface::aimrt_module_cpp_interface)
 ```
 
-AimRT 在下载过程中会下载一些依赖，会从 github 下载源码，其中部分依赖如 Boost 体积较大，如果由于网络问题下载失败，可以考虑使用 AimRT 提供的 gitee 备选下载地址，见 {{ '[url_cn.bashrc]({}/url_cn.bashrc)'.format(code_site_root_path_url) }} 文件，该文件将备选下载地址设置为环境变量 `AIMRT_DOWNLOAD_FLAGS`，用户可以在 CMake 生成命令中添加该环境变量以从备选地址下载。
-
-要使用备用下载地址，需要首先 `source url_cn.bashrc`，然后 CMake 生成时添加 `AIMRT_DOWNLOAD_FLAGS` 环境变量：
-```bash
-# Set AIMRT_DOWNLOAD_FLAGS to download from mirror site
-source url_cn.bashrc
-# Add AIMRT_DOWNLOAD_FLAGS to cmake generate command
-cmake -Bbuild ... $AIMRT_DOWNLOAD_FLAGS
-```
-
 ## 安装后find_package引用
 
 请注意：使用 **install 后 find_package 引用**这种方式，只能引用部分功能，只能基于 pkg 模式开发，无法使用 app 模式开发、或开发 aimrt 插件。
@@ -88,13 +78,13 @@ cmake -Bbuild ... $AIMRT_DOWNLOAD_FLAGS
 
 ### 安装方式二：从二进制包安装
 
-***TODO，此方式还在建设中***
+***TODO***
 
-您可以直接在`AimRT 的发布页面`上下载一些主流平台上编译好的二进制包并安装。
+<!-- 您可以直接在`AimRT 的发布页面`上下载一些主流平台上编译好的二进制包并安装。
 
 注意：
 - 部分插件只在一些平台上提供，这和插件本身所需的组件依赖的平台有关。
-- AimRT 二进制安装包直接支持的平台较少，但并不意味 AimRT 仅支持这些平台。AimRT 本身比较轻量，没有太多依赖，鼓励使用源码形式安装/引用。
+- AimRT 二进制安装包直接支持的平台较少，但并不意味 AimRT 仅支持这些平台。AimRT 本身比较轻量，没有太多依赖，鼓励使用源码形式安装/引用。 -->
 
 
 ### 安装完成后，使用CMake find_package进行引用
