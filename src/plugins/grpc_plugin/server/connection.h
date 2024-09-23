@@ -193,7 +193,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
 
  private:
   Awaitable<void> ReceiveFromRemote() {
-    std::array<uint8_t, 8192> buffer;
+    std::array<uint8_t, 1024UL * 1024UL> buffer;
     auto nread = co_await socket_.async_read_some(asio::buffer(buffer), asio::use_awaitable);
 
 #ifndef NDEBUG
