@@ -31,8 +31,8 @@ class RosTestRpcWrapperServer : public rclcpp::Node {
  private:
   rclcpp::Service<RosRpcWrapper>::SharedPtr service_;
 
-  void CoRpcHandle(const std::shared_ptr<RosRpcWrapper::Request> wrapper_req,
-                   std::shared_ptr<RosRpcWrapper::Response> wrapper_rsp) {
+  void CoRpcHandle(const std::shared_ptr<RosRpcWrapper::Request>& wrapper_req,
+                   const std::shared_ptr<RosRpcWrapper::Response>& wrapper_rsp) {
     // deserialize protobuf req from RosRpcWrapper Request
     aimrt::protocols::example::GetFooDataReq req;
 

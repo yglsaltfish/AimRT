@@ -55,7 +55,7 @@ void AsioStrandExecutor::Initialize(std::string_view name,
       !options_.bind_asio_thread_executor_name.empty(),
       "Invalide bind asio thread executor name, name is empty.");
 
-  auto io_ptr = get_asio_handle_(options_.bind_asio_thread_executor_name);
+  auto* io_ptr = get_asio_handle_(options_.bind_asio_thread_executor_name);
 
   AIMRT_CHECK_ERROR_THROW(
       io_ptr,

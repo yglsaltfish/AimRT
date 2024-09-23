@@ -18,7 +18,7 @@ void PluginLoader::LoadPlugin(std::string_view plugin_path) {
                           "Load dynamic lib failed, lib path {}, error info {}",
                           plugin_path_, aimrt::common::util::DynamicLib::GetErr());
 
-  auto create_func = dynamic_lib_.GetSymbol(kDynlibCreateCorePluginFuncName);
+  auto* create_func = dynamic_lib_.GetSymbol(kDynlibCreateCorePluginFuncName);
   AIMRT_CHECK_ERROR_THROW(create_func != nullptr,
                           "Cannot find symbol '{}' in lib {}.",
                           kDynlibCreateCorePluginFuncName, plugin_path_);

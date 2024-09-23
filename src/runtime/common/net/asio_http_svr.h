@@ -11,6 +11,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
+#include <utility>
 
 #include "net/http_dispatcher.h"
 #include "util/log_util.h"
@@ -297,7 +298,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
           std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
-      session_options_ptr_ = session_options_ptr;
+      session_options_ptr_ = std::move(session_options_ptr);
     }
 
     void Start() {
@@ -650,7 +651,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     static std::string_view MimeType(std::string_view path) {
       using boost::beast::iequals;
       auto const ext = [&path] {
-        auto const pos = path.rfind(".");
+        auto const pos = path.rfind('.');
         if (pos == std::string_view::npos)
           return std::string_view();
         return path.substr(pos);

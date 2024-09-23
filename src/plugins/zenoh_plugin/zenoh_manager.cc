@@ -42,7 +42,7 @@ void ZenohManager::RegisterPublisher(const std::string &keyexpr) {
     return;
   }
 
-  z_pub_registry_.emplace(keyexpr, std::move(z_pub));
+  z_pub_registry_.emplace(keyexpr, z_pub);
   AIMRT_TRACE("Publisher with keyexpr: {} registered successfully.", keyexpr.c_str());
 
   return;
@@ -71,7 +71,7 @@ void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc 
     return;
   }
 
-  z_sub_registry_.emplace(keyexpr, std::move(z_sub));
+  z_sub_registry_.emplace(keyexpr, z_sub);
   AIMRT_TRACE("Subscriber with keyexpr: {} registered successfully.", keyexpr.c_str());
 
   return;

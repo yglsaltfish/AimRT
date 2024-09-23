@@ -25,7 +25,7 @@ inline std::shared_ptr<aimrt::util::BufferArrayView> SerializeReqWithCache(
 
   AIMRT_ASSERT(serialize_ret, "Serialize failed.");
 
-  auto ptr = buffer_array_ptr.get();
+  auto* ptr = buffer_array_ptr.get();
   auto buffer_array_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
       new aimrt::util::BufferArrayView(*ptr),
       [buffer_array_ptr{std::move(buffer_array_ptr)}](const auto* ptr) { delete ptr; });
@@ -62,7 +62,7 @@ inline std::shared_ptr<aimrt::util::BufferArrayView> SerializeRspWithCache(
 
   AIMRT_ASSERT(serialize_ret, "Serialize failed.");
 
-  auto ptr = buffer_array_ptr.get();
+  auto* ptr = buffer_array_ptr.get();
   auto buffer_array_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
       new aimrt::util::BufferArrayView(*ptr),
       [buffer_array_ptr{std::move(buffer_array_ptr)}](const auto* ptr) { delete ptr; });

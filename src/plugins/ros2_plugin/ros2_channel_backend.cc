@@ -85,7 +85,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
 
   static bool decode(const Node& node, Options& rhs) {
     if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
-      for (auto& pub_topic_options_node : node["pub_topics_options"]) {
+      for (const auto& pub_topic_options_node : node["pub_topics_options"]) {
         auto pub_topic_options = Options::PubTopicOptions{
             .topic_name = pub_topic_options_node["topic_name"].as<std::string>()};
         if (pub_topic_options_node["qos"]) {
@@ -96,7 +96,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2ChannelBackend::Options> {
     }
 
     if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
-      for (auto& sub_topic_options_node : node["sub_topics_options"]) {
+      for (const auto& sub_topic_options_node : node["sub_topics_options"]) {
         auto sub_topic_options = Options::SubTopicOptions{
             .topic_name = sub_topic_options_node["topic_name"].as<std::string>()};
         if (sub_topic_options_node["qos"]) {
@@ -288,7 +288,7 @@ bool Ros2ChannelBackend::Subscribe(
       auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
       sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
 
-      auto sub_tool_ptr = sub_tool_unique_ptr.get();
+      auto* sub_tool_ptr = sub_tool_unique_ptr.get();
 
       std::string ros2_topic_name = rclcpp::extend_name_with_sub_namespace(
           info.topic_name,
@@ -344,7 +344,7 @@ bool Ros2ChannelBackend::Subscribe(
     auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
     sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
 
-    auto sub_tool_ptr = sub_tool_unique_ptr.get();
+    auto* sub_tool_ptr = sub_tool_unique_ptr.get();
 
     auto ros_sub_handle_ptr = ros2_node_ptr_->create_subscription<ros2_plugin_proto::msg::RosMsgWrapper>(
         real_ros2_topic_name,
@@ -452,7 +452,7 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
         serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
     // 填内容，直接复制过去
-    auto buffer_array_data = buffer_array_view_ptr->Data();
+    const auto* buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t msg_size = buffer_array_view_ptr->BufferSize();
 
@@ -469,14 +469,14 @@ void Ros2ChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
 
     wrapper_msg.data.resize(msg_size);
 
-    auto cur_pos = wrapper_msg.data.data();
+    auto* cur_pos = wrapper_msg.data.data();
     for (size_t ii = 0; ii < buffer_array_len; ++ii) {
       memcpy(cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
       cur_pos += buffer_array_data[ii].len;
     }
 
     // 发送数据
-    ros2_publisher_ptr->publish(std::move(wrapper_msg));
+    ros2_publisher_ptr->publish(wrapper_msg);
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
   }

@@ -69,7 +69,7 @@ class Function<Ops> {
       static_cast<const OpsType*>(base_.ops)->destroyer(&(base_.object_buf));
   }
 
-  Function(Function&& function) {
+  Function(Function&& function) noexcept {
     base_.ops = std::exchange(function.base_.ops, nullptr);
     if (base_.ops)
       static_cast<const OpsType*>(base_.ops)
@@ -88,7 +88,7 @@ class Function<Ops> {
           ->relocator(&(function_base->object_buf), &(base_.object_buf));
   }
 
-  Function& operator=(Function&& function) {
+  Function& operator=(Function&& function) noexcept {
     if (&function != this) {
       this->~Function();
       new (this) Function(std::move(function));
@@ -125,7 +125,7 @@ class Function<Ops> {
   }
 
   Function& operator=(std::nullptr_t) {
-    if (auto ops = std::exchange(base_.ops, nullptr)) {
+    if (const auto* ops = std::exchange(base_.ops, nullptr)) {
       static_cast<const OpsType*>(ops)->destroyer(&(base_.object_buf));
     }
     return *this;

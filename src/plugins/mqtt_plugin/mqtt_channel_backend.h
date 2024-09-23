@@ -4,6 +4,7 @@
 #pragma once
 
 #include <set>
+#include <utility>
 
 #include "core/channel/channel_backend_base.h"
 #include "core/channel/channel_backend_tools.h"
@@ -36,7 +37,7 @@ class MqttChannelBackend : public runtime::core::channel::ChannelBackendBase {
       std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
       : client_(client),
         max_pkg_size_(max_pkg_size),
-        msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
+        msg_handle_registry_ptr_(std::move(msg_handle_registry_ptr)) {}
 
   ~MqttChannelBackend() override = default;
 

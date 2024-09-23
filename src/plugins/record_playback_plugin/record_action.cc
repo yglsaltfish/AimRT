@@ -69,7 +69,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     rhs.executor = node["executor"].as<std::string>();
 
     if (node["topic_meta_list"] && node["topic_meta_list"].IsSequence()) {
-      for (auto& topic_meta_node : node["topic_meta_list"]) {
+      for (const auto& topic_meta_node : node["topic_meta_list"]) {
         auto topic_meta = Options::TopicMeta{
             .topic_name = topic_meta_node["topic_name"].as<std::string>(),
             .msg_type = topic_meta_node["msg_type"].as<std::string>()};

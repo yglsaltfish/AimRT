@@ -34,7 +34,7 @@ struct convert<aimrt::runtime::core::executor::ExecutorManager::Options> {
     if (!node.IsMap()) return false;
 
     if (node["executors"] && node["executors"].IsSequence()) {
-      for (auto& executor_node : node["executors"]) {
+      for (const auto& executor_node : node["executors"]) {
         auto executor_options = Options::ExecutorOptions{
             .name = executor_node["name"].as<std::string>(),
             .type = executor_node["type"].as<std::string>()};
@@ -242,7 +242,7 @@ std::list<std::pair<std::string, std::string>> ExecutorManager::GenInitializatio
   std::vector<std::vector<std::string>> executor_info_table =
       {{"name", "type", "thread safe", "support time schedule"}};
 
-  for (auto& item : executor_vec_) {
+  for (const auto& item : executor_vec_) {
     std::vector<std::string> cur_executor_info(4);
     cur_executor_info[0] = item->Name();
     cur_executor_info[1] = item->Type();

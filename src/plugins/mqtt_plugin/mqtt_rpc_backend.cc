@@ -50,7 +50,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
       rhs.timeout_executor = node["timeout_executor"].as<std::string>();
 
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
-      for (auto& client_options_node : node["clients_options"]) {
+      for (const auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
             .func_name = client_options_node["func_name"].as<std::string>()};
 
@@ -68,7 +68,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttRpcBackend::Options> {
     }
 
     if (node["servers_options"] && node["servers_options"].IsSequence()) {
-      for (auto& server_options_node : node["servers_options"]) {
+      for (const auto& server_options_node : node["servers_options"]) {
         auto server_options = Options::ServerOptions{
             .func_name = server_options_node["func_name"].as<std::string>()};
 
@@ -270,7 +270,7 @@ bool MqttRpcBackend::RegisterServiceFunc(
                 return;
               }
 
-              auto buffer_array_data = buffer_array_view_ptr->Data();
+              const auto* buffer_array_data = buffer_array_view_ptr->Data();
               const size_t buffer_array_len = buffer_array_view_ptr->Size();
               size_t rsp_size = buffer_array_view_ptr->BufferSize();
 
@@ -526,7 +526,7 @@ void MqttRpcBackend::Invoke(
       return;
     }
 
-    auto buffer_array_data = buffer_array_view_ptr->Data();
+    const auto* buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t req_size = buffer_array_view_ptr->BufferSize();
 

@@ -49,7 +49,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
     if (!node.IsMap()) return false;
 
     if (node["type_support_pkgs"] && node["type_support_pkgs"].IsSequence()) {
-      for (auto& type_support_pkg_node : node["type_support_pkgs"]) {
+      for (const auto& type_support_pkg_node : node["type_support_pkgs"]) {
         auto type_support_pkg = Options::TypeSupportPkg{
             .path = type_support_pkg_node["path"].as<std::string>()};
 
@@ -58,7 +58,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
     }
 
     if (node["record_actions"] && node["record_actions"].IsSequence()) {
-      for (auto& record_action_node : node["record_actions"]) {
+      for (const auto& record_action_node : node["record_actions"]) {
         auto record_action = Options::RecordActionOptions{
             .name = record_action_node["name"].as<std::string>(),
             .options = record_action_node["options"]};
@@ -68,7 +68,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordPlaybackPlugin::Opt
     }
 
     if (node["playback_actions"] && node["playback_actions"].IsSequence()) {
-      for (auto& playback_action_node : node["playback_actions"]) {
+      for (const auto& playback_action_node : node["playback_actions"]) {
         auto playback_action = Options::PlaybackActionOptions{
             .name = playback_action_node["name"].as<std::string>(),
             .options = playback_action_node["options"]};
@@ -247,7 +247,7 @@ void RecordPlaybackPlugin::InitTypeSupport(Options::TypeSupportPkg& options) {
 
   auto type_support_array = loader_ptr->GetTypeSupportArray();
 
-  for (auto item : type_support_array) {
+  for (const auto* item : type_support_array) {
     aimrt::util::TypeSupportRef type_support_ref(item);
     auto type_name = type_support_ref.TypeName();
 
@@ -330,7 +330,7 @@ void RecordPlaybackPlugin::RegisterRecordChannel() {
   // Subscribe
   for (auto& recore_func_itr : recore_func_map) {
     const auto& key = recore_func_itr.first;
-    const auto& wrapper = recore_func_itr.second;
+    auto& wrapper = recore_func_itr.second;
 
     auto finditr = type_support_map_.find(key.msg_type);
 
@@ -396,7 +396,7 @@ void RecordPlaybackPlugin::RegisterPlaybackChannel() {
   }
 
   // RegisterPublishType
-  for (auto& item : playback_topic_meta_set) {
+  for (const auto& item : playback_topic_meta_set) {
     auto finditr = type_support_map_.find(item.msg_type);
 
     const auto& type_support_wrapper = finditr->second;
@@ -430,7 +430,7 @@ void RecordPlaybackPlugin::RegisterPlaybackChannel() {
       auto finditr = type_support_map_.find(topic_meta.msg_type);
       const auto& type_support_wrapper = finditr->second;
 
-      auto pub_type_wrapper_ptr = core_ptr_->GetChannelManager().GetChannelRegistry()->GetPublishTypeWrapperPtr(
+      const auto* pub_type_wrapper_ptr = core_ptr_->GetChannelManager().GetChannelRegistry()->GetPublishTypeWrapperPtr(
           topic_meta.msg_type, topic_meta.topic_name, type_support_wrapper.options.path, "core");
       AIMRT_CHECK_ERROR_THROW(pub_type_wrapper_ptr, "Get publish type failed!");
 

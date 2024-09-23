@@ -89,11 +89,11 @@ void TimeManipulatorPlugin::RegisterRpcService() {
   // 注册rpc服务
   service_ptr_ = std::make_unique<TimeManipulatorServiceImpl>();
 
-  auto& executor_vec = core_ptr_->GetExecutorManager().GetAllExecutors();
+  const auto& executor_vec = core_ptr_->GetExecutorManager().GetAllExecutors();
 
-  for (auto& itr : executor_vec) {
+  for (const auto& itr : executor_vec) {
     if (itr->Type() == "time_manipulator") {
-      auto ptr = dynamic_cast<TimeManipulatorExecutor*>(itr.get());
+      auto* ptr = dynamic_cast<TimeManipulatorExecutor*>(itr.get());
       if (ptr) {
         service_ptr_->RegisterTimeManipulatorExecutor(ptr);
       } else {

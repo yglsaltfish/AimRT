@@ -72,6 +72,7 @@ class Context {
 
   std::vector<std::string_view> GetMetaKeys() const {
     std::vector<std::string_view> result;
+    result.reserve(meta_data_map_.size());
     for (const auto& it : meta_data_map_) result.emplace_back(it.first);
     return result;
   }
@@ -244,6 +245,7 @@ class ContextRef {
     aimrt_string_view_array_t keys = base_ptr_->ops->get_meta_keys(base_ptr_->impl);
 
     std::vector<std::string_view> result;
+    result.reserve(keys.len);
     for (size_t ii = 0; ii < keys.len; ++ii)
       result.emplace_back(aimrt::util::ToStdStringView(keys.str_array[ii]));
 

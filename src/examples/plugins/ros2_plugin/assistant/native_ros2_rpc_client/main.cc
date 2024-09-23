@@ -71,7 +71,7 @@ class RosTestRpcClient : public rclcpp::Node {
     auto result = client_->async_send_request(
         req,
         [logger = this->get_logger()](ServiceResponseFuture future) {
-          auto rsp = future.get();
+          const auto &rsp = future.get();
           RCLCPP_INFO(logger, "rsp code: %lu", rsp->code);
         });
     RCLCPP_INFO(

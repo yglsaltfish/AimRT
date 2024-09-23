@@ -31,8 +31,8 @@ class RosTestRpcServer : public rclcpp::Node {
  private:
   rclcpp::Service<RosTestRpc>::SharedPtr service_;
 
-  void CoRpcHandle(const std::shared_ptr<RosTestRpc::Request> request,
-                   std::shared_ptr<RosTestRpc::Response> response) {
+  void CoRpcHandle(const std::shared_ptr<RosTestRpc::Request>& request,
+                   const std::shared_ptr<RosTestRpc::Response>& response) {
     response->code = 123;
     RCLCPP_INFO(this->get_logger(), "handle service");
   };

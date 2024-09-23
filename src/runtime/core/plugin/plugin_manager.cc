@@ -29,7 +29,7 @@ struct convert<aimrt::runtime::core::plugin::PluginManager::Options> {
     if (!node.IsMap()) return false;
 
     if (node["plugins"] && node["plugins"].IsSequence()) {
-      for (auto& plugin_options_node : node["plugins"]) {
+      for (const auto& plugin_options_node : node["plugins"]) {
         auto plugin_options = Options::PluginOptions{
             .name = plugin_options_node["name"].as<std::string>(),
             .path = plugin_options_node["path"].as<std::string>()};
@@ -121,7 +121,8 @@ void PluginManager::Initialize(YAML::Node options_node) {
 
   if (!tmp_registered_plugin_vec.empty()) {
     std::vector<std::string> unconfigured_plugins;
-    for (auto itr : tmp_registered_plugin_vec)
+    unconfigured_plugins.reserve(tmp_registered_plugin_vec.size());
+    for (auto* itr : tmp_registered_plugin_vec)
       unconfigured_plugins.emplace_back(itr->Name());
     AIMRT_ERROR_THROW("Some plugins are not configured, {}",
                       aimrt::common::util::JoinVec(unconfigured_plugins, ","));

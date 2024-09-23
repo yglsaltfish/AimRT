@@ -76,7 +76,7 @@ aimrt::co::Task<aimrt::rpc::Status> ParameterServiceImpl::Dump(
 
     const auto& parameter_names = parameter_handle_ptr->ListParameter();
 
-    for (auto& parameter_name : parameter_names) {
+    for (const auto& parameter_name : parameter_names) {
       auto parameter_ptr = parameter_handle_ptr->GetParameter(parameter_name);
       if (!parameter_ptr) [[unlikely]] {
         continue;

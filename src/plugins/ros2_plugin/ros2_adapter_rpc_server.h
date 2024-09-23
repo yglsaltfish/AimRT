@@ -48,7 +48,7 @@ class Ros2AdapterWrapperServer : public rclcpp::ServiceBase {
   void Shutdown() { run_flag_.store(false); }
 
  private:
-  void ReturnRspWithStatusCode(std::shared_ptr<rmw_request_id_t> request_header, uint32_t code);
+  void ReturnRspWithStatusCode(const std::shared_ptr<rmw_request_id_t>& request_header, uint32_t code);
 
  private:
   std::atomic_bool run_flag_ = false;

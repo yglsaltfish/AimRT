@@ -155,7 +155,7 @@ void BenchmarkSubscriberModule::Evaluate() const {
   uint64_t sum_latency = 0;
 
   for (size_t ii = 0; ii < cur_bench_topic_number_; ++ii) {
-    for (auto& msg_record : topic_record_vec_[ii].msg_record_vec) {
+    for (const auto& msg_record : topic_record_vec_[ii].msg_record_vec) {
       if (!msg_record.recv) [[unlikely]]
         continue;
 

@@ -46,7 +46,7 @@ Ros2AdapterServer::Ros2AdapterServer(
 
   if (ret != RCL_RET_OK) {
     if (ret == RCL_RET_SERVICE_NAME_INVALID) {
-      auto rcl_node_handle = get_rcl_node_handle();
+      auto* rcl_node_handle = get_rcl_node_handle();
       // this will throw on any validation problem
       rcl_reset_error();
       rclcpp::expand_topic_or_service_name(
@@ -155,7 +155,7 @@ Ros2AdapterWrapperServer::Ros2AdapterWrapperServer(
 
   if (ret != RCL_RET_OK) {
     if (ret == RCL_RET_SERVICE_NAME_INVALID) {
-      auto rcl_node_handle = get_rcl_node_handle();
+      auto* rcl_node_handle = get_rcl_node_handle();
       // this will throw on any validation problem
       rcl_reset_error();
       rclcpp::expand_topic_or_service_name(
@@ -268,7 +268,7 @@ void Ros2AdapterWrapperServer::handle_request(
           return;
         }
 
-        auto buffer_array_data = buffer_array_view_ptr->Data();
+        const auto* buffer_array_data = buffer_array_view_ptr->Data();
         const size_t buffer_array_len = buffer_array_view_ptr->Size();
         size_t rsp_size = buffer_array_view_ptr->BufferSize();
 
@@ -277,7 +277,7 @@ void Ros2AdapterWrapperServer::handle_request(
         wrapper_rsp_ptr->serialization_type = serialization_type;
         wrapper_rsp_ptr->data.resize(rsp_size);
 
-        auto cur_pos = wrapper_rsp_ptr->data.data();
+        auto* cur_pos = wrapper_rsp_ptr->data.data();
         for (size_t ii = 0; ii < buffer_array_len; ++ii) {
           memcpy(cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
           cur_pos += buffer_array_data[ii].len;
@@ -298,7 +298,7 @@ void Ros2AdapterWrapperServer::handle_request(
 }
 
 void Ros2AdapterWrapperServer::ReturnRspWithStatusCode(
-    std::shared_ptr<rmw_request_id_t> request_header, uint32_t code) {
+    const std::shared_ptr<rmw_request_id_t>& request_header, uint32_t code) {
   auto wrapper_rsp_ptr = std::make_shared<ros2_plugin_proto::srv::RosRpcWrapper::Response>();
   wrapper_rsp_ptr->code = code;
 

@@ -138,7 +138,7 @@ inline void WriteMemberSequenceNested(
   if (member.is_upper_bound_ && json.size() > member.array_size_)
     throw std::runtime_error("Json sequence is more than capacity");
 
-  auto member_typeinfo =
+  const auto *member_typeinfo =
       reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(member.members_->data);
   auto &seq = buffer;
   member.resize_function(seq, json.size());
@@ -162,7 +162,7 @@ inline void WriteMemberNested(
     throw std::runtime_error("WriteMemberNested but the json is not array!");
   }
 
-  auto member_typeinfo =
+  const auto *member_typeinfo =
       reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(member.members_->data);
   if (member.is_array_) {
     for (unsigned int i = 0; i < json[member.name_].size(); i++) {
@@ -423,7 +423,7 @@ inline void DynamicArrayToJson(
       DynamicArrayToJsonImpl(member_info, reinterpret_cast<const std::vector<std::u16string> *>(member_data), json_array);
       break;
     case rosidl_typesupport_introspection_cpp::ROS_TYPE_MESSAGE:
-      auto cur_member_info =
+      const auto *cur_member_info =
           reinterpret_cast<const rosidl_typesupport_introspection_cpp::MessageMembers *>(member_info.members_->data);
       uint8_t *element_data = nullptr;
       memcpy(&element_data, member_data, sizeof(void *));

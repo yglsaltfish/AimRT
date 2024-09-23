@@ -40,7 +40,7 @@ struct convert<aimrt::runtime::core::logger::LoggerManager::Options> {
     }
 
     if (node["backends"] && node["backends"].IsSequence()) {
-      for (auto& backend_options_node : node["backends"]) {
+      for (const auto& backend_options_node : node["backends"]) {
         auto backend_options = Options::BackendOptions{
             .type = backend_options_node["type"].as<std::string>()};
 
@@ -199,7 +199,7 @@ const LoggerProxy& LoggerManager::GetLoggerProxy(std::string_view logger_name) {
 
 std::unordered_map<std::string, aimrt_log_level_t> LoggerManager::GetAllLoggerLevels() const {
   std::unordered_map<std::string, aimrt_log_level_t> result;
-  for (auto& itr : logger_proxy_map_) {
+  for (const auto& itr : logger_proxy_map_) {
     result.emplace(itr.first, itr.second->LogLevel());
   }
   return result;
@@ -207,7 +207,7 @@ std::unordered_map<std::string, aimrt_log_level_t> LoggerManager::GetAllLoggerLe
 
 void LoggerManager::SetLoggerLevels(
     const std::unordered_map<std::string, aimrt_log_level_t>& logger_lvls) {
-  for (auto& itr : logger_lvls) {
+  for (const auto& itr : logger_lvls) {
     auto find_itr = logger_proxy_map_.find(itr.first);
     if (find_itr == logger_proxy_map_.end()) continue;
 
@@ -237,7 +237,8 @@ std::list<std::pair<std::string, std::string>> LoggerManager::GenInitializationR
       "Method can only be called when state is 'Init'.");
 
   std::vector<std::string> logger_backend_type_vec;
-  for (auto& logger_backend : logger_backend_vec_) {
+  logger_backend_type_vec.reserve(logger_backend_vec_.size());
+  for (const auto& logger_backend : logger_backend_vec_) {
     logger_backend_type_vec.emplace_back(logger_backend->Type());
   }
 

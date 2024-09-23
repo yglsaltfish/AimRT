@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "aimrt_module_cpp_interface/logger/logger.h"
 
 #include "pybind11/pybind11.h"
@@ -12,7 +14,7 @@ namespace aimrt::runtime::python_runtime {
 inline void ExportLoggerRef(pybind11::object m) {
   using namespace aimrt::logger;
 
-  pybind11::class_<LoggerRef>(m, "LoggerRef")
+  pybind11::class_<LoggerRef>(std::move(m), "LoggerRef")
       .def(pybind11::init<>())
       .def("__bool__", &LoggerRef::operator bool)
       .def("GetLogLevel", &LoggerRef::GetLogLevel)

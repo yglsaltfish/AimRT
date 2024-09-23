@@ -62,7 +62,7 @@ struct convert<aimrt::plugins::record_playback_plugin::MetaData> {
     rhs.version = node["version"].as<uint32_t>();
 
     if (node["topics"] && node["topics"].IsSequence()) {
-      for (auto& topic_node : node["topics"]) {
+      for (const auto& topic_node : node["topics"]) {
         aimrt::plugins::record_playback_plugin::TopicMeta topic{
             .id = topic_node["id"].as<uint64_t>(),
             .topic_name = topic_node["topic_name"].as<std::string>(),
@@ -74,7 +74,7 @@ struct convert<aimrt::plugins::record_playback_plugin::MetaData> {
     }
 
     if (node["files"] && node["files"].IsSequence()) {
-      for (auto& file_node : node["files"]) {
+      for (const auto& file_node : node["files"]) {
         auto file = Obj::FileMeta{
             .path = file_node["path"].as<std::string>(),
             .start_timestamp = file_node["start_timestamp"].as<uint64_t>()};

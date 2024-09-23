@@ -46,7 +46,7 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
     if (!node.IsMap()) return false;
 
     if (node["backends"] && node["backends"].IsSequence()) {
-      for (auto& backend_options_node : node["backends"]) {
+      for (const auto& backend_options_node : node["backends"]) {
         auto backend_options = Options::BackendOptions{
             .type = backend_options_node["type"].as<std::string>()};
 
@@ -58,7 +58,7 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
     }
 
     if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
-      for (auto& pub_topic_options_node : node["pub_topics_options"]) {
+      for (const auto& pub_topic_options_node : node["pub_topics_options"]) {
         auto pub_topic_options = Options::PubTopicOptions{
             .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
             .enable_backends = pub_topic_options_node["enable_backends"].as<std::vector<std::string>>()};
@@ -71,7 +71,7 @@ struct convert<aimrt::runtime::core::channel::ChannelManager::Options> {
     }
 
     if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
-      for (auto& sub_topic_options_node : node["sub_topics_options"]) {
+      for (const auto& sub_topic_options_node : node["sub_topics_options"]) {
         auto sub_topic_options = Options::SubTopicOptions{
             .topic_name = sub_topic_options_node["topic_name"].as<std::string>(),
             .enable_backends = sub_topic_options_node["enable_backends"].as<std::vector<std::string>>()};
@@ -260,6 +260,7 @@ std::list<std::pair<std::string, std::string>> ChannelManager::GenInitialization
   }
 
   std::vector<std::string> channel_backend_name_vec;
+  channel_backend_name_vec.reserve(channel_backend_vec_.size());
   for (const auto& item : channel_backend_vec_)
     channel_backend_name_vec.emplace_back(item->Name());
 

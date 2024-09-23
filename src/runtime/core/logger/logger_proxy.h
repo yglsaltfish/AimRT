@@ -67,7 +67,7 @@ class LoggerProxy {
           .log_data = log_data,
           .log_data_size = log_data_size};
 
-      for (auto& logger_backend_ptr : logger_backend_vec_) {
+      for (const auto& logger_backend_ptr : logger_backend_vec_) {
         logger_backend_ptr->Log(log_data_wrapper);
       }
     }

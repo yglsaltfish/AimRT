@@ -25,16 +25,16 @@ namespace aimrt::common::util {
  */
 inline std::string& Trim(std::string& s) {
   if (s.empty()) return s;
-  s.erase(s.find_last_not_of(" ") + 1);
-  s.erase(0, s.find_first_not_of(" "));
+  s.erase(s.find_last_not_of(' ') + 1);
+  s.erase(0, s.find_first_not_of(' '));
   return s;
 }
 
 inline std::string_view& Trim(std::string_view& s) {
   if (s.empty()) return s;
-  auto p = s.find_last_not_of(" ");
+  auto p = s.find_last_not_of(' ');
   s = s.substr(0, (p != std::string_view::npos) ? (p + 1) : 0);
-  p = s.find_first_not_of(" ");
+  p = s.find_first_not_of(' ');
   s = s.substr((p != std::string_view::npos) ? p : s.size());
   return s;
 }
@@ -479,7 +479,7 @@ inline std::string& ReplaceString(std::string& str,
  */
 inline bool IsAlnumStr(std::string_view str) {
   if (str.length() == 0) return false;
-  for (auto& c : str) {
+  for (const auto& c : str) {
     if (!isalnum(c)) return false;
   }
   return true;
@@ -494,7 +494,7 @@ inline bool IsAlnumStr(std::string_view str) {
  */
 inline bool IsDigitStr(std::string_view str) {
   if (str.length() == 0) return false;
-  for (auto& c : str) {
+  for (const auto& c : str) {
     if (c > '9' || c < '0') return false;
   }
   return true;
