@@ -55,7 +55,7 @@ variables:
       -Diceoryx_DOWNLOAD_URL=https://file.agibot.com/third_party/iceoryx-2.0.6.tar.gz \
       -Dcpptoml_DOWNLOAD_URL=https://file.agibot.com/third_party/cpptoml-0.1.0.tar.gz \
 
-  TEST_CMD_WINDOWS:
+  TEST_CMD_MSVC:
     value: |
       ./test.bat `
       -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz `
@@ -76,7 +76,7 @@ variables:
       -Dopentelemetry_cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/opentelemetry-cpp-1.16.1.tar.gz `
       -Dzenohc_DOWNLOAD_URL=https://file.agibot.com/third_party/zenoh-c-1.0.0.6.tar.gz
 
-  BUILD_CMD_WINDOWS:
+  BUILD_CMD_MSVC:
     value: |
       ./build.bat `
       -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz `
