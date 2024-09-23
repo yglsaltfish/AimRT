@@ -27,7 +27,7 @@
 
 
 运行方式（linux）：
-- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF` 选项编译 AimRT；
 - 直接运行 build 目录下`start_examples_cpp_protobuf_rpc_sync.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
@@ -67,7 +67,7 @@
 
 
 运行方式（linux）：
-- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF` 选项编译 AimRT；
 - 直接运行 build 目录下`start_examples_cpp_protobuf_rpc_async.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
@@ -106,7 +106,7 @@
 
 
 运行方式（linux）：
-- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF` 选项编译 AimRT；
 - 直接运行 build 目录下`start_examples_cpp_protobuf_rpc_future.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
@@ -147,7 +147,7 @@
 
 
 运行方式（linux）：
-- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF` 选项编译 AimRT；
 - 直接运行 build 目录下`start_examples_cpp_protobuf_rpc_co.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
@@ -189,7 +189,7 @@
 
 
 运行方式（linux）：
-- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_PROTOBUF` 选项编译 AimRT；
 - 直接运行 build 目录下`start_examples_cpp_protobuf_rpc_single_pkg.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
