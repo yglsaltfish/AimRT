@@ -95,7 +95,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name));
 
-    auto handle = [this, &service_func_wrapper, pattern](const z_loaned_query_t* query) {
+    auto handle = [this, &service_func_wrapper, pattern](const z_loaned_sample_t* message) {
       try {
         // create service invoke wrapper
         auto service_invoke_wrapper_ptr = std::make_shared<runtime::core::rpc::InvokeWrapper>(
@@ -107,7 +107,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
         service_invoke_wrapper_ptr->ctx_ref = ctx_ptr;
 
         // read data
-        const z_loaned_bytes_t* payload = z_query_payload(query);
+        const z_loaned_bytes_t* payload = z_sample_payload(message);
         size_t serialized_size = z_bytes_len(payload);
         z_bytes_reader_t reader = z_bytes_get_reader(payload);
         std::vector<char> serialized_data(serialized_size);
@@ -158,7 +158,6 @@ bool ZenohRpcBackend::RegisterServiceFunc(
           service_invoke_wrapper_ptr->callback =
               [this,
                service_invoke_wrapper_ptr,
-               query,
                ctx_ptr,
                service_req_ptr,
                service_rsp_ptr,
@@ -166,8 +165,8 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                pattern{std::move(pattern)},
                req_id_buf](aimrt::rpc::Status status) {
                 if (!status.OK()) [[unlikely]] {
-                  ReturnRspWithStatusCode(
-                      pattern, query, serialization_type, req_id_buf, status.Code());
+                  // ReturnRspWithStatusCode(
+                  //     pattern, query, serialization_type, req_id_buf, status.Code());
 
                   return;
                 }
@@ -176,8 +175,8 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                 auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeRspWithCache(
                     *service_invoke_wrapper_ptr, serialization_type);
                 if (!buffer_array_view_ptr) [[unlikely]] {
-                  ReturnRspWithStatusCode(
-                      pattern, query, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
+                  // ReturnRspWithStatusCode(
+                  //     pattern, query, serialization_type, req_id_buf, AIMRT_RPC_STATUS_SVR_SERIALIZATION_FAILED);
 
                   return;
                 }
@@ -199,7 +198,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                       buffer_array_data[ii].len);
                 }
 
-                zenoh_manager_ptr_->Reply(pattern, msg_buf_vec.data(), pkg_size, query);
+                zenoh_manager_ptr_->Publish("rep/" + pattern, msg_buf_vec.data(), pkg_size);
               };
           // call service
           service_func_wrapper.service_func(service_invoke_wrapper_ptr);
@@ -211,7 +210,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
         AIMRT_WARN("Handle zenoh rpc msg failed, exception info: {}", e.what());
       }
     };
-    zenoh_manager_ptr_->RegisterServicer(pattern, std::move(handle));
+    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "server");
     return true;
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
@@ -233,11 +232,11 @@ bool ZenohRpcBackend::RegisterClientFunc(
 
     std::string pattern = std::string("aimrt_rpc/") +
                           util::UrlEncode(GetRealFuncName(info.func_name));
-    auto handle = [this](const z_loaned_reply_t* reply) {
+    auto handle = [this](const z_loaned_sample_t* message) {
       std::shared_ptr<runtime::core::rpc::InvokeWrapper> client_invoke_wrapper_ptr;
       try {
         // read data
-        const z_loaned_bytes_t* payload = z_sample_payload(z_reply_ok(reply));
+        const z_loaned_bytes_t* payload = z_sample_payload(message);
         size_t serialized_size = z_bytes_len(payload);
         z_bytes_reader_t reader = z_bytes_get_reader(payload);
         std::vector<char> serialized_data(serialized_size);
@@ -300,7 +299,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
         client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     };
 
-    zenoh_manager_ptr_->RegisterClient(pattern, std::move(handle));
+    zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client");
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
@@ -406,7 +405,7 @@ void ZenohRpcBackend::Invoke(
     }
 
     // send data
-    zenoh_manager_ptr_->Query(pattern, msg_buf_vec.data(), z_pkg_size);
+    zenoh_manager_ptr_->Publish("req/" + pattern, msg_buf_vec.data(), z_pkg_size);
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
@@ -437,7 +436,7 @@ void ZenohRpcBackend::ReturnRspWithStatusCode(
   buf_oper.SetBuffer(req_id_buf, 4);
   buf_oper.SetUint32(code);
 
-  zenoh_manager_ptr_->Reply(pattern, msg_buf_vec.data(), pkg_size, query);
+  // zenoh_manager_ptr_->Reply(pattern, msg_buf_vec.data(), pkg_size, query);
 }
 
 }  // namespace aimrt::plugins::zenoh_plugin
