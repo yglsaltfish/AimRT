@@ -50,7 +50,7 @@ bool ZenohPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitChannel,
                                 [this] { RegisterZenohChannelBackend(); });
 
-    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::PreInitRpc,
+    core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPreInitRpc,
                                 [this] { RegisterZenohRpcBackend(); });
 
     plugin_options_node = options_;

@@ -23,11 +23,11 @@
 
 |         节点         |  类型  | 是否可选 | 默认值 |            作用             |
 | :------------------: | :----: | :------: | :----: | :-------------------------: |
-| native_cfg_file_path | string |   可选   |   ""   | 使用原生zenoh提供的配置文件 |
+| native_cfg_file_path | string |   可选   |   ""   | 使用zenoh提供的原生配置文件 |
 
 
 关于**mqtt_plugin**的配置，使用注意点如下：
-- `native_cfg_file_path` 表示原生zenoh提供的配置文件的路径，如果不填写则默认使用zenoh官方提供的默认配置，具体配置内容请参考zenoh官方关于[configuration](https://zenoh.io/docs/manual/configuration/)的说明。
+- `native_cfg_file_path` 表示zenoh提供的原生配置文件的路径，如果不填写则默认使用zenoh官方提供的默认配置，具体配置内容请参考zenoh官方关于[configuration](https://zenoh.io/docs/manual/configuration/)的说明。
 
 
 以下是一个简单的示例：
@@ -39,7 +39,7 @@ aimrt:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so #【可选】插件路径。如果是硬编码注册的插件不需要填
         options:
-          native_cfg_file_path: ./DEFAULT_CONFIG.json5 #【可选】使用原生zenoh提供的配置文件。
+          native_cfg_file_path: ./DEFAULT_CONFIG.json5 #【可选】使用zenoh提供的原生配置文件。
 ```
 
 ## zenoh 类型 Channel 后端

@@ -116,17 +116,17 @@ bool ZenohRpcBackend::RegisterServiceFunc(
           util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
 
           // deserialize type
-          std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+          std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
           ctx_ptr->SetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE, serialization_type);
 
-          std::string pattern(buf_oper.GetString(util::BufferLenType::UINT8));
+          std::string pattern(buf_oper.GetString(util::BufferLenType::kUInt8));
           char req_id_buf[4];
           buf_oper.GetBuffer(req_id_buf, 4);
 
           size_t ctx_num = buf_oper.GetUint8();
           for (size_t ii = 0; ii < ctx_num; ++ii) {
-            auto key = buf_oper.GetString(util::BufferLenType::UINT16);
-            auto val = buf_oper.GetString(util::BufferLenType::UINT16);
+            auto key = buf_oper.GetString(util::BufferLenType::kUInt16);
+            auto val = buf_oper.GetString(util::BufferLenType::kUInt16);
             ctx_ptr->SetMetaValue(key, val);
           }
           ctx_ptr->SetFunctionName(info.func_name);
@@ -189,7 +189,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
 
                 std::vector<char> msg_buf_vec(pkg_size);
                 util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
-                buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+                buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
                 buf_oper.SetBuffer(req_id_buf, sizeof(req_id_buf));
                 buf_oper.SetUint32(0);
 
@@ -245,7 +245,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
         if (z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size) >= 0) {
           util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
 
-          std::string serialization_type(buf_oper.GetString(util::BufferLenType::UINT8));
+          std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
           uint32_t req_id = buf_oper.GetUint32();
           uint32_t code = buf_oper.GetUint32();
 
@@ -389,13 +389,13 @@ void ZenohRpcBackend::Invoke(
     std::vector<char> msg_buf_vec(z_pkg_size);
     util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
 
-    buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
-    buf_oper.SetString(pattern, util::BufferLenType::UINT8);
+    buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
+    buf_oper.SetString(pattern, util::BufferLenType::kUInt8);
     buf_oper.SetUint32(cur_req_id);
 
     buf_oper.SetUint8(static_cast<uint8_t>(keys.size()));
     for (const auto& s : context_meta_kv) {
-      buf_oper.SetString(s, util::BufferLenType::UINT16);
+      buf_oper.SetString(s, util::BufferLenType::kUInt16);
     }
 
     // data
@@ -433,7 +433,7 @@ void ZenohRpcBackend::ReturnRspWithStatusCode(
   std::vector<char> msg_buf_vec(pkg_size);
   util::BufferOperator buf_oper(msg_buf_vec.data(), msg_buf_vec.size());
 
-  buf_oper.SetString(serialization_type, util::BufferLenType::UINT8);
+  buf_oper.SetString(serialization_type, util::BufferLenType::kUInt8);
   buf_oper.SetBuffer(req_id_buf, 4);
   buf_oper.SetUint32(code);
 

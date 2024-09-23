@@ -85,6 +85,40 @@ void ZenohManager::RegisterSubscriber(const std::string &keyexpr, MsgHandleFunc 
   return;
 }
 
+void ZenohManager::RegisterServicer(const std::string &keyexpr, MsgQueryFunc handle) {
+  z_view_keyexpr_t key;
+  z_view_keyexpr_from_str(&key, keyexpr.c_str());
+  z_owned_closure_query_t z_callback;
+  auto function_ptr = std::make_shared<MsgQueryFunc>(std::move(handle));
+
+  z_closure(
+      &z_callback,
+      [](const z_loaned_query_t *query, void *arg) { (*reinterpret_cast<MsgQueryFunc *>(arg))(query); },
+
+      nullptr,
+
+      function_ptr.get());
+
+  msg_query_vec_.emplace_back(std::move(function_ptr));
+
+  z_owned_queryable_t z_qable;
+  if (z_declare_queryable(&z_qable, z_loan(z_session_), z_loan(key), z_move(z_callback), NULL) < 0) {
+    AIMRT_ERROR("Unable to declare Server!");
+    return;
+  }
+  z_query_reply_options_default(&z_reply_options_);
+  z_srv_registry_.emplace(keyexpr, std::move(z_qable));
+  AIMRT_TRACE("Server with keyexpr: {} registered successfully.", keyexpr.c_str());
+  return;
+}
+
+void ZenohManager::RegisterClient(const std::string &keyexpr, MsgReplyFunc handle) {
+  z_get_options_default(&z_get_options_);
+
+  auto function_ptr = std::make_shared<MsgReplyFunc>(std::move(handle));
+  msg_reply_registry_.emplace(keyexpr, std::move(function_ptr));
+}
+
 void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, uint64_t serialized_data_len) {
   auto z_pub_iter = z_pub_registry_.find(topic);
   if (z_pub_iter == z_pub_registry_.end()) {
@@ -98,6 +132,64 @@ void ZenohManager::Publish(const std::string &topic, char *serialized_data_ptr, 
   z_publisher_put(z_loan(z_pub_iter->second), z_move(z_payload), &z_pub_options_);
 
   return;
+}
+
+bool ZenohManager::Query(const std::string &keyexpr, char *serialized_data_ptr,
+                         uint64_t serialized_data_len) {
+  auto z_rep_iter = msg_reply_registry_.find(keyexpr);
+  if (z_rep_iter == msg_reply_registry_.end()) [[unlikely]] {
+    AIMRT_ERROR("Url: {} is not registered!", keyexpr);
+    return false;
+  }
+
+  z_view_keyexpr_t z_get_key_;
+  z_view_keyexpr_from_str(&z_get_key_, keyexpr.c_str());
+
+  // recreate the closure object (the closure and opts are forcibly removed after each successful get)
+  z_owned_closure_reply_t z_reply_closure_;
+  z_closure(
+      &z_reply_closure_,
+      [](const z_loaned_reply_t *reply, void *arg) {
+        if (z_reply_is_ok(reply)) {
+          (*reinterpret_cast<MsgReplyFunc *>(arg))(reply);
+        } else {
+          AIMRT_ERROR("time out");
+        }
+      },
+
+      NULL,
+
+      z_rep_iter->second.get());
+
+  z_owned_bytes_t z_get_payload;
+  z_bytes_from_buf(&z_get_payload, reinterpret_cast<uint8_t *>(serialized_data_ptr),
+                   serialized_data_len,
+                   NULL,
+                   NULL);
+  z_get_options_.payload = &z_get_payload;
+  auto z_result = z_get(z_loan(z_session_), z_loan(z_get_key_), "", &z_reply_closure_, &z_get_options_);
+  z_drop(z_move(z_get_payload));
+
+  if (z_result != Z_OK) [[unlikely]] {
+    AIMRT_WARN("Client get request failed, error code: {}", z_result);
+    return false;
+  }
+
+  return true;
+}
+
+void ZenohManager::Reply(const std::string &keyexpr, char *serialized_data_ptr,
+                         uint64_t serialized_data_len, const z_loaned_query_t *query) {
+  z_owned_bytes_t reply_payload;
+  z_bytes_from_buf(&reply_payload, reinterpret_cast<uint8_t *>(serialized_data_ptr),
+                   serialized_data_len,
+                   NULL,
+                   NULL);
+
+  z_view_keyexpr_t reply_keyexpr_;
+  z_view_keyexpr_from_str(&reply_keyexpr_, keyexpr.data());
+
+  z_query_reply(query, z_loan(reply_keyexpr_), z_move(reply_payload), &z_reply_options_);
 }
 
 }  // namespace aimrt::plugins::zenoh_plugin

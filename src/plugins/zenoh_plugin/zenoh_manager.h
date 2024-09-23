@@ -61,7 +61,11 @@ class ZenohManager {
   z_owned_session_t z_session_;
   z_owned_config_t z_config_;
 
+  std::unordered_map<std::string, std::shared_ptr<MsgReplyFunc>> msg_reply_registry_;
   std::unordered_map<std::string, z_owned_queryable_t> z_srv_registry_;
+  std::vector<std::shared_ptr<MsgQueryFunc>> msg_query_vec_;
+  z_query_reply_options_t z_reply_options_;
+  z_get_options_t z_get_options_;
 };
 
 }  // namespace aimrt::plugins::zenoh_plugin
