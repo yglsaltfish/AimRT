@@ -22,7 +22,7 @@
 
 
 运行方式（linux）：
-- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_ROS2` 选项编译 AimRT；
 - 直接运行 build 目录下`start_examples_cpp_ros2_channel.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
@@ -58,7 +58,7 @@
 
 
 运行方式（linux）：
-- 开启 `AIMRT_BUILD_EXAMPLES` 选项编译 AimRT；
+- 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_WITH_ROS2` 选项编译 AimRT；
 - 直接运行 build 目录下`start_examples_cpp_ros2_channel_single_pkg.sh`脚本启动进程；
 - 键入`ctrl-c`停止进程；
 
