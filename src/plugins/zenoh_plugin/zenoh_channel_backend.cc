@@ -133,6 +133,7 @@ bool ZenohChannelBackend::Subscribe(
         };
 
     zenoh_manager_ptr_->RegisterSubscriber(pattern, std::move(handle));
+    AIMRT_INFO("Register subscribe type to zenoh channel, url: {}", pattern);
     return true;
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());

@@ -148,7 +148,7 @@ bool IceoryxChannelBackend::Subscribe(
         };
 
     iceoryx_manager_ptr_->RegisterSubscriber(pattern, std::move(handle));
-    AIMRT_INFO("Register publish type to iceoryx channel, url: {}, shm_init_size: {} bytes", pattern, iox_shm_init_size_);
+    AIMRT_INFO("Register subscribe type  to iceoryx channel, url: {}, shm_init_size: {} bytes", pattern, iox_shm_init_size_);
 
     return true;
   } catch (const std::exception& e) {
@@ -157,7 +157,6 @@ bool IceoryxChannelBackend::Subscribe(
   }
 }
 
-// 只会从缓存中读取数据，不会将数据存到缓存种从而降低共享内存的性能
 // dynamic allocation for loaned shm:
 //
 //         .---------------if not enough -----------------.
