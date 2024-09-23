@@ -42,7 +42,7 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
     if (node["force_trace"])
       rhs.force_trace = node["force_trace"].as<bool>();
 
-    for (auto& attribute_node : node["attributes"]) {
+    for (const auto& attribute_node : node["attributes"]) {
       auto attribute = Options::Attribute{
           .key = attribute_node["key"].as<std::string>(),
           .val = attribute_node["val"].as<std::string>(),

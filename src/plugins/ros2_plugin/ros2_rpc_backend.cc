@@ -94,7 +94,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
       rhs.timeout_executor = node["timeout_executor"].as<std::string>();
 
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
-      for (auto& client_options_node : node["clients_options"]) {
+      for (const auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
             .func_name = client_options_node["func_name"].as<std::string>()};
 
@@ -106,7 +106,7 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2RpcBackend::Options> {
     }
 
     if (node["servers_options"] && node["servers_options"].IsSequence()) {
-      for (auto& server_options_node : node["servers_options"]) {
+      for (const auto& server_options_node : node["servers_options"]) {
         auto server_options = Options::ServerOptions{
             .func_name = server_options_node["func_name"].as<std::string>()};
 

@@ -13,7 +13,7 @@ TEST(AllocatorManagerTest, AllocatorManager) {
   EXPECT_EQ(allocator_manager.GetState(), AllocatorManager::State::kInit);
   const AllocatorProxy& allocator_proxy = allocator_manager.GetAllocatorProxy();
   EXPECT_EQ(allocator_proxy.NativeHandle()->get_thread_local_buf(allocator_proxy.NativeHandle()->impl, 1024 * 1024 * 16 + 1), nullptr);
-  auto buf_ptr = allocator_proxy.NativeHandle()->get_thread_local_buf(allocator_proxy.NativeHandle()->impl, 1024);
+  auto* buf_ptr = allocator_proxy.NativeHandle()->get_thread_local_buf(allocator_proxy.NativeHandle()->impl, 1024);
   EXPECT_NE(buf_ptr, nullptr);
   allocator_manager.Start();
   EXPECT_EQ(allocator_manager.GetState(), AllocatorManager::State::kStart);

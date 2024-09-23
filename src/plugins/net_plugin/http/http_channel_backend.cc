@@ -36,7 +36,7 @@ struct convert<aimrt::plugins::net_plugin::HttpChannelBackend::Options> {
 
   static bool decode(const Node& node, Options& rhs) {
     if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
-      for (auto& pub_topic_options_node : node["pub_topics_options"]) {
+      for (const auto& pub_topic_options_node : node["pub_topics_options"]) {
         auto pub_topic_options = Options::PubTopicOptions{
             .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
             .server_url_list = pub_topic_options_node["server_url_list"].as<std::vector<std::string>>()};
@@ -46,7 +46,7 @@ struct convert<aimrt::plugins::net_plugin::HttpChannelBackend::Options> {
     }
 
     if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
-      for (auto& sub_topic_options_node : node["sub_topics_options"]) {
+      for (const auto& sub_topic_options_node : node["sub_topics_options"]) {
         auto sub_topic_options = Options::SubTopicOptions{
             .topic_name = sub_topic_options_node["topic_name"].as<std::string>()};
 
@@ -161,7 +161,7 @@ bool HttpChannelBackend::Subscribe(
     auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
     sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
 
-    auto sub_tool_ptr = sub_tool_unique_ptr.get();
+    auto* sub_tool_ptr = sub_tool_unique_ptr.get();
 
     http_subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
@@ -304,7 +304,7 @@ void HttpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
     size_t msg_size = buffer_array_view_ptr->BufferSize();
     auto req_beast_buf = req_ptr->body().prepare(msg_size);
 
-    auto data = buffer_array_view_ptr->Data();
+    const auto* data = buffer_array_view_ptr->Data();
     auto buffer_array_pos = 0;
     size_t buffer_pos = 0;
 

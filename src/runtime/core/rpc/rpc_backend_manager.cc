@@ -297,7 +297,7 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
 
             auto backend_itr = rpc_backend_index_map_.find(addr_backend);
             if (backend_itr != rpc_backend_index_map_.end()) {
-              auto backend_ptr = backend_itr->second;
+              auto* backend_ptr = backend_itr->second;
 
               if (std::find(backend_ptr_vec.begin(), backend_ptr_vec.end(), backend_ptr) != backend_ptr_vec.end()) {
                 backend_ptr->Invoke(client_invoke_wrapper_ptr);
@@ -320,9 +320,10 @@ void RpcBackendManager::Invoke(InvokeProxyInfoWrapper&& wrapper) {
 
 RpcBackendManager::FuncBackendInfoMap RpcBackendManager::GetClientsBackendInfo() const {
   std::unordered_map<std::string_view, std::vector<std::string_view>> result;
-  for (auto& itr : clients_backend_index_map_) {
+  for (const auto& itr : clients_backend_index_map_) {
     std::vector<std::string_view> backends_name;
-    for (auto& item : itr.second)
+    backends_name.reserve(itr.second.size());
+    for (const auto& item : itr.second)
       backends_name.emplace_back(item->Name());
 
     result.emplace(itr.first, std::move(backends_name));
@@ -333,9 +334,9 @@ RpcBackendManager::FuncBackendInfoMap RpcBackendManager::GetClientsBackendInfo()
 
 RpcBackendManager::FuncBackendInfoMap RpcBackendManager::GetServersBackendInfo() const {
   std::unordered_map<std::string_view, std::vector<std::string_view>> result;
-  for (auto& itr : servers_backend_index_map_) {
+  for (const auto& itr : servers_backend_index_map_) {
     std::vector<std::string_view> backends_name;
-    for (auto& item : itr.second)
+    for (const auto& item : itr.second)
       backends_name.emplace_back(item->Name());
 
     result.emplace(itr.first, std::move(backends_name));

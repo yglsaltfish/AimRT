@@ -40,7 +40,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttChannelBackend::Options> {
 
   static bool decode(const Node& node, Options& rhs) {
     if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
-      for (auto& pub_topic_options_node : node["pub_topics_options"]) {
+      for (const auto& pub_topic_options_node : node["pub_topics_options"]) {
         int qos = 2;
 
         if (pub_topic_options_node["qos"]) qos = pub_topic_options_node["qos"].as<int>();
@@ -56,7 +56,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttChannelBackend::Options> {
     }
 
     if (node["sub_topics_options"] && node["sub_topics_options"].IsSequence()) {
-      for (auto& sub_topic_options_node : node["sub_topics_options"]) {
+      for (const auto& sub_topic_options_node : node["sub_topics_options"]) {
         int qos = 2;
 
         if (sub_topic_options_node["qos"]) qos = sub_topic_options_node["qos"].as<int>();
@@ -196,7 +196,7 @@ bool MqttChannelBackend::Subscribe(
     auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
     sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
 
-    auto sub_tool_ptr = sub_tool_unique_ptr.get();
+    auto* sub_tool_ptr = sub_tool_unique_ptr.get();
 
     subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
@@ -272,7 +272,7 @@ void MqttChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper
         serialization_type, info.pkg_path, info.module_name, info.topic_name, info.msg_type);
 
     // 填内容
-    auto buffer_array_data = buffer_array_view_ptr->Data();
+    const auto* buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t msg_size = buffer_array_view_ptr->BufferSize();
 

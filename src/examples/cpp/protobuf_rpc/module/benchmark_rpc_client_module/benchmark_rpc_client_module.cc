@@ -73,7 +73,7 @@ bool BenchmarkRpcClientModule::Initialize(aimrt::CoreRef core) {
               "Bench plan parallel({}) is greater than max parallel({})",
               bench_plan.parallel, max_parallel_);
 
-          bench_plans_.emplace_back(std::move(bench_plan));
+          bench_plans_.emplace_back(bench_plan);
         }
       }
     }

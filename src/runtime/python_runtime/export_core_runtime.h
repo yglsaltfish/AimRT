@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "aimrt_module_cpp_interface/module_base.h"
 #include "core/aimrt_core.h"
 
@@ -13,7 +15,7 @@ namespace aimrt::runtime::python_runtime {
 inline void ExportCoreOptions(pybind11::object m) {
   using namespace aimrt::runtime::core;
 
-  pybind11::class_<AimRTCore::Options>(m, "CoreOptions")
+  pybind11::class_<AimRTCore::Options>(std::move(m), "CoreOptions")
       .def(pybind11::init<>())
       .def_readwrite("cfg_file_path", &AimRTCore::Options::cfg_file_path);
 }
@@ -39,7 +41,7 @@ inline aimrt::CoreRef PyCoreCreateModule(
 inline void ExportCore(pybind11::object m) {
   using namespace aimrt::runtime::core;
 
-  pybind11::class_<AimRTCore>(m, "Core")
+  pybind11::class_<AimRTCore>(std::move(m), "Core")
       .def(pybind11::init<>())
       .def("Initialize", &AimRTCore::Initialize)
       .def("Start", &PyCoreStart)

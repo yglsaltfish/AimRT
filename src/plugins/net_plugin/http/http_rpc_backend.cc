@@ -40,7 +40,7 @@ struct convert<aimrt::plugins::net_plugin::HttpRpcBackend::Options> {
 
   static bool decode(const Node& node, Options& rhs) {
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
-      for (auto& client_options_node : node["clients_options"]) {
+      for (const auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
             .func_name = client_options_node["func_name"].as<std::string>(),
             .server_url = client_options_node["server_url"].as<std::string>()};
@@ -50,7 +50,7 @@ struct convert<aimrt::plugins::net_plugin::HttpRpcBackend::Options> {
     }
 
     if (node["servers_options"] && node["servers_options"].IsSequence()) {
-      for (auto& server_options_node : node["servers_options"]) {
+      for (const auto& server_options_node : node["servers_options"]) {
         auto server_options = Options::ServerOptions{
             .func_name = server_options_node["func_name"].as<std::string>()};
 
@@ -211,7 +211,7 @@ bool HttpRpcBackend::RegisterServiceFunc(
                 size_t rsp_size = buffer_array_view_ptr->BufferSize();
                 auto rsp_beast_buf = rsp.body().prepare(rsp_size);
 
-                auto data = buffer_array_view_ptr->Data();
+                const auto* data = buffer_array_view_ptr->Data();
                 auto buffer_array_pos = 0;
                 size_t buffer_pos = 0;
 
@@ -345,7 +345,7 @@ void HttpRpcBackend::Invoke(
         *io_ptr_,
         [http_cli_pool_ptr{http_cli_pool_ptr_},
          client_invoke_wrapper_ptr,
-         url{std::move(url)}]() -> asio::awaitable<void> {
+         url]() -> asio::awaitable<void> {
           const auto& info = client_invoke_wrapper_ptr->info;
 
           std::string url_path(url->path);
@@ -408,7 +408,7 @@ void HttpRpcBackend::Invoke(
             size_t req_size = buffer_array_view_ptr->BufferSize();
             auto req_beast_buf = req.body().prepare(req_size);
 
-            auto data = buffer_array_view_ptr->Data();
+            const auto* data = buffer_array_view_ptr->Data();
             auto buffer_array_pos = 0;
             size_t buffer_pos = 0;
 

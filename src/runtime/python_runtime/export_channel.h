@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "aimrt_module_cpp_interface/channel/channel_handle.h"
 #include "python_runtime/export_type_support.h"
 
@@ -12,7 +14,7 @@ namespace aimrt::runtime::python_runtime {
 
 inline bool PyRegisterPublishType(
     aimrt::channel::PublisherRef& publisher_ref,
-    std::shared_ptr<const PyTypeSupport> msg_type_support) {
+    const std::shared_ptr<const PyTypeSupport>& msg_type_support) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(msg_type_support);
 
@@ -32,7 +34,7 @@ inline void PyPublish(
 inline void ExportPublisherRef(pybind11::object m) {
   using namespace aimrt::channel;
 
-  pybind11::class_<PublisherRef>(m, "PublisherRef")
+  pybind11::class_<PublisherRef>(std::move(m), "PublisherRef")
       .def(pybind11::init<>())
       .def("__bool__", &PublisherRef::operator bool)
       .def("RegisterPublishType", &PyRegisterPublishType)
@@ -43,7 +45,7 @@ inline pybind11::bytes channel_empty_py_bytes;
 
 inline bool PySubscribe(
     aimrt::channel::SubscriberRef& subscriber_ref,
-    std::shared_ptr<const PyTypeSupport> msg_type_support,
+    const std::shared_ptr<const PyTypeSupport>& msg_type_support,
     std::function<void(std::string_view, const pybind11::bytes&)>&& callback) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(msg_type_support);
@@ -78,7 +80,7 @@ inline bool PySubscribe(
 inline void ExportSubscriberRef(pybind11::object m) {
   using namespace aimrt::channel;
 
-  pybind11::class_<SubscriberRef>(m, "SubscriberRef")
+  pybind11::class_<SubscriberRef>(std::move(m), "SubscriberRef")
       .def(pybind11::init<>())
       .def("__bool__", &SubscriberRef::operator bool)
       .def("Subscribe", &PySubscribe);
@@ -87,7 +89,7 @@ inline void ExportSubscriberRef(pybind11::object m) {
 inline void ExportChannelHandleRef(pybind11::object m) {
   using namespace aimrt::channel;
 
-  pybind11::class_<ChannelHandleRef>(m, "ChannelHandleRef")
+  pybind11::class_<ChannelHandleRef>(std::move(m), "ChannelHandleRef")
       .def(pybind11::init<>())
       .def("__bool__", &ChannelHandleRef::operator bool)
       .def("GetPublisher", &ChannelHandleRef::GetPublisher)

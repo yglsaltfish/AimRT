@@ -4,6 +4,7 @@
 #pragma once
 
 #include <future>
+#include <utility>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "python_runtime/export_type_support.h"
@@ -12,7 +13,7 @@
 
 namespace aimrt::runtime::python_runtime {
 
-inline void ExportRpcStatus(pybind11::object m) {
+inline void ExportRpcStatus(const pybind11::object& m) {
   using namespace aimrt::rpc;
 
   pybind11::enum_<aimrt_rpc_status_code_t>(m, "RpcStatusRetCode")
@@ -52,7 +53,7 @@ inline void ExportRpcStatus(pybind11::object m) {
       .def("ToString", &Status::ToString);
 }
 
-inline void ExportRpcContext(pybind11::object m) {
+inline void ExportRpcContext(const pybind11::object& m) {
   using namespace aimrt::rpc;
 
   pybind11::class_<Context>(m, "RpcContext")
@@ -93,8 +94,8 @@ inline pybind11::bytes rpc_empty_py_bytes;
 inline void PyRpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
     std::string_view func_name,
-    std::shared_ptr<const PyTypeSupport> req_type_support,
-    std::shared_ptr<const PyTypeSupport> rsp_type_support,
+    const std::shared_ptr<const PyTypeSupport>& req_type_support,
+    const std::shared_ptr<const PyTypeSupport>& rsp_type_support,
     std::function<std::tuple<aimrt::rpc::Status, std::string>(aimrt::rpc::ContextRef, const pybind11::bytes&)>&& service_func) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
@@ -151,7 +152,7 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
 inline void ExportRpcServiceBase(pybind11::object m) {
   using namespace aimrt::rpc;
 
-  pybind11::class_<ServiceBase>(m, "ServiceBase")
+  pybind11::class_<ServiceBase>(std::move(m), "ServiceBase")
       .def(pybind11::init<std::string_view, std::string_view>())
       .def("RegisterServiceFunc", &PyRpcServiceBaseRegisterServiceFunc);
 }
@@ -159,8 +160,8 @@ inline void ExportRpcServiceBase(pybind11::object m) {
 inline bool PyRpcHandleRefRegisterClientFunc(
     aimrt::rpc::RpcHandleRef& rpc_handle_ref,
     std::string_view func_name,
-    std::shared_ptr<const PyTypeSupport> req_type_support,
-    std::shared_ptr<const PyTypeSupport> rsp_type_support) {
+    const std::shared_ptr<const PyTypeSupport>& req_type_support,
+    const std::shared_ptr<const PyTypeSupport>& rsp_type_support) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
@@ -205,7 +206,7 @@ inline std::tuple<aimrt::rpc::Status, pybind11::bytes> PyRpcHandleRefInvoke(
 inline void ExportRpcHandleRef(pybind11::object m) {
   using namespace aimrt::rpc;
 
-  pybind11::class_<RpcHandleRef>(m, "RpcHandleRef")
+  pybind11::class_<RpcHandleRef>(std::move(m), "RpcHandleRef")
       .def(pybind11::init<>())
       .def("__bool__", &RpcHandleRef::operator bool)
       .def("RegisterService", &RpcHandleRef::RegisterService)

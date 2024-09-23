@@ -79,7 +79,7 @@ class RosTestRpcWrapperClient : public rclcpp::Node {
     auto result = client_->async_send_request(
         wrapper_req,
         [logger = this->get_logger()](ServiceResponseFuture future) {
-          auto wrapper_rsp = future.get();
+          const auto &wrapper_rsp = future.get();
 
           if (wrapper_rsp->code == 0 && wrapper_rsp->serialization_type == "pb") {
             // deserialize protobuf rsp from RosRpcWrapper Response

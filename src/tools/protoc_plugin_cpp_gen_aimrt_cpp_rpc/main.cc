@@ -648,7 +648,7 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
   }
 
   static std::string ProtoFileBaseName(const std::string& full_name) {
-    return full_name.substr(0, full_name.rfind("."));
+    return full_name.substr(0, full_name.rfind('.'));
   }
 
   static std::string GenNamespaceStr(const std::string& ns) {
@@ -696,13 +696,13 @@ aimrt::co::Task<aimrt::rpc::Status> {{service_name}}CoProxy::{{rpc_func_name}}(
     package_node.kv["{{namespace_end}}"] = GenNamespaceEndStr(file->package());
 
     for (int ii = 0; ii < file->service_count(); ++ii) {
-      auto service = file->service(ii);
+      const auto* service = file->service(ii);
 
       ServiceNode service_node;
       service_node.kv["{{service_name}}"] = service->name();
 
       for (int jj = 0; jj < service->method_count(); ++jj) {
-        auto method = service->method(jj);
+        const auto* method = service->method(jj);
 
         MethodNode method_node;
         method_node.kv["{{rpc_func_name}}"] = method->name();

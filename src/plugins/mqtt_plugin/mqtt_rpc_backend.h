@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "core/rpc/rpc_backend_base.h"
 #include "core/util/rpc_client_tool.h"
 #include "mqtt_plugin/msg_handle_registry.h"
@@ -35,10 +37,10 @@ class MqttRpcBackend : public runtime::core::rpc::RpcBackendBase {
       MQTTAsync& client,
       uint32_t max_pkg_size,
       std::shared_ptr<MsgHandleRegistry> msg_handle_registry_ptr)
-      : client_id_(client_id),
+      : client_id_(std::move(client_id)),
         client_(client),
         max_pkg_size_(max_pkg_size),
-        msg_handle_registry_ptr_(msg_handle_registry_ptr) {}
+        msg_handle_registry_ptr_(std::move(msg_handle_registry_ptr)) {}
 
   ~MqttRpcBackend() override = default;
 

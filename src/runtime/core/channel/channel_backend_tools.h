@@ -27,7 +27,7 @@ class SubscribeTool {
   void DoSubscribeCallback(
       const std::shared_ptr<aimrt::channel::Context>& ctx_ptr,
       const runtime::core::channel::SubscribeWrapper& msg_sub_wrapper,
-      std::shared_ptr<void> msg_ptr) const {
+      const std::shared_ptr<void>& msg_ptr) const {
     AIMRT_ASSERT(&msg_sub_wrapper == sub_wrapper_vec_[0], "Unexpected errors.");
 
     runtime::core::channel::MsgWrapper sub_msg_wrapper{
@@ -52,7 +52,7 @@ class SubscribeTool {
 
     AIMRT_ASSERT(serialize_ret, "Serialize failed.");
 
-    auto ptr = buffer_array_ptr.get();
+    auto* ptr = buffer_array_ptr.get();
     auto buffer_array_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
         new aimrt::util::BufferArrayView(*ptr),
         [buffer_array_ptr{std::move(buffer_array_ptr)}](const auto* ptr) { delete ptr; });
@@ -80,7 +80,7 @@ class SubscribeTool {
     if (!need_cache_flag) {
       DoSubscribeCallbackWithoutCache(ctx_ptr, serialization_type, buffer_array_view);
     } else {
-      auto buffer_array_data = buffer_array_view.Data();
+      const auto* buffer_array_data = buffer_array_view.Data();
       const size_t buffer_array_len = buffer_array_view.Size();
       size_t msg_size = buffer_array_view.BufferSize();
 
@@ -91,7 +91,7 @@ class SubscribeTool {
         cur_pos += buffer_array_data[ii].len;
       }
 
-      auto ptr = buffer_ptr.get();
+      auto* ptr = buffer_ptr.get();
       auto buffer_array_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
           new aimrt::util::BufferArrayView(ptr->data(), ptr->size()),
           [buffer_ptr{std::move(buffer_ptr)}](const auto* ptr) { delete ptr; });
@@ -114,7 +114,7 @@ class SubscribeTool {
       std::unique_ptr<std::vector<uint8_t>> buffer_ptr = std::make_unique<std::vector<uint8_t>>(len);
       memcpy(buffer_ptr->data(), data, len);
 
-      auto ptr = buffer_ptr.get();
+      auto* ptr = buffer_ptr.get();
       auto buffer_array_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
           new aimrt::util::BufferArrayView(ptr->data(), ptr->size()),
           [buffer_ptr{std::move(buffer_ptr)}](const auto* ptr) { delete ptr; });
@@ -252,7 +252,7 @@ inline std::shared_ptr<aimrt::util::BufferArrayView> SerializeMsgWithCache(
 
   AIMRT_ASSERT(serialize_ret, "Serialize failed.");
 
-  auto ptr = buffer_array_ptr.get();
+  auto* ptr = buffer_array_ptr.get();
   auto buffer_array_view_ptr = std::shared_ptr<aimrt::util::BufferArrayView>(
       new aimrt::util::BufferArrayView(*ptr),
       [buffer_array_ptr{std::move(buffer_array_ptr)}](const auto* ptr) { delete ptr; });

@@ -55,7 +55,7 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
               "Bench plan topic number({}) is greater than max topic number({})",
               bench_plan.topic_number, max_topic_number_);
 
-          bench_plans_.emplace_back(std::move(bench_plan));
+          bench_plans_.emplace_back(bench_plan);
         }
       }
     }

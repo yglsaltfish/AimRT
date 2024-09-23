@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstring>
+#include <utility>
 
 #include "aimrt_module_c_interface/util/type_support_base.h"
 #include "aimrt_module_cpp_interface/util/string.h"
@@ -45,13 +46,13 @@ class PyTypeSupport {
   }
 
   void Copy(const void* from, void* to) const {
-    auto& from_buf = *static_cast<const BufType*>(from);
+    const auto& from_buf = *static_cast<const BufType*>(from);
     auto& to_buf = *static_cast<BufType*>(to);
     to_buf = from_buf;
   }
 
   void Move(void* from, void* to) const {
-    auto& from_buf = *static_cast<const BufType*>(from);
+    auto& from_buf = *static_cast<BufType*>(from);
     auto& to_buf = *static_cast<BufType*>(to);
     to_buf = std::move(from_buf);
   }
@@ -61,7 +62,7 @@ class PyTypeSupport {
       const void* msg,
       const aimrt_buffer_array_allocator_t* allocator,
       aimrt_buffer_array_t* buffer_array) const {
-    auto& msg_buf = *static_cast<const BufType*>(msg);
+    const auto& msg_buf = *static_cast<const BufType*>(msg);
 
     auto buffer = allocator->allocate(allocator->impl, buffer_array, msg_buf.size());
     if (buffer.data == nullptr || buffer.len < msg_buf.size()) return false;
@@ -136,7 +137,7 @@ class PyTypeSupport {
 };
 
 inline void ExportTypeSupport(pybind11::object m) {
-  pybind11::class_<PyTypeSupport, std::shared_ptr<PyTypeSupport>>(m, "TypeSupport")
+  pybind11::class_<PyTypeSupport, std::shared_ptr<PyTypeSupport>>(std::move(m), "TypeSupport")
       .def(pybind11::init<>())
       .def("SetTypeName", &PyTypeSupport::SetTypeName)
       .def("SetSerializationTypesSupportedList", &PyTypeSupport::SetSerializationTypesSupportedList);

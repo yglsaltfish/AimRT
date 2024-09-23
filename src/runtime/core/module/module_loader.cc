@@ -25,17 +25,17 @@ void ModuleLoader::LoadPkg(std::string_view pkg_path,
                           "Load dynamic lib failed, lib path {}, error info {}",
                           pkg_path_, aimrt::common::util::DynamicLib::GetErr());
 
-  auto get_module_num_func = dynamic_lib_.GetSymbol(kDynlibGetModuleNumFuncName);
+  auto* get_module_num_func = dynamic_lib_.GetSymbol(kDynlibGetModuleNumFuncName);
   AIMRT_CHECK_ERROR_THROW(get_module_num_func != nullptr,
                           "Cannot find symbol '{}' in lib {}.",
                           kDynlibGetModuleNumFuncName, pkg_path_);
 
-  auto get_module_name_list_func = dynamic_lib_.GetSymbol(kDynlibGetModuleNameListFuncName);
+  auto* get_module_name_list_func = dynamic_lib_.GetSymbol(kDynlibGetModuleNameListFuncName);
   AIMRT_CHECK_ERROR_THROW(get_module_name_list_func != nullptr,
                           "Cannot find symbol '{}' in lib {}.",
                           kDynlibGetModuleNameListFuncName, pkg_path_);
 
-  auto create_func = dynamic_lib_.GetSymbol(kDynlibCreateModuleFuncName);
+  auto* create_func = dynamic_lib_.GetSymbol(kDynlibCreateModuleFuncName);
   AIMRT_CHECK_ERROR_THROW(create_func != nullptr,
                           "Cannot find symbol '{}' in lib {}.",
                           kDynlibCreateModuleFuncName, pkg_path_);

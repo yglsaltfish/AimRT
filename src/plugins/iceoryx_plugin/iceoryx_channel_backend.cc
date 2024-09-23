@@ -98,7 +98,7 @@ bool IceoryxChannelBackend::Subscribe(
     auto sub_tool_unique_ptr = std::make_unique<runtime::core::channel::SubscribeTool>();
     sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
 
-    auto sub_tool_ptr = sub_tool_unique_ptr.get();
+    auto* sub_tool_ptr = sub_tool_unique_ptr.get();
     subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
     auto handle =

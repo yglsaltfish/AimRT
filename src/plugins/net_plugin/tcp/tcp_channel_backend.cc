@@ -32,7 +32,7 @@ struct convert<aimrt::plugins::net_plugin::TcpChannelBackend::Options> {
 
   static bool decode(const Node& node, Options& rhs) {
     if (node["pub_topics_options"] && node["pub_topics_options"].IsSequence()) {
-      for (auto& pub_topic_options_node : node["pub_topics_options"]) {
+      for (const auto& pub_topic_options_node : node["pub_topics_options"]) {
         auto pub_topic_options = Options::PubTopicOptions{
             .topic_name = pub_topic_options_node["topic_name"].as<std::string>(),
             .server_url_list = pub_topic_options_node["server_url_list"].as<std::vector<std::string>>()};
@@ -154,7 +154,7 @@ bool TcpChannelBackend::Subscribe(
     auto sub_tool_unique_ptr = std::make_unique<aimrt::runtime::core::channel::SubscribeTool>();
     sub_tool_unique_ptr->AddSubscribeWrapper(&subscribe_wrapper);
 
-    auto sub_tool_ptr = sub_tool_unique_ptr.get();
+    auto* sub_tool_ptr = sub_tool_unique_ptr.get();
 
     tcp_subscribe_wrapper_map_.emplace(pattern, std::move(sub_tool_unique_ptr));
 
@@ -255,7 +255,7 @@ void TcpChannelBackend::Publish(runtime::core::channel::MsgWrapper& msg_wrapper)
     // 填内容，直接复制过去
     auto msg_buf_ptr = std::make_shared<boost::asio::streambuf>();
 
-    auto buffer_array_data = buffer_array_view_ptr->Data();
+    const auto* buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t msg_size = buffer_array_view_ptr->BufferSize();
 

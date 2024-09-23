@@ -29,7 +29,7 @@ class MsgHandleRegistry {
   MsgHandleRegistry& operator=(const MsgHandleRegistry&) = delete;
 
   ServerMsgHandleFunc GetMsgHandleFunc() const {
-    return [this](auto ep, auto buf) { HandleServerMsg(ep, buf); };
+    return [this](const auto& ep, const auto& buf) { HandleServerMsg(ep, buf); };
   }
 
   template <typename... Args>

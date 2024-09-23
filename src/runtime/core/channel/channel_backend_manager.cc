@@ -433,9 +433,10 @@ void ChannelBackendManager::Publish(MsgWrapper&& wrapper) {
 
 ChannelBackendManager::TopicBackendInfoMap ChannelBackendManager::GetPubTopicBackendInfo() const {
   std::unordered_map<std::string_view, std::vector<std::string_view>> result;
-  for (auto& itr : pub_topics_backend_index_map_) {
+  for (const auto& itr : pub_topics_backend_index_map_) {
     std::vector<std::string_view> backends_name;
-    for (auto& item : itr.second)
+    backends_name.reserve(itr.second.size());
+    for (const auto& item : itr.second)
       backends_name.emplace_back(item->Name());
 
     result.emplace(itr.first, std::move(backends_name));
@@ -446,9 +447,10 @@ ChannelBackendManager::TopicBackendInfoMap ChannelBackendManager::GetPubTopicBac
 
 ChannelBackendManager::TopicBackendInfoMap ChannelBackendManager::GetSubTopicBackendInfo() const {
   std::unordered_map<std::string_view, std::vector<std::string_view>> result;
-  for (auto& itr : sub_topics_backend_index_map_) {
+  for (const auto& itr : sub_topics_backend_index_map_) {
     std::vector<std::string_view> backends_name;
-    for (auto& item : itr.second)
+    backends_name.reserve(itr.second.size());
+    for (const auto& item : itr.second)
       backends_name.emplace_back(item->Name());
 
     result.emplace(itr.first, std::move(backends_name));

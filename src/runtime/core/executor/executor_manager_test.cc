@@ -47,9 +47,9 @@ executors:
       .name = "test",
   };
 
-  auto executor_manager = executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle();
+  const auto *executor_manager = executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle();
 
-  auto executor_ptr = executor_manager->get_executor(
+  const auto *executor_ptr = executor_manager->get_executor(
       executor_manager->impl, aimrt::util::ToAimRTStringView("test_executor_1"));
 
   ASSERT_NE(executor_manager_.GetExecutorManagerProxy(detail_info).NativeHandle(), nullptr);

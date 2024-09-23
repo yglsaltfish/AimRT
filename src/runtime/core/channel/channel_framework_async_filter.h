@@ -63,6 +63,7 @@ class FrameworkAsyncChannelFilterManager {
 
   std::vector<std::string> GetAllFiltersName() const {
     std::vector<std::string> result;
+    result.reserve(filter_map_.size());
     for (const auto& itr : filter_map_)
       result.emplace_back(itr.first);
 
@@ -76,7 +77,7 @@ class FrameworkAsyncChannelFilterManager {
 
     auto collector_ptr = std::make_unique<FrameworkAsyncChannelFilterCollector>();
 
-    for (auto& name : filter_name_vec) {
+    for (const auto& name : filter_name_vec) {
       auto find_itr = filter_map_.find(name);
       AIMRT_ASSERT(find_itr != filter_map_.end(), "Can not find filter: {}", name);
 

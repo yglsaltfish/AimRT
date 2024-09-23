@@ -2,6 +2,8 @@
 // All rights reserved.
 
 #include "ros2_plugin/ros2_adapter_rpc_client.h"
+
+#include <utility>
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "aimrt_module_cpp_interface/util/buffer.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
@@ -19,7 +21,7 @@ Ros2AdapterClient::Ros2AdapterClient(
     const std::string& real_ros2_func_name,
     const rclcpp::QoS& qos,
     aimrt::executor::ExecutorRef timeout_executor)
-    : rclcpp::ClientBase(node_base, node_graph),
+    : rclcpp::ClientBase(node_base, std::move(node_graph)),
       client_func_wrapper_(client_func_wrapper),
       real_ros2_func_name_(real_ros2_func_name) {
   rcl_client_options_t client_options = rcl_client_get_default_options();
@@ -33,7 +35,7 @@ Ros2AdapterClient::Ros2AdapterClient(
       &client_options);
   if (ret != RCL_RET_OK) {
     if (ret == RCL_RET_SERVICE_NAME_INVALID) {
-      auto rcl_node_handle = this->get_rcl_node_handle();
+      auto* rcl_node_handle = this->get_rcl_node_handle();
       // this will throw on any validation problem
       rcl_reset_error();
       rclcpp::expand_topic_or_service_name(
@@ -125,7 +127,7 @@ Ros2AdapterWrapperClient::Ros2AdapterWrapperClient(
     const std::string& real_ros2_func_name,
     const rclcpp::QoS& qos,
     aimrt::executor::ExecutorRef timeout_executor)
-    : rclcpp::ClientBase(node_base, node_graph),
+    : rclcpp::ClientBase(node_base, std::move(node_graph)),
       client_func_wrapper_(client_func_wrapper),
       real_ros2_func_name_(real_ros2_func_name) {
   rcl_client_options_t client_options = rcl_client_get_default_options();
@@ -139,7 +141,7 @@ Ros2AdapterWrapperClient::Ros2AdapterWrapperClient(
       &client_options);
   if (ret != RCL_RET_OK) {
     if (ret == RCL_RET_SERVICE_NAME_INVALID) {
-      auto rcl_node_handle = this->get_rcl_node_handle();
+      auto* rcl_node_handle = this->get_rcl_node_handle();
       // this will throw on any validation problem
       rcl_reset_error();
       rclcpp::expand_topic_or_service_name(
@@ -235,7 +237,7 @@ void Ros2AdapterWrapperClient::Invoke(
   }
 
   // 填wrapper_req
-  auto buffer_array_data = buffer_array_view_ptr->Data();
+  const auto* buffer_array_data = buffer_array_view_ptr->Data();
   const size_t buffer_array_len = buffer_array_view_ptr->Size();
   size_t req_size = buffer_array_view_ptr->BufferSize();
 
@@ -251,7 +253,7 @@ void Ros2AdapterWrapperClient::Invoke(
 
   wrapper_req.data.resize(req_size);
 
-  auto cur_pos = wrapper_req.data.data();
+  auto* cur_pos = wrapper_req.data.data();
   for (size_t ii = 0; ii < buffer_array_len; ++ii) {
     memcpy(cur_pos, buffer_array_data[ii].data, buffer_array_data[ii].len);
     cur_pos += buffer_array_data[ii].len;

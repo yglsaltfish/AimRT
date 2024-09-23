@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include <boost/asio.hpp>
+#include <utility>
 
 #include "util/log_util.h"
 #include "util/string_util.h"
@@ -150,7 +151,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
           std::atomic_exchange(&state_, SessionState::kInit) == SessionState::kPreInit,
           "Method can only be called when state is 'PreInit'.");
 
-      session_options_ptr_ = session_options_ptr;
+      session_options_ptr_ = std::move(session_options_ptr);
     }
 
     void Start() {

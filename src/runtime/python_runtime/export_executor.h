@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "aimrt_module_cpp_interface/executor/executor_manager.h"
 
 #include "pybind11/chrono.h"
@@ -15,7 +17,7 @@ namespace aimrt::runtime::python_runtime {
 inline void ExportExecutorManagerRef(pybind11::object m) {
   using namespace aimrt::executor;
 
-  pybind11::class_<ExecutorManagerRef>(m, "ExecutorManagerRef")
+  pybind11::class_<ExecutorManagerRef>(std::move(m), "ExecutorManagerRef")
       .def(pybind11::init<>())
       .def("__bool__", &ExecutorManagerRef::operator bool)
       .def("GetExecutor", &ExecutorManagerRef::GetExecutor);
@@ -43,7 +45,7 @@ inline void PyExecutorRefExecuteAfterWrapper(
 inline void ExportExecutorRef(pybind11::object m) {
   using namespace aimrt::executor;
 
-  pybind11::class_<ExecutorRef>(m, "ExecutorRef")
+  pybind11::class_<ExecutorRef>(std::move(m), "ExecutorRef")
       .def(pybind11::init<>())
       .def("__bool__", &ExecutorRef::operator bool)
       .def("Type", &ExecutorRef::Type)

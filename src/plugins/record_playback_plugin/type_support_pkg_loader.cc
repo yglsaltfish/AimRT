@@ -19,12 +19,12 @@ void TypeSupportPkgLoader::LoadTypeSupportPkg(std::string_view path) {
                           "Load dynamic lib failed, lib path {}, error info {}",
                           path_, aimrt::common::util::DynamicLib::GetErr());
 
-  auto get_length_func = dynamic_lib_.GetSymbol(kDynlibGetTypeSupportArrayLengthFuncName);
+  auto* get_length_func = dynamic_lib_.GetSymbol(kDynlibGetTypeSupportArrayLengthFuncName);
   AIMRT_CHECK_ERROR_THROW(get_length_func != nullptr,
                           "Cannot find symbol '{}' in lib {}.",
                           kDynlibGetTypeSupportArrayLengthFuncName, path_);
 
-  auto get_array_func = dynamic_lib_.GetSymbol(kDynlibGetTypeSupportArrayFuncName);
+  auto* get_array_func = dynamic_lib_.GetSymbol(kDynlibGetTypeSupportArrayFuncName);
   AIMRT_CHECK_ERROR_THROW(get_array_func != nullptr,
                           "Cannot find symbol '{}' in lib {}.",
                           kDynlibGetTypeSupportArrayFuncName, path_);

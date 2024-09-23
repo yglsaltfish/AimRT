@@ -46,7 +46,7 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
     if (!node.IsMap()) return false;
 
     if (node["backends"] && node["backends"].IsSequence()) {
-      for (auto& backend_options_node : node["backends"]) {
+      for (const auto& backend_options_node : node["backends"]) {
         auto backend_options = Options::BackendOptions{
             .type = backend_options_node["type"].as<std::string>()};
 
@@ -58,7 +58,7 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
     }
 
     if (node["clients_options"] && node["clients_options"].IsSequence()) {
-      for (auto& client_options_node : node["clients_options"]) {
+      for (const auto& client_options_node : node["clients_options"]) {
         auto client_options = Options::ClientOptions{
             .func_name = client_options_node["func_name"].as<std::string>(),
             .enable_backends = client_options_node["enable_backends"].as<std::vector<std::string>>()};
@@ -71,7 +71,7 @@ struct convert<aimrt::runtime::core::rpc::RpcManager::Options> {
     }
 
     if (node["servers_options"] && node["servers_options"].IsSequence()) {
-      for (auto& server_options_node : node["servers_options"]) {
+      for (const auto& server_options_node : node["servers_options"]) {
         auto server_options = Options::ServerOptions{
             .func_name = server_options_node["func_name"].as<std::string>(),
             .enable_backends = server_options_node["enable_backends"].as<std::vector<std::string>>()};
@@ -136,7 +136,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
   std::vector<std::pair<std::string, std::vector<std::string>>> client_backends_rules;
   std::vector<std::pair<std::string, std::vector<std::string>>> client_filters_rules;
   for (const auto& item : options_.clients_options) {
-    for (auto& backend_name : item.enable_backends) {
+    for (const auto& backend_name : item.enable_backends) {
       AIMRT_CHECK_ERROR_THROW(
           std::find(rpc_backend_name_vec.begin(), rpc_backend_name_vec.end(), backend_name) != rpc_backend_name_vec.end(),
           "Invalid rpc backend type '{}' for func '{}'",
@@ -152,7 +152,7 @@ void RpcManager::Initialize(YAML::Node options_node) {
   std::vector<std::pair<std::string, std::vector<std::string>>> server_backends_rules;
   std::vector<std::pair<std::string, std::vector<std::string>>> server_filters_rules;
   for (const auto& item : options_.servers_options) {
-    for (auto& backend_name : item.enable_backends) {
+    for (const auto& backend_name : item.enable_backends) {
       AIMRT_CHECK_ERROR_THROW(
           std::find(rpc_backend_name_vec.begin(), rpc_backend_name_vec.end(), backend_name) != rpc_backend_name_vec.end(),
           "Invalid rpc backend type '{}' for func '{}'",
@@ -257,6 +257,7 @@ std::list<std::pair<std::string, std::string>> RpcManager::GenInitializationRepo
   }
 
   std::vector<std::string> rpc_backend_name_vec;
+  rpc_backend_name_vec.reserve(rpc_backend_vec_.size());
   for (const auto& item : rpc_backend_vec_)
     rpc_backend_name_vec.emplace_back(item->Name());
 

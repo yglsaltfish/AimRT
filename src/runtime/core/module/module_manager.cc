@@ -47,7 +47,7 @@ struct convert<aimrt::runtime::core::module::ModuleManager::Options> {
     if (!node.IsMap()) return false;
 
     if (node["pkgs"] && node["pkgs"].IsSequence()) {
-      for (auto& pkg_options_node : node["pkgs"]) {
+      for (const auto& pkg_options_node : node["pkgs"]) {
         Options::PkgLoaderOptions pkg_options{
             .path = pkg_options_node["path"].as<std::string>()};
 
@@ -64,7 +64,7 @@ struct convert<aimrt::runtime::core::module::ModuleManager::Options> {
     }
 
     if (node["modules"] && node["modules"].IsSequence()) {
-      for (auto& module_options_node : node["modules"]) {
+      for (const auto& module_options_node : node["modules"]) {
         Options::ModuleOptions module_options{
             .name = module_options_node["name"].as<std::string>()};
 
@@ -122,7 +122,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
 
   // 初始化直接注册的模块
   for (const auto& item : registered_module_vec_) {
-    auto module_ptr = item.second;
+    const auto* module_ptr = item.second;
 
     AIMRT_CHECK_ERROR_THROW(module_ptr != nullptr, "Module point is null!");
 
@@ -183,7 +183,7 @@ void ModuleManager::Initialize(YAML::Node options_node) {
           pkg_path);
 
       // 初始化module wrapper
-      auto module_ptr = module_loader.GetModule(module_name);
+      const auto* module_ptr = module_loader.GetModule(module_name);
 
       AIMRT_CHECK_ERROR_THROW(module_ptr != nullptr, "Module point is null!");
 
@@ -228,7 +228,7 @@ void ModuleManager::Start() {
     AIMRT_CHECK_ERROR_THROW(module_wrapper_map_itr != module_wrapper_map_.end(),
                             "Can not find module '{}'.", module_name);
 
-    auto module_ptr = module_wrapper_map_itr->second->module_ptr;
+    const auto* module_ptr = module_wrapper_map_itr->second->module_ptr;
 
     bool start_ret = module_ptr->start(module_ptr->impl);
     AIMRT_CHECK_ERROR_THROW(start_ret, "Start module '{}' failed.", module_name);
@@ -314,7 +314,7 @@ const aimrt_core_base_t* ModuleManager::CreateModule(
           .module_ptr = nullptr,
           .core_proxy_ptr = std::make_unique<CoreProxy>(module_info)});
 
-  auto core_base_ptr = module_wrapper_ptr->core_proxy_ptr->NativeHandle();
+  const auto* core_base_ptr = module_wrapper_ptr->core_proxy_ptr->NativeHandle();
 
   InitModule(module_wrapper_ptr.get());
 
@@ -401,7 +401,7 @@ std::list<std::pair<std::string, std::string>> ModuleManager::GenInitializationR
   std::vector<std::vector<std::string>> module_info_table =
       {{"name", "pkg", "version"}};
 
-  for (auto& item : module_detail_info_vec_) {
+  for (const auto& item : module_detail_info_vec_) {
     std::vector<std::string> cur_module_info(3);
     cur_module_info[0] = item->name;
     cur_module_info[1] = item->pkg_path;

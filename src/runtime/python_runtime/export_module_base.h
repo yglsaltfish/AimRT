@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "aimrt_module_cpp_interface/module_base.h"
 
 #include "pybind11/pybind11.h"
@@ -33,7 +35,7 @@ class PyModuleBaseAdapter : public ModuleBase {
 inline void ExportModuleBase(pybind11::object m) {
   using namespace aimrt;
 
-  pybind11::class_<ModuleBase, PyModuleBaseAdapter, std::shared_ptr<ModuleBase>>(m, "ModuleBase")
+  pybind11::class_<ModuleBase, PyModuleBaseAdapter, std::shared_ptr<ModuleBase>>(std::move(m), "ModuleBase")
       .def(pybind11::init<>())
       .def("Info", &ModuleBase::Info)
       .def("Initialize", &ModuleBase::Initialize)
