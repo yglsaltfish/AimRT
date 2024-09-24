@@ -242,56 +242,56 @@ bool ZenohRpcBackend::RegisterClientFunc(
         z_bytes_reader_t reader = z_bytes_get_reader(payload);
         std::vector<char> serialized_data(serialized_size);
 
-        if (z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size) >= 0) {
-          util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
-
-          std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
-          uint32_t req_id = buf_oper.GetUint32();
-          uint32_t code = buf_oper.GetUint32();
-
-          auto msg_recorder = client_tool_ptr_->GetRecord(req_id);
-          if (!msg_recorder) [[unlikely]] {
-            // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
-            AIMRT_TRACE("Can not get req id {} from recorder.", req_id);
-            return;
-          }
-
-          // 获取到记录
-          client_invoke_wrapper_ptr = std::move(*msg_recorder);
-
-          if (code) [[unlikely]] {
-            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(code));
-            return;
-          }
-
-          const auto& info = client_invoke_wrapper_ptr->info;
-
-          // client rsp deserialize
-          auto remaining_buf = buf_oper.GetRemainingBuffer();
-          aimrt_buffer_view_t buffer_view{
-              .data = remaining_buf.data(),
-              .len = remaining_buf.size()};
-
-          aimrt_buffer_array_view_t buffer_array_view{
-              .data = &buffer_view,
-              .len = 1};
-
-          bool deserialize_ret = info.rsp_type_support_ref.Deserialize(
-              serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
-
-          if (!deserialize_ret) {
-            // 反序列化失败
-            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
-            return;
-          }
-
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
-          return;
-
-        } else {
+        auto read_ret = z_bytes_reader_read(&reader, reinterpret_cast<uint8_t*>(serialized_data.data()), serialized_size);
+        if (read_ret < 0) {
           AIMRT_ERROR("Zenoh Plugin Read payload failed!");
+          return;
         }
 
+        util::ConstBufferOperator buf_oper(serialized_data.data(), serialized_size);
+
+        std::string serialization_type(buf_oper.GetString(util::BufferLenType::kUInt8));
+        uint32_t req_id = buf_oper.GetUint32();
+        uint32_t code = buf_oper.GetUint32();
+
+        auto msg_recorder = client_tool_ptr_->GetRecord(req_id);
+        if (!msg_recorder) [[unlikely]] {
+          // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
+          AIMRT_TRACE("Can not get req id {} from recorder.", req_id);
+          return;
+        }
+
+        // 获取到记录
+        client_invoke_wrapper_ptr = std::move(*msg_recorder);
+
+        if (code) [[unlikely]] {
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(code));
+          return;
+        }
+
+        const auto& info = client_invoke_wrapper_ptr->info;
+
+        // client rsp deserialize
+        auto remaining_buf = buf_oper.GetRemainingBuffer();
+        aimrt_buffer_view_t buffer_view{
+            .data = remaining_buf.data(),
+            .len = remaining_buf.size()};
+
+        aimrt_buffer_array_view_t buffer_array_view{
+            .data = &buffer_view,
+            .len = 1};
+
+        bool deserialize_ret = info.rsp_type_support_ref.Deserialize(
+            serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
+
+        if (!deserialize_ret) {
+          // 反序列化失败
+          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
+          return;
+        }
+
+        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
+        return;
       } catch (const std::exception& e) {
         AIMRT_WARN("Handle zenoh rpc msg failed, exception info: {}", e.what());
       }
@@ -301,7 +301,6 @@ bool ZenohRpcBackend::RegisterClientFunc(
     };
 
     zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client");
-
   } catch (const std::exception& e) {
     AIMRT_ERROR("{}", e.what());
     return false;
@@ -345,7 +344,7 @@ void ZenohRpcBackend::Invoke(
       return;
     }
 
-    auto buffer_array_data = buffer_array_view_ptr->Data();
+    const auto* buffer_array_data = buffer_array_view_ptr->Data();
     const size_t buffer_array_len = buffer_array_view_ptr->Size();
     size_t req_size = buffer_array_view_ptr->BufferSize();
 
