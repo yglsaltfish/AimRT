@@ -17,7 +17,7 @@ class ZenohManager {
   ZenohManager(const ZenohManager&) = delete;
   ZenohManager& operator=(const ZenohManager&) = delete;
 
-  void Initialize(std::string& native_cfg_file_path);
+  void Initialize(std::string& native_cfg_path);
   void Shutdown();
 
   void RegisterSubscriber(const std::string& url, MsgHandleFunc handle);

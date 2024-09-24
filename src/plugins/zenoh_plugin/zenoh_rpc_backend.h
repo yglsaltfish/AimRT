@@ -16,8 +16,9 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
  public:
   ZenohRpcBackend(
-      std::shared_ptr<ZenohManager>& zenoh_manager_ptr)
-      : zenoh_manager_ptr_(zenoh_manager_ptr) {}
+      std::shared_ptr<ZenohManager>& zenoh_manager_ptr, std::string& limit_domain)
+      : zenoh_manager_ptr_(zenoh_manager_ptr),
+        limit_domain_(limit_domain) {}
   ~ZenohRpcBackend() = default;
 
   std::string_view Name() const noexcept override { return "zenoh"; }
@@ -44,7 +45,6 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
 
   void ReturnRspWithStatusCode(
       const std::string& pattern,
-      const z_loaned_query_t* query,
       std::string_view serialization_type,
       const char* req_id_buf,
       uint32_t code);
@@ -65,6 +65,7 @@ class ZenohRpcBackend : public runtime::core::rpc::RpcBackendBase {
   std::atomic_uint32_t req_id_ = 0;
 
   std::shared_ptr<ZenohManager> zenoh_manager_ptr_;
+  std::string limit_domain_;
 
   std::unique_ptr<runtime::core::util::RpcClientTool<std::shared_ptr<runtime::core::rpc::InvokeWrapper>>> client_tool_ptr_;
 };

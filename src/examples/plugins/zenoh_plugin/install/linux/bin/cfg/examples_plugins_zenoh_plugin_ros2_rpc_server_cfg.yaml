@@ -22,7 +22,7 @@ aimrt:
         enable_backends: [zenoh]
   module:
     pkgs:
-      - path: ./libprotobuf_rpc_server_pkg.so
+      - path: ./libros2_rpc_server_pkg.so
         enable_modules: [NormalRpcCoServerModule]
     modules:
       - name: NormalRpcCoServerModule

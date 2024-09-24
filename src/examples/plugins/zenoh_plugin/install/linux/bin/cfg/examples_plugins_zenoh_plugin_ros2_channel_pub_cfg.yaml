@@ -27,7 +27,7 @@ aimrt:
         enable_backends: [zenoh]
   module:
     pkgs:
-      - path: ./libprotobuf_channel_pub_pkg.so
+      - path: ./libros2_channel_pub_pkg.so
         enable_modules: [NormalPublisherModule]
     modules:
       - name: NormalPublisherModule

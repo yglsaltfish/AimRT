@@ -15,7 +15,8 @@ namespace aimrt::plugins::zenoh_plugin {
 class ZenohPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
-    std::string native_cfg_file_path;
+    std::string native_cfg_path;
+    std::string limit_domain;
   };
 
  public:

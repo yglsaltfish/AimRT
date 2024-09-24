@@ -5,10 +5,10 @@
 
 namespace aimrt::plugins::zenoh_plugin {
 
-void ZenohManager::Initialize(std::string &native_cfg_file_path) {
-  if (!native_cfg_file_path.empty() && native_cfg_file_path.c_str() != nullptr) {
-    if (zc_config_from_file(&z_config_, native_cfg_file_path.c_str()) != Z_OK) {
-      AIMRT_ERROR("Unable to load configuration file: {}", native_cfg_file_path);
+void ZenohManager::Initialize(std::string &native_cfg_path) {
+  if (!native_cfg_path.empty() && native_cfg_path.c_str() != nullptr) {
+    if (zc_config_from_file(&z_config_, native_cfg_path.c_str()) != Z_OK) {
+      AIMRT_ERROR("Unable to load configuration file: {}", native_cfg_path);
       return;
     }
     PrintZenohCgf(z_config_);
