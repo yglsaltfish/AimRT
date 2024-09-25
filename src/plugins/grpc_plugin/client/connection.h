@@ -67,7 +67,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
   Connection(const Connection&) = delete;
   Connection& operator=(const Connection&) = delete;
 
-  void Initialize(std::shared_ptr<const ConnectionOptions>& options_ptr) {
+  void Initialize(const std::shared_ptr<const ConnectionOptions>& options_ptr) {
     AIMRT_CHECK_ERROR_THROW(
         std::atomic_exchange(&state_, ConnectionState::kInit) == ConnectionState::kPreInit,
         "Method can only be called when state is 'PreInit'.");
