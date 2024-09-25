@@ -33,7 +33,7 @@ AimRT 兼容 linux、windows 等主流操作系统，编译器需要能够支持
 
 ## 通过源码引用
 
-您可以参考以下 CMake 代码引用 AimRT：
+您可以参考以下 CMake 代码引用 AimRT，注意需要将`GIT_TAG`版本改为你想引用的版本：
 ```cmake
 include(FetchContent)
 
