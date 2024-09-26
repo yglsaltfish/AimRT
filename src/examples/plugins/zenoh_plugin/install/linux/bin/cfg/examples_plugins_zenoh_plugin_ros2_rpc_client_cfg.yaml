@@ -6,8 +6,8 @@ aimrt:
     plugins:
       - name: zenoh_plugin
         path: ./libaimrt_zenoh_plugin.so
-        options: 
-          native_cfg_path: ./cfg/zenoh_native_config.json5    
+        options:
+          native_cfg_path: ./cfg/zenoh_native_config.json5      
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -17,22 +17,27 @@ aimrt:
       - name: work_thread_pool
         type: asio_thread
         options:
-          thread_num: 2
-  channel:
+          thread_num: 4
+      - name: timeout_handle
+        type: time_wheel
+        options:
+          bind_executor: work_thread_pool
+  rpc:
     backends:
       - type: zenoh
-    pub_topics_options:
-      - topic_name: "(.*)"
+        options: 
+          timeout_executor: timeout_handle
+    clients_options:
+      - func_name: "(.*)"
         enable_backends: [zenoh]
   module:
     pkgs:
-      - path: ./libprotobuf_channel_pub_pkg.so
-        enable_modules: [NormalPublisherModule]
+      - path: ./libros2_rpc_client_pkg.so
+        enable_modules: [NormalRpcCoClientModule]
     modules:
-      - name: NormalPublisherModule
+      - name: NormalRpcCoClientModule
         log_lvl: INFO
 
 # Module custom configuration
-NormalPublisherModule:
-  topic_name: test_topic
-  channel_frq: 0.5
+NormalRpcCoClientModule:
+  rpc_frq: 0.5

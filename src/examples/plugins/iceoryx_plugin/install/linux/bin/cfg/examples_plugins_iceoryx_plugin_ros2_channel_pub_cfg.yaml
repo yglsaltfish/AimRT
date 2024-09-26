@@ -4,10 +4,8 @@
 aimrt:
   plugin:
     plugins:
-      - name: zenoh_plugin
-        path: ./libaimrt_zenoh_plugin.so
-        options: 
-          native_cfg_path: ./cfg/zenoh_native_config.json5    
+      - name: iceoryx_plugin
+        path: ./libaimrt_iceoryx_plugin.so
   log:
     core_lvl: INFO # Trace/Debug/Info/Warn/Error/Fatal/Off
     backends:
@@ -20,13 +18,13 @@ aimrt:
           thread_num: 2
   channel:
     backends:
-      - type: zenoh
+      - type: iceoryx
     pub_topics_options:
       - topic_name: "(.*)"
-        enable_backends: [zenoh]
+        enable_backends: [iceoryx]
   module:
     pkgs:
-      - path: ./libprotobuf_channel_pub_pkg.so
+      - path: ./libros2_channel_pub_pkg.so
         enable_modules: [NormalPublisherModule]
     modules:
       - name: NormalPublisherModule
