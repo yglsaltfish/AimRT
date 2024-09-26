@@ -108,7 +108,7 @@
 
 配置文件：
 - [examples_plugins_zenoh_plugin_ros2_channel_pub_cfg.yaml](./install/linux/bin/cfg/examples_plugins_zenoh_plugin_ros2_channel_pub_cfg.yaml)
-- [start_examples_plugins_zenoh_plugin_ros2_channel_sub.yaml](./install/linux/bin/start_examples_plugins_zenoh_plugin_ros2_channel_sub.sh)
+- [examples_plugins_zenoh_plugin_ros2_channel_sub_cfg.yaml](./install/linux/bin/cfg/examples_plugins_zenoh_plugin_ros2_channel_sub_cfg.yaml)
 
 
 - 开启 `AIMRT_BUILD_EXAMPLES`、`AIMRT_BUILD_ZENOH_PLUGIN` 选项编译 AimRT（编译时需要提前准备好rust编译环境）；
