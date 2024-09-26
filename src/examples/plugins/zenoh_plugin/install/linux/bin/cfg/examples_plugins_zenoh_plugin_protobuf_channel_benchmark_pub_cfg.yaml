@@ -43,6 +43,10 @@ BenchmarkPublisherModule:
   max_topic_number: 4
   bench_plans:
     - channel_frq: 1000
-      msg_size: 10
+      msg_size: 512
       topic_number: 4
       msg_count: 5000
+    - channel_frq: 1000
+      msg_size: 4096
+      topic_number: 1
+      msg_count: 1000

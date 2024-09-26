@@ -10,9 +10,9 @@
 ## 插件概述
 
 **zenoh_plugin** 是一个轻量级的、高效的、实时的数据传输插件，它旨在为分布式系统提供低延迟、高吞吐量的数据传输和处理能力。当需要以下业务场景的时候，zenoh 插件将非常合适：
-- `服务发现`机制的通信系统
-- 灵活的网络拓扑结构
-- 低延迟、高吞吐量的网络通信和数据传输
+- `服务发现`机制的通信系统；
+- 灵活的网络拓扑结构；
+- 低延迟、高吞吐量的网络通信和数据传输；
 
 此插件为 AimRT 提供以下组件：
 - `zenoh` 类型 Rpc 后端
@@ -28,7 +28,7 @@
 |  limit_domain   | string |   可选   |   ""   |   对插件的通信域进行限制    |
 
 关于**zenoh_plugin**的配置，使用注意点如下：
-- `native_cfg_path` 表示 zenoh 提供的原生配置文件的路径，可以通过配置该文件来灵活配置 zenoh 的网络结构。如果不填写则默认使用 zenoh 官方提供的默认配置，具体配置内容请参考 zenoh 官方关于[configuration](https://zenoh.io/docs/manual/configuration/)的说明，您也可以直接修改src/examples/plugins/zenoh_plugin/install/linux/bin/cfg/zenoh_native_config.json5文件来自定义配置，这里列举几个常用的配置项：
+- `native_cfg_path` 表示 zenoh 提供的原生配置文件的路径，可以通过配置该文件来灵活配置 zenoh 的网络结构。如果不填写则默认使用 zenoh 官方提供的默认配置，具体配置内容请参考 zenoh 官方关于[configuration](https://zenoh.io/docs/manual/configuration/)的说明，您也可以直接修改 {{ '[zenoh_native_config.json5]({}/src/examples/plugins/zenoh_plugin/install/linux/bin/cfg/zenoh_native_config.json5)'.format(code_site_root_path_url) }}文件来自定义配置，这里列举几个常用的配置项：
 
 |            配置项             |                                 作用                                  | zenoh_native_config中的配置值 |
 | :---------------------------: | :-------------------------------------------------------------------: | :---------------------------: |
@@ -69,7 +69,7 @@ aimrt:
 
 | 节点             | 类型   | 是否可选 | 默认值 | 作用                               |
 | ---------------- | ------ | -------- | ------ | ---------------------------------- |
-| timeout_executor | string | 可选     | ""     | Client 端发起 RPC 超时情况下的执行 |
+| timeout_executor | string | 可选     | ""     | Client 端发起 RPC 超时情况下的执行器 |
 
 以下是一个简单的客户端的示例：
 
@@ -117,7 +117,7 @@ aimrt:
         enable_backends: [zenoh]
 
 ```
-以上示例中，Client 端和 Server 端都采用服务发现机制，即在统一网络中的两个端点可自动发现彼此并建立连接，因此在配置过程中用户可以不用手动输入 ip 地址等信息，降低使用复杂度。
+以上示例中，Client 端和 Server 端都采用服务发现机制，即在统一网络中的两个端点可自动发现彼此并建立连接。
 
 在整个 RPC 过程中，底层使用的 Zenoh Topic 名称格式如下：
 - Server 端
@@ -212,7 +212,7 @@ channel:
         enable_backends: [zenoh]
 ```
 
-以上示例中都使用 zeonh 的服务发现机制，即在统一网络中的两个端点可自动发现彼此并建立连接，因此在配置过程中用户可以不用手动输入ip地址等信息，降低使用复杂度。
+以上示例中都使用 zeonh 的服务发现机制，即在统一网络中的两个端点可自动发现彼此并建立连接。
 
 在这个过程中，底层使用的 Topic 名称格式为：`channel/${topic_name}/${message_type}${limit_domain}`。其中，`${topic_name}`为 AimRT 的 Topic 名称，`${message_type}`为 url 编码后的 AimRT 消息名称， `${limit_domain}`为插件的限制域。这个 Topic 被设置成为 Zenoh 最终的键表达式（Keyxpr），这是 Zenoh 的提供的资源标识符，只有键表达式匹配的订阅者和发布者才能够进行通信。
 
