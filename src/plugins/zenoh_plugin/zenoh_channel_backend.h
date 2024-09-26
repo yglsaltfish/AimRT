@@ -19,7 +19,7 @@ class ZenohChannelBackend : public runtime::core::channel::ChannelBackendBase {
 
  public:
   ZenohChannelBackend(
-      std::shared_ptr<ZenohManager>& zenoh_util_ptr, std::string& limit_domain)
+      const std::shared_ptr<ZenohManager>& zenoh_util_ptr, const std::string& limit_domain)
       : zenoh_manager_ptr_(zenoh_util_ptr),
         limit_domain_(limit_domain) {}
 

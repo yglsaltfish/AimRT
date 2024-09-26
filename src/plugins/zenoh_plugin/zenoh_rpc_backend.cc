@@ -2,12 +2,6 @@
 // All rights reserved.
 
 #include "zenoh_plugin/zenoh_rpc_backend.h"
-#include "aimrt_module_cpp_interface/rpc/rpc_status.h"
-#include "aimrt_module_cpp_interface/util/type_support.h"
-#include "core/rpc/rpc_backend_tools.h"
-#include "util/buffer_util.h"
-#include "util/url_encode.h"
-#include "zenoh.h"
 
 namespace YAML {
 template <>
@@ -180,7 +174,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
 
                   return;
                 }
-                auto buffer_array_data = buffer_array_view_ptr->Data();
+                const auto* buffer_array_data = buffer_array_view_ptr->Data();
                 const size_t buffer_array_len = buffer_array_view_ptr->Size();
                 size_t rsp_size = buffer_array_view_ptr->BufferSize();
 
@@ -198,7 +192,7 @@ bool ZenohRpcBackend::RegisterServiceFunc(
                       buffer_array_data[ii].len);
                 }
 
-                zenoh_manager_ptr_->Publish("rep/" + pattern, msg_buf_vec.data(), pkg_size);
+                zenoh_manager_ptr_->Publish("rsp/" + pattern, msg_buf_vec.data(), pkg_size);
               };
           // call service
           service_func_wrapper.service_func(service_invoke_wrapper_ptr);
@@ -256,12 +250,12 @@ bool ZenohRpcBackend::RegisterClientFunc(
 
         auto msg_recorder = client_tool_ptr_->GetRecord(req_id);
         if (!msg_recorder) [[unlikely]] {
-          // 未找到记录，说明此次调用已经超时了，走了超时处理后删掉了记录
+          // can't find recorder, which means timeout
           AIMRT_TRACE("Can not get req id {} from recorder.", req_id);
           return;
         }
 
-        // 获取到记录
+        // find record
         client_invoke_wrapper_ptr = std::move(*msg_recorder);
 
         if (code) [[unlikely]] {
@@ -285,7 +279,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
             serialization_type, buffer_array_view, client_invoke_wrapper_ptr->rsp_ptr);
 
         if (!deserialize_ret) {
-          // 反序列化失败
+          // deserialize failed
           client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
           return;
         }
@@ -335,11 +329,11 @@ void ZenohRpcBackend::Invoke(
       return;
     }
 
-    // client req序列化
+    // client req serialize
     auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(
         *client_invoke_wrapper_ptr, serialization_type);
     if (!buffer_array_view_ptr) [[unlikely]] {
-      // 序列化失败
+      // serialize failed
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
       return;
     }
@@ -366,21 +360,19 @@ void ZenohRpcBackend::Invoke(
       context_meta_kv_size += (2 + val.size());
       context_meta_kv.emplace_back(val);
     }
-    // 填zenoh包
+    // padding zenoh pkg
     size_t z_pkg_size = 1 + serialization_type.size() +
                         1 + pattern.size() +
                         4 +
                         context_meta_kv_size +
                         req_size;
 
-    // 将回调等内容记录下来
     auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
     auto record_ptr = client_invoke_wrapper_ptr;
 
     bool ret = client_tool_ptr_->Record(cur_req_id, timeout, std::move(record_ptr));
 
     if (!ret) [[unlikely]] {
-      // 一般不太可能出现
       AIMRT_ERROR("Failed to record msg.");
       client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
@@ -436,7 +428,7 @@ void ZenohRpcBackend::ReturnRspWithStatusCode(
   buf_oper.SetBuffer(req_id_buf, 4);
   buf_oper.SetUint32(code);
 
-  zenoh_manager_ptr_->Publish("rep/" + pattern, msg_buf_vec.data(), pkg_size);
+  zenoh_manager_ptr_->Publish("rsp/" + pattern, msg_buf_vec.data(), pkg_size);
 }
 
 }  // namespace aimrt::plugins::zenoh_plugin

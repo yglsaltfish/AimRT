@@ -17,18 +17,18 @@ class ZenohManager {
   ZenohManager(const ZenohManager&) = delete;
   ZenohManager& operator=(const ZenohManager&) = delete;
 
-  void Initialize(std::string& native_cfg_path);
+  void Initialize(const std::string& native_cfg_path);
   void Shutdown();
 
-  void RegisterSubscriber(const std::string& url, MsgHandleFunc handle);
-  void RegisterPublisher(const std::string& url);
+  void RegisterSubscriber(const std::string& keyexpr, MsgHandleFunc handle);
+  void RegisterPublisher(const std::string& keyexpr);
 
   void RegisterRpcNode(const std::string& keyexpr, MsgHandleFunc handle, const std::string& role);
 
-  void Publish(const std::string& url, char* serialized_data_ptr, uint64_t serialized_data_len);
+  void Publish(const std::string& topic, char* serialized_data_ptr, uint64_t serialized_data_len);
 
  private:
-  void PrintZenohCgf(z_owned_config_t z_config) {
+  static void PrintZenohCgf(z_owned_config_t z_config) {
     z_owned_string_t out_config_string;
     zc_config_to_string(z_loan(z_config), &out_config_string);
 
@@ -41,7 +41,7 @@ class ZenohManager {
     writer_builder["indentation"] = "    ";
     std::string pretty_json = Json::writeString(writer_builder, json_data);
 
-    AIMRT_INFO("Using Custom Native Zenoh configuration: {}", pretty_json);
+    AIMRT_INFO("Using custom zenoh native configuration: {}", pretty_json);
 
     z_drop(z_move(out_config_string));
   }

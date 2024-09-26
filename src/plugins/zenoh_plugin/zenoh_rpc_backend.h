@@ -3,8 +3,14 @@
 
 #pragma once
 
+#include "aimrt_module_cpp_interface/rpc/rpc_status.h"
+#include "aimrt_module_cpp_interface/util/type_support.h"
 #include "core/rpc/rpc_backend_base.h"
+#include "core/rpc/rpc_backend_tools.h"
 #include "core/util/rpc_client_tool.h"
+#include "util/buffer_util.h"
+#include "util/url_encode.h"
+#include "zenoh.h"
 #include "zenoh_plugin/zenoh_manager.h"
 
 namespace aimrt::plugins::zenoh_plugin {

@@ -24,7 +24,7 @@ struct convert<aimrt::plugins::zenoh_plugin::ZenohPlugin::Options> {
       rhs.native_cfg_path = node["native_cfg_path"].as<std::string>();
 
     if (node["limit_domain"])
-      rhs.limit_domain = node["limit_domain"].as<std::string>();
+      rhs.limit_domain = '/' + node["limit_domain"].as<std::string>();
 
     return true;
   }
