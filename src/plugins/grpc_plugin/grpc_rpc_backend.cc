@@ -367,8 +367,13 @@ void GrpcRpcBackend::Invoke(
           const auto& info = client_invoke_wrapper_ptr->info;
 
           try {
-            client::ClientOptions cli_options{.host = std::string(url->host),
-                                              .service = std::string(url->service)};
+            client::ClientOptions cli_options{
+                .host = std::string(url->host),
+                .service = std::string(url->service),
+                .http2_settings = http2::Session::Http2Settings{
+                    .max_concurrent_streams = 100,
+                    .initial_window_size = (1U << 31) - 1,
+                }};
 
             auto client_ptr = co_await http2_cli_pool_ptr->GetClient(cli_options);
             if (!client_ptr) [[unlikely]] {

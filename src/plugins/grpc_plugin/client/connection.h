@@ -207,9 +207,8 @@ class Connection : public std::enable_shared_from_this<Connection> {
             cur_duration = chrono::steady_clock::now() - start_time_point;
             AIMRT_CHECK_ERROR_THROW(cur_duration < timeout, "Timeout.");
 
-            // FIXME(zhangyi): The read buffer size is fixed
             while (nghttp2_session_.ResponseListEmpty()) {
-              std::array<uint8_t, 8192> buf;
+              std::array<uint8_t, 65536> buf;
               auto read_timer = asio::steady_timer(socket_strand_, timeout - cur_duration);
               auto read_result = co_await (socket_.async_read_some(asio::buffer(buf), asio::use_awaitable) ||
                                            read_timer.async_wait(asio::use_awaitable));
