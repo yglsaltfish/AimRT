@@ -7,6 +7,7 @@
 
 #include "core/aimrt_core.h"
 #include "mqtt_plugin/global.h"
+#include "util/url_encode.h"
 
 namespace YAML {
 template <>
@@ -19,6 +20,7 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
     node["broker_addr"] = rhs.broker_addr;
     node["client_id"] = rhs.client_id;
     node["max_pkg_size_k"] = rhs.max_pkg_size_k;
+    node["truststore"] = rhs.truststore;
 
     return node;
   }
@@ -31,6 +33,9 @@ struct convert<aimrt::plugins::mqtt_plugin::MqttPlugin::Options> {
 
     if (node["max_pkg_size_k"])
       rhs.max_pkg_size_k = node["max_pkg_size_k"].as<uint32_t>();
+
+    if (node["truststore"])
+      rhs.truststore = node["truststore"].as<std::string>();
 
     return true;
   }
@@ -72,6 +77,19 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
+
+    MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
+    if (!options_.truststore.empty()) {
+      // check broker_add protocol
+      if (common::util::ExtractProtocolFromUrl(options_.broker_addr) != "ssl") {
+        AIMRT_ERROR("You have set truststore option, please check your broker addr is ssl protocol.");
+        return false;
+      }
+
+      ssl_opts.trustStore = options_.truststore.c_str();
+      conn_opts.ssl = &ssl_opts;
+    }
+
     conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
       static_cast<std::promise<bool> *>(context)->set_value(true);
     };
