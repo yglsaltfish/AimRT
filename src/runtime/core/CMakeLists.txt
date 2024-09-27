@@ -46,6 +46,9 @@ target_link_libraries(
 include(AddWerror)
 add_werror(${CUR_TARGET_NAME})
 
+# Set version of target
+target_compile_definitions(${CUR_TARGET_NAME} PUBLIC AIMRT_VERSION="${AIMRT_VERSION}")
+
 # Set test of target
 if(AIMRT_BUILD_TESTS AND test_files)
   add_gtest_target(TEST_TARGET ${CUR_TARGET_NAME} TEST_SRC ${test_files})
