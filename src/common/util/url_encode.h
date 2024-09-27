@@ -113,12 +113,4 @@ inline std::string HttpHeaderDecode(std::string_view str) {
   return ret_str;
 }
 
-inline std::string ExtractProtocolFromUrl(const std::string& url) {
-  size_t pos = url.find("://");
-  if (pos != std::string::npos) {
-    return url.substr(0, pos);
-  }
-  return "";
-}
-
 }  // namespace aimrt::common::util

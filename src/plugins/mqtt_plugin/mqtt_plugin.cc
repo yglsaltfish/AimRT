@@ -7,7 +7,7 @@
 
 #include "core/aimrt_core.h"
 #include "mqtt_plugin/global.h"
-#include "util/url_encode.h"
+#include "util/url_parser.h"
 
 namespace YAML {
 template <>
@@ -75,19 +75,23 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     std::promise<bool> connect_ret_promise;
 
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
+    MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
+
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
 
-    MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
-    if (!options_.truststore.empty()) {
-      // check broker_add protocol
-      if (common::util::ExtractProtocolFromUrl(options_.broker_addr) != "ssl") {
-        AIMRT_ERROR("You have set truststore option, please check your broker addr is ssl protocol.");
+    // check broker_add protocol
+    if (common::util::ParseUrl(options_.broker_addr)->protocol == "ssl") {
+      if (options_.truststore.empty()) {
+        AIMRT_ERROR("Broker protocol is ssl, but truststore is empty.");
         return false;
       }
-
       ssl_opts.trustStore = options_.truststore.c_str();
       conn_opts.ssl = &ssl_opts;
+    } else {
+      if (!options_.truststore.empty()) {
+        AIMRT_WARN("Broker protocol is tcp, the truststore you set will be ignored.");
+      }
     }
 
     conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
