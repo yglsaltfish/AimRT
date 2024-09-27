@@ -56,7 +56,7 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
 
     init_flag_ = true;
 
-    // 初始化mqtt
+    // initialize mqtt
     MQTTAsync_create(
         &client_, options_.broker_addr.c_str(), options_.client_id.c_str(), MQTTCLIENT_PERSISTENCE_NONE, NULL);
 
@@ -88,9 +88,10 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
       }
       ssl_opts.trustStore = options_.truststore.c_str();
       conn_opts.ssl = &ssl_opts;
+
     } else {
       if (!options_.truststore.empty()) {
-        AIMRT_WARN("Broker protocol is tcp, the truststore you set will be ignored.");
+        AIMRT_WARN("Broker protocol is not ssl, the truststore you set will be ignored.");
       }
     }
 
