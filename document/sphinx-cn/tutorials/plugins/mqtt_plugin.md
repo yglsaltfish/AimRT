@@ -29,7 +29,7 @@
 - `broker_addr`表示 mqtt broker 的地址，使用者必须保证有 mqtt 的 broker 运行在该地址，否则启动会失败。
 - `client_id`表示本节点连接 mqtt broker 时的 client id。
 - `max_pkg_size_k`表示传输数据时的最大包尺寸，默认 1 MB。注意，必须 broker 也要支持该尺寸才行。
-- `truststore`表示 broker 的 CA 证书路径。当`broker_addr`的协议被配置为`ssl`时，该选项生效，用于指定 CA 证书路径，否则自动忽略该选项。
+- `truststore`表示 broker 的 CA 证书路径，例如`/etc/emqx/certs/cacert.pem` 。当`broker_addr`的协议被配置为`ssl`或者`mqtts`时，该选项生效，用于指定 CA 证书路径，否则自动忽略该选项。
 
 **mqtt_plugin**插件基于[paho.mqtt.c](https://github.com/eclipse/paho.mqtt.c)封装，在使用时，Channel 订阅回调、RPC Server 处理方法、RPC Client 返回时，使用的都是**paho.mqtt.c**提供的线程，当使用者在回调中阻塞了线程时，有可能导致无法继续接收/发送消息。正如 Module 接口文档中所述，一般来说，如果回调中的任务非常轻量，那就可以直接在回调里处理；但如果回调中的任务比较重，那最好调度到其他专门执行任务的执行器里处理。
 

@@ -80,19 +80,17 @@ bool MqttPlugin::Initialize(runtime::core::AimRTCore *core_ptr) noexcept {
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
 
-    // check broker_add protocol
-    if (common::util::ParseUrl(options_.broker_addr)->protocol == "ssl") {
-      if (options_.truststore.empty()) {
-        AIMRT_ERROR("Broker protocol is ssl, but truststore is empty.");
-        return false;
-      }
+    // check broker_add protocol is ssl/mqtts or not
+    auto ret = common::util::ParseUrl(options_.broker_addr);
+    AIMRT_CHECK_ERROR_THROW(ret != std::nullopt, "Parse broker_addr failed");
+
+    if (ret->protocol == "ssl" || ret->protocol == "mqtts") {
+      AIMRT_CHECK_ERROR_THROW(!options_.truststore.empty(), "Use ssl/mqtts must set truststore");
       ssl_opts.trustStore = options_.truststore.c_str();
       conn_opts.ssl = &ssl_opts;
 
     } else {
-      if (!options_.truststore.empty()) {
-        AIMRT_WARN("Broker protocol is not ssl, the truststore you set will be ignored.");
-      }
+      AIMRT_CHECK_WARN(options_.truststore.empty(), "Broker protocol is not ssl/mqtts, the truststore you set will be ignored.");
     }
 
     conn_opts.onSuccess = [](void *context, MQTTAsync_successData *response) {
