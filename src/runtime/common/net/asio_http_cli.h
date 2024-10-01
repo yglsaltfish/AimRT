@@ -322,6 +322,10 @@ class AsioHttpClient : public std::enable_shared_from_this<AsioHttpClient> {
               if (first_time_entry_) [[unlikely]] {
                 first_time_entry_ = false;
 
+                AIMRT_TRACE("Http cli session create a new connect to {}:{}",
+                            session_options_ptr_->host,
+                            session_options_ptr_->service);
+
                 // resolve
                 asio::ip::tcp::resolver resolver(session_socket_strand_);
                 auto const dst = co_await resolver.async_resolve(

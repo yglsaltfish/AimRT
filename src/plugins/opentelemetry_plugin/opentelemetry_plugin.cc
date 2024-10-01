@@ -19,8 +19,11 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
     Node node;
 
     node["node_name"] = rhs.node_name;
+
     node["trace_otlp_http_exporter_url"] = rhs.trace_otlp_http_exporter_url;
     node["force_trace"] = rhs.force_trace;
+
+    node["metrics_otlp_http_exporter_url"] = rhs.metrics_otlp_http_exporter_url;
 
     node["attributes"] = YAML::Node();
     for (const auto& attribute : rhs.attributes) {
@@ -37,10 +40,15 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
     if (!node.IsMap()) return false;
 
     rhs.node_name = node["node_name"].as<std::string>();
-    rhs.trace_otlp_http_exporter_url = node["trace_otlp_http_exporter_url"].as<std::string>();
+
+    if (node["trace_otlp_http_exporter_url"])
+      rhs.trace_otlp_http_exporter_url = node["trace_otlp_http_exporter_url"].as<std::string>();
 
     if (node["force_trace"])
       rhs.force_trace = node["force_trace"].as<bool>();
+
+    if (node["metrics_otlp_http_exporter_url"])
+      rhs.metrics_otlp_http_exporter_url = node["metrics_otlp_http_exporter_url"].as<std::string>();
 
     for (const auto& attribute_node : node["attributes"]) {
       auto attribute = Options::Attribute{
@@ -57,6 +65,8 @@ struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Option
 
 namespace trace_api = opentelemetry::trace;
 namespace trace_sdk = opentelemetry::sdk::trace;
+namespace metrics_api = opentelemetry::metrics;
+namespace metric_sdk = opentelemetry::sdk::metrics;
 namespace resource = opentelemetry::sdk::resource;
 namespace otlp = opentelemetry::exporter::otlp;
 
@@ -84,16 +94,52 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
     }
     auto resource = resource::Resource::Create(resource_attributes);
 
-    otlp::OtlpHttpExporterOptions opts;
-    opts.url = options_.trace_otlp_http_exporter_url;
-    auto exporter = otlp::OtlpHttpExporterFactory::Create(opts);
-
-    trace_sdk::BatchSpanProcessorOptions bsp_opts{};
-    auto processor = trace_sdk::BatchSpanProcessorFactory::Create(std::move(exporter), bsp_opts);
-
-    provider_ = trace_sdk::TracerProviderFactory::Create(std::move(processor), resource);
-
     propagator_ = std::make_shared<trace_api::propagation::HttpTraceContext>();
+
+    // trace
+    if (!options_.trace_otlp_http_exporter_url.empty()) {
+      enable_trace_ = true;
+
+      otlp::OtlpHttpExporterOptions opts;
+      opts.url = options_.trace_otlp_http_exporter_url;
+      auto exporter = otlp::OtlpHttpExporterFactory::Create(opts);
+
+      trace_sdk::BatchSpanProcessorOptions bsp_opts{};
+      auto processor = trace_sdk::BatchSpanProcessorFactory::Create(std::move(exporter), bsp_opts);
+
+      auto provider = trace_sdk::TracerProviderFactory::Create(std::move(processor), resource);
+
+      trace_provider_ = std::make_shared<opentelemetry::trace::TracerProvider>(std::move(provider));
+
+      tracer_ = trace_provider_->GetTracer(options_.node_name);
+    }
+
+    // metrics
+    if (!options_.metrics_otlp_http_exporter_url.empty()) {
+      enable_metrics_ = true;
+
+      otlp::OtlpHttpMetricExporterOptions opts;
+      opts.url = options_.metrics_otlp_http_exporter_url;
+      auto exporter = otlp::OtlpHttpMetricExporterFactory::Create(opts);
+
+      metric_sdk::PeriodicExportingMetricReaderOptions reader_opts{};
+      reader_opts.export_interval_millis = std::chrono::milliseconds(15000);
+      reader_opts.export_timeout_millis = std::chrono::milliseconds(5000);
+
+      auto reader =
+          metric_sdk::PeriodicExportingMetricReaderFactory::Create(std::move(exporter), reader_opts);
+
+      auto views = metric_sdk::ViewRegistryFactory::Create();
+
+      auto context = metric_sdk::MeterContextFactory::Create(std::move(views), resource);
+      context->AddMetricReader(std::move(reader));
+
+      auto provider = metric_sdk::MeterProviderFactory::Create(std::move(context));
+
+      meter_provider_ = std::make_shared<opentelemetry::metrics::MeterProvider>(std::move(provider));
+
+      meter_ = meter_provider_->GetMeter(options_.node_name);
+    }
 
     // register hook
     core_ptr_->RegisterHookFunc(runtime::core::AimRTCore::State::kPostInitLog,
@@ -118,7 +164,12 @@ void OpenTelemetryPlugin::Shutdown() noexcept {
   try {
     if (!init_flag_) return;
 
-    provider_.reset();
+    meter_ = opentelemetry::nostd::shared_ptr<opentelemetry::metrics::Meter>();
+    meter_provider_.reset();
+
+    tracer_ = opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer>();
+    trace_provider_.reset();
+
     propagator_.reset();
 
   } catch (const std::exception& e) {
@@ -134,78 +185,98 @@ void OpenTelemetryPlugin::SetPluginLogger() {
 void OpenTelemetryPlugin::RegisterChannelFilter() {
   auto& channel_manager = core_ptr_->GetChannelManager();
 
-  channel_manager.SetPassedContextMetaKeys(
-      {std::string(kCtxKeyStartNewTrace),
-       std::string(kCtxKeyTraceParent),
-       std::string(kCtxKeyTraceState)});
+  if (enable_trace_) {
+    channel_manager.AddPassedContextMetaKeys(
+        {std::string(kCtxKeyStartNewTrace),
+         std::string(kCtxKeyTraceParent),
+         std::string(kCtxKeyTraceState)});
 
-  channel_manager.RegisterPublishFilter(
-      "otp_trace",
-      [this](aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
-             aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
-        ChannelFilter(trace_api::SpanKind::kProducer, true, msg_wrapper, std::move(h));
-      });
+    channel_manager.RegisterPublishFilter(
+        "otp_trace",
+        [this](aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
+               aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
+          ChannelTraceFilter(trace_api::SpanKind::kProducer, true, msg_wrapper, std::move(h));
+        });
 
-  channel_manager.RegisterPublishFilter(
-      "otp_simple_trace",
-      [this](aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
-             aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
-        ChannelFilter(trace_api::SpanKind::kProducer, false, msg_wrapper, std::move(h));
-      });
+    channel_manager.RegisterPublishFilter(
+        "otp_simple_trace",
+        [this](aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
+               aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
+          ChannelTraceFilter(trace_api::SpanKind::kProducer, false, msg_wrapper, std::move(h));
+        });
 
-  channel_manager.RegisterSubscribeFilter(
-      "otp_trace",
-      [this](aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
-             aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
-        ChannelFilter(trace_api::SpanKind::kConsumer, true, msg_wrapper, std::move(h));
-      });
+    channel_manager.RegisterSubscribeFilter(
+        "otp_trace",
+        [this](aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
+               aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
+          ChannelTraceFilter(trace_api::SpanKind::kConsumer, true, msg_wrapper, std::move(h));
+        });
 
-  channel_manager.RegisterSubscribeFilter(
-      "otp_simple_trace",
-      [this](aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
-             aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
-        ChannelFilter(trace_api::SpanKind::kConsumer, false, msg_wrapper, std::move(h));
-      });
+    channel_manager.RegisterSubscribeFilter(
+        "otp_simple_trace",
+        [this](aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
+               aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h) {
+          ChannelTraceFilter(trace_api::SpanKind::kConsumer, false, msg_wrapper, std::move(h));
+        });
+  }
 }
 
 void OpenTelemetryPlugin::RegisterRpcFilter() {
   auto& rpc_manager = core_ptr_->GetRpcManager();
 
-  rpc_manager.SetPassedContextMetaKeys(
-      {std::string(kCtxKeyStartNewTrace),
-       std::string(kCtxKeyTraceParent),
-       std::string(kCtxKeyTraceState)});
+  if (enable_trace_) {
+    rpc_manager.AddPassedContextMetaKeys(
+        {std::string(kCtxKeyStartNewTrace),
+         std::string(kCtxKeyTraceParent),
+         std::string(kCtxKeyTraceState)});
 
-  rpc_manager.RegisterClientFilter(
-      "otp_trace",
-      [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
-             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
-        RpcFilter(trace_api::SpanKind::kClient, true, wrapper_ptr, std::move(h));
-      });
+    rpc_manager.RegisterClientFilter(
+        "otp_trace",
+        [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+               aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+          RpcTraceFilter(trace_api::SpanKind::kClient, true, wrapper_ptr, std::move(h));
+        });
 
-  rpc_manager.RegisterClientFilter(
-      "otp_simple_trace",
-      [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
-             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
-        RpcFilter(trace_api::SpanKind::kClient, false, wrapper_ptr, std::move(h));
-      });
+    rpc_manager.RegisterClientFilter(
+        "otp_simple_trace",
+        [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+               aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+          RpcTraceFilter(trace_api::SpanKind::kClient, false, wrapper_ptr, std::move(h));
+        });
 
-  rpc_manager.RegisterServerFilter(
-      "otp_trace",
-      [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
-             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
-        RpcFilter(trace_api::SpanKind::kServer, true, wrapper_ptr, std::move(h));
-      });
+    rpc_manager.RegisterServerFilter(
+        "otp_trace",
+        [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+               aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+          RpcTraceFilter(trace_api::SpanKind::kServer, true, wrapper_ptr, std::move(h));
+        });
 
-  rpc_manager.RegisterServerFilter(
-      "otp_simple_trace",
-      [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
-             aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
-        RpcFilter(trace_api::SpanKind::kServer, false, wrapper_ptr, std::move(h));
-      });
+    rpc_manager.RegisterServerFilter(
+        "otp_simple_trace",
+        [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+               aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+          RpcTraceFilter(trace_api::SpanKind::kServer, false, wrapper_ptr, std::move(h));
+        });
+  }
+
+  if (enable_metrics_) {
+    rpc_manager.RegisterClientFilter(
+        "otp_metrics",
+        [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+               aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+          h(wrapper_ptr);
+        });
+
+    rpc_manager.RegisterServerFilter(
+        "otp_metrics",
+        [this](const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
+               aimrt::runtime::core::rpc::FrameworkAsyncRpcHandle&& h) {
+          h(wrapper_ptr);
+        });
+  }
 }
 
-void OpenTelemetryPlugin::ChannelFilter(
+void OpenTelemetryPlugin::ChannelTraceFilter(
     opentelemetry::trace::SpanKind kind,
     bool upload_msg,
     aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
@@ -221,7 +292,6 @@ void OpenTelemetryPlugin::ChannelFilter(
     ctx_ref.SetMetaValue(kCtxKeyStartNewTrace, "true");
   }
 
-  auto tracer = provider_->GetTracer(options_.node_name);
   ContextCarrier carrier(ctx_ref);
 
   // 解压传进来的context，得到父span
@@ -248,7 +318,7 @@ void OpenTelemetryPlugin::ChannelFilter(
 
   // 需要启动一个新trace
   std::string span_name = msg_wrapper.info.topic_name + "/" + msg_wrapper.info.msg_type;
-  auto span = tracer->StartSpan(ToNoStdStringView(span_name), op);
+  auto span = tracer_->StartSpan(ToNoStdStringView(span_name), op);
 
   // 将当前span的context打包
   opentelemetry::context::Context output_ot_ctx(trace_api::kSpanKey, span);
@@ -274,7 +344,7 @@ void OpenTelemetryPlugin::ChannelFilter(
   span->End();
 }
 
-void OpenTelemetryPlugin::RpcFilter(
+void OpenTelemetryPlugin::RpcTraceFilter(
     opentelemetry::trace::SpanKind kind,
     bool upload_msg,
     const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
@@ -290,7 +360,6 @@ void OpenTelemetryPlugin::RpcFilter(
     ctx_ref.SetMetaValue(kCtxKeyStartNewTrace, "true");
   }
 
-  auto tracer = provider_->GetTracer(options_.node_name);
   ContextCarrier carrier(ctx_ref);
 
   // 解压传进来的context，得到父span
@@ -316,7 +385,7 @@ void OpenTelemetryPlugin::RpcFilter(
   }
 
   // 需要启动一个新trace
-  auto span = tracer->StartSpan(ToNoStdStringView(ctx_ref.GetFunctionName()), op);
+  auto span = tracer_->StartSpan(ToNoStdStringView(ctx_ref.GetFunctionName()), op);
 
   // 将当前span的context打包
   opentelemetry::context::Context output_ot_ctx(trace_api::kSpanKey, span);

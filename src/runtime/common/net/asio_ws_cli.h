@@ -201,6 +201,10 @@ class AsioWebSocketClient
               namespace http = boost::beast::http;
               namespace websocket = boost::beast::websocket;
 
+              AIMRT_TRACE("WebSocket cli session create a new connect to {}:{}",
+                          session_options_ptr_->host,
+                          session_options_ptr_->service);
+
               // resolve
               asio::ip::tcp::resolver resolver(session_socket_strand_);
               auto const dst = co_await resolver.async_resolve(

@@ -185,7 +185,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
             try {
               remote_addr_ = aimrt::common::util::SSToString(session_options_ptr_->svr_ep);
 
-              AIMRT_TRACE("Tcp cli session start create a new connect to {}.", RemoteAddr());
+              AIMRT_TRACE("Tcp cli session create a new connect to {}.", RemoteAddr());
               co_await sock_.async_connect(session_options_ptr_->svr_ep,
                                            boost::asio::use_awaitable);
 
