@@ -8,6 +8,7 @@ variables:
       source /opt/ros/humble/setup.bash &&
       ./build.sh \
       -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz \
+      -Dasio_DOWNLOAD_URL=https://file.agibot.com/third_party/asio-asio-1-30-2.tar.gz \
       -Dfmt_DOWNLOAD_URL=https://file.agibot.com/third_party/fmt-10.2.1.tar.gz \
       -Dgflags_DOWNLOAD_URL=https://file.agibot.com/third_party/gflags-2.2.2.tar.gz \
       -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz \
@@ -34,6 +35,7 @@ variables:
       source /opt/ros/humble/setup.bash &&
       ./test.sh \
       -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz \
+      -Dasio_DOWNLOAD_URL=https://file.agibot.com/third_party/asio-asio-1-30-2.tar.gz \
       -Dfmt_DOWNLOAD_URL=https://file.agibot.com/third_party/fmt-10.2.1.tar.gz \
       -Dgflags_DOWNLOAD_URL=https://file.agibot.com/third_party/gflags-2.2.2.tar.gz \
       -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz \
@@ -59,6 +61,7 @@ variables:
     value: |
       ./build.bat `
       -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz `
+      -Dasio_DOWNLOAD_URL=https://file.agibot.com/third_party/asio-asio-1-30-2.tar.gz `
       -Dfmt_DOWNLOAD_URL=https://file.agibot.com/third_party/fmt-10.2.1.tar.gz `
       -Dgflags_DOWNLOAD_URL=https://file.agibot.com/third_party/gflags-2.2.2.tar.gz `
       -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz `
@@ -81,6 +84,7 @@ variables:
     value: |
       ./test.bat `
       -Dboost_DOWNLOAD_URL=https://file.agibot.com/third_party/boost-1.82.0.tar.xz `
+      -Dasio_DOWNLOAD_URL=https://file.agibot.com/third_party/asio-asio-1-30-2.tar.gz `
       -Dfmt_DOWNLOAD_URL=https://file.agibot.com/third_party/fmt-10.2.1.tar.gz `
       -Dgflags_DOWNLOAD_URL=https://file.agibot.com/third_party/gflags-2.2.2.tar.gz `
       -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz `

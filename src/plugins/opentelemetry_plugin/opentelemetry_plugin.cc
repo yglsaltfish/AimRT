@@ -107,9 +107,7 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
       trace_sdk::BatchSpanProcessorOptions bsp_opts{};
       auto processor = trace_sdk::BatchSpanProcessorFactory::Create(std::move(exporter), bsp_opts);
 
-      auto provider = trace_sdk::TracerProviderFactory::Create(std::move(processor), resource);
-
-      trace_provider_ = std::make_shared<opentelemetry::trace::TracerProvider>(std::move(provider));
+      trace_provider_ = trace_sdk::TracerProviderFactory::Create(std::move(processor), resource);
 
       tracer_ = trace_provider_->GetTracer(options_.node_name);
     }
@@ -134,9 +132,7 @@ bool OpenTelemetryPlugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcep
       auto context = metric_sdk::MeterContextFactory::Create(std::move(views), resource);
       context->AddMetricReader(std::move(reader));
 
-      auto provider = metric_sdk::MeterProviderFactory::Create(std::move(context));
-
-      meter_provider_ = std::make_shared<opentelemetry::metrics::MeterProvider>(std::move(provider));
+      meter_provider_ = metric_sdk::MeterProviderFactory::Create(std::move(context));
 
       meter_ = meter_provider_->GetMeter(options_.node_name);
     }
