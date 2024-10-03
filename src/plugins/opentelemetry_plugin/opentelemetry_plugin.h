@@ -8,9 +8,25 @@
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 
-#include <opentelemetry/trace/propagation/http_trace_context.h>
+#include "opentelemetry/exporters/otlp/otlp_environment.h"
+#include "opentelemetry/exporters/otlp/otlp_http.h"
 #include "opentelemetry/exporters/otlp/otlp_http_exporter_factory.h"
 #include "opentelemetry/exporters/otlp/otlp_http_exporter_options.h"
+#include "opentelemetry/exporters/otlp/otlp_http_metric_exporter_factory.h"
+#include "opentelemetry/exporters/otlp/otlp_http_metric_exporter_options.h"
+#include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/metrics/provider.h"
+#include "opentelemetry/sdk/common/global_log_handler.h"
+#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_factory.h"
+#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_options.h"
+#include "opentelemetry/sdk/metrics/meter_context.h"
+#include "opentelemetry/sdk/metrics/meter_context_factory.h"
+#include "opentelemetry/sdk/metrics/meter_provider_factory.h"
+#include "opentelemetry/sdk/metrics/metric_reader.h"
+#include "opentelemetry/sdk/metrics/push_metric_exporter.h"
+#include "opentelemetry/sdk/metrics/state/filtered_ordered_attribute_map.h"
+#include "opentelemetry/sdk/metrics/view/view_registry.h"
+#include "opentelemetry/sdk/metrics/view/view_registry_factory.h"
 #include "opentelemetry/sdk/trace/batch_span_processor_factory.h"
 #include "opentelemetry/sdk/trace/batch_span_processor_options.h"
 #include "opentelemetry/sdk/trace/exporter.h"
@@ -20,6 +36,7 @@
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "opentelemetry/sdk/trace/tracer_provider_factory.h"
 #include "opentelemetry/sdk/version/version.h"
+#include "opentelemetry/trace/propagation/http_trace_context.h"
 #include "opentelemetry/trace/provider.h"
 #include "opentelemetry/trace/scope.h"
 #include "opentelemetry/trace/span.h"
@@ -36,8 +53,11 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
     std::string node_name;
+
     std::string trace_otlp_http_exporter_url;
     bool force_trace = false;
+
+    std::string metrics_otlp_http_exporter_url;
 
     struct Attribute {
       std::string key;
@@ -60,13 +80,13 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   void RegisterChannelFilter();
   void RegisterRpcFilter();
 
-  void ChannelFilter(
+  void ChannelTraceFilter(
       opentelemetry::trace::SpanKind kind,
       bool upload_msg,
       aimrt::runtime::core::channel::MsgWrapper& msg_wrapper,
       aimrt::runtime::core::channel::FrameworkAsyncChannelHandle&& h);
 
-  void RpcFilter(
+  void RpcTraceFilter(
       opentelemetry::trace::SpanKind kind,
       bool upload_msg,
       const std::shared_ptr<aimrt::runtime::core::rpc::InvokeWrapper>& wrapper_ptr,
@@ -79,8 +99,17 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
 
   bool init_flag_ = false;
 
-  std::shared_ptr<opentelemetry::trace::TracerProvider> provider_;
   std::shared_ptr<opentelemetry::context::propagation::TextMapPropagator> propagator_;
+
+  // trace
+  bool enable_trace_ = false;
+  std::shared_ptr<opentelemetry::trace::TracerProvider> trace_provider_;
+  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> tracer_;
+
+  // metrics
+  bool enable_metrics_ = false;
+  std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
+  opentelemetry::nostd::shared_ptr<opentelemetry::metrics::Meter> meter_;
 };
 
 }  // namespace aimrt::plugins::opentelemetry_plugin
