@@ -225,6 +225,11 @@ void RecordAction::RegisterGetTypeSupportFunc(
   get_type_support_func_ = get_type_support_func;
 }
 
+size_t RecordAction::GetDbFileSize() const {
+  if (cur_db_file_path_.empty() || !std::filesystem::exists(cur_db_file_path_)) return 0;
+  return std::filesystem::file_size(cur_db_file_path_);
+}
+
 void RecordAction::AddRecord(OneRecord&& record) {
   if (state_.load() != State::kStart) [[unlikely]] {
     return;
@@ -362,11 +367,8 @@ void RecordAction::StopSignalRecord() {
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-  if (db_ == nullptr) [[unlikely]] {
-    // first record
-    OpenNewDb(record.timestamp);
-  } else if (cur_data_size_ > max_bag_size_) [[unlikely]] {
-    // check db size
+  
+  if (db_ == nullptr || ((cur_data_size_ > max_bag_size_ * 0.7) && (GetDbFileSize() > max_bag_size_ * 0.95))) [[unlikely]] {
     cur_data_size_ = 0;
     OpenNewDb(record.timestamp);
   }
@@ -418,17 +420,17 @@ void RecordAction::OpenNewDb(uint64_t start_timestamp) {
 
   std::string cur_db_file_name = bag_base_name_ + "_" + std::to_string(cur_db_file_index_) + ".db3";
 
-  auto db_file_path = (real_bag_path_ / cur_db_file_name).string();
+  cur_db_file_path_ = (real_bag_path_ / cur_db_file_name).string();
 
   ++cur_db_file_index_;
 
   // open db
-  int ret = sqlite3_open(db_file_path.c_str(), &db_);
+  int ret = sqlite3_open(cur_db_file_path_.c_str(), &db_);
   AIMRT_CHECK_ERROR_THROW(ret == SQLITE_OK,
                           "Sqlite3 open db file failed, path: {}, ret: {}, error info: {}",
-                          db_file_path, ret, sqlite3_errmsg(db_));
+                          cur_db_file_path_, ret, sqlite3_errmsg(db_));
 
-  AIMRT_TRACE("Open new db, path: {}", db_file_path);
+  AIMRT_TRACE("Open new db, path: {}", cur_db_file_path_);
 
   // sqlite3_exec(db_, "PRAGMA synchronous = OFF; ", 0, 0, 0);
 

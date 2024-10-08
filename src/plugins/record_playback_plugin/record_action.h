@@ -81,6 +81,7 @@ class RecordAction {
 
   void OpenNewDb(uint64_t start_timestamp);
   void CloseDb();
+  size_t GetDbFileSize() const;
 
   enum class State : uint32_t {
     kPreInit,
@@ -107,6 +108,7 @@ class RecordAction {
   std::deque<std::vector<char>> buf_cache_;
 
   std::filesystem::path real_bag_path_;
+  std::string cur_db_file_path_;
   std::string bag_base_name_;
 
   uint32_t cur_db_file_index_ = 0;
