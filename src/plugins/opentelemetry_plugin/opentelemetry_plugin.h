@@ -9,8 +9,41 @@
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 
 #include "opentelemetry/context/propagation/text_map_propagator.h"
+#include "opentelemetry/exporters/otlp/otlp_environment.h"
+#include "opentelemetry/exporters/otlp/otlp_http.h"
+#include "opentelemetry/exporters/otlp/otlp_http_exporter_factory.h"
+#include "opentelemetry/exporters/otlp/otlp_http_exporter_options.h"
+#include "opentelemetry/exporters/otlp/otlp_http_metric_exporter_factory.h"
+#include "opentelemetry/exporters/otlp/otlp_http_metric_exporter_options.h"
+#include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/metrics/provider.h"
+#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_factory.h"
+#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_options.h"
+#include "opentelemetry/sdk/metrics/meter_context.h"
+#include "opentelemetry/sdk/metrics/meter_context_factory.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "opentelemetry/sdk/metrics/meter_provider_factory.h"
+#include "opentelemetry/sdk/metrics/metric_reader.h"
+#include "opentelemetry/sdk/metrics/push_metric_exporter.h"
+#include "opentelemetry/sdk/metrics/state/filtered_ordered_attribute_map.h"
+#include "opentelemetry/sdk/metrics/view/view_registry.h"
+#include "opentelemetry/sdk/metrics/view/view_registry_factory.h"
+#include "opentelemetry/sdk/trace/batch_span_processor_factory.h"
+#include "opentelemetry/sdk/trace/batch_span_processor_options.h"
+#include "opentelemetry/sdk/trace/exporter.h"
+#include "opentelemetry/sdk/trace/processor.h"
+#include "opentelemetry/sdk/trace/recordable.h"
+#include "opentelemetry/sdk/trace/simple_processor_factory.h"
+#include "opentelemetry/sdk/trace/tracer_provider.h"
+#include "opentelemetry/sdk/trace/tracer_provider_factory.h"
+#include "opentelemetry/sdk/version/version.h"
+#include "opentelemetry/trace/propagation/http_trace_context.h"
+#include "opentelemetry/trace/provider.h"
+#include "opentelemetry/trace/scope.h"
+#include "opentelemetry/trace/span.h"
+#include "opentelemetry/trace/span_context.h"
 #include "opentelemetry/trace/span_metadata.h"
+#include "opentelemetry/trace/tracer.h"
 #include "opentelemetry/trace/tracer_provider.h"
 
 #include "core/channel/channel_framework_async_filter.h"
@@ -95,14 +128,14 @@ class OpenTelemetryPlugin : public AimRTCorePluginBase {
   // trace
   bool enable_trace_ = false;
   std::shared_ptr<opentelemetry::trace::TracerProvider> trace_provider_;
-  opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> tracer_;
+  std::shared_ptr<opentelemetry::trace::Tracer> tracer_;
 
   // metrics
   bool enable_metrics_ = false;
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
-  opentelemetry::nostd::shared_ptr<opentelemetry::metrics::Meter> meter_;
+  std::shared_ptr<opentelemetry::metrics::Meter> meter_;
 
-  using u64_counter = opentelemetry::nostd::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>;
+  using u64_counter = std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>;
 
   u64_counter chn_pub_msg_num_counter_;
   u64_counter chn_sub_msg_num_counter_;

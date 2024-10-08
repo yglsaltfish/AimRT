@@ -10,41 +10,6 @@
 #include "opentelemetry_plugin/global.h"
 #include "opentelemetry_plugin/util.h"
 
-#include "opentelemetry/exporters/otlp/otlp_environment.h"
-#include "opentelemetry/exporters/otlp/otlp_http.h"
-#include "opentelemetry/exporters/otlp/otlp_http_exporter_factory.h"
-#include "opentelemetry/exporters/otlp/otlp_http_exporter_options.h"
-#include "opentelemetry/exporters/otlp/otlp_http_metric_exporter_factory.h"
-#include "opentelemetry/exporters/otlp/otlp_http_metric_exporter_options.h"
-#include "opentelemetry/metrics/meter_provider.h"
-#include "opentelemetry/metrics/provider.h"
-#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_factory.h"
-#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_options.h"
-#include "opentelemetry/sdk/metrics/meter_context.h"
-#include "opentelemetry/sdk/metrics/meter_context_factory.h"
-#include "opentelemetry/sdk/metrics/meter_provider_factory.h"
-#include "opentelemetry/sdk/metrics/metric_reader.h"
-#include "opentelemetry/sdk/metrics/push_metric_exporter.h"
-#include "opentelemetry/sdk/metrics/state/filtered_ordered_attribute_map.h"
-#include "opentelemetry/sdk/metrics/view/view_registry.h"
-#include "opentelemetry/sdk/metrics/view/view_registry_factory.h"
-#include "opentelemetry/sdk/trace/batch_span_processor_factory.h"
-#include "opentelemetry/sdk/trace/batch_span_processor_options.h"
-#include "opentelemetry/sdk/trace/exporter.h"
-#include "opentelemetry/sdk/trace/processor.h"
-#include "opentelemetry/sdk/trace/recordable.h"
-#include "opentelemetry/sdk/trace/simple_processor_factory.h"
-#include "opentelemetry/sdk/trace/tracer_provider.h"
-#include "opentelemetry/sdk/trace/tracer_provider_factory.h"
-#include "opentelemetry/sdk/version/version.h"
-#include "opentelemetry/trace/propagation/http_trace_context.h"
-#include "opentelemetry/trace/provider.h"
-#include "opentelemetry/trace/scope.h"
-#include "opentelemetry/trace/span.h"
-#include "opentelemetry/trace/span_context.h"
-#include "opentelemetry/trace/tracer.h"
-#include "opentelemetry/trace/tracer_provider.h"
-
 namespace YAML {
 template <>
 struct convert<aimrt::plugins::opentelemetry_plugin::OpenTelemetryPlugin::Options> {
@@ -209,10 +174,10 @@ void OpenTelemetryPlugin::Shutdown() noexcept {
   try {
     if (!init_flag_) return;
 
-    meter_ = opentelemetry::nostd::shared_ptr<opentelemetry::metrics::Meter>();
+    meter_.reset();
     meter_provider_.reset();
 
-    tracer_ = opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer>();
+    tracer_.reset();
     trace_provider_.reset();
 
     propagator_.reset();
@@ -366,9 +331,8 @@ void OpenTelemetryPlugin::ChannelTraceFilter(
   auto extract_ctx = propagator_->Extract(carrier, input_ot_ctx);
 
   auto extract_ctx_val = extract_ctx.GetValue(trace_api::kSpanKey);
-  if (!::opentelemetry::nostd::holds_alternative<::opentelemetry::nostd::monostate>(extract_ctx_val)) {
-    auto parent_span =
-        ::opentelemetry::nostd::get<::opentelemetry::nostd::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
+  if (!std::holds_alternative<std::monostate>(extract_ctx_val)) {
+    auto parent_span = std::get<std::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
     op.parent = parent_span->GetContext();
     start_new_trace = true;
   }
@@ -381,7 +345,7 @@ void OpenTelemetryPlugin::ChannelTraceFilter(
 
   // 需要启动一个新trace
   std::string span_name = msg_wrapper.info.topic_name + "/" + msg_wrapper.info.msg_type;
-  auto span = tracer_->StartSpan(ToNoStdStringView(span_name), op);
+  auto span = tracer_->StartSpan(span_name, op);
 
   // 先发布数据
   h(msg_wrapper);
@@ -396,7 +360,7 @@ void OpenTelemetryPlugin::ChannelTraceFilter(
   // 添加context中的属性
   auto keys = ctx_ref.GetMetaKeys();
   for (auto& item : keys) {
-    span->SetAttribute(ToNoStdStringView(item), ToNoStdStringView(ctx_ref.GetMetaValue(item)));
+    span->SetAttribute(item, ctx_ref.GetMetaValue(item));
   }
 
   if (upload_msg) {
@@ -439,9 +403,8 @@ void OpenTelemetryPlugin::RpcTraceFilter(
   auto extract_ctx = propagator_->Extract(carrier, input_ot_ctx);
 
   auto extract_ctx_val = extract_ctx.GetValue(trace_api::kSpanKey);
-  if (!::opentelemetry::nostd::holds_alternative<::opentelemetry::nostd::monostate>(extract_ctx_val)) {
-    auto parent_span =
-        ::opentelemetry::nostd::get<::opentelemetry::nostd::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
+  if (!std::holds_alternative<std::monostate>(extract_ctx_val)) {
+    auto parent_span = std::get<std::shared_ptr<::opentelemetry::trace::Span>>(extract_ctx_val);
     op.parent = parent_span->GetContext();
     start_new_trace = true;
   }
@@ -453,7 +416,7 @@ void OpenTelemetryPlugin::RpcTraceFilter(
   }
 
   // 需要启动一个新trace
-  auto span = tracer_->StartSpan(ToNoStdStringView(ctx_ref.GetFunctionName()), op);
+  auto span = tracer_->StartSpan(ctx_ref.GetFunctionName(), op);
 
   // 将当前span的context打包
   opentelemetry::context::Context output_ot_ctx(trace_api::kSpanKey, span);
@@ -479,7 +442,7 @@ void OpenTelemetryPlugin::RpcTraceFilter(
         // 添加context中的属性
         auto keys = ctx_ref.GetMetaKeys();
         for (auto& item : keys) {
-          span->SetAttribute(ToNoStdStringView(item), ToNoStdStringView(ctx_ref.GetMetaValue(item)));
+          span->SetAttribute(item, ctx_ref.GetMetaValue(item));
         }
 
         if (upload_msg) {
