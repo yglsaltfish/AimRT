@@ -367,7 +367,6 @@ void RecordAction::StopSignalRecord() {
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-  
   if (db_ == nullptr || ((cur_data_size_ > max_bag_size_ * 0.7) && (GetDbFileSize() > max_bag_size_ * 0.95))) [[unlikely]] {
     cur_data_size_ = 0;
     OpenNewDb(record.timestamp);
