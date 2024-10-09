@@ -14,7 +14,7 @@ variables:
       -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz \
       -Dprotobuf_DOWNLOAD_URL=https://file.agibot.com/third_party/protobuf-3.21.12.tar.gz \
       -Dyaml-cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/yaml-cpp-0.8.0.tar.gz \
-      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.5.tar.gz \
+      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.6.tar.gz \
       -Dsqlite_DOWNLOAD_URL=https://file.agibot.com/third_party/sqlite-amalgamation-3420000.zip \
       -Dstdexec_DOWNLOAD_URL=https://file.agibot.com/third_party/stdexec-nvhpc-23.09.rc4.tar.gz \
       -Dlibunifex_DOWNLOAD_URL=https://file.agibot.com/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz \
@@ -41,7 +41,7 @@ variables:
       -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz \
       -Dprotobuf_DOWNLOAD_URL=https://file.agibot.com/third_party/protobuf-3.21.12.tar.gz \
       -Dyaml-cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/yaml-cpp-0.8.0.tar.gz \
-      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.5.tar.gz \
+      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.6.tar.gz \
       -Dsqlite_DOWNLOAD_URL=https://file.agibot.com/third_party/sqlite-amalgamation-3420000.zip \
       -Dstdexec_DOWNLOAD_URL=https://file.agibot.com/third_party/stdexec-nvhpc-23.09.rc4.tar.gz \
       -Dlibunifex_DOWNLOAD_URL=https://file.agibot.com/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz \
@@ -67,7 +67,7 @@ variables:
       -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz `
       -Dprotobuf_DOWNLOAD_URL=https://file.agibot.com/third_party/protobuf-3.21.12.tar.gz `
       -Dyaml-cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/yaml-cpp-0.8.0.tar.gz `
-      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.5.tar.gz `
+      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.6.tar.gz `
       -Dsqlite_DOWNLOAD_URL=https://file.agibot.com/third_party/sqlite-amalgamation-3420000.zip `
       -Dstdexec_DOWNLOAD_URL=https://file.agibot.com/third_party/stdexec-nvhpc-23.09.rc4.tar.gz `
       -Dlibunifex_DOWNLOAD_URL=https://file.agibot.com/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz `
@@ -90,7 +90,7 @@ variables:
       -Dgoogletest_DOWNLOAD_URL=https://file.agibot.com/third_party/googletest-1.13.0.tar.gz `
       -Dprotobuf_DOWNLOAD_URL=https://file.agibot.com/third_party/protobuf-3.21.12.tar.gz `
       -Dyaml-cpp_DOWNLOAD_URL=https://file.agibot.com/third_party/yaml-cpp-0.8.0.tar.gz `
-      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.5.tar.gz `
+      -Djsoncpp_DOWNLOAD_URL=https://file.agibot.com/third_party/jsoncpp-1.9.6.tar.gz `
       -Dsqlite_DOWNLOAD_URL=https://file.agibot.com/third_party/sqlite-amalgamation-3420000.zip `
       -Dstdexec_DOWNLOAD_URL=https://file.agibot.com/third_party/stdexec-nvhpc-23.09.rc4.tar.gz `
       -Dlibunifex_DOWNLOAD_URL=https://file.agibot.com/third_party/libunifex-591ec09e7d51858ad05be979d4034574215f5971.tar.gz `
