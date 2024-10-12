@@ -108,7 +108,6 @@ class RecordAction {
   std::deque<std::shared_ptr<aimrt::util::BufferArrayView>> buf_array_view_cache_;
   std::deque<std::vector<char>> buf_cache_;
 
-  bool update_cur_data_size_ = true;
   std::filesystem::path real_bag_path_;
   std::string cur_db_file_path_;
   std::string bag_base_name_;
