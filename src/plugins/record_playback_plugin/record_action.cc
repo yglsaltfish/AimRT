@@ -367,16 +367,15 @@ void RecordAction::StopSignalRecord() {
 }
 
 void RecordAction::AddRecordImpl(OneRecord&& record) {
-
   if (db_ == nullptr) [[unlikely]] {
-        // first record
+    // first record
     OpenNewDb(record.timestamp);
   } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
     cur_data_size_ = 0;
     estimated_overhead_ = std::max(1.0, static_cast<double>(GetDbFileSize()) / original_cur_data_size);
     OpenNewDb(record.timestamp);
-  } 
+  }
 
   if (cur_exec_count_ == 0) [[unlikely]] {
     sqlite3_exec(db_, "BEGIN", 0, 0, 0);
