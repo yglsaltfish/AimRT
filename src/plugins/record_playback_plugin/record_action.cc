@@ -373,9 +373,9 @@ void RecordAction::AddRecordImpl(OneRecord&& record) {
     OpenNewDb(record.timestamp);
   } else if (cur_data_size_ * estimated_overhead_ >= max_bag_size_) [[unlikely]] {
     size_t original_cur_data_size = cur_data_size_;
-    cur_data_size_ = GetDbFileSize();
+    cur_data_size_ = 0;
+    estimated_overhead_ = std::max(1.0, static_cast<double>(GetDbFileSize()) / original_cur_data_size);
     OpenNewDb(record.timestamp);
-    estimated_overhead_ = static_cast<double>(cur_data_size_) / original_cur_data_size;
   } 
 
   if (cur_exec_count_ == 0) [[unlikely]] {
