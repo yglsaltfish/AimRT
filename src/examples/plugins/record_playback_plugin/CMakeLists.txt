@@ -8,7 +8,7 @@ string(REGEX REPLACE ".*/\(.*\)" "\\1" CUR_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set_namespace()
 
 # type_support_pkg
-add_subdirectory(example_event_type_support_pkg)
+add_subdirectory(example_event_ts_pkg)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -27,4 +27,6 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CUR_INSTALL_SOURCE_DIR}/bin ${CMAKE_BINARY_DIR}
   DEPENDS aimrt::runtime::main #
           aimrt::examples::cpp::pb_chn::pb_chn_pub_pkg #
-          aimrt::examples::cpp::pb_chn::pb_chn_sub_pkg)
+          aimrt::examples::cpp::pb_chn::pb_chn_sub_pkg #
+          aimrt::examples::cpp::ros2_chn::ros2_chn_pub_pkg #
+          aimrt::examples::cpp::ros2_chn::ros2_chn_sub_pkg)

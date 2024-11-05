@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # exit on error and print each command
-set -ex
+set -e
 
 cmake -B build \
     -DCMAKE_BUILD_TYPE=Release \
@@ -29,6 +29,7 @@ cmake -B build \
     -DAIMRT_BUILD_LOG_CONTROL_PLUGIN=ON \
     -DAIMRT_BUILD_OPENTELEMETRY_PLUGIN=ON \
     -DAIMRT_BUILD_GRPC_PLUGIN=ON \
+    -DAIMRT_BUILD_ECHO_PLUGIN=ON \
     -DAIMRT_BUILD_PYTHON_PACKAGE=ON \
     $@
 

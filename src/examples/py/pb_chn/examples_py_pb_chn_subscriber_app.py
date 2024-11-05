@@ -2,14 +2,14 @@
 # All rights reserved.
 
 import argparse
-import threading
 import signal
 import sys
-import aimrt_py
-import yaml
+import threading
 
-from google.protobuf.json_format import MessageToJson
+import aimrt_py
 import event_pb2
+import yaml
+from google.protobuf.json_format import MessageToJson
 
 global_aimrt_core = None
 
@@ -55,10 +55,11 @@ def main():
 
     # Subscribe
     subscriber = module_handle.GetChannelHandle().GetSubscriber(topic_name)
-    assert subscriber, "Get subscriber for topic '{}' failed.".format(topic_name)
+    assert subscriber, f"Get subscriber for topic '{topic_name}' failed."
 
-    def EventHandle(msg):
-        aimrt_py.info(module_handle.GetLogger(), "Get new pb event, data: {}".format(MessageToJson(msg)))
+    def EventHandle(ctx_ref, msg):
+        aimrt_py.info(module_handle.GetLogger(),
+                      f"Get new pb event, ctx: {ctx_ref.ToString()}, data: {MessageToJson(msg)}")
 
     aimrt_py.Subscribe(subscriber, event_pb2.ExampleEventMsg, EventHandle)
 

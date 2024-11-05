@@ -29,7 +29,8 @@ target_link_libraries(
           ${CUR_SUPERIOR_NAMESPACE}::executor_module
           ${CUR_SUPERIOR_NAMESPACE}::executor_co_module
           ${CUR_SUPERIOR_NAMESPACE}::executor_co_loop_module
-          ${CUR_SUPERIOR_NAMESPACE}::real_time_module)
+          ${CUR_SUPERIOR_NAMESPACE}::real_time_module
+          ${CUR_SUPERIOR_NAMESPACE}::timer_module)
 
 # Set misc of target
 set_target_properties(${CUR_TARGET_NAME} PROPERTIES OUTPUT_NAME ${CUR_DIR})

@@ -4,12 +4,14 @@
 #pragma once
 
 #include <future>
+#include <string>
 #include <utility>
 
 #include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "python_runtime/export_type_support.h"
 
 #include "pybind11/pybind11.h"
+#include "rpc/rpc_context_base.h"
 
 namespace aimrt::runtime::python_runtime {
 
@@ -57,8 +59,15 @@ inline void ExportRpcContext(const pybind11::object& m) {
   using aimrt::rpc::Context;
   using aimrt::rpc::ContextRef;
 
-  pybind11::class_<Context>(m, "RpcContext")
+  pybind11::enum_<aimrt_rpc_context_type_t>(m, "RpcContextType")
+      .value("AIMRT_RPC_CLIENT_CONTEXT", AIMRT_RPC_CLIENT_CONTEXT)
+      .value("AIMRT_RPC_SERVER_CONTEXT", AIMRT_RPC_SERVER_CONTEXT);
+
+  pybind11::class_<Context, std::shared_ptr<Context>>(m, "RpcContext")
       .def(pybind11::init<>())
+      .def("CheckUsed", &Context::CheckUsed)
+      .def("SetUsed", &Context::SetUsed)
+      .def("Reset", &Context::Reset)
       .def("GetType", &Context::GetType)
       .def("Timeout", &Context::Timeout)
       .def("SetTimeout", &Context::SetTimeout)
@@ -69,6 +78,8 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("SetToAddr", &Context::SetToAddr)
       .def("GetSerializationType", &Context::GetSerializationType)
       .def("SetSerializationType", &Context::SetSerializationType)
+      .def("GetFunctionName", &Context::GetFunctionName)
+      .def("SetFunctionName", &Context::SetFunctionName)
       .def("ToString", &Context::ToString);
 
   pybind11::class_<ContextRef>(m, "RpcContextRef")
@@ -77,6 +88,8 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def(pybind11::init<Context*>())
       .def(pybind11::init<const std::shared_ptr<Context>&>())
       .def("__bool__", &ContextRef::operator bool)
+      .def("CheckUsed", &ContextRef::CheckUsed)
+      .def("SetUsed", &ContextRef::SetUsed)
       .def("GetType", &ContextRef::GetType)
       .def("Timeout", &ContextRef::Timeout)
       .def("SetTimeout", &ContextRef::SetTimeout)
@@ -87,20 +100,20 @@ inline void ExportRpcContext(const pybind11::object& m) {
       .def("SetToAddr", &ContextRef::SetToAddr)
       .def("GetSerializationType", &ContextRef::GetSerializationType)
       .def("SetSerializationType", &ContextRef::SetSerializationType)
+      .def("GetFunctionName", &ContextRef::GetFunctionName)
+      .def("SetFunctionName", &ContextRef::SetFunctionName)
       .def("ToString", &ContextRef::ToString);
 }
 
-inline const pybind11::bytes& GetRpcEmptyPyBytes() {
-  static const pybind11::bytes kRpcEmptyPyBytes = pybind11::bytes("");
-  return kRpcEmptyPyBytes;
-}
+using ServiceFuncReturnType = std::tuple<aimrt::rpc::Status, std::string>;
+using ServiceFuncType = std::function<ServiceFuncReturnType(aimrt::rpc::ContextRef, const pybind11::bytes&)>;
 
 inline void PyRpcServiceBaseRegisterServiceFunc(
     aimrt::rpc::ServiceBase& service,
     std::string_view func_name,
     const std::shared_ptr<const PyTypeSupport>& req_type_support,
     const std::shared_ptr<const PyTypeSupport>& rsp_type_support,
-    std::function<std::tuple<aimrt::rpc::Status, std::string>(aimrt::rpc::ContextRef, const pybind11::bytes&)>&& service_func) {
+    ServiceFuncType&& service_func) {
   static std::vector<std::shared_ptr<const PyTypeSupport>> py_ts_vec;
   py_ts_vec.emplace_back(req_type_support);
   py_ts_vec.emplace_back(rsp_type_support);
@@ -116,29 +129,17 @@ inline void PyRpcServiceBaseRegisterServiceFunc(
           const std::string& req_buf = *static_cast<const std::string*>(req_ptr);
           std::string& rsp_buf = *static_cast<std::string*>(rsp_ptr);
 
-          // TODO，未知原因，在此处使用空字符串构造pybind11::bytes时会挂掉。但是在外面构造没有问题
-          if (req_buf.empty()) [[unlikely]] {
-            auto [status, rsp_buf_tmp] = service_func(ctx_ref, GetRpcEmptyPyBytes());
+          pybind11::gil_scoped_acquire acquire;
 
-            rsp_buf = std::move(rsp_buf_tmp);
+          auto req_buf_bytes = pybind11::bytes(req_buf);
+          auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
+          req_buf_bytes.release();
 
-            callback_f(status.Code());
-            return;
-          } else {
-            auto req_buf_bytes = pybind11::bytes(req_buf);
+          pybind11::gil_scoped_release release;
 
-            auto [status, rsp_buf_tmp] = service_func(ctx_ref, req_buf_bytes);
-
-            pybind11::gil_scoped_acquire acquire;
-            req_buf_bytes.release();
-            pybind11::gil_scoped_release release;
-
-            rsp_buf = std::move(rsp_buf_tmp);
-
-            callback_f(status.Code());
-            return;
-          }
-
+          rsp_buf = std::move(rsp_buf_tmp);
+          callback_f(status.Code());
+          return;
         } catch (const std::exception& e) {
           callback_f(AIMRT_RPC_STATUS_SVR_HANDLE_FAILED);
           return;
@@ -158,6 +159,9 @@ inline void ExportRpcServiceBase(pybind11::object m) {
 
   pybind11::class_<ServiceBase>(std::move(m), "ServiceBase")
       .def(pybind11::init<std::string_view, std::string_view>())
+      .def("RpcType", &ServiceBase::RpcType)
+      .def("ServiceName", &ServiceBase::ServiceName)
+      .def("SetServiceName", &ServiceBase::SetServiceName)
       .def("RegisterServiceFunc", &PyRpcServiceBaseRegisterServiceFunc);
 }
 
@@ -213,8 +217,27 @@ inline void ExportRpcHandleRef(pybind11::object m) {
   pybind11::class_<RpcHandleRef>(std::move(m), "RpcHandleRef")
       .def(pybind11::init<>())
       .def("__bool__", &RpcHandleRef::operator bool)
-      .def("RegisterService", &RpcHandleRef::RegisterService)
+      .def("RegisterService",
+           pybind11::overload_cast<std::string_view, aimrt::rpc::ServiceBase*>(&RpcHandleRef::RegisterService))
+      .def("RegisterService",
+           pybind11::overload_cast<aimrt::rpc::ServiceBase*>(&RpcHandleRef::RegisterService))
       .def("RegisterClientFunc", &PyRpcHandleRefRegisterClientFunc)
       .def("Invoke", &PyRpcHandleRefInvoke);
 }
+
+inline void ExportRpcProxyBase(pybind11::object m) {
+  using aimrt::rpc::ContextRef;
+  using aimrt::rpc::ProxyBase;
+  using aimrt::rpc::RpcHandleRef;
+
+  pybind11::class_<ProxyBase>(std::move(m), "ProxyBase")
+      .def(pybind11::init<RpcHandleRef, std::string_view, std::string_view>())
+      .def("RpcType", &ProxyBase::RpcType)
+      .def("ServiceName", &ProxyBase::ServiceName)
+      .def("SetServiceName", &ProxyBase::SetServiceName)
+      .def("NewContextSharedPtr", &ProxyBase::NewContextSharedPtr, pybind11::arg("ctx_ref") = ContextRef())
+      .def("GetDefaultContextSharedPtr", &ProxyBase::GetDefaultContextSharedPtr)
+      .def("SetDefaultContextSharedPtr", &ProxyBase::SetDefaultContextSharedPtr);
+}
+
 }  // namespace aimrt::runtime::python_runtime
