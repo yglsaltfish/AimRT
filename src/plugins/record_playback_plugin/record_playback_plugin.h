@@ -5,16 +5,17 @@
 
 #include "aimrt_core_plugin_interface/aimrt_core_plugin_base.h"
 #include "aimrt_module_cpp_interface/util/type_support.h"
+#include "core/util/type_support_pkg_loader.h"
 #include "record_playback_plugin/playback_action.h"
 #include "record_playback_plugin/record_action.h"
 #include "record_playback_plugin/service.h"
-#include "record_playback_plugin/type_support_pkg_loader.h"
-
 namespace aimrt::plugins::record_playback_plugin {
 
 class RecordPlaybackPlugin : public AimRTCorePluginBase {
  public:
   struct Options {
+    std::string service_name;
+
     struct TypeSupportPkg {
       std::string path;
     };
@@ -59,12 +60,12 @@ class RecordPlaybackPlugin : public AimRTCorePluginBase {
 
   std::unique_ptr<RecordPlaybackServiceImpl> service_ptr_;
 
-  std::vector<std::unique_ptr<TypeSupportPkgLoader>> type_support_pkg_loader_vec_;
+  std::vector<std::unique_ptr<runtime::core::util::TypeSupportPkgLoader>> type_support_pkg_loader_vec_;
 
   struct TypeSupportWrapper {
     const Options::TypeSupportPkg& options;
     aimrt::util::TypeSupportRef type_support_ref;
-    TypeSupportPkgLoader* loader_ptr;
+    runtime::core::util::TypeSupportPkgLoader* loader_ptr;
   };
   std::unordered_map<std::string_view, TypeSupportWrapper> type_support_map_;
 
