@@ -25,6 +25,27 @@ AimRTCore::~AimRTCore() {
   hook_task_vec_array_.clear();
 }
 
+void AimRTCore::PrintStartupInfo() const {
+  constexpr const char* aimrt_info = R"(
+  ╔═══════════════════════════════════════════════════════════╗
+  ║                                                           ║
+  ║           █████╗ ██╗███╗   ███╗██████╗ ████████╗          ║
+  ║          ██╔══██╗██║████╗ ████║██╔══██╗╚══██╔══╝          ║
+  ║          ███████║██║██╔████╔██║██████╔╝   ██║             ║
+  ║          ██╔══██║██║██║╚██╔╝██║██╔══██╗   ██║             ║
+  ║          ██║  ██║██║██║ ╚═╝ ██║██║  ██║   ██║             ║
+  ║          ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝             ║
+  ║                                                           ║
+  ║        Modern High Performance Robotics Framework         ║
+  ║        Official Website: https://aimrt.org                ║
+  ║        Documentation:    https://docs.aimrt.org           ║
+  ║        Version:          v{:<32}║
+  ╚═══════════════════════════════════════════════════════════╝
+  )";
+  constexpr const auto* version_str = util::GetAimRTVersion();
+  AIMRT_INFO(aimrt_info, version_str);
+}
+
 void AimRTCore::Initialize(const Options& options) {
   EnterState(State::kPreInit);
 
@@ -70,6 +91,7 @@ void AimRTCore::Initialize(const Options& options) {
       std::bind(&AimRTCore::GetExecutor, this, std::placeholders::_1));
   logger_manager_.Initialize(configurator_manager_.GetAimRTOptionsNode("log"));
   SetCoreLogger();
+  PrintStartupInfo();
   EnterState(State::kPostInitLog);
 
   // Init allocator
@@ -223,7 +245,7 @@ void AimRTCore::ShutdownImpl() {
 void AimRTCore::Start() {
   StartImpl();
 
-  AIMRT_INFO("AimRT start completed, will waiting for shutdown.");
+  AIMRT_INFO("AimRT startup completed, will wait for shutdown.");
 
   shutdown_promise_.get_future().wait();
   ShutdownImpl();
