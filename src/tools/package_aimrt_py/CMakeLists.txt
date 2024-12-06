@@ -2,8 +2,9 @@
 # All rights reserved.
 
 get_target_property(py_files aimrt::runtime::python_runtime PY_FILES)
-file(GLOB_RECURSE gencode_file ${PROJECT_SOURCE_DIR}/src/tools/protoc_plugin_py_gen_aimrt_py_rpc/*.py)
-list(APPEND py_files ${gencode_file})
+file(GLOB_RECURSE gencode_file CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/tools/protoc_plugin_py_gen_aimrt_py_rpc/*.py)
+file(GLOB_RECURSE ros2_gencode_file CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/tools/ros2_py_gen_aimrt_py_rpc/*.py)
+list(APPEND py_files ${gencode_file} ${ros2_gencode_file})
 
 set(AIMRT_PY_PKG_DIR ${CMAKE_BINARY_DIR}/aimrt_py_pkg)
 
@@ -14,6 +15,15 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${py_files} ${AIMRT_PY_PKG_DIR}/aimrt_py/
   COMMENT "Copying python runtime files"
   DEPENDS aimrt::runtime::python_runtime)
+
+if(AIMRT_BUILD_WITH_ROS2)
+  add_custom_target(
+    copy_ros2_python_runtime
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${AIMRT_PY_PKG_DIR}/aimrt_py/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:aimrt::runtime::python_runtime_ros2> ${AIMRT_PY_PKG_DIR}/aimrt_py/
+    COMMENT "Copying python runtime ros2 files"
+    DEPENDS aimrt::runtime::python_runtime_ros2)
+endif()
 
 add_custom_target(
   copy_ros2_plugin_proto_files
@@ -33,6 +43,10 @@ add_custom_target(
   COMMENT "Creating python package"
   DEPENDS copy_python_runtime
   WORKING_DIRECTORY ${AIMRT_PY_PKG_DIR})
+
+if(AIMRT_BUILD_WITH_ROS2)
+  add_dependencies(create_python_pkg copy_ros2_python_runtime)
+endif()
 
 if(AIMRT_BUILD_WITH_ROS2 AND AIMRT_BUILD_ROS2_PLUGIN)
   add_dependencies(create_python_pkg copy_ros2_plugin_proto_files)

@@ -44,6 +44,7 @@ cmake_dependent_option(AIMRT_BUILD_TIME_MANIPULATOR_PLUGIN "AimRT build time man
 cmake_dependent_option(AIMRT_BUILD_PARAMETER_PLUGIN "AimRT build parameter plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_PROTOBUF" OFF)
 cmake_dependent_option(AIMRT_BUILD_LOG_CONTROL_PLUGIN "AimRT build log control plugin." OFF "AIMRT_BUILD_RUNTIME;AIMRT_BUILD_WITH_PROTOBUF" OFF)
 cmake_dependent_option(AIMRT_BUILD_GRPC_PLUGIN "AimRT build grpc plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
+cmake_dependent_option(AIMRT_BUILD_PROXY_PLUGIN "AimRT build proxy plugin." OFF "AIMRT_BUILD_RUNTIME" OFF)
 
 option(AIMRT_INSTALL "Enable installation of AimRT." ON)
 
@@ -94,7 +95,10 @@ if(AIMRT_MASTER_PROJECT)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if(UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   add_compile_options(/utf-8 /wd4819)
