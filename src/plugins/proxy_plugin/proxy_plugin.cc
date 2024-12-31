@@ -208,8 +208,11 @@ void ProxyPlugin::RegisterSubChannel() {
               .topic_name = topic_meta.topic_name,
               .pkg_path = type_support_wrapper.options.path,
               .module_name = "core",
-              .msg_type_support_ref = type_support_wrapper.type_support_ref},
-          .require_cache_serialization_types = {"pb", "ros2", "json", "yaml"}};
+              .msg_type_support_ref = type_support_wrapper.type_support_ref}};
+
+      for (const auto type_list = type_support_wrapper.type_support_ref.SerializationTypesSupportedListSpan(); const auto& type : type_list) {
+        subscribe_wrapper.require_cache_serialization_types.emplace(type.str);
+      }
 
       subscribe_wrapper.callback = [this, action_raw_ptr = proxy_action.get()](
                                        MsgWrapper& msg_wrapper, std::function<void()>&& release_callback) {
