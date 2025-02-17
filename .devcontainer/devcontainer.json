@@ -1,0 +1,46 @@
+{
+    "name": "AimRT Dev Container", // 容器的名称
+    "build": {
+        "dockerfile": "Dockerfile",  // 使用当前目录下的 Dockerfile 构建镜像
+        "context": "..",            // 构建上下文（相对于 .devcontainer 文件夹）
+        "args": {                     // 可选：传递给 Dockerfile 的构建参数
+            // "VARIANT": "16-buster"
+        }
+    },
+    "workspaceFolder": "/home/ws",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/ws,type=bind",
+
+    // 设置容器运行后的行为
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "editor.tabSize": 2,
+                "editor.formatOnSave": true,
+                "terminal.integrated.shell.linux": "/bin/bash"  // 指定容器内的默认 shell
+            },
+            "extensions": [
+                "ms-vscode.cpptools",        // 添加你需要的插件
+                "ms-python.python"
+            ]
+        }
+    },
+    // 容器创建后要执行的命令 (例如安装依赖)
+    // "postCreateCommand": "pip install -r requirements.txt",
+
+    // 端口转发
+    "forwardPorts": [8000], // 将容器内的 8000 端口转发到本地
+
+    "mounts": [
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached"
+     ],
+
+
+    "remoteUser": "vscode",  // 以哪个用户身份在容器内运行 (通常是 vscode 或 root)
+    "features": { // 使用预定义的特性 (beta)
+        "ghcr.io/devcontainers/features/common-utils": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/docker-in-docker:2.12.0": {}
+    }
+}
