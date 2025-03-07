@@ -19,6 +19,7 @@
 #include "aimrt_module_c_interface/rpc/rpc_status_base.h"
 #include "aimrt_module_c_interface/util/buffer_base.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_context.h"
+#include "aimrt_module_cpp_interface/rpc/rpc_handle.h"
 #include "aimrt_module_cpp_interface/rpc/rpc_status.h"
 #include "core/rpc/rpc_backend_tools.h"
 #include "core/rpc/rpc_invoke_wrapper.h"
@@ -163,9 +164,9 @@ bool GrpcRpcBackend::RegisterServiceFunc(
       return false;
     }
 
-    // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /rpc/aimrt.protocols.example.ExampleService/GetBarData
-    // ros2:/example_ros2/srv/RosTestRpc -> /rpc/example_ros2/srv/RosTestRpc
-    auto pattern = "/rpc" + std::string(GetRealFuncName(func_name));
+    // pb:/aimrt.protocols.example.ExampleService/GetBarData -> /aimrt.protocols.example.ExampleService/GetBarData
+    // ros2:/example_ros2/srv/RosTestRpc -> /example_ros2/srv/RosTestRpc
+    auto pattern = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
 
     plugins::grpc_plugin::server::HttpHandle http_handle =
         [this, &service_func_wrapper](
@@ -317,9 +318,13 @@ bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrap
 
   auto find_client_option = std::ranges::find_if(
       options_.clients_options,
-      [func_name = GetRealFuncName(info.func_name)](const Options::ClientOptions& client_option) {
+      [func_name = info.func_name](const Options::ClientOptions& client_option) {
         try {
-          return std::regex_match(func_name.begin(), func_name.end(), std::regex(client_option.func_name, std::regex::ECMAScript));
+          auto real_func_name = std::string(rpc::GetFuncNameWithoutPrefix(func_name));
+          return std::regex_match(func_name.begin(), func_name.end(),
+                                  std::regex(client_option.func_name, std::regex::ECMAScript)) ||
+                 std::regex_match(real_func_name.begin(), real_func_name.end(),
+                                  std::regex(client_option.func_name, std::regex::ECMAScript));
         } catch (const std::exception& e) {
           AIMRT_WARN("Regex get exception, expr: {}, string: {}, exception info: {}",
                      client_option.func_name, func_name, e.what());
@@ -329,11 +334,10 @@ bool GrpcRpcBackend::RegisterClientFunc(const runtime::core::rpc::ClientFuncWrap
 
   if (find_client_option == options_.clients_options.end()) {
     AIMRT_WARN("Server url is not set for func: {}", info.func_name);
-    return false;
+  } else {
+    // /aimrt.protocols.example.ExampleService/GetBarData -> 127.0.0.1:8080
+    client_server_url_map_.emplace(rpc::GetFuncNameWithoutPrefix(info.func_name), find_client_option->server_url);
   }
-
-  // /aimrt.protocols.example.ExampleService/GetBarData -> 127.0.0.1:8080
-  client_server_url_map_.emplace(GetRealFuncName(info.func_name), find_client_option->server_url);
 
   return true;
 }
@@ -348,7 +352,7 @@ void GrpcRpcBackend::Invoke(
     }
 
     const auto& info = client_invoke_wrapper_ptr->info;
-    auto real_func_name = GetRealFuncName(info.func_name);
+    auto real_func_name = rpc::GetFuncNameWithoutPrefix(info.func_name);
 
     // check ctx, to_addr priority: ctx > server_url
     auto to_addr = client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_TO_ADDR);
@@ -369,7 +373,7 @@ void GrpcRpcBackend::Invoke(
       return;
     }
     if (url->path.empty()) {
-      url->path = "/rpc" + std::string(GetRealFuncName(info.func_name));
+      url->path = std::string(rpc::GetFuncNameWithoutPrefix(info.func_name));
     }
     AIMRT_TRACE("Http2 cli session send request, remote addr {}, path: {}",
                 url->host, url->path);
@@ -404,14 +408,16 @@ void GrpcRpcBackend::Invoke(
             req_ptr->AddHeader("user-agent", std::string("grpc-c++-aimrt/") + GetAimRTVersion());
 
             auto timeout = client_invoke_wrapper_ptr->ctx_ref.Timeout();
-            if (timeout <= chrono::nanoseconds(0)) {
+            if (timeout <= chrono::nanoseconds(0)) [[unlikely]] {
               timeout = chrono::nanoseconds::max();
             }
             req_ptr->AddHeader("grpc-timeout", grpc::FormatTimeout(timeout));
 
-            std::vector<std::string_view> meta_keys = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeys();
-            for (const auto& item : meta_keys) {
-              req_ptr->AddHeader(item, client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(item));
+            auto [meta_key_vals_array, meta_key_vals_array_len] = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeyValsArray();
+            for (size_t ii = 0; ii < meta_key_vals_array_len; ii += 2) {
+              auto key = aimrt::util::ToStdStringView(meta_key_vals_array[ii]);
+              auto val = aimrt::util::ToStdStringView(meta_key_vals_array[ii + 1]);
+              req_ptr->AddHeader(key, val);
             }
 
             std::string serialization_type(client_invoke_wrapper_ptr->ctx_ref.GetSerializationType());
