@@ -258,14 +258,14 @@ std::future<void> AimRTCore::AsyncStart() {
 
   AIMRT_INFO("AimRT start completed, will waiting for async shutdown.");
 
-  std::promise<void> end_running_promise;
-  auto fu = end_running_promise.get_future();
-
-  std::thread([this, end_running_promise{std::move(end_running_promise)}]() mutable {
+  std::packaged_task<void()> task([this]() {
     shutdown_promise_.get_future().wait();
     ShutdownImpl();
-    end_running_promise.set_value();
-  }).detach();
+  });
+
+  auto fu = task.get_future();
+
+  std::thread(std::move(task)).detach();
 
   return fu;
 }
@@ -295,7 +295,6 @@ void AimRTCore::SetCoreLogger() {
       [core_logger_ptr](
           uint32_t lvl,
           uint32_t line,
-          uint32_t column,
           const char* file_name,
           const char* function_name,
           const char* log_data,
@@ -303,7 +302,7 @@ void AimRTCore::SetCoreLogger() {
         core_logger_ptr->log(
             core_logger_ptr->impl,
             static_cast<aimrt_log_level_t>(lvl),
-            line, column, file_name, function_name,
+            line, file_name, function_name,
             log_data, log_data_size);  //
       };
 }
