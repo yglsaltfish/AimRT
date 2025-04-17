@@ -36,18 +36,18 @@ jobs:
           path: |
             /var/cache/apt/archives
             /var/lib/apt/lists
-          key: ${{ runner.os }}-apt-${{ inputs.tool_chain }}-v1-${{ hashFiles('**/Dockerfile', '**/setup.py', '**/requirements.txt') }}
+          key: ${{ runner.os }}-apt-${{ inputs.tool_chain }}-v1
           restore-keys: |
-            ${{ runner.os }}-apt-${{ inputs.tool_chain }}-v1-
+            ${{ runner.os }}-apt-${{ inputs.tool_chain }}-v1
 
       - name: Cache pip packages
         uses: actions/cache@v4
         id: cache-pip
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-v1-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
+          key: ${{ runner.os }}-pip-v1
           restore-keys: |
-            ${{ runner.os }}-pip-v1-
+            ${{ runner.os }}-pip-v1
 
       - name: Set up ROS 2
         uses: ros-tooling/setup-ros@v0.7
@@ -89,12 +89,12 @@ jobs:
               echo "CC=$(which gcc-$version)" >> $GITHUB_ENV
               echo "CXX=$(which g++-$version)" >> $GITHUB_ENV
           elif [[ "${{ inputs.tool_chain }}" =~ clang-([0-9.]+) ]]; then
-              apt-get install lsb-release wget software-properties-common gnupg -y
+              apt install lsb-release wget software-properties-common gnupg -y
               version="${BASH_REMATCH[1]}"
               echo $version
               wget https://apt.llvm.org/llvm.sh
               chmod +x llvm.sh
-              ./llvm.sh ${version} all # Assuming 'all' installs clang, clang++, etc.
+              ./llvm.sh ${version}
               clang-$version --version
               clang++-$version --version
               echo "CC=$(which clang-$version)" >> $GITHUB_ENV
