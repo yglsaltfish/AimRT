@@ -15,7 +15,6 @@ on:
         required: true
         type: string
         default: gcc-11
-
 jobs:
   test:
     runs-on: ${{ inputs.run_platform }}
@@ -28,6 +27,27 @@ jobs:
       - name: Get short sha
         id: slug
         run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        id: cache-apt
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ inputs.tool_chain }}-v1-${{ hashFiles('**/Dockerfile', '**/setup.py', '**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-${{ inputs.tool_chain }}-v1-
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        id: cache-pip
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-v1-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-v1-
 
       - name: Set up ROS 2
         uses: ros-tooling/setup-ros@v0.7
@@ -44,35 +64,37 @@ jobs:
         with:
           toolchain: 1.75.0
 
-      - name: Install dependencies for build
+      - name: Install dependencies via apt
         shell: bash
         run: |
-          apt install curl wget python3.10  python3-pip  make  vim  libglib2.0-dev  libcurl4-openssl-dev  python3-venv  zip  lcov  bc git build-essential  autoconf  libtool  pkg-config doxygen libacl1-dev -y
+          apt-get update -y
+          apt-get install curl wget python3.10 python3-pip make vim libglib2.0-dev libcurl4-openssl-dev python3-venv zip lcov bc git build-essential autoconf libtool pkg-config doxygen libacl1-dev -y
+
+      - name: Install dependencies via pip
+        shell: bash
+        run: |
           pip install pyinstaller jinja2 setuptools==74.1.2 pyyaml sphinx sphinx_rtd_theme sphinx-design myst-parser build linkify-it-py
 
-
-      - name: set up toolchain
+      - name: set up toolchain (GCC/Clang)
         shell: bash
         run: |
           if [[ "${{ inputs.tool_chain }}" =~ gcc-([0-9.]+) ]]; then
               version="${BASH_REMATCH[1]}"
-              apt-get update -y
               apt-get install software-properties-common -y
               add-apt-repository ppa:ubuntu-toolchain-r/test -y
               apt-get update -y
               apt-get install gcc-$version g++-$version -y
-              echo "Extracted version: $version"
               gcc-$version --version
               g++-$version --version
               echo "CC=$(which gcc-$version)" >> $GITHUB_ENV
               echo "CXX=$(which g++-$version)" >> $GITHUB_ENV
           elif [[ "${{ inputs.tool_chain }}" =~ clang-([0-9.]+) ]]; then
-              apt install lsb-release wget software-properties-common gnupg -y
+              apt-get install lsb-release wget software-properties-common gnupg -y
               version="${BASH_REMATCH[1]}"
               echo $version
               wget https://apt.llvm.org/llvm.sh
               chmod +x llvm.sh
-              ./llvm.sh ${version}
+              ./llvm.sh ${version} all # Assuming 'all' installs clang, clang++, etc.
               clang-$version --version
               clang++-$version --version
               echo "CC=$(which clang-$version)" >> $GITHUB_ENV
