@@ -58,7 +58,7 @@ jobs:
               version="${BASH_REMATCH[1]}"
               apt-get update -y
               apt-get install software-properties-common -y
-              add-apt-repository ppa:ubuntu-toolchain-r/test -y
+              add-apt-repository ppa:ubuntu-toolchain-r -y
               apt-get update -y
               apt-get install gcc-$version g++-$version -y
               echo "Extracted version: $version"
