@@ -15,6 +15,7 @@ struct MetaData {
   uint32_t version = 0;
 
   std::vector<TopicMeta> topics;
+  YAML::Node extra_attributes;
 
   struct FileMeta {
     std::string path;
@@ -35,6 +36,12 @@ struct convert<aimrt::plugins::record_playback_plugin::MetaData> {
 
     node["version"] = rhs.version;
 
+    if (rhs.extra_attributes && !rhs.extra_attributes.IsNull()) {
+      node["extra_attributes"] = rhs.extra_attributes;
+    } else {
+      node["extra_attributes"] = YAML::Node(YAML::NodeType::Map);
+    }
+
     node["topics"] = YAML::Node();
     for (const auto& topic : rhs.topics) {
       Node topic_node;
@@ -52,7 +59,6 @@ struct convert<aimrt::plugins::record_playback_plugin::MetaData> {
       file_node["start_timestamp"] = file.start_timestamp;
       node["files"].push_back(file_node);
     }
-
     return node;
   }
 
@@ -60,6 +66,12 @@ struct convert<aimrt::plugins::record_playback_plugin::MetaData> {
     if (!node.IsMap()) return false;
 
     rhs.version = node["version"].as<uint32_t>();
+
+    if (node["extra_attributes"]) {
+      rhs.extra_attributes = node["extra_attributes"];
+    } else {
+      rhs.extra_attributes = YAML::Node(YAML::NodeType::Null);
+    }
 
     if (node["topics"] && node["topics"].IsSequence()) {
       for (const auto& topic_node : node["topics"]) {

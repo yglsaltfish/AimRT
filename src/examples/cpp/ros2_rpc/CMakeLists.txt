@@ -15,11 +15,16 @@ add_subdirectory(module/normal_rpc_future_client_module)
 add_subdirectory(module/normal_rpc_co_server_module)
 add_subdirectory(module/normal_rpc_sync_server_module)
 add_subdirectory(module/normal_rpc_async_server_module)
+add_subdirectory(module/benchmark_rpc_client_module)
 
 # pkg
 add_subdirectory(pkg/ros2_rpc_pkg)
 add_subdirectory(pkg/ros2_rpc_client_pkg)
 add_subdirectory(pkg/ros2_rpc_server_pkg)
+
+# app
+add_subdirectory(app/normal_ros2_rpc_client_app)
+add_subdirectory(app/normal_ros2_rpc_server_app)
 
 # install
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")

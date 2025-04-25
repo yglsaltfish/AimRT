@@ -6,7 +6,7 @@ include(FetchContent)
 message(STATUS "get mcap ...")
 
 set(MCAP_VERSION
-    "1.4.1"
+    "2.0.0"
     CACHE STRING "MCAP version to use")
 set(MCAP_TAG "releases/cpp/v${MCAP_VERSION}")
 set(mcap_DOWNLOAD_URL
@@ -36,7 +36,7 @@ set(zstd_DOWNLOAD_URL
 if(zstd_LOCAL_SOURCE)
   FetchContent_Declare(
     zstd
-    SOURCE_DIR ${ZSTD_LOCAL_SOURCE}
+    SOURCE_DIR ${zstd_LOCAL_SOURCE}
     OVERRIDE_FIND_PACKAGE)
 else()
   FetchContent_Declare(

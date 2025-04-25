@@ -22,6 +22,7 @@ option(AIMRT_BUILD_RUNTIME "AimRT build runtime." ON)
 option(AIMRT_BUILD_CLI_TOOLS "AimRT build aimrt command line tools." OFF)
 option(AIMRT_BUILD_WITH_PROTOBUF "AimRT build with protobuf." ON)
 option(AIMRT_BUILD_WITH_ROS2 "AimRT build with ros2." OFF)
+option(AIMRT_BUILD_PROTOCOLS "AimRT build protocols." ON)
 
 option(AIMRT_INSTALL "Enable installation of AimRT." ON)
 
@@ -100,9 +101,10 @@ if(AIMRT_MASTER_PROJECT)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   add_compile_options(/utf-8 /wd4819)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
 endif()
@@ -116,7 +118,7 @@ if(AIMRT_BUILD_DOCUMENT AND UNIX)
   message(STATUS "gen document ...")
   set(AIMRT_DOC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/document)
   execute_process(COMMAND ${AIMRT_DOC_DIR}/doxygen/build.sh ${AIMRT_DOC_DIR}/doxygen WORKING_DIRECTORY ${AIMRT_DOC_DIR}/doxygen)
-  execute_process(COMMAND ${AIMRT_DOC_DIR}/sphinx-cn/build.sh ${AIMRT_DOC_DIR}/sphinx-cn WORKING_DIRECTORY ${AIMRT_DOC_DIR}/sphinx-cn)
+  execute_process(COMMAND ${AIMRT_DOC_DIR}/sphinx-cn/build.sh ${AIMRT_DOC_DIR}/sphinx-cn --single-version WORKING_DIRECTORY ${AIMRT_DOC_DIR}/sphinx-cn)
 endif()
 
 # Include cmake module
@@ -225,7 +227,6 @@ if(AIMRT_BUILD_RUNTIME)
   endif()
 
   if(AIMRT_BUILD_RECORD_PLAYBACK_PLUGIN)
-    include(GetSqlite)
     include(GetMcap)
   endif()
 
@@ -279,6 +280,11 @@ if(AIMRT_BUILD_RUNTIME)
     include(GetBoost)
     include(GetNghttp2)
   endif()
+
+  if(AIMRT_BUILD_ECHO_PLUGIN)
+    include(GetJsonCpp)
+  endif()
+
 endif()
 
 # Add subdirectory
@@ -306,9 +312,11 @@ message("\n  AIMRT CMake Options/Info:")
 list(
   APPEND
   aimrt_vars
+  AIMRT_RUNTIME_VERSION
   AIMRT_BUILD_TESTS
   AIMRT_BUILD_DOCUMENT
   AIMRT_BUILD_RUNTIME
+  AIMRT_BUILD_PROTOCOLS
   AIMRT_BUILD_CLI_TOOLS
   AIMRT_BUILD_WITH_PROTOBUF
   AIMRT_BUILD_WITH_ROS2
