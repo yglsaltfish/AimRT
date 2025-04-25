@@ -14,12 +14,11 @@
 namespace aimrt::common::net {
 
 /**
- * @brief Asio Executor Tool
- * @note When using, first call RegisterSvrFunc to register the start and stop methods of the subservice.
- * Then call the Start method to start asynchronously.
- * And then call the join method to wait for the kill signal or other asynchronous programs to call the Stop method to end the entire service.
- * It will not call the asio stop method, but only call the registered stop method, and wait for each subservice to stop by itself.
- * 'signals_' also assumes the function of work_guard, ensuring that io will not exit before there is an explicit Stop.
+ * @brief asio执行工具
+ * @note 使用时先调用RegisterSvrFunc注册子服务的启动、停止方法，
+ * 然后调用Start方法异步启动，之后可以调用join方法，等待kill信号或其他异步程序里调用Stop方法结束整个服务。
+ * 并不会调用asio的stop方法，只会调用注册的stop方法，等各个子服务自己停止。
+ * signals_同时承担了work_guard的功能，保证没有显式Stop之前io不会退出。
  */
 class AsioExecutor {
  public:
@@ -42,8 +41,8 @@ class AsioExecutor {
   AsioExecutor& operator=(const AsioExecutor&) = delete;
 
   /**
-   * @brief Register svr start method
-   * @note The earlier the start func is registered, the earlier it will be executed.
+   * @brief 注册svr的start方法
+   * @note 越早注册的start func越早执行
    * @param[in] start_func
    */
   void RegisterSvrStartFunc(std::function<void()>&& start_func) {
@@ -54,8 +53,8 @@ class AsioExecutor {
   }
 
   /**
-   * @brief Register svr stop method
-   * @note The earlier the stop func is registered, the later it will be executed.
+   * @brief 注册svr的stop方法
+   * @note 越早注册的stop func越晚执行
    * @param[in] stop_func
    */
   void RegisterSvrStopFunc(std::function<void()>&& stop_func) {
@@ -66,10 +65,10 @@ class AsioExecutor {
   }
 
   /**
-   * @brief Register svr start/stop method
-   * @note The earlier the start func is registered, the earlier it is executed. The earlier the stop func is registered, the later it is executed.
-   * @param[in] start_func
-   * @param[in] stop_func
+   * @brief 注册svr的start、stop方法
+   * @note 越早注册的start func越早执行，越早注册的stop func越晚执行
+   * @param[in] start_func 子服务启动方法，一般在其中起一个启动协程
+   * @param[in] stop_func 子服务结束方法，需要保证可以重复调用
    */
   void RegisterSvrFunc(std::function<void()>&& start_func, std::function<void()>&& stop_func) {
     RegisterSvrStartFunc(std::move(start_func));
@@ -77,8 +76,8 @@ class AsioExecutor {
   }
 
   /**
-   * @brief Start running
-   * @note Asynchronously, the registered start method will be called and the specified number of threads will be started.
+   * @brief 开始运行
+   * @note 异步，会调用注册的start方法并启动指定数量的线程
    */
   void Start() {
     if (std::atomic_exchange(&state_, State::kStart) != State::kPreStart) [[unlikely]]
@@ -105,8 +104,8 @@ class AsioExecutor {
   }
 
   /**
-   * @brief Join
-   * @note Block until all threads exit
+   * @brief join
+   * @note 阻塞直到所有线程退出
    */
   void Join() {
     for (auto itr = threads_.begin(); itr != threads_.end();) {
@@ -116,14 +115,14 @@ class AsioExecutor {
   }
 
   /**
-   * @brief Shutdown
-   * @note Asynchronous, the registered stop method will be called
+   * @brief 停止
+   * @note 异步，会调用注册的stop方法
    */
   void Shutdown() {
     if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown) [[unlikely]]
       return;
 
-    // There is no need to call 'io_.stop()'. When all tasks on io_ are completed, it will stop automatically.
+    // 并不需要调用io_.stop()。当io_上所有任务都运行完毕后，会自动停止
     std::for_each(stop_func_vec_.rbegin(), stop_func_vec_.rend(),
                   [](const std::function<void()>& f) {
                     if (f) f();
@@ -135,7 +134,7 @@ class AsioExecutor {
   }
 
   /**
-   * @brief Allow receiving a stop signal
+   * @brief 接收停止信号
    *
    */
   void EnableStopSignal() {
@@ -156,8 +155,16 @@ class AsioExecutor {
     });
   }
 
+  /**
+   * @brief 获取io_ctx
+   * @return io_context
+   */
   auto IO() const { return io_ptr_; }
 
+  /**
+   * @brief 获取线程数
+   * @return uint32_t
+   */
   uint32_t ThreadsNum() const { return threads_num_; }
 
  private:

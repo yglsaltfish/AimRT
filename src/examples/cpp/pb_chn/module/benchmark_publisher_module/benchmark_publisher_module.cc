@@ -139,7 +139,6 @@ bool BenchmarkPublisherModule::Initialize(aimrt::CoreRef core) {
 
 bool BenchmarkPublisherModule::Start() {
   try {
-    run_flag_ = true;
     publish_control_executor_.Execute(std::bind(&BenchmarkPublisherModule::MainLoop, this));
   } catch (const std::exception& e) {
     AIMRT_ERROR("Start failed, {}", e.what());
@@ -152,10 +151,9 @@ bool BenchmarkPublisherModule::Start() {
 
 void BenchmarkPublisherModule::Shutdown() {
   try {
-    if (run_flag_) {
-      run_flag_ = false;
-      stop_sig_.get_future().wait();
-    }
+    run_flag_ = false;
+
+    stop_sig_.get_future().wait();
 
   } catch (const std::exception& e) {
     AIMRT_ERROR("Shutdown failed, {}", e.what());

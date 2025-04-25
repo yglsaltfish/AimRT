@@ -4,7 +4,6 @@
 #pragma once
 
 #include <cassert>
-#include <cinttypes>
 #include <functional>
 
 #include "core/logger/log_data_wrapper.h"
@@ -122,6 +121,10 @@ class LogFormatter {
               estimated_size_ += 8;
               format_handlers_.emplace_back(FormatLine);
               break;
+            case 'C':  // column number (20)
+              estimated_size_ += 4;
+              format_handlers_.emplace_back(FormatColumn);
+              break;
             case 'F':  // function name (TestFunc)
               estimated_size_ += 32;
               format_handlers_.emplace_back(FormatFunction);
@@ -169,7 +172,7 @@ class LogFormatter {
 
     char micro_str[WIDTH + 1];
 
-    sprintf(micro_str, "%06" PRIu64, aimrt::common::util::GetTimestampUs(data.t) % 1000000);
+    sprintf(micro_str, "%06llu", aimrt::common::util::GetTimestampUs(data.t) % 1000000);
 
     buffer.append(micro_str, WIDTH);
   }
@@ -254,6 +257,11 @@ class LogFormatter {
   // format line number
   static void FormatLine(const LogDataWrapper& data, std::string& buffer) {
     buffer.append(std::to_string(data.line));
+  }
+
+  // format column number
+  static void FormatColumn(const LogDataWrapper& data, std::string& buffer) {
+    buffer.append(std::to_string(data.column));
   }
 
   // format function name

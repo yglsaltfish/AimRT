@@ -3,7 +3,6 @@
 
 #include "topic_logger_plugin/topic_logger_backend.h"
 #include "aimrt_module_protobuf_interface/channel/protobuf_channel.h"
-#include "util/string_util.h"
 
 namespace YAML {
 template <>
@@ -17,7 +16,6 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
     node["interval_ms"] = rhs.interval_ms;
     node["timer_executor_name"] = rhs.timer_executor_name;
     node["topic_name"] = rhs.topic_name;
-    node["max_msg_size"] = rhs.max_msg_size;
 
     return node;
   }
@@ -29,8 +27,6 @@ struct convert<aimrt::plugins::topic_logger_plugin::TopicLoggerBackend::Options>
       rhs.interval_ms = node["interval_ms"].as<uint32_t>();
     if (node["module_filter"])
       rhs.module_filter = node["module_filter"].as<std::string>();
-    if (node["max_msg_size"])
-      rhs.max_msg_size = node["max_msg_size"].as<size_t>();
 
     rhs.topic_name = node["topic_name"].as<std::string>();
     rhs.timer_executor_name = node["timer_executor_name"].as<std::string>();
@@ -55,7 +51,6 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
 
   auto timer_task = [this]() {
     std::queue<aimrt::protocols::topic_logger::SingleLogData> tmp_queue;
-    uint64_t cur_sequence_num;
     {
       std::unique_lock<std::mutex> lck(mutex_);
       // if queue is empty, then stop timer to avoid unnecessary work
@@ -65,13 +60,9 @@ void TopicLoggerBackend::Initialize(YAML::Node options_node) {
         return;
       }
       queue_.swap(tmp_queue);
-      cur_sequence_num = sequence_num_++;
     }
 
     aimrt::protocols::topic_logger::LogData log_data;
-    log_data.mutable_header()->set_time_stamp(aimrt::common::util::GetCurTimestampNs());
-    log_data.mutable_header()->set_sequence_num(cur_sequence_num);
-
     while (!tmp_queue.empty()) {
       auto& single_log_data = tmp_queue.front();
       log_data.mutable_logs()->Add(std::move(single_log_data));
@@ -105,12 +96,10 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     single_log_data.set_time_point(log_data_wrapper.t.time_since_epoch().count());
     single_log_data.set_level(static_cast<::aimrt::protocols::topic_logger::LogLevel>(log_data_wrapper.lvl));
     single_log_data.set_line(log_data_wrapper.line);
+    single_log_data.set_column(log_data_wrapper.column);
     single_log_data.set_file_name(log_data_wrapper.file_name);
     single_log_data.set_function_name(log_data_wrapper.function_name);
-
-    const auto* log_data_ptr = log_data_wrapper.log_data;
-    size_t used_msg_size = common::util::SafeUtf8TruncationLength(log_data_ptr, log_data_wrapper.log_data_size, max_msg_size_);
-    single_log_data.set_message(log_data_ptr, used_msg_size);
+    single_log_data.set_message(log_data_wrapper.log_data, log_data_wrapper.log_data_size);
 
     {
       std::unique_lock<std::mutex> lck(mutex_);
@@ -128,7 +117,6 @@ void TopicLoggerBackend::Log(const runtime::core::logger::LogDataWrapper& log_da
     (void)fprintf(stderr, "Log get exception: %s\n", e.what());
   }
 }
-
 bool TopicLoggerBackend::CheckLog(const runtime::core::logger::LogDataWrapper& log_data_wrapper) {
   {
     std::shared_lock lock(module_filter_map_mutex_);

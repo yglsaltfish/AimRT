@@ -17,7 +17,6 @@
 #include "grpc_plugin/http2/server_session.h"
 #include "grpc_plugin/server/options.h"
 #include "net/http_dispatcher.h"
-#include "util/string_util.h"
 
 namespace aimrt::plugins::grpc_plugin::server {
 
@@ -73,7 +72,7 @@ class Connection : public std::enable_shared_from_this<Connection> {
         std::atomic_exchange(&state_, ConnectionState::kStart) == ConnectionState::kInit,
         "Method can only be called when state is 'Init'");
 
-    remote_addr_ = aimrt::common::util::SSToString(socket_.remote_endpoint());
+    remote_addr_ = socket_.remote_endpoint().address().to_string();
 
     auto self = this->shared_from_this();
 
@@ -89,8 +88,6 @@ class Connection : public std::enable_shared_from_this<Connection> {
                 co_await SendToRemote();  // Send some http2 data to client
                 continue;
               }
-
-              tick_has_data_ = true;
 
               for (auto&& req_ptr_ref : full_request_list) {
                 auto req_ptr = std::move(req_ptr_ref);
@@ -109,8 +106,6 @@ class Connection : public std::enable_shared_from_this<Connection> {
                   co_await SendToRemote();
                   continue;
                 }
-
-                req_ptr->AddHeader("Remote-Endpoint", remote_addr_);  // To trace the request
 
                 asio::co_spawn(
                     io_ptr_->get_executor(),

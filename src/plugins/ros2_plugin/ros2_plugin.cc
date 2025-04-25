@@ -3,7 +3,6 @@
 
 #include "ros2_plugin/ros2_plugin.h"
 #include "core/aimrt_core.h"
-#include "rcl/logging.h"
 #include "ros2_plugin/global.h"
 #include "ros2_plugin/ros2_channel_backend.h"
 #include "ros2_plugin/ros2_rpc_backend.h"
@@ -21,7 +20,6 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2Plugin::Options> {
     if (rhs.executor_type == "MultiThreaded") {
       node["executor_thread_num"] = rhs.executor_thread_num;
     }
-    node["auto_initialize_logging"] = rhs.auto_initialize_logging;
 
     return node;
   }
@@ -36,10 +34,6 @@ struct convert<aimrt::plugins::ros2_plugin::Ros2Plugin::Options> {
 
     if (rhs.executor_type == "MultiThreaded" && node["executor_thread_num"])
       rhs.executor_thread_num = node["executor_thread_num"].as<uint32_t>();
-
-    if (node["auto_initialize_logging"]) {
-      rhs.auto_initialize_logging = node["auto_initialize_logging"].as<bool>();
-    }
 
     return true;
   }
@@ -59,9 +53,8 @@ bool Ros2Plugin::Initialize(runtime::core::AimRTCore* core_ptr) noexcept {
     }
 
     init_flag_ = true;
-    rclcpp::InitOptions op;
 
-    op.auto_initialize_logging(options_.auto_initialize_logging);
+    rclcpp::InitOptions op;
     op.shutdown_on_signal = false;
 
     if (!rclcpp::ok()) {
