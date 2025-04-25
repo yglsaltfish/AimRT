@@ -34,21 +34,22 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
       std::function<void(const Udp::endpoint&, const std::shared_ptr<Streambuf>&)>;
 
   struct Options {
-    /// Listening address
+    /// 监听的地址
     Udp::endpoint ep = Udp::endpoint{boost::asio::ip::address_v4(), 53927};
 
-    /// Maximum number of connections
+    /// 最大连接数
     size_t max_session_num = 1000000;
 
-    /// Managing coroutine timer intervals
+    /// 管理协程定时器间隔
     std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(10);
 
-    /// Maximum time without data
+    /// 最长无数据时间
     std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(300);
 
-    /// The maximum length of each packet. Cannot be greater than 65507
+    /// 每包最大长度。不可大于65507
     size_t max_package_size = 1024;
 
+    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -285,7 +286,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
 
       auto self = shared_from_this();
 
-      // Timer co
+      // 定时器协程
       boost::asio::co_spawn(
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
@@ -297,7 +298,7 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
                 if (tick_has_data_) {
                   tick_has_data_ = false;
                 } else {
-                  AIMRT_TRACE(
+                  AIMRT_WARN(
                       "udp svr session exit due to timeout({}ms), addr {}.",
                       std::chrono::duration_cast<std::chrono::milliseconds>(session_options_ptr_->max_no_data_duration).count(),
                       aimrt::common::util::SSToString(remote_ep_));
@@ -372,16 +373,16 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
     Strand session_mgr_strand_;
     Timer timer_;
 
-    // Log handle
+    // 日志打印句柄
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-    // Msg processing handle
+    // msg处理句柄
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-    // Options
+    // 配置
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // State
+    // 状态
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -405,19 +406,19 @@ class AsioUdpServer : public std::enable_shared_from_this<AsioUdpServer> {
   Strand socket_strand_;
   Udp::socket sock_;
 
-  // Log handle
+  // 日志打印句柄
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // Msg processing handle
+  // msg处理句柄
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-  // Options
+  // 配置
   Options options_;
 
-  // State
+  // 状态
   std::atomic<State> state_ = State::kPreInit;
 
-  // Session management
+  // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::unordered_map<Udp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };

@@ -5,14 +5,13 @@
 
 #include <atomic>
 #include <chrono>
-#include <cstddef>
 #include <functional>
 #include <list>
 #include <memory>
-#include <utility>
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
+#include <utility>
 
 #include "net/http_dispatcher.h"
 #include "util/log_util.h"
@@ -52,22 +51,22 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
       std::chrono::nanoseconds)>;
 
   struct Options {
-    /// Listening address
+    /// 监听的地址
     Tcp::endpoint ep = Tcp::endpoint{boost::asio::ip::address_v4(), 50080};
 
-    /// Maximum number of connections
+    /// 最大连接数
     size_t max_session_num = 1000000;
 
-    /// Managing coroutine timer intervals
+    /// 管理协程定时器间隔
     std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(5);
 
-    /// Maximum time without data
+    /// 最长无数据时间
     std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(60);
 
-    /// Static web page path, supports relative path, requires index.html to exist in the directory.
-    /// If empty, it means static web page function is not supported
+    /// 静态网页路径，支持相对路径，要求该目录下存在index.html。为空表示不支持静态网页功能
     std::string doc_root;
 
+    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -311,7 +310,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
       auto self = this->shared_from_this();
 
-      // Processing co
+      // 请求处理协程
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
@@ -366,7 +365,6 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
                 // 处理handle类请求
                 const auto& handle = http_dispatcher_ptr_->GetHttpHandle(url_struct->path);
                 if (handle) {
-                  req.set("Remote-Endpoint", RemoteAddr());  // To trace the request
                   co_await handle(self, req);
                   continue;
                 }
@@ -473,7 +471,7 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
           },
           boost::asio::detached);
 
-      // Timer co
+      // 定时器协程
       boost::asio::co_spawn(
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
@@ -774,16 +772,16 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
     Strand session_mgr_strand_;
     Timer timer_;
 
-    // Log handle
+    // 日志打印句柄
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
     // Dispatcher
     std::shared_ptr<Dispatcher> http_dispatcher_ptr_;
 
-    // Options
+    // 配置
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // State
+    // 状态
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -802,24 +800,24 @@ class AsioHttpServer : public std::enable_shared_from_this<AsioHttpServer> {
 
   // IO CTX
   std::shared_ptr<IOCtx> io_ptr_;
-  Strand mgr_strand_;       // Session pool operation strand
-  Tcp::acceptor acceptor_;  // Listener
-  Timer acceptor_timer_;    // The sleep timer when the connection is full
-  Timer mgr_timer_;         // Timer to manage session pool
+  Strand mgr_strand_;       // session池操作strand
+  Tcp::acceptor acceptor_;  // 监听器
+  Timer acceptor_timer_;    // 连接满时监听器的sleep定时器
+  Timer mgr_timer_;         // 管理session池的定时器
 
-  // Log handle
+  // 日志打印句柄
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
   // Dispatcher
   std::shared_ptr<Session::Dispatcher> http_dispatcher_ptr_;
 
-  // Options
+  // 配置
   Options options_;
 
-  // State
+  // 状态
   std::atomic<State> state_ = State::kPreInit;
 
-  // Session management
+  // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::list<std::shared_ptr<Session>> session_ptr_list_;  // session池
 };

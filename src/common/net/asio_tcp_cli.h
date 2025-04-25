@@ -31,15 +31,16 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
   using MsgHandle = std::function<void(const std::shared_ptr<Streambuf>&)>;
 
   struct Options {
-    /// Server address
+    /// 服务端地址
     Tcp::endpoint svr_ep;
 
-    /// Timer Interval
+    /// 定时器间隔
     std::chrono::nanoseconds heart_beat_time = std::chrono::seconds(60);
 
-    /// Maximum package size: up to 10m
+    /// 包最大尺寸，最大10m
     uint32_t max_recv_size = 1024 * 1024 * 10;
 
+    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -129,7 +130,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
   bool IsRunning() const { return state_.load() == State::kStart; }
 
  private:
-  // | 2byte magicnum | 4byte msglen |
+  // 包头结构：| 2byte magicnum | 4byte msglen |
   static constexpr size_t kHeadSize = 6;
   static constexpr char kHeadByte1 = 'Y';
   static constexpr char kHeadByte2 = 'T';
@@ -177,6 +178,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
 
       auto self = shared_from_this();
 
+      // 启动协程
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
@@ -187,7 +189,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
               co_await sock_.async_connect(session_options_ptr_->svr_ep,
                                            boost::asio::use_awaitable);
 
-              // Sender co
+              // 发送协程
               boost::asio::co_spawn(
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
@@ -234,7 +236,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
                         }
 
                         if (heartbeat_flag) {
-                          // Heartbeat packet is only used to keep alive and does not transmit business/management information
+                          // 心跳包仅用来保活，不传输业务/管理信息
                           static constexpr char kHeartbeatPkg[kHeadSize] = {
                               kHeadByte1, kHeadByte2, 0, 0, 0, 0};
                           static const boost::asio::const_buffer kHeartbeatBuf(
@@ -261,7 +263,7 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
                   },
                   boost::asio::detached);
 
-              // Receiver co
+              // 接收协程
               boost::asio::co_spawn(
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
@@ -408,16 +410,16 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
     Tcp::socket sock_;
     Timer send_sig_timer_;
 
-    // Log handle
+    // 日志打印句柄
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-    // Msg processing handle
+    // msg处理句柄
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-    // Options
+    // 配置
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // State
+    // 状态
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -437,19 +439,19 @@ class AsioTcpClient : public std::enable_shared_from_this<AsioTcpClient> {
   std::shared_ptr<IOCtx> io_ptr_;
   Strand mgr_strand_;
 
-  // Log handle
+  // 日志打印句柄
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // Msg processing handle
+  // msg处理句柄
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-  // Options
+  // 配置
   Options options_;
 
-  // State
+  // 状态
   std::atomic<State> state_ = State::kPreInit;
 
-  // Session management
+  // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::shared_ptr<Session> session_ptr_;
 };
@@ -464,9 +466,10 @@ class AsioTcpClientPool
   using Awaitable = boost::asio::awaitable<T>;
 
   struct Options {
-    /// Maximum number of clients
+    /// 最大client数
     size_t max_client_num = 1000;
 
+    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -576,16 +579,16 @@ class AsioTcpClientPool
   std::shared_ptr<IOCtx> io_ptr_;
   Strand mgr_strand_;
 
-  // Log handle
+  // 日志打印句柄
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // Options
+  // 配置
   Options options_;
 
-  // State
+  // 状态
   std::atomic<State> state_ = State::kPreInit;
 
-  // Client management
+  // client管理
   std::unordered_map<size_t, std::shared_ptr<AsioTcpClient>> client_map_;
 };
 

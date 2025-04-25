@@ -29,15 +29,16 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
   using Awaitable = boost::asio::awaitable<T>;
 
   struct Options {
-    /// Server address
+    /// 服务端地址
     Udp::endpoint svr_ep;
 
-    // Maximum time without data
+    // 最长无数据时间
     std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(60);
 
-    // The maximum length of each packet. Cannot be greater than 65507
+    // 每包最大长度。不可大于65507
     size_t max_package_size = 65507;
 
+    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -174,7 +175,7 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
                 if (tick_has_data_) {
                   tick_has_data_ = false;
                 } else {
-                  AIMRT_TRACE(
+                  AIMRT_WARN(
                       "udp cli session exit due to timeout({}ms).",
                       std::chrono::duration_cast<std::chrono::milliseconds>(session_options_ptr_->max_no_data_duration).count());
                   break;
@@ -302,13 +303,13 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
     Strand session_socket_strand_;
     Udp::socket sock_;
 
-    // Log handle
+    // 日志打印句柄
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-    // Options
+    // 配置
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // State
+    // 状态
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -327,16 +328,16 @@ class AsioUdpClient : public std::enable_shared_from_this<AsioUdpClient> {
   std::shared_ptr<IOCtx> io_ptr_;
   Strand mgr_strand_;
 
-  // Log handle
+  // 日志打印句柄
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // Options
+  // 配置
   Options options_;
 
-  // State
+  // 状态
   std::atomic<State> state_ = State::kPreInit;
 
-  // Session management
+  // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::shared_ptr<Session> session_ptr_;
 };
@@ -351,9 +352,10 @@ class AsioUdpClientPool
   using Awaitable = boost::asio::awaitable<T>;
 
   struct Options {
-    /// Maximum number of clients
+    /// 最大client数
     size_t max_client_num = 1000;
 
+    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -469,16 +471,16 @@ class AsioUdpClientPool
   std::shared_ptr<IOCtx> io_ptr_;
   Strand mgr_strand_;
 
-  // Log handle
+  // 日志打印句柄
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // Options
+  // 配置
   Options options_;
 
-  // State
+  // 状态
   std::atomic<State> state_ = State::kPreInit;
 
-  // Client management
+  // client管理
   std::unordered_map<size_t, std::shared_ptr<AsioUdpClient>> client_map_;
 };
 

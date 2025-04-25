@@ -24,7 +24,6 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
     uint32_t interval_ms = 100;          // default: 100ms
     std::string timer_executor_name;
     std::string topic_name;
-    size_t max_msg_size = SIZE_MAX;
   };
 
  public:
@@ -50,8 +49,6 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
   }
 
   void RegisterLogPublisher();
-
-  void SetMaxMsgSize() { max_msg_size_ = options_.max_msg_size; }
 
   void StartupPulisher() {
     publish_flag_ = true;
@@ -92,9 +89,6 @@ class TopicLoggerBackend : public runtime::core::logger::LoggerBackendBase {
 
   std::mutex mutex_;
   std::queue<aimrt::protocols::topic_logger::SingleLogData> queue_;
-
-  size_t max_msg_size_ = SIZE_MAX;
-  uint64_t sequence_num_ = 0;
 };
 
 }  // namespace aimrt::plugins::topic_logger_plugin

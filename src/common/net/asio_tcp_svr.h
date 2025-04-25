@@ -33,21 +33,22 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
       std::function<void(const Tcp::endpoint&, const std::shared_ptr<Streambuf>&)>;
 
   struct Options {
-    /// Listening address
+    /// 监听的地址
     Tcp::endpoint ep = Tcp::endpoint{boost::asio::ip::address_v4(), 57634};
 
-    /// Maximum number of connections
+    /// 最大连接数
     size_t max_session_num = 1000000;
 
-    /// Managing coroutine timer intervals
+    /// 管理协程定时器间隔
     std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(10);
 
-    /// Maximum time without data
+    /// 最长无数据时间
     std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(300);
 
-    /// Maximum package size
+    /// 包最大尺寸
     uint32_t max_recv_size = 1024 * 1024 * 16;
 
+    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -260,7 +261,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
   bool IsRunning() const { return state_.load() == State::kStart; }
 
  private:
-  // | 2byte magicnum | 4byte msglen |
+  // 包头结构：| 2byte magicnum | 4byte msglen |
   static constexpr size_t kHeadSize = 6;
   static constexpr char kHeadByte1 = 'Y';
   static constexpr char kHeadByte2 = 'T';
@@ -320,7 +321,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
       auto self = shared_from_this();
 
-      // Sender co
+      // 发送协程
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
@@ -375,7 +376,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           },
           boost::asio::detached);
 
-      // Receiver co
+      // 接收协程
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
@@ -433,7 +434,7 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
           },
           boost::asio::detached);
 
-      // Timer co
+      // 定时器协程
       boost::asio::co_spawn(
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
@@ -564,16 +565,16 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
     Strand session_mgr_strand_;
     Timer timer_;
 
-    // Log handle
+    // 日志打印句柄
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-    // Msg processing handle
+    // msg处理句柄
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-    // Options
+    // 配置
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // State
+    // 状态
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -592,24 +593,24 @@ class AsioTcpServer : public std::enable_shared_from_this<AsioTcpServer> {
 
   // IO CTX
   std::shared_ptr<IOCtx> io_ptr_;
-  Strand mgr_strand_;       // Session pool operation strand
-  Tcp::acceptor acceptor_;  // Listener
-  Timer acceptor_timer_;    // The sleep timer when the connection is full
-  Timer mgr_timer_;         // Timer to manage session pool
+  Strand mgr_strand_;       // session池操作strand
+  Tcp::acceptor acceptor_;  // 监听器
+  Timer acceptor_timer_;    // 连接满时监听器的sleep定时器
+  Timer mgr_timer_;         // 管理session池的定时器
 
-  // Log handle
+  // 日志打印句柄
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // Msg processing handle
+  // msg处理句柄
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-  // Options
+  // 配置
   Options options_;
 
-  // State
+  // 状态
   std::atomic<State> state_ = State::kPreInit;
 
-  // Session management
+  // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };

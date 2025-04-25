@@ -30,7 +30,6 @@ bool LoggerBenchModule::Initialize(aimrt::CoreRef core) {
 }
 
 bool LoggerBenchModule::Start() {
-  run_flag_ = true;
   AIMRT_INFO("Start succeeded.");
 
   auto work_executor = core_.GetExecutorManager().GetExecutor("work_executor");
@@ -83,10 +82,7 @@ bool LoggerBenchModule::Start() {
 }
 
 void LoggerBenchModule::Shutdown() {
-  if (run_flag_) {
-    run_flag_ = false;
-    log_loop_stop_sig_.get_future().wait();
-  }
+  log_loop_stop_sig_.get_future().wait();
 
   AIMRT_INFO("Shutdown succeeded.");
 }

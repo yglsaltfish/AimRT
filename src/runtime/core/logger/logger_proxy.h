@@ -43,6 +43,7 @@ class LoggerProxy {
 
   void Log(aimrt_log_level_t lvl,
            uint32_t line,
+           uint32_t column,
            const char* file_name,
            const char* function_name,
            const char* log_data,
@@ -60,6 +61,7 @@ class LoggerProxy {
           .t = std::chrono::system_clock::now(),
           .lvl = lvl,
           .line = line,
+          .column = column,
           .file_name = file_name,
           .function_name = function_name,
           .log_data = log_data,
@@ -79,6 +81,7 @@ class LoggerProxy {
         .log = [](void* impl,
                   aimrt_log_level_t lvl,
                   uint32_t line,
+                  uint32_t column,
                   const char* file_name,
                   const char* function_name,
                   const char* log_data,
@@ -86,6 +89,7 @@ class LoggerProxy {
           static_cast<LoggerProxy*>(impl)->Log(
               lvl,
               line,
+              column,
               file_name,
               function_name,
               log_data,

@@ -51,7 +51,7 @@ class BenchmarkPublisherModule : public aimrt::ModuleBase {
  private:
   aimrt::CoreRef core_;
 
-  std::atomic_bool run_flag_ = false;
+  std::atomic_bool run_flag_ = true;
   std::promise<void> stop_sig_;
 
   aimrt::executor::ExecutorRef publish_control_executor_;  // name: publish_control_executor

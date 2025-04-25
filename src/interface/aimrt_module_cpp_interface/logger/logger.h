@@ -27,6 +27,7 @@ class LoggerRef {
   void Log(
       uint32_t lvl,
       uint32_t line,
+      uint32_t column,
       const char* file_name,
       const char* function_name,
       const char* log_data,
@@ -35,7 +36,7 @@ class LoggerRef {
     base_ptr_->log(
         base_ptr_->impl,
         static_cast<aimrt_log_level_t>(lvl),
-        line, file_name, function_name,
+        line, column, file_name, function_name,
         log_data, log_data_size);
   };
 
@@ -48,11 +49,11 @@ inline LoggerRef GetSimpleLoggerRef() {
       .get_log_level = [](void* impl) -> aimrt_log_level_t {
         return static_cast<aimrt_log_level_t>(aimrt::common::util::SimpleLogger::GetLogLevel());
       },
-      .log = [](void* impl, aimrt_log_level_t lvl, uint32_t line,
+      .log = [](void* impl, aimrt_log_level_t lvl, uint32_t line, uint32_t column,
                 const char* file_name, const char* function_name,
                 const char* log_data, size_t log_data_size) {
         aimrt::common::util::SimpleLogger::Log(
-            static_cast<uint32_t>(lvl), line, file_name, function_name, log_data, log_data_size);  //
+            static_cast<uint32_t>(lvl), line, column, file_name, function_name, log_data, log_data_size);  //
       }};
 
   return LoggerRef(&kSimpleLogger);

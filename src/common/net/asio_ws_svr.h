@@ -31,27 +31,30 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
   template <class T>
   using Awaitable = boost::asio::awaitable<T>;
 
-  using MsgHandle = std::function<void(const Tcp::endpoint&, const std::shared_ptr<Streambuf>&)>;
+  // todo
+  using MsgHandle =
+      std::function<void(const Tcp::endpoint&, const std::shared_ptr<Streambuf>&)>;
 
   struct Options {
-    /// Listening address
+    /// 监听的地址
     Tcp::endpoint ep = Tcp::endpoint{boost::asio::ip::address_v4(), 50180};
 
-    /// Maximum number of connections
+    /// 最大连接数
     size_t max_session_num = 1000000;
 
-    /// Managing coroutine timer intervals
+    /// 管理协程定时器间隔
     std::chrono::nanoseconds mgr_timer_dt = std::chrono::seconds(10);
 
-    /// Maximum time without data
+    /// 最长无数据时间
     std::chrono::nanoseconds max_no_data_duration = std::chrono::seconds(300);
 
-    /// Maximum package size
+    /// 包最大尺寸
     uint32_t max_recv_size = 1024 * 1024 * 16;
 
-    // Use binary mode or text mode
+    // 使用binary模式还是text模式
     bool binary_mode = true;
 
+    /// 校验配置
     static Options Verify(const Options& verify_options) {
       Options options(verify_options);
 
@@ -129,7 +132,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
           while (state_.load() == State::kStart) {
             try {
-              // If the number of links reaches the upper limit, wait for a while and try again
+              // 如果链接数达到上限，则等待一段时间再试
               if (session_ptr_map_.size() >= options_.max_session_num) {
                 acceptor_timer_.expires_after(options_.mgr_timer_dt);
                 co_await acceptor_timer_.async_wait(boost::asio::use_awaitable);
@@ -315,7 +318,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
       auto self = shared_from_this();
 
-      // Establishing a connection
+      // 建立连接
       boost::asio::co_spawn(
           session_socket_strand_,
           [this, self]() -> Awaitable<void> {
@@ -336,7 +339,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
               stream_.binary(session_options_ptr_->binary_mode);
 
-              // Sending coroutines
+              // 发送协程
               boost::asio::co_spawn(
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
@@ -374,7 +377,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
                   },
                   boost::asio::detached);
 
-              // Receiving coroutine
+              // 接收协程
               boost::asio::co_spawn(
                   session_socket_strand_,
                   [this, self]() -> Awaitable<void> {
@@ -415,7 +418,7 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
           },
           boost::asio::detached);
 
-      // Timer coroutine
+      // 定时器协程
       boost::asio::co_spawn(
           session_mgr_strand_,
           [this, self]() -> Awaitable<void> {
@@ -560,16 +563,16 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
     Strand session_mgr_strand_;
     Timer timer_;
 
-    // Log handle
+    // 日志打印句柄
     std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-    // Msg processing handle
+    // msg处理句柄
     std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-    // Options
+    // 配置
     std::shared_ptr<const SessionOptions> session_options_ptr_;
 
-    // State
+    // 状态
     std::atomic<SessionState> state_ = SessionState::kPreInit;
 
     // misc
@@ -588,24 +591,24 @@ class AsioWebSocketServer : public std::enable_shared_from_this<AsioWebSocketSer
 
   // IO CTX
   std::shared_ptr<IOCtx> io_ptr_;
-  Strand mgr_strand_;       // Session pool operation strand
-  Tcp::acceptor acceptor_;  // Listener
-  Timer acceptor_timer_;    // The sleep timer when the connection is full
-  Timer mgr_timer_;         // Timer to manage session pool
+  Strand mgr_strand_;       // session池操作strand
+  Tcp::acceptor acceptor_;  // 监听器
+  Timer acceptor_timer_;    // 连接满时监听器的sleep定时器
+  Timer mgr_timer_;         // 管理session池的定时器
 
-  // Log handle
+  // 日志打印句柄
   std::shared_ptr<aimrt::common::util::LoggerWrapper> logger_ptr_;
 
-  // Msg processing handle
+  // msg处理句柄
   std::shared_ptr<MsgHandle> msg_handle_ptr_;
 
-  // Options
+  // 配置
   Options options_;
 
-  // State
+  // 状态
   std::atomic<State> state_ = State::kPreInit;
 
-  // Session management
+  // session管理
   std::shared_ptr<const SessionOptions> session_options_ptr_;
   std::unordered_map<Tcp::endpoint, std::shared_ptr<Session>> session_ptr_map_;
 };

@@ -16,6 +16,7 @@ struct LogDataWrapper {
   std::chrono::system_clock::time_point t;
   aimrt_log_level_t lvl;
   uint32_t line;
+  uint32_t column;
   const char* file_name;
   const char* function_name;
   const char* log_data;

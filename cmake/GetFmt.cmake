@@ -28,7 +28,7 @@ function(get_fmt)
   if(NOT fmt_POPULATED)
     set(FMT_MASTER_PROJECT OFF)
 
-    set(FMT_INSTALL ${AIMRT_INSTALL})
+    set(FMT_INSTALL ON)
 
     FetchContent_MakeAvailable(fmt)
   endif()

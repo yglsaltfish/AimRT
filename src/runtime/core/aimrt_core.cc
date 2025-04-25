@@ -7,7 +7,6 @@
 
 #include "core/util/version.h"
 #include "core/util/yaml_tools.h"
-#include "util/sys_tools.h"
 
 namespace aimrt::runtime::core {
 
@@ -259,14 +258,14 @@ std::future<void> AimRTCore::AsyncStart() {
 
   AIMRT_INFO("AimRT start completed, will waiting for async shutdown.");
 
-  std::packaged_task<void()> task([this]() {
+  std::promise<void> end_running_promise;
+  auto fu = end_running_promise.get_future();
+
+  std::thread([this, end_running_promise{std::move(end_running_promise)}]() mutable {
     shutdown_promise_.get_future().wait();
     ShutdownImpl();
-  });
-
-  auto fu = task.get_future();
-
-  std::thread(std::move(task)).detach();
+    end_running_promise.set_value();
+  }).detach();
 
   return fu;
 }
@@ -296,6 +295,7 @@ void AimRTCore::SetCoreLogger() {
       [core_logger_ptr](
           uint32_t lvl,
           uint32_t line,
+          uint32_t column,
           const char* file_name,
           const char* function_name,
           const char* log_data,
@@ -303,7 +303,7 @@ void AimRTCore::SetCoreLogger() {
         core_logger_ptr->log(
             core_logger_ptr->impl,
             static_cast<aimrt_log_level_t>(lvl),
-            line, file_name, function_name,
+            line, column, file_name, function_name,
             log_data, log_data_size);  //
       };
 }
@@ -346,16 +346,6 @@ std::string AimRTCore::GenInitializationReport() const {
 
   std::list<std::pair<std::string, std::string>> report;
 
-  std::vector<std::vector<std::string>> base_info_table = {
-      {"AimRT Version", util::GetAimRTVersion()},
-      {"AimRT Cfg File Path", configurator_manager_.GetConfigureFilePath()},
-      {"Executable Path", aimrt::common::util::GetExecutablePath()},
-      {"Process PID", aimrt::common::util::GetCurrentProcessPid()},
-  };
-
-  report.splice(report.end(), {std::pair<std::string, std::string>{
-                                  "Base Info",
-                                  aimrt::common::util::DrawTable(base_info_table, false)}});
   report.splice(report.end(), configurator_manager_.GenInitializationReport());
   report.splice(report.end(), plugin_manager_.GenInitializationReport());
   report.splice(report.end(), executor_manager_.GenInitializationReport());
@@ -368,6 +358,8 @@ std::string AimRTCore::GenInitializationReport() const {
 
   std::stringstream result;
   result << "\n----------------------- AimRT Initialization Report Begin ----------------------\n\n";
+
+  result << "AimRT Version: " << util::GetAimRTVersion() << "\n\n";
 
   size_t count = 0;
   for (auto& itr : report) {

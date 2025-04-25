@@ -111,11 +111,14 @@ int32_t main(int32_t argc, char** argv) {
     }
 
     if (FLAGS_running_duration == 0) {
-      core.Start();  // Blocked here
+      core.Start();
+
+      core.Shutdown();
     } else {
       auto fu = core.AsyncStart();
 
       std::this_thread::sleep_for(std::chrono::seconds(FLAGS_running_duration));
+
       core.Shutdown();
 
       fu.wait();
