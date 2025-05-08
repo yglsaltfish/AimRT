@@ -401,7 +401,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
 
         uint64_t start_record_timestamp = now - preparation_duration_s * 1000000000;
 
-        // 二分查找到缓存中需要开始记录的地方
+        // Use binary search to locate the starting point for recording in the cache
         size_t last_cache_size = last_cache_.size();
         size_t cur_cache_size = cur_cache_.size();
         size_t all_cache_size = last_cache_size + cur_cache_size;
@@ -424,7 +424,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
             high = mid;
         }
 
-        // 将缓存写入db
+        // Write cache to db
         if (low < last_cache_size) {
           for (size_t ii = low; ii < last_cache_size; ++ii) {
             AddRecordImpl(std::move(last_cache_[ii]));
@@ -439,7 +439,7 @@ bool RecordAction::StartSignalRecord(uint64_t preparation_duration_s, uint64_t r
           }
         }
 
-        // 清空缓存
+        // Clear the cache
         last_cache_.clear();
         cur_cache_.clear();
       });
@@ -458,6 +458,27 @@ void RecordAction::StopSignalRecord() {
   }
 
   executor_.Execute([this]() { recording_flag_ = false; });
+}
+
+void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&& kv_pairs) {
+  executor_.Execute([this, move_kv_pairs = std::move(kv_pairs)] {
+  if (!metadata_.extra_attributes.IsMap()) {
+    metadata_.extra_attributes = YAML::Node(YAML::NodeType::Map);
+  }
+  for (const auto& [key, value] : move_kv_pairs) {
+    try {
+      YAML::Node parsed_node = YAML::Load(value);
+      metadata_.extra_attributes[key] = parsed_node;
+    } catch (const std::exception& e) {
+      metadata_.extra_attributes[key] = value;
+    }
+  }
+  YAML::Node node;
+  node["aimrt_bagfile_information"] = metadata_;
+
+  std::ofstream ofs(metadata_yaml_file_path_);
+  ofs << node;
+  ofs.close(); });
 }
 
 size_t RecordAction::GetFileSize() const {
