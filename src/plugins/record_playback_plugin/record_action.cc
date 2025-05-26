@@ -208,7 +208,7 @@ void RecordAction::Initialize(YAML::Node options) {
   real_bag_path_ = parent_bag_path / bag_base_name_;
 
   AIMRT_CHECK_ERROR_THROW(!std::filesystem::exists(real_bag_path_),
-                          "Bag path '{}' does not exist!", real_bag_path_.string());
+                          "Bag path '{}' has already existed!", real_bag_path_.string());
 
   std::filesystem::create_directories(real_bag_path_);
 
@@ -270,7 +270,6 @@ void RecordAction::Shutdown() {
   });
 
   sync_timer_->Cancel();
-  sync_timer_->SyncWait();
 
   stop_promise.get_future().wait();
 }
@@ -469,7 +468,7 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
     try {
       YAML::Node parsed_node = YAML::Load(value);
       metadata_.extra_attributes[key] = parsed_node;
-    } catch (const std::exception& e) {
+    } catch (...) {
       metadata_.extra_attributes[key] = value;
     }
   }
