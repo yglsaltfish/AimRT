@@ -183,7 +183,7 @@ void RecordAction::Initialize(YAML::Node options) {
     topic_meta_map_.emplace(key, topic_meta);
   }
   // misc
-  max_bag_size_ = options_.storage_policy.max_bag_size_m * 1024 * 1024;
+  max_bag_size_ = static_cast<size_t>(options_.storage_policy.max_bag_size_m) * 1024 * 1024;
   max_preparation_duration_ns_ = options_.max_preparation_duration_s * 1000000000;
 
   metadata_.version = kVersion;
@@ -624,9 +624,17 @@ std::string RecordAction::BuildROS2Schema(const MessageMembers* members, int ind
   queue.push({members, indent});
   visited.insert(members);
 
-  static auto appendArrayNotation = [](std::stringstream& ss, bool isArray) {
-    if (isArray) {
-      ss << "[] ";
+  static auto appendArrayNotation = [](std::stringstream& ss, const MessageMember& member) {
+    if (member.is_array_) {
+      if (member.is_upper_bound_) {
+        ss << "[" << member.array_size_ << "] ";
+      } else {
+        if (member.array_size_ > 0) {
+          ss << "[" << member.array_size_ << "] ";
+        } else {
+          ss << "[] ";
+        }
+      }
     } else {
       ss << " ";
     }
@@ -662,7 +670,7 @@ std::string RecordAction::BuildROS2Schema(const MessageMembers* members, int ind
         const auto* nested_members = static_cast<const MessageMembers*>(member.members_->data);
         if (nested_members) {
           schema << RosSchemaFormat(nested_members);
-          appendArrayNotation(schema, member.is_array_);
+          appendArrayNotation(schema, member);
           schema << member.name_ << "\n";
           if (visited.find(nested_members) == visited.end()) {
             queue.push({nested_members, current_indent + 1});
@@ -716,7 +724,7 @@ std::string RecordAction::BuildROS2Schema(const MessageMembers* members, int ind
           schema << "string";
           break;
       }
-      appendArrayNotation(schema, member.is_array_);
+      appendArrayNotation(schema, member);
       schema << member.name_ << "\n";
     }
   }
