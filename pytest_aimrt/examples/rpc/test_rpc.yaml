@@ -1,0 +1,44 @@
+name: "RPC Communication Test"
+description: "Test RPC communication between server and client using AimRT framework"
+
+# 执行配置
+config:
+  execution_count: 1       # 测试执行次数
+  time_sec: 60          # 总超时时间（秒）
+  cwd: "build"             # 执行目录（相对于项目根目录）
+  environment:             # 全局环境变量
+    LOG_LEVEL: "info"
+
+
+# 输入配置 - 定义要执行的脚本和它们的依赖关系
+input:
+  scripts:
+    # MQTT RPC 服务器脚本
+    - path: "./start_examples_plugins_mqtt_plugin_pb_rpc_server.sh"
+      args: []                    # 脚本参数
+      depends_on: []              # 依赖的脚本（空表示可以直接启动）
+      delay_sec: 0                # 启动延迟（秒）
+      time_sec: 10             # 脚本运行时间
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      environment:                # 脚本特定的环境变量
+        ROLE: "server"
+      cwd: ""                # 脚本执行目录
+      shutdown_patterns: ["hello world foo"]
+
+    # MQTT RPC 客户端脚本
+    - path: "./start_examples_plugins_mqtt_plugin_pb_rpc_client.sh"
+      args: []
+      depends_on: ["./start_examples_plugins_mqtt_plugin_pb_rpc_server.sh"]  # 依赖服务器启动
+      delay_sec: 3                # 等待3秒让服务器完全启动
+      time_sec: 10
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      environment:
+        ROLE: "client"
+      cwd: ""
+      shutdown_patterns: ["hello world foo"]
