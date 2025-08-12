@@ -1,5 +1,5 @@
-name: "RPC Communication Test"
-description: "Test RPC communication between server and client using AimRT framework"
+name: "ROS2 RPC Test"
+description: "Test ROS2 RPC communication between server and client using AimRT framework"
 
 # 执行配置
 config:
@@ -14,7 +14,7 @@ config:
 input:
   scripts:
     # MQTT RPC 服务器脚本
-    - path: "./start_examples_plugins_mqtt_plugin_pb_rpc_server.sh"
+    - path: "./start_examples_plugins_ros2_plugin_pb_rpc_server.sh"
       args: []                    # 脚本参数
       depends_on: []              # 依赖的脚本（空表示可以直接启动）
       delay_sec: 0                # 启动延迟（秒）
@@ -27,11 +27,12 @@ input:
         ROLE: "server"
       cwd: ""                # 脚本执行目录
       shutdown_patterns: ["hello world foo"]
+      enabled_callbacks: ["custom_log_check"]
 
     # MQTT RPC 客户端脚本
-    - path: "./start_examples_plugins_mqtt_plugin_pb_rpc_client.sh"
+    - path: "./start_examples_plugins_ros2_plugin_pb_rpc_client.sh"
       args: []
-      depends_on: ["./start_examples_plugins_mqtt_plugin_pb_rpc_server.sh"]  # 依赖服务器启动
+      depends_on: ["./start_examples_plugins_ros2_plugin_pb_rpc_server.sh"]  # 依赖服务器启动
       delay_sec: 3                # 等待3秒让服务器完全启动
       time_sec: 10
       monitor:
@@ -42,3 +43,4 @@ input:
         ROLE: "client"
       cwd: ""
       shutdown_patterns: ["hello world foo"]
+      enabled_callbacks: ["custom_log_check", "custom_log_check_2"]

@@ -56,6 +56,7 @@ class ProcessManager:
         self.resource_monitor = resource_monitor or ResourceMonitor()
         self.callback_manager = callback_manager or CallbackManager()
         self._processes: Dict[str, ProcessInfo] = {}
+        self._script_configs: Dict[str, ScriptConfig] = {}
         self._lock = threading.Lock()
 
     def execute_script(self, script_config: ScriptConfig, run_time: Optional[int] = None) -> ProcessInfo:
@@ -112,6 +113,7 @@ class ProcessManager:
 
             with self._lock:
                 self._processes[script_config.path] = process_info
+                self._script_configs[script_config.path] = script_config
 
             # 开始资源监控
             monitor_enabled = any(script_config.monitor.values())
@@ -229,10 +231,29 @@ class ProcessManager:
             else:
                 print(f"⚠️ 未收集到监控数据: {script_path}")
 
+        try:
+            with self._lock:
+                scfg = self._script_configs.get(script_path)
+            if scfg and getattr(scfg, 'shutdown_patterns', None):
+                patterns = [p.lower() for p in (scfg.shutdown_patterns or [])]
+                combined_output = ((process_info.stdout or "") + "\n" + (process_info.stderr or "")).lower()
+                if any(pat in combined_output for pat in patterns):
+                    if process_info.status in ["failed", "timeout", "killed"]:
+                        print(f"🛎️ 事后命中shutdown_patterns，置为completed: {script_path}")
+                        process_info.status = "completed"
+                        if not process_info.end_time:
+                            process_info.end_time = datetime.now()
+        except Exception as _e:
+            pass
+
         # 触发进程结束回调
+        # 触发回调时携带脚本配置，便于按脚本过滤回调
+        with self._lock:
+            scfg = self._script_configs.get(script_path)
         context = {
             'process_info': process_info,
-            'monitor_data': process_info.monitor_data
+            'monitor_data': process_info.monitor_data,
+            'script_config': scfg
         }
         self.callback_manager.execute_callbacks(CallbackTrigger.PROCESS_END, context)
 

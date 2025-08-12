@@ -40,7 +40,6 @@ class ScriptConfig:
     callbacks: List[CallbackConfigData] = field(default_factory=list)  # 回调配置
     shutdown_patterns: List[str] = field(default_factory=list)  # 匹配即请求优雅退出并记为completed
     enabled_callbacks: List[str] = field(default_factory=list)  # 仅对该脚本启用的回调名（函数回调）
-    disabled_callbacks: List[str] = field(default_factory=list)  # 对该脚本禁用的回调名（函数回调）
 
 
 @dataclass
@@ -53,8 +52,6 @@ class TestConfig:
     cwd: str = ""
     environment: Dict[str, str] = field(default_factory=dict)
     scripts: List[ScriptConfig] = field(default_factory=list)
-    enabled_callbacks: List[str] = field(default_factory=list)
-    disabled_callbacks: List[str] = field(default_factory=list)
 
 
 class ConfigManager:
@@ -109,9 +106,7 @@ class ConfigManager:
             execution_count=config_data.get('execution_count', 1),
             time_sec=config_data.get('time_sec', 60),
             cwd=config_data.get('cwd', ''),
-            environment=config_data.get('environment', {}),
-            enabled_callbacks=config_data.get('enabled_callbacks', []),
-            disabled_callbacks=config_data.get('disabled_callbacks', [])
+            environment=config_data.get('environment', {})
         )
 
         # 解析脚本配置
@@ -130,8 +125,7 @@ class ConfigManager:
                 environment=script_data.get('environment', {}),
                 cwd=script_data.get('cwd', config_data.get('cwd', '')),
                 shutdown_patterns=script_data.get('shutdown_patterns', []),
-                enabled_callbacks=script_data.get('enabled_callbacks', []),
-                disabled_callbacks=script_data.get('disabled_callbacks', [])
+                enabled_callbacks=script_data.get('enabled_callbacks', [])
             )
             test_config.scripts.append(script_config)
 

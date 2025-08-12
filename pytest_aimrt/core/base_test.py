@@ -105,8 +105,7 @@ class BaseAimRTTest:
 
                 execution_success = True
                 for script_path, process_info in results.items():
-                    # 将被测试框架按时间预算终止（killed）视为可接受
-                    if process_info.status not in ["completed", "killed"]:
+                    if process_info.status not in ["completed"]:
                         print(f"❌ 脚本执行失败: {script_path} (状态: {process_info.status})")
                         execution_success = False
                     else:
@@ -171,30 +170,25 @@ class BaseAimRTTest:
             self.callback_manager.register_callback(callback)
 
     def register_function_callback(self, name: str, trigger: CallbackTrigger, func, **kwargs):
-        """注册函数回调"""
-        # 筛选启用/禁用（全局与脚本级）
+        """注册函数回调（只支持脚本级 enabled_callbacks 控制）"""
         if self._test_config:
-            glb_enabled = self._test_config.enabled_callbacks or []
-            glb_disabled = self._test_config.disabled_callbacks or []
-
-            # 脚本级定制（如果提供则优先生效）。这里为了简单，统一采用“如任一脚本设置了名单则采用名单并覆盖全局”。
-            script_enabled = []
-            script_disabled = []
+            # 收集每个脚本声明的 enabled_callbacks
+            script_enabled_map = {}
             for sc in (self._test_config.scripts or []):
                 if getattr(sc, 'enabled_callbacks', None):
-                    script_enabled = sc.enabled_callbacks
-                if getattr(sc, 'disabled_callbacks', None):
-                    script_disabled = sc.disabled_callbacks
+                    for n in sc.enabled_callbacks:
+                        script_enabled_map.setdefault(n, set()).add(sc.path)
 
-            eff_enabled = script_enabled if script_enabled else glb_enabled
-            eff_disabled = script_disabled if script_disabled else glb_disabled
-
-            if eff_disabled and name in eff_disabled:
-                print(f"⏭️ 跳过注册回调: {name} (被禁用)")
-                return None
-            if eff_enabled and name not in eff_enabled:
-                print(f"⏭️ 跳过注册回调: {name} (未在启用列表中)")
-                return None
+            if script_enabled_map:
+                # 若任一脚本声明了 enabled_callbacks，则仅允许在至少一个脚本名单里的回调注册
+                if name not in script_enabled_map:
+                    print(f"⏭️ 跳过注册回调: {name} (未在任何脚本的enabled_callbacks中)")
+                    return None
+                # 注入目标脚本名单，执行阶段据此过滤
+                kwargs = dict(kwargs or {})
+                params = dict(kwargs.get('params', {}))
+                params['target_scripts'] = sorted(list(script_enabled_map[name]))
+                kwargs['params'] = params
 
         if self.process_manager:
             return self.process_manager.register_function_callback(name, trigger, func, **kwargs)
@@ -215,7 +209,7 @@ class BaseAimRTTest:
 
         print("\n📊 生成测试报告...")
 
-        # 生成总结报告
+        # generate summary report
         summary_report = self.process_manager.generate_summary_report()
         self._reports.append({
             "type": "summary",
@@ -223,10 +217,9 @@ class BaseAimRTTest:
             "data": summary_report
         })
 
-        # 打印资源使用情况
         self._print_resource_usage_report(summary_report)
 
-        # 生成详细报告文件（携带回调结果）
+
         if self._test_config:
             callback_results = self.process_manager.get_callback_results() if self.process_manager else {}
             report_files = self.report_generator.generate_all_reports(
@@ -245,7 +238,6 @@ class BaseAimRTTest:
         print("\n📋 资源使用情况报告:")
         print("=" * 80)
 
-        # 打印总结信息
         summary = summary_report["summary"]
         print(f"总进程数: {summary['total_processes']}")
         print(f"成功完成: {summary['completed']}")

@@ -12,7 +12,7 @@ from .resource_monitor import ResourceMonitor, ResourceSnapshot, ProcessMonitorD
 from .process_manager import ProcessManager, ProcessInfo
 from .callback_manager import (
     CallbackManager, BaseCallback, CallbackResult, CallbackConfig, CallbackTrigger,
-    LogAnalysisCallback, ResourceThresholdCallback, CustomFunctionCallback
+    ResourceThresholdCallback, CustomFunctionCallback
 )
 from .report_generator import ReportGenerator
 from .base_test import BaseAimRTTest
@@ -22,7 +22,7 @@ __all__ = [
     'ResourceMonitor', 'ResourceSnapshot', 'ProcessMonitorData',
     'ProcessManager', 'ProcessInfo',
     'CallbackManager', 'BaseCallback', 'CallbackResult', 'CallbackConfig', 'CallbackTrigger',
-    'LogAnalysisCallback', 'ResourceThresholdCallback', 'CustomFunctionCallback',
+    'ResourceThresholdCallback', 'CustomFunctionCallback',
     'ReportGenerator',
     'BaseAimRTTest'
 ]

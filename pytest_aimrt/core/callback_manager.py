@@ -77,92 +77,6 @@ class BaseCallback(ABC):
         with self._lock:
             self.results.clear()
 
-
-class LogAnalysisCallback(BaseCallback):
-    """日志分析回调示例"""
-
-    def execute(self, context: Dict[str, Any]) -> CallbackResult:
-        """分析进程日志"""
-        try:
-            process_info = context.get('process_info')
-            if not process_info:
-                return CallbackResult(
-                    success=False,
-                    message="缺少进程信息",
-                    errors=["process_info not found in context"]
-                )
-
-            # 降噪选项：对非 completed 的进程（如 killed/timeout）默认跳过日志失败判定
-            ignore_if_not_completed = self.config.params.get('ignore_if_not_completed', True)
-            if ignore_if_not_completed and getattr(process_info, 'status', None) != 'completed':
-                return CallbackResult(
-                    success=True,
-                    message=f"进程状态为 {getattr(process_info, 'status', 'unknown')}，跳过日志分析",
-                    data={'skipped': True, 'status': getattr(process_info, 'status', None)}
-                )
-
-            # 分析stdout和stderr
-            stdout = process_info.stdout or ""
-            stderr = process_info.stderr or ""
-
-            # 自定义检测逻辑
-            error_patterns = self.config.params.get('error_patterns', [])
-            warning_patterns = self.config.params.get('warning_patterns', [])
-            success_patterns = self.config.params.get('success_patterns', [])
-
-            errors = []
-            warnings = []
-            success_indicators = []
-
-            # 检查错误模式
-            for pattern in error_patterns:
-                if pattern.lower() in stdout.lower() or pattern.lower() in stderr.lower():
-                    errors.append(f"发现错误模式: {pattern}")
-
-            # 检查警告模式
-            for pattern in warning_patterns:
-                if pattern.lower() in stdout.lower() or pattern.lower() in stderr.lower():
-                    warnings.append(f"发现警告模式: {pattern}")
-
-            # 检查成功指示器
-            for pattern in success_patterns:
-                if pattern.lower() in stdout.lower():
-                    success_indicators.append(f"发现成功指示器: {pattern}")
-
-            # 统计信息
-            data = {
-                'stdout_lines': len(stdout.split('\n')) if stdout else 0,
-                'stderr_lines': len(stderr.split('\n')) if stderr else 0,
-                'error_count': len(errors),
-                'warning_count': len(warnings),
-                'success_indicators': success_indicators
-            }
-
-            # 是否允许“成功指示覆盖少量错误”
-            success_overrides_error = self.config.params.get('success_overrides_error', False)
-            max_errors_for_override = self.config.params.get('max_errors_for_override', 0)
-
-            success = (len(errors) == 0) or (
-                success_overrides_error and len(success_indicators) > 0 and len(errors) <= max_errors_for_override
-            )
-            message = f"日志分析完成: 错误{len(errors)}个, 警告{len(warnings)}个"
-
-            return CallbackResult(
-                success=success,
-                message=message,
-                data=data,
-                warnings=warnings,
-                errors=errors
-            )
-
-        except Exception as e:
-            return CallbackResult(
-                success=False,
-                message=f"日志分析异常: {e}",
-                errors=[str(e)]
-            )
-
-
 class ResourceThresholdCallback(BaseCallback):
     """资源阈值检测回调示例"""
 
@@ -332,6 +246,15 @@ class CallbackManager:
                 if pinfo:
                     enriched_context.setdefault('script_path', getattr(pinfo, 'script_path', None))
                     enriched_context.setdefault('pid', getattr(pinfo, 'pid', None))
+                    # 若回调指定了目标脚本名单，则仅在这些脚本上触发
+                    try:
+                        target_scripts = callback.config.params.get('target_scripts', [])
+                    except Exception:
+                        target_scripts = []
+                    if target_scripts:
+                        current_script = getattr(pinfo, 'script_path', None)
+                        if current_script not in set(target_scripts):
+                            continue
                 result = callback.execute(enriched_context)
                 # 回调可能未返回结果，做防御
                 if result is None:

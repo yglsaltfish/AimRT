@@ -62,6 +62,10 @@ class ResourceMonitor:
         self._monitor_threads: Dict[int, threading.Thread] = {}
         self._stop_events: Dict[int, threading.Event] = {}
         self._lock = threading.Lock()
+        # 缓存psutil.Process对象，避免每次采样首次cpu_percent恒为0的问题
+        self._proc_cache: Dict[int, psutil.Process] = {}
+        # 标记已完成cpu_percent预热的pid（首次调用返回0，需要预热一次）
+        self._cpu_primed: set[int] = set()
 
     def start_monitoring(self, pid: int, name: str) -> bool:
         """
@@ -85,6 +89,14 @@ class ResourceMonitor:
                 if pid in self._monitors:
                     print(f"⚠️ 进程 {pid} ({name}) 已在监控中")
                     return True
+
+                # 缓存并预热cpu_percent，下一轮采样即可获得非零值
+                self._proc_cache[pid] = process
+                try:
+                    process.cpu_percent(None)
+                except Exception:
+                    pass
+                self._cpu_primed.add(pid)
 
                 # 创建监控数据
                 monitor_data = ProcessMonitorData(
@@ -180,7 +192,11 @@ class ResourceMonitor:
     def _monitor_process(self, pid: int, stop_event: threading.Event):
         """监控进程及其子进程的资源使用情况"""
         try:
-            process = psutil.Process(pid)
+            # 复用已缓存的psutil.Process对象，避免每轮新建导致cpu_percent恒为0
+            process = self._proc_cache.get(pid)
+            if process is None:
+                process = psutil.Process(pid)
+                self._proc_cache[pid] = process
 
             while not stop_event.is_set():
                 try:
@@ -200,8 +216,13 @@ class ResourceMonitor:
                     total_disk_read_count = 0
                     total_disk_write_count = 0
 
-                    # 获取主进程资源
-                    cpu_percent = process.cpu_percent()
+                    # 获取主进程资源（带预热逻辑）
+                    if pid in self._cpu_primed:
+                        cpu_percent = process.cpu_percent(None)
+                    else:
+                        process.cpu_percent(None)
+                        self._cpu_primed.add(pid)
+                        cpu_percent = 0.0
                     memory_info = process.memory_info()
                     memory_percent = process.memory_percent()
 
@@ -228,16 +249,26 @@ class ResourceMonitor:
 
                     # 获取子进程资源
                     child_pids = []
+                    child_cpu_map: Dict[int, float] = {}
                     for child_pid in all_processes:
                         if child_pid != pid:  # 跳过主进程
                             try:
-                                child_process = psutil.Process(child_pid)
+                                child_process = self._proc_cache.get(child_pid)
+                                if child_process is None:
+                                    child_process = psutil.Process(child_pid)
+                                    self._proc_cache[child_pid] = child_process
                                 if child_process.is_running():
                                     child_pids.append(child_pid)
 
-                                    # 子进程CPU使用率
-                                    child_cpu = child_process.cpu_percent()
+                                    # 子进程CPU使用率（带预热）
+                                    if child_pid in self._cpu_primed:
+                                        child_cpu = child_process.cpu_percent(None)
+                                    else:
+                                        child_process.cpu_percent(None)
+                                        self._cpu_primed.add(child_pid)
+                                        child_cpu = 0.0
                                     total_cpu_percent += child_cpu
+                                    child_cpu_map[child_pid] = child_cpu
 
                                     # 子进程内存使用情况
                                     child_memory = child_process.memory_info()
@@ -271,17 +302,17 @@ class ResourceMonitor:
                         disk_write_count=total_disk_write_count
                     )
 
-                    # 获取子进程详细信息
+                    # 获取子进程详细信息（复用本轮已有的CPU测量值，避免二次调用）
                     children_info = []
                     for child_pid in child_pids:
                         try:
-                            child_process = psutil.Process(child_pid)
+                            child_process = self._proc_cache.get(child_pid) or psutil.Process(child_pid)
                             if child_process.is_running():
                                 child_info = {
                                     "pid": child_pid,
                                     "name": child_process.name(),
                                     "cmdline": " ".join(child_process.cmdline()),
-                                    "cpu_percent": child_process.cpu_percent(),
+                                    "cpu_percent": child_cpu_map.get(child_pid, 0.0),
                                     "memory_info": {
                                         "rss_mb": child_process.memory_info().rss / 1024 / 1024,
                                         "vms_mb": child_process.memory_info().vms / 1024 / 1024,
@@ -346,7 +377,7 @@ class ResourceMonitor:
             List[int]: 包含主进程和所有子进程的PID列表
         """
         try:
-            process = psutil.Process(pid)
+            # 直接返回PID本身以及其递归子进程PID列表
             all_pids = [pid]  # 包含主进程
 
             # 递归获取所有子进程

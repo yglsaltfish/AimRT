@@ -28,6 +28,10 @@ class ReportGenerator:
         """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.html_dir = self.output_dir / "html"
+        self.json_dir = self.output_dir / "json"
+        self.html_dir.mkdir(parents=True, exist_ok=True)
+        self.json_dir.mkdir(parents=True, exist_ok=True)
 
     def generate_json_report(self, test_name: str,
                            execution_results: Dict[str, ProcessInfo],
@@ -45,7 +49,7 @@ class ReportGenerator:
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{test_name}_{timestamp}_report.json"
-        filepath = self.output_dir / filename
+        filepath = self.json_dir / filename
 
         # 构建报告数据
         report_data = {
@@ -58,7 +62,6 @@ class ReportGenerator:
             "detailed_results": {}
         }
 
-        # 添加详细结果
         for script_path, process_info in execution_results.items():
             process_data = {
                 "script_path": script_path,
@@ -75,7 +78,6 @@ class ReportGenerator:
                 "stderr": process_info.stderr
             }
 
-            # 添加资源监控数据
             if process_info.monitor_data:
                 from .resource_monitor import ResourceMonitor
                 monitor = ResourceMonitor()
@@ -84,7 +86,6 @@ class ReportGenerator:
 
             report_data["detailed_results"][script_path] = process_data
 
-        # 写入文件
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False)
 
@@ -108,7 +109,7 @@ class ReportGenerator:
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{test_name}_{timestamp}_report.html"
-        filepath = self.output_dir / filename
+        filepath = self.html_dir / filename
 
         # 直接内联展示日志，不保存到独立文件
         html_content = self._generate_html_content(test_name, execution_results, summary_data, callback_results)
@@ -117,6 +118,11 @@ class ReportGenerator:
             f.write(html_content)
 
         print(f"🌐 HTML报告已生成: {filepath}")
+        try:
+            self._update_aggregate_index(test_name, summary_data, str(filepath))
+            self._generate_index_html()
+        except Exception as e:
+            print(f"⚠️ 更新聚合索引失败: {e}")
         return str(filepath)
 
     def _generate_html_content(self, test_name: str,
@@ -555,12 +561,10 @@ class ReportGenerator:
         """
         reports = {}
 
-        # 暂时不生成json报告
-
-        # try:
-        #     reports["json"] = self.generate_json_report(test_name, execution_results, summary_data)
-        # except Exception as e:
-        #     print(f"❌ 生成JSON报告失败: {e}")
+        try:
+            reports["json"] = self.generate_json_report(test_name, execution_results, summary_data)
+        except Exception as e:
+            print(f"❌ 生成JSON报告失败: {e}")
 
         try:
             reports["html"] = self.generate_html_report(test_name, execution_results, summary_data, callback_results)
@@ -568,3 +572,81 @@ class ReportGenerator:
             print(f"❌ 生成HTML报告失败: {e}")
 
         return reports
+
+    def _generate_index_html(self):
+        idx = self._load_index()
+        entries = idx.get("entries", [])
+        entries = list(reversed(entries))
+
+        html = [
+            "<!DOCTYPE html>",
+            "<html lang='zh-CN'><head><meta charset='utf-8'>",
+            "<meta name='viewport' content='width=device-width, initial-scale=1.0'>",
+            "<title>AimRT 测试报告索引</title>",
+            "<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:20px} .container{max-width:1200px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1);overflow:hidden} .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:24px} .header h1{margin:0} .list{padding:20px} .card{border:1px solid #ddd;border-radius:8px;margin:12px 0;padding:12px;background:#fafafa} .meta{color:#666;font-size:12px} .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:12px;margin-left:8px} .ok{background:#d4edda;color:#155724} .warn{background:#fff3cd;color:#856404} .fail{background:#f8d7da;color:#721c24}</style>",
+            "</head><body><div class='container'>",
+            "<div class='header'><h1>🗂️ AimRT 测试报告索引</h1>",
+            f"<div class='meta'>最后更新时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div></div>",
+            "<div class='list'>"
+        ]
+
+        for e in entries:
+            s = e.get("summary", {})
+            total = s.get("total_processes", 0)
+            completed = s.get("completed", 0)
+            failed = s.get("failed", 0)
+            killed = s.get("killed", 0)
+            timeout = s.get("timeout", 0)
+            rate = s.get("success_rate", 0)
+            badge_cls = "ok" if (failed == 0) else "fail"
+            html.append("<div class='card'>")
+            html.append(f"<div><a href='{Path(e['report_path']).name}' target='_blank'>{e['test_name']}</a>"
+                        f" <span class='badge {badge_cls}'>成功率 {rate:.1f}%</span></div>")
+            html.append(f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}</div>")
+            html.append("</div>")
+
+        html.append("</div></div></body></html>")
+        self._index_html_path().write_text("\n".join(html), encoding='utf-8')
+
+    def _index_json_path(self) -> Path:
+        """返回聚合索引JSON文件路径（位于HTML目录）。"""
+        return self.json_dir / "index.json"
+
+    def _index_html_path(self) -> Path:
+        """返回HTML入口页路径（位于HTML目录）。"""
+        return self.html_dir / "index.html"
+
+    def _load_index(self) -> Dict[str, Any]:
+        """加载聚合索引JSON。"""
+        path = self._index_json_path()
+        if path.exists():
+            try:
+                return json.loads(path.read_text(encoding='utf-8'))
+            except Exception:
+                return {"entries": []}
+        return {"entries": []}
+
+    def _save_index(self, index_data: Dict[str, Any]):
+        """保存聚合索引JSON。"""
+        self._index_json_path().write_text(
+            json.dumps(index_data, ensure_ascii=False, indent=2),
+            encoding='utf-8'
+        )
+
+    def _update_aggregate_index(self, test_name: str, summary_data: Dict[str, Any], report_path: str):
+        """更新聚合索引，记录一次新的HTML报告。
+
+        Args:
+            test_name: 测试名称
+            summary_data: 汇总数据
+            report_path: HTML报告的绝对路径
+        """
+        idx = self._load_index()
+        entries = idx.setdefault("entries", [])
+        entries.append({
+            "test_name": test_name,
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "summary": summary_data.get("summary", {}),
+            "report_path": report_path
+        })
+        self._save_index(idx)
