@@ -26,7 +26,6 @@ input:
         ROLE: "server"
       cwd: ""                # 脚本执行目录
       shutdown_patterns: ["Benchmark plan 2 completed"]  # 当匹配到该字符串时，认为脚本已完成相应的测试，退出测试
-      enabled_callbacks: []
 
     - path: "./start_examples_plugins_mqtt_plugin_pb_chn_benchmark_pub_qos2.sh"
       args: []
@@ -41,4 +40,3 @@ input:
         ROLE: "client"
       cwd: ""
       shutdown_patterns: ["Bench completed."]  # 当匹配到该字符串时，认为脚本已完成相应的测试，退出测试
-      enabled_callbacks: ["log_check"]

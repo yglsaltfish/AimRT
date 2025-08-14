@@ -894,9 +894,7 @@ if __name__ == "__main__":
 
     def execute_scripts_with_dependencies(self, scripts: List[ScriptConfig]) -> Dict[str, ProcessInfo]:
         """
-        根据依赖关系并行执行脚本组
-
-        新的执行逻辑：
+        执行逻辑：
         - 每个脚本是独立的，不需要等待前一个完全结束
         - 只要依赖的进程启动了，就可以根据delay时间启动下一个
         - 支持真正的并行执行

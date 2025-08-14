@@ -55,44 +55,31 @@ class TestRPCExamples:
             func=my_log_check,
         )
 
-        print(aimrt_test_runner.get_execution_results())
-
-
-
-        test_config = aimrt_test_runner.get_test_config()
-        if not test_config:
-            pytest.fail("Test configuration not loaded")
-
         success = aimrt_test_runner.run_test()
 
         if not success:
             pytest.fail("channel test execution failed")
 
-    # @pytest.mark.aimrt
-    # def test_mqtt_qos2_config(self, aimrt_test_runner: AimRTTestRunner):
-    #     yaml_config_path = Path(__file__).parent / "test_mqtt_qos2.yaml"
+    @pytest.mark.aimrt
+    def test_mqtt_qos2_config(self, aimrt_test_runner: AimRTTestRunner):
+        yaml_config_path = Path(__file__).parent / "test_mqtt_qos2.yaml"
 
-    #     if not yaml_config_path.exists():
-    #         pytest.skip(f"YAML config file not found: {yaml_config_path}")
+        if not yaml_config_path.exists():
+            pytest.skip(f"YAML config file not found: {yaml_config_path}")
 
-    #     if not aimrt_test_runner.setup_from_yaml(str(yaml_config_path)):
-    #         pytest.fail("Failed to setup test environment from YAML configuration")
+        if not aimrt_test_runner.setup_from_yaml(str(yaml_config_path)):
+            pytest.fail("Failed to setup test environment from YAML configuration")
 
-    #     aimrt_test_runner.register_function_callback(
-    #         name="log_check",
-    #         trigger=CallbackTrigger.PROCESS_END,
-    #         func=my_log_check,
-    #         enabled=True
-    #     )
+        aimrt_test_runner.register_function_callback(
+            name="log_check",
+            trigger=CallbackTrigger.PROCESS_END,
+            func=my_log_check,
+        )
 
-    #     test_config = aimrt_test_runner.get_test_config()
-    #     if not test_config:
-    #         pytest.fail("Test configuration not loaded")
+        success = aimrt_test_runner.run_test()
 
-    #     success = aimrt_test_runner.run_test()
-
-    #     if not success:
-    #         pytest.fail("channel test execution failed")
+        if not success:
+            pytest.fail("channel test execution failed")
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

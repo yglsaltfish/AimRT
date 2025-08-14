@@ -49,7 +49,6 @@ class TestRPCExamples:
             name="log_check",
             trigger=CallbackTrigger.PROCESS_END,
             func=my_log_check,
-            enabled=True
         )
 
         assert aimrt_test_runner.run_test()
@@ -118,7 +117,7 @@ input:
 pytest pytest_aimrt/examples/channel_remote -v
 
 # 按关键字过滤
-pytest -k mqtt_qos2 -q
+pytest -k mqtt -q
 ```
 
 ### 运行机制与要点
@@ -149,27 +148,3 @@ pytest -k mqtt_qos2 -q
   - HTML：`test_reports/html/<测试名>_<时间>_report.html`
   - JSON：`test_reports/json/<测试名>_<时间>_report.json`
 - 报告内容包括整体统计、各脚本状态、资源使用（如可用）、回调结果和 pytest 原生结果摘要。
-
-### 常见问题排查
-- **远程启动失败**
-  - 检查 `hosts.<name>.host/ssh_user/ssh_password/ssh_port/remote_cwd` 是否正确，远端是否可 SSH 登录，`remote_cwd` 是否存在。
-  - 远端是否有 `python3`；远程资源监控需安装 `psutil`（可选）。
-- **回调未生效**
-  - 若 YAML 中任意脚本出现 `enabled_callbacks`，请确认需要的回调名是否被列入相应脚本。
-  - 若想默认放行，删除所有脚本中的 `enabled_callbacks` 字段。
-- **匹配不到日志**
-  - 确认 `shutdown_patterns` 与回调逻辑的关键字是否正确；
-
-### API 速览
-- `AimRTTestRunner`
-  - `setup_from_yaml(path) -> bool`
-  - `run_test() -> bool`
-  - `register_function_callback(name, trigger, func, **kwargs)`
-  - `get_test_config()`
-  - `get_execution_results()`
-  - `get_callback_results(name=None)`
-  - `get_reports()`
-- `CallbackResult(success: bool, message: str, data: dict={}, warnings: list=[], errors: list=[])`
-- 触发器：`CallbackTrigger.PROCESS_START | PROCESS_END | PERIODIC`
-
-

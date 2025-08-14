@@ -22,8 +22,6 @@ class HostProfile:
     ssh_password: str = ""
     remote_cwd: str = ""
 
-# YAML回调配置已废弃，移除 CallbackConfigData
-
 @dataclass
 class ScriptConfig:
     """脚本配置类"""
@@ -137,7 +135,6 @@ class ConfigManager:
             if isinstance(scr_env, dict):
                 merged_remote_env.update(scr_env)
 
-            # 区分字段是否在YAML中出现：出现但为空 -> []；未出现 -> None
             if 'enabled_callbacks' in script_data:
                 enabled_callbacks = script_data.get('enabled_callbacks') or []
             else:

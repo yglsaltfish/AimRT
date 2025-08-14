@@ -31,7 +31,6 @@ class CallbackConfig:
     """回调配置"""
     name: str
     trigger: CallbackTrigger
-    enabled: bool = True
     interval_sec: float = 1.0  # 周期性检查的间隔（秒）
     timeout_sec: float = 10.0  # 回调执行超时时间
     retry_count: int = 0
@@ -137,7 +136,6 @@ class CallbackManager:
         with self._lock:
             for name, callback in self._callbacks.items():
                 if (callback.config.trigger == CallbackTrigger.PERIODIC and
-                    callback.config.enabled and
                     name not in self._periodic_threads):
 
                     stop_event = threading.Event()
@@ -173,7 +171,7 @@ class CallbackManager:
         with self._lock:
             callbacks_to_execute = [
                 (name, callback) for name, callback in self._callbacks.items()
-                if callback.config.trigger == trigger and callback.config.enabled
+                if callback.config.trigger == trigger
             ]
 
         for name, callback in callbacks_to_execute:

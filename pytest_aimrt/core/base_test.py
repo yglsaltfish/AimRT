@@ -92,7 +92,6 @@ class BaseAimRTTest:
         success_count = 0
 
         try:
-            # 执行多次测试
             for execution in range(self._test_config.execution_count):
                 if self._test_config.execution_count > 1:
                     print(f"\n📊 执行第 {execution + 1}/{self._test_config.execution_count} 次测试")
@@ -122,10 +121,8 @@ class BaseAimRTTest:
                     print("⏳ 等待2秒后开始下一次执行...")
                     time.sleep(2)
 
-            # 生成报告
             self._generate_reports()
 
-            # 计算成功率
             success_rate = (success_count / self._test_config.execution_count) * 100
             print("\n📈 测试完成统计:")
             print(f"   总执行次数: {self._test_config.execution_count}")
@@ -137,10 +134,6 @@ class BaseAimRTTest:
         except Exception as e:
             print(f"❌ 执行测试时发生错误: {e}")
             return False
-
-    def get_test_config(self) -> Optional[TestConfig]:
-        """获取测试配置"""
-        return self._test_config
 
     def get_process_status(self) -> Dict[str, str]:
         """

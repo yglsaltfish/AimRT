@@ -34,10 +34,6 @@ class AimRTTestRunner:
             raise RuntimeError("测试环境未初始化，请先调用setup_from_yaml")
         return self._base_test.run_test()
 
-    def get_test_config(self):
-        """获取测试配置"""
-        return self._base_test.get_test_config()
-
     def get_process_status(self) -> Dict[str, str]:
         """获取进程状态"""
         return self._base_test.get_process_status()
