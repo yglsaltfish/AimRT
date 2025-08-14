@@ -15,6 +15,7 @@ from .resource_monitor import ResourceMonitor
 from .process_manager import ProcessManager, ProcessInfo
 from .callback_manager import CallbackManager, CallbackTrigger
 from .report_generator import ReportGenerator
+from .pytest_results import export_results as export_pytest_results
 
 
 class BaseAimRTTest:
@@ -170,19 +171,24 @@ class BaseAimRTTest:
             self.callback_manager.register_callback(callback)
 
     def register_function_callback(self, name: str, trigger: CallbackTrigger, func, **kwargs):
-        """注册函数回调（只支持脚本级 enabled_callbacks 控制）"""
+        """注册函数回调（支持脚本级 enabled_callbacks 白名单）"""
         if self._test_config:
-            # 收集每个脚本声明的 enabled_callbacks
-            script_enabled_map = {}
-            for sc in (self._test_config.scripts or []):
-                if getattr(sc, 'enabled_callbacks', None):
-                    for n in sc.enabled_callbacks:
+            # 判断是否开启白名单模式：只要任一脚本在YAML中出现了 enabled_callbacks 字段（即使为空列表），即开启
+            whitelist_enabled = any(hasattr(sc, 'enabled_callbacks') and sc.enabled_callbacks is not None
+                                    for sc in (self._test_config.scripts or []))
+
+            if whitelist_enabled:
+                # 收集每个脚本声明的 enabled_callbacks（可能为空，表示该脚本不允许任何回调）
+                script_enabled_map = {}
+                for sc in (self._test_config.scripts or []):
+                    if sc.enabled_callbacks is None:
+                        continue
+                    for n in (sc.enabled_callbacks or []):
                         script_enabled_map.setdefault(n, set()).add(sc.path)
 
-            if script_enabled_map:
-                # 若任一脚本声明了 enabled_callbacks，则仅允许在至少一个脚本名单里的回调注册
+                # 若白名单开启但该回调未出现在任何脚本名单中，则不注册
                 if name not in script_enabled_map:
-                    print(f"⏭️ 跳过注册回调: {name} (未在任何脚本的enabled_callbacks中)")
+                    print(f"⏭️ 跳过注册回调: {name} (白名单启用，未在任何脚本的enabled_callbacks中)")
                     return None
                 # 注入目标脚本名单，执行阶段据此过滤
                 kwargs = dict(kwargs or {})
@@ -222,11 +228,18 @@ class BaseAimRTTest:
 
         if self._test_config:
             callback_results = self.process_manager.get_callback_results() if self.process_manager else {}
+            # 导出 pytest 结果
+            try:
+                pytest_results = export_pytest_results()
+            except Exception:
+                pytest_results = {"summary": {}, "tests": []}
+
             report_files = self.report_generator.generate_all_reports(
                 self._test_config.name,
                 self._execution_results,
                 summary_report,
-                callback_results
+                callback_results,
+                pytest_results
             )
             for format_type, filepath in report_files.items():
                 print(f"📋 {format_type.upper()}报告: {filepath}")

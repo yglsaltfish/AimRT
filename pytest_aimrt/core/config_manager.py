@@ -12,18 +12,17 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from pathlib import Path
 
-
 @dataclass
-class CallbackConfigData:
-    """回调配置数据"""
-    name: str
-    trigger: str = "process_end"  # process_start, process_end, periodic, on_demand
-    enabled: bool = True
-    interval_sec: float = 1.0
-    timeout_sec: float = 10.0
-    retry_count: int = 0
-    params: Dict[str, Any] = field(default_factory=dict)
+class HostProfile:
+    """远端主机档案"""
+    name: str = ""
+    host: str = ""
+    ssh_user: str = ""
+    ssh_port: int = 22
+    ssh_password: str = ""
+    remote_cwd: str = ""
 
+# YAML回调配置已废弃，移除 CallbackConfigData
 
 @dataclass
 class ScriptConfig:
@@ -37,9 +36,10 @@ class ScriptConfig:
     monitor: Dict[str, bool] = field(default_factory=lambda: {"cpu": True, "memory": True, "disk": True})
     environment: Dict[str, str] = field(default_factory=dict)
     cwd: str = ""
-    callbacks: List[CallbackConfigData] = field(default_factory=list)  # 回调配置
     shutdown_patterns: List[str] = field(default_factory=list)  # 匹配即请求优雅退出并记为completed
-    enabled_callbacks: List[str] = field(default_factory=list)  # 仅对该脚本启用的回调名（函数回调）
+    enabled_callbacks: Optional[List[str]] = None  # 若字段在YAML中出现则为列表（可为空），否则为None 表示未启用白名单
+    remote_env: Dict[str, str] = field(default_factory=dict)
+    host_profile: Optional[HostProfile] = None
 
 
 @dataclass
@@ -83,7 +83,6 @@ class ConfigManager:
                 print("❌ 配置文件为空")
                 return False
 
-            # 解析配置
             self._config = self._parse_config(data)
             print(f"✅ 成功加载配置: {self._config.name}")
             return True
@@ -97,7 +96,6 @@ class ConfigManager:
 
     def _parse_config(self, data: Dict[str, Any]) -> TestConfig:
         """解析配置数据"""
-        # 解析基本配置
         config_data = data.get('config', {})
 
         test_config = TestConfig(
@@ -109,11 +107,42 @@ class ConfigManager:
             environment=config_data.get('environment', {})
         )
 
-        # 解析脚本配置
         input_data = data.get('input', {})
         scripts_data = input_data.get('scripts', [])
 
+        hosts_profiles_raw = data.get('hosts', {}) or {}
+        hosts_profiles: Dict[str, HostProfile] = {}
+        for name, prof in hosts_profiles_raw.items():
+            if not isinstance(prof, dict):
+                continue
+            hosts_profiles[name] = HostProfile(
+                name=name,
+                host=prof.get('host', ''),
+                ssh_user=prof.get('ssh_user', ''),
+                ssh_port=int(prof.get('ssh_port', 22) or 22),
+                ssh_password=prof.get('ssh_password', ''),
+                remote_cwd=prof.get('remote_cwd', ''),
+            )
+
         for script_data in scripts_data:
+            script_remote = script_data.get('remote', '')
+            host_prof = hosts_profiles.get(script_remote) if script_remote else None
+
+
+            merged_remote_env: Dict[str, str] = {}
+            prof_env = getattr(host_prof, 'remote_env', {}) if host_prof else {}
+            if isinstance(prof_env, dict):
+                merged_remote_env.update(prof_env)
+            scr_env = script_data.get('remote_env', {}) or {}
+            if isinstance(scr_env, dict):
+                merged_remote_env.update(scr_env)
+
+            # 区分字段是否在YAML中出现：出现但为空 -> []；未出现 -> None
+            if 'enabled_callbacks' in script_data:
+                enabled_callbacks = script_data.get('enabled_callbacks') or []
+            else:
+                enabled_callbacks = None
+
             script_config = ScriptConfig(
                 path=script_data.get('path', ''),
                 args=script_data.get('args', []),
@@ -125,7 +154,9 @@ class ConfigManager:
                 environment=script_data.get('environment', {}),
                 cwd=script_data.get('cwd', config_data.get('cwd', '')),
                 shutdown_patterns=script_data.get('shutdown_patterns', []),
-                enabled_callbacks=script_data.get('enabled_callbacks', [])
+                enabled_callbacks=enabled_callbacks,
+                remote_env=merged_remote_env,
+                host_profile=host_prof
             )
             test_config.scripts.append(script_config)
 
@@ -140,13 +171,11 @@ class ConfigManager:
         if not self._config:
             return False
 
-        # 检查脚本路径
         for script in self._config.scripts:
             if not script.path:
                 print("❌ 脚本路径为空")
                 return False
 
-        # 检查依赖关系
         script_paths = {script.path for script in self._config.scripts}
         for script in self._config.scripts:
             for dep in script.depends_on:
@@ -171,7 +200,6 @@ class ConfigManager:
         order = []
 
         while len(resolved) < len(scripts):
-            # 找到所有依赖已满足的脚本
             ready = []
             for path, script in scripts.items():
                 if path not in resolved:
@@ -179,7 +207,6 @@ class ConfigManager:
                         ready.append(path)
 
             if not ready:
-                # 存在循环依赖
                 remaining = set(scripts.keys()) - resolved
                 raise ValueError(f"检测到循环依赖: {remaining}")
 

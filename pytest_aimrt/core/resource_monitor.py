@@ -302,51 +302,14 @@ class ResourceMonitor:
                         disk_write_count=total_disk_write_count
                     )
 
-                    # 获取子进程详细信息（复用本轮已有的CPU测量值，避免二次调用）
-                    children_info = []
-                    for child_pid in child_pids:
-                        try:
-                            child_process = self._proc_cache.get(child_pid) or psutil.Process(child_pid)
-                            if child_process.is_running():
-                                child_info = {
-                                    "pid": child_pid,
-                                    "name": child_process.name(),
-                                    "cmdline": " ".join(child_process.cmdline()),
-                                    "cpu_percent": child_cpu_map.get(child_pid, 0.0),
-                                    "memory_info": {
-                                        "rss_mb": child_process.memory_info().rss / 1024 / 1024,
-                                        "vms_mb": child_process.memory_info().vms / 1024 / 1024,
-                                        "percent": child_process.memory_percent()
-                                    },
-                                    "create_time": datetime.fromtimestamp(child_process.create_time()).isoformat(),
-                                    "status": child_process.status()
-                                }
-
-                                # 尝试获取子进程的I/O信息
-                                try:
-                                    io_counters = child_process.io_counters()
-                                    child_info["io_counters"] = {
-                                        "read_bytes_mb": io_counters.read_bytes / 1024 / 1024,
-                                        "write_bytes_mb": io_counters.write_bytes / 1024 / 1024,
-                                        "read_count": io_counters.read_count,
-                                        "write_count": io_counters.write_count
-                                    }
-                                except (psutil.AccessDenied, AttributeError):
-                                    child_info["io_counters"] = None
-
-                                children_info.append(child_info)
-                        except (psutil.NoSuchProcess, psutil.AccessDenied):
-                            continue
 
                     # 更新监控数据
                     with self._lock:
                         if pid in self._monitors:
                             monitor_data = self._monitors[pid]
                             monitor_data.snapshots.append(snapshot)
-                            monitor_data.children = child_pids
-                            # 只有在有子进程时才更新子进程信息，避免覆盖之前的信息
-                            if children_info:
-                                monitor_data.children_info = children_info
+                            monitor_data.children = []
+                            monitor_data.children_info = []
                             monitor_data.total_cpu_percent = total_cpu_percent
                             monitor_data.total_memory_rss = total_memory_rss
                             monitor_data.total_memory_percent = total_memory_percent
@@ -474,9 +437,6 @@ class ResourceMonitor:
             "start_time": monitor_data.start_time.isoformat(),
             "end_time": end_time.isoformat(),
             "sample_count": len(snapshots),
-            "children_count": len(monitor_data.children_info),  # 使用保存的子进程信息数量
-            "children_pids": monitor_data.children,
-            "children_info": monitor_data.children_info,  # 直接使用保存的子进程信息
             "cpu": {
                 "min_percent": min(cpu_values),
                 "max_percent": max(cpu_values),

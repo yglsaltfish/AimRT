@@ -26,7 +26,12 @@ class ReportGenerator:
         Args:
             output_dir: 报告输出目录
         """
-        self.output_dir = Path(output_dir)
+        # 将输出目录锚定到仓库根目录，避免随CWD变化
+        repo_root = Path(__file__).resolve().parents[2]
+        output_path = Path(output_dir)
+        if not output_path.is_absolute():
+            output_path = repo_root / output_path
+        self.output_dir = output_path
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.html_dir = self.output_dir / "html"
         self.json_dir = self.output_dir / "json"
@@ -35,7 +40,8 @@ class ReportGenerator:
 
     def generate_json_report(self, test_name: str,
                            execution_results: Dict[str, ProcessInfo],
-                           summary_data: Dict[str, Any]) -> str:
+                           summary_data: Dict[str, Any],
+                           pytest_results: Dict[str, Any] | None = None) -> str:
         """
         生成JSON格式的测试报告
 
@@ -86,6 +92,10 @@ class ReportGenerator:
 
             report_data["detailed_results"][script_path] = process_data
 
+        # 附加 pytest 结果
+        if pytest_results:
+            report_data["pytest"] = pytest_results
+
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False)
 
@@ -95,7 +105,8 @@ class ReportGenerator:
     def generate_html_report(self, test_name: str,
                            execution_results: Dict[str, ProcessInfo],
                            summary_data: Dict[str, Any],
-                           callback_results: Dict[str, Any] | None = None) -> str:
+                           callback_results: Dict[str, Any] | None = None,
+                           pytest_results: Dict[str, Any] | None = None) -> str:
         """
         生成HTML格式的测试报告
 
@@ -112,14 +123,15 @@ class ReportGenerator:
         filepath = self.html_dir / filename
 
         # 直接内联展示日志，不保存到独立文件
-        html_content = self._generate_html_content(test_name, execution_results, summary_data, callback_results)
+        html_content = self._generate_html_content(test_name, execution_results, summary_data, callback_results, pytest_results)
 
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(html_content)
 
         print(f"🌐 HTML报告已生成: {filepath}")
         try:
-            self._update_aggregate_index(test_name, summary_data, str(filepath))
+            pytest_summary = (pytest_results or {}).get("summary", {}) if pytest_results else {}
+            self._update_aggregate_index(test_name, summary_data, str(filepath), pytest_summary)
             self._generate_index_html()
         except Exception as e:
             print(f"⚠️ 更新聚合索引失败: {e}")
@@ -128,7 +140,8 @@ class ReportGenerator:
     def _generate_html_content(self, test_name: str,
                              execution_results: Dict[str, ProcessInfo],
                              summary_data: Dict[str, Any],
-                             callback_results: Dict[str, Any] | None = None) -> str:
+                             callback_results: Dict[str, Any] | None = None,
+                             pytest_results: Dict[str, Any] | None = None) -> str:
         """生成HTML报告内容"""
 
         # HTML模板
@@ -300,6 +313,12 @@ class ReportGenerator:
             word-break: break-word;
         }}
 
+        /* pytest outcome 样式 */
+        .outcome-pass {{ color: #155724; background: #d4edda; padding: 2px 6px; border-radius: 4px; display: inline-block; }}
+        .outcome-fail {{ color: #721c24; background: #f8d7da; padding: 2px 6px; border-radius: 4px; display: inline-block; }}
+        .outcome-skip {{ color: #856404; background: #fff3cd; padding: 2px 6px; border-radius: 4px; display: inline-block; }}
+        .outcome-error {{ color: #0c5460; background: #d1ecf1; padding: 2px 6px; border-radius: 4px; display: inline-block; }}
+
         .children-title {{
             font-weight: bold;
             color: #28a745;
@@ -406,50 +425,13 @@ class ReportGenerator:
         for script_path, process_info in execution_results.items():
             status_class = f"status-{process_info.status}"
 
-            # 资源使用信息
+            # 资源使用信息（不展示子进程独立详情）
             resource_html = ""
-            children_html = ""
-            total_resources_html = ""
 
             if process_info.monitor_data:
                 from .resource_monitor import ResourceMonitor
                 monitor = ResourceMonitor()
                 resource_report = monitor.generate_report(process_info.monitor_data)
-
-                # 生成子进程信息
-                if resource_report.get('children_count', 0) > 0:
-                    children_info = resource_report.get('children_info', [])
-                    children_html = f"""
-                    <div class="children-section">
-                        <div class="children-title">👶 子进程信息 ({resource_report['children_count']} 个子进程)</div>
-                    """
-
-                    for child in children_info:
-                        children_html += f"""
-                        <div class="child-item">
-                            <div class="child-header">PID {child['pid']}: {child['name']}</div>
-                            <div class="child-details">
-                                命令行: {child['cmdline']}<br>
-                                CPU使用率: {child['cpu_percent']:.1f}%<br>
-                                内存使用: {child['memory_info']['rss_mb']:.1f}MB (占比: {child['memory_info']['percent']:.1f}%)<br>
-                                状态: {child['status']}<br>
-                                创建时间: {child['create_time']}
-                            </div>
-                        </div>
-                        """
-
-                    children_html += "</div>"
-
-                    # 生成总资源使用信息（包括子进程）
-                    total_resources_html = f"""
-                    <div class="total-resources">
-                        <div class="total-resources-title">📊 总资源使用情况（包括子进程）</div>
-                        <div class="child-details">
-                            总CPU使用率: {resource_report['cpu']['total_percent']:.1f}%<br>
-                            总内存使用: {resource_report['memory']['total_rss_mb']:.1f}MB (占比: {resource_report['memory']['total_percent']:.1f}%)
-                        </div>
-                    </div>
-                    """
 
                 resource_html = f"""
                 <div class="resource-grid">
@@ -507,8 +489,6 @@ class ReportGenerator:
 
                     <h4>📈 资源使用情况</h4>
                     {resource_html}
-                    {total_resources_html}
-                    {children_html}
 
                     {("<h4>📤 标准输出</h4><pre class='log-block'>" + stdout_html + "</pre>") if stdout_html.strip() else ""}
                     {("<h4>📥 标准错误输出</h4><pre class='log-block'>" + stderr_html + "</pre>") if stderr_html.strip() else ""}
@@ -535,6 +515,54 @@ class ReportGenerator:
                                    f"<div>errors: {err}</div></div>"
                 callback_cards_html += f"<h3>{cb_name}</h3>" + items_html
 
+        # 生成 pytest 结果区块
+        pytest_section_html = "<p>无 pytest 结果</p>"
+        if pytest_results and pytest_results.get("summary"):
+            ps = pytest_results.get("summary", {})
+            tests = pytest_results.get("tests", [])
+            def map_outcome(o: str) -> tuple[str, str]:
+                m = {
+                    "passed": ("通过", "outcome-pass"),
+                    "failed": ("失败", "outcome-fail"),
+                    "skipped": ("跳过", "outcome-skip"),
+                    "error": ("错误", "outcome-error"),
+                }
+                return m.get((o or '').lower(), (escape(o or ''), ""))
+            row_list = []
+            for t in tests:
+                label, cls = map_outcome(str(t.get('outcome','')))
+                nodeid = escape(t.get('nodeid',''))
+                dur = float(t.get('duration', 0) or 0)
+                row_list.append(f"<tr><td>{nodeid}</td><td><span class=\"{cls}\">{label}</span></td><td>{dur:.3f}s</td></tr>")
+            rows = "".join(row_list)
+            pytest_section_html = f"""
+            <div class=\"resource-grid\">
+                <div class=\"resource-item\">
+                    <div class=\"resource-title\">汇总</div>
+                    <div class=\"resource-value\">
+                        总数: {ps.get('total',0)}, 通过: {ps.get('passed',0)}, 失败: {ps.get('failed',0)}, 跳过: {ps.get('skipped',0)}, 错误: {ps.get('error',0)}, 成功率: {ps.get('success_rate',0):.1f}%
+                    </div>
+                </div>
+                <div class=\"resource-item\" style=\"grid-column: 1 / -1;\">
+                    <div class=\"resource-title\">明细</div>
+                    <div class=\"resource-value\">
+                        <table style=\"width:100%; border-collapse: collapse;\">
+                            <thead>
+                                <tr>
+                                    <th style=\"text-align:left;border-bottom:1px solid #ddd;\">用例</th>
+                                    <th style=\"text-align:left;border-bottom:1px solid #ddd;\">结果</th>
+                                    <th style=\"text-align:left;border-bottom:1px solid #ddd;\">耗时</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            """
+
         # 填充模板
         summary = summary_data["summary"]
         return html_template.format(
@@ -552,7 +580,8 @@ class ReportGenerator:
     def generate_all_reports(self, test_name: str,
                            execution_results: Dict[str, ProcessInfo],
                            summary_data: Dict[str, Any],
-                           callback_results: Dict[str, Any] | None = None) -> Dict[str, str]:
+                           callback_results: Dict[str, Any] | None = None,
+                           pytest_results: Dict[str, Any] | None = None) -> Dict[str, str]:
         """
         生成所有格式的报告
 
@@ -562,12 +591,12 @@ class ReportGenerator:
         reports = {}
 
         try:
-            reports["json"] = self.generate_json_report(test_name, execution_results, summary_data)
+            reports["json"] = self.generate_json_report(test_name, execution_results, summary_data, pytest_results)
         except Exception as e:
             print(f"❌ 生成JSON报告失败: {e}")
 
         try:
-            reports["html"] = self.generate_html_report(test_name, execution_results, summary_data, callback_results)
+            reports["html"] = self.generate_html_report(test_name, execution_results, summary_data, callback_results, pytest_results)
         except Exception as e:
             print(f"❌ 生成HTML报告失败: {e}")
 
@@ -583,7 +612,7 @@ class ReportGenerator:
             "<html lang='zh-CN'><head><meta charset='utf-8'>",
             "<meta name='viewport' content='width=device-width, initial-scale=1.0'>",
             "<title>AimRT 测试报告索引</title>",
-            "<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:20px} .container{max-width:1200px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1);overflow:hidden} .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:24px} .header h1{margin:0} .list{padding:20px} .card{border:1px solid #ddd;border-radius:8px;margin:12px 0;padding:12px;background:#fafafa} .meta{color:#666;font-size:12px} .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:12px;margin-left:8px} .ok{background:#d4edda;color:#155724} .warn{background:#fff3cd;color:#856404} .fail{background:#f8d7da;color:#721c24}</style>",
+            "<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:20px} .container{max-width:1200px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1);overflow:hidden} .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:24px} .header h1{margin:0} .list{padding:20px} .card{border:1px solid #ddd;border-radius:8px;margin:12px 0;padding:12px;background:#fafafa} .meta{color:#666;font-size:12px} .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:12px;margin-left:8px} .ok{background:#d4edda;color:#155724} .warn{background:#fff3cd;color:#856404} .fail{background:#f8d7da;color:#721c24} .outp{color:#155724;background:#d4edda;padding:2px 6px;border-radius:4px} .outf{color:#721c24;background:#f8d7da;padding:2px 6px;border-radius:4px} .oute{color:#0c5460;background:#d1ecf1;padding:2px 6px;border-radius:4px} .outs{color:#856404;background:#fff3cd;padding:2px 6px;border-radius:4px}</style>",
             "</head><body><div class='container'>",
             "<div class='header'><h1>🗂️ AimRT 测试报告索引</h1>",
             f"<div class='meta'>最后更新时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div></div>",
@@ -602,7 +631,18 @@ class ReportGenerator:
             html.append("<div class='card'>")
             html.append(f"<div><a href='{Path(e['report_path']).name}' target='_blank'>{e['test_name']}</a>"
                         f" <span class='badge {badge_cls}'>成功率 {rate:.1f}%</span></div>")
-            html.append(f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}</div>")
+            # pytest 概览
+            ps = e.get('pytest_summary', {}) or {}
+            p_total = ps.get('total', 0)
+            p_pass = ps.get('passed', 0)
+            p_fail = ps.get('failed', 0)
+            p_skip = ps.get('skipped', 0)
+            p_err = ps.get('error', 0)
+            p_rate = ps.get('success_rate', 0)
+            py_html = ""
+            if p_total:
+                py_html = f" | Pytest: total {p_total} <span class='outp'>pass {p_pass}</span> <span class='outf'>fail {p_fail}</span> <span class='outs'>skip {p_skip}</span> <span class='oute'>error {p_err}</span> rate {p_rate:.1f}%"
+            html.append(f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}{py_html}</div>")
             html.append("</div>")
 
         html.append("</div></div></body></html>")
@@ -633,7 +673,7 @@ class ReportGenerator:
             encoding='utf-8'
         )
 
-    def _update_aggregate_index(self, test_name: str, summary_data: Dict[str, Any], report_path: str):
+    def _update_aggregate_index(self, test_name: str, summary_data: Dict[str, Any], report_path: str, pytest_summary: Dict[str, Any] | None = None):
         """更新聚合索引，记录一次新的HTML报告。
 
         Args:
@@ -647,6 +687,7 @@ class ReportGenerator:
             "test_name": test_name,
             "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "summary": summary_data.get("summary", {}),
-            "report_path": report_path
+            "report_path": report_path,
+            "pytest_summary": pytest_summary or {}
         })
         self._save_index(idx)

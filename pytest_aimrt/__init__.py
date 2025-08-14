@@ -8,7 +8,7 @@ AimRT 测试框架
 """
 
 __version__ = "0.1.0"
-__author__ = "AimRT Team"
+__author__ = "AimRT"
 
 from .core import (
     BaseAimRTTest,
@@ -24,7 +24,6 @@ from .core import (
 )
 
 from .fixtures.aimrt_test import AimRTTestRunner
-from .utils import TimeoutError, with_timeout
 
 __all__ = [
     'BaseAimRTTest',
@@ -37,7 +36,5 @@ __all__ = [
     'BaseCallback',
     'CallbackResult',
     'CallbackTrigger',
-    'AimRTTestRunner',
-    'TimeoutError',
-    'with_timeout'
+    'AimRTTestRunner'
 ]

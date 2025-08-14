@@ -11,6 +11,7 @@ import pytest
 from typing import Dict
 
 from ..core.base_test import BaseAimRTTest
+from ..core.pytest_results import record_report, reset_results
 
 
 class AimRTTestRunner:
@@ -117,3 +118,32 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "integration: mark test as integration test"
     )
+
+    # 重置一次结果收集
+    try:
+        reset_results()
+    except Exception:
+        pass
+
+
+def pytest_runtest_logreport(report):
+    """收集每个用例阶段的测试结果（聚合为最终报告）。"""
+    try:
+        # 仅记录 call 阶段，若 setup/teardown 失败也会以 error 形式覆盖
+        longrepr = None
+        if hasattr(report, 'longrepr') and report.longrepr:
+            try:
+                longrepr = str(report.longrepr)
+            except Exception:
+                longrepr = None
+        keywords = sorted([str(k) for k, v in getattr(report, 'keywords', {}).items() if v])
+        record_report(
+            nodeid=report.nodeid,
+            outcome=str(report.outcome),
+            duration=float(getattr(report, 'duration', 0.0) or 0.0),
+            when=str(report.when),
+            longrepr=longrepr,
+            keywords=keywords,
+        )
+    except Exception:
+        pass
