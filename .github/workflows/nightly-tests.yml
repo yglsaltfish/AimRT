@@ -1,0 +1,36 @@
+name: Nightly Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to test'
+        required: true
+        default: 'ubuntu-22.04'
+      tool_chain:
+        description: 'Tool chain to use'
+        required: true
+        default: 'gcc-11'
+      image:
+        description: 'Image to use'
+        required: true
+        default: 'ros:humble-ros-core-jammy'
+
+jobs:
+  test-linux-gcc:
+    uses: ./.github/workflows/test.yml
+    with:
+      run_platform: ${{ matrix.platform }}
+      image_name: ${{ matrix.image }}
+      tool_chain: ${{ matrix.tool_chain }}
+    strategy:
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            tool_chain: gcc-11
+            image: ros:humble-ros-core-jammy
+          - platform: ubuntu-22.04-arm
+            tool_chain: gcc-11
+            image: ros:humble-ros-core-jammy
