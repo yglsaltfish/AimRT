@@ -5,10 +5,6 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch:
 
-concurrency:
-  group: nightly-tests-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   test-linux-gcc:
     uses: ./.github/workflows/test.yml
@@ -25,68 +21,3 @@ jobs:
           - platform: ubuntu-22.04-arm
             tool_chain: gcc-11
             image: ros:humble-ros-core-jammy
-
-  build-linux:
-    needs: [test-linux-gcc]
-    uses: ./.github/workflows/build.yml
-    with:
-      run_platform: ${{ matrix.platform }}
-      image_name: ${{ matrix.image }}
-      tool_chain: ${{ matrix.tool_chain }}
-    strategy:
-      matrix:
-        include:
-          - platform: ubuntu-22.04
-            tool_chain: gcc-11
-            image: ros:humble-ros-core-jammy
-          - platform: ubuntu-22.04-arm
-            tool_chain: gcc-11
-            image: ros:humble-ros-core-jammy
-
-  post-artifact-tasks:
-    runs-on: ubuntu-latest
-    needs: [build-linux]
-    steps:
-      - name: Download x86 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ubuntu-22.04_artifact
-          path: artifacts/ubuntu-22.04
-
-      - name: Download arm artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ubuntu-22.04-arm_artifact
-          path: artifacts/ubuntu-22.04-arm
-
-      - name: List downloaded artifacts
-        run: |
-          echo "Listing artifacts..."
-          find artifacts -maxdepth 3 -type f -print
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Quick validate x86 wheel
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          wheels=(artifacts/ubuntu-22.04/*.whl artifacts/ubuntu-22.04/**/*.whl)
-          if [ ${#wheels[@]} -gt 0 ]; then
-            echo "Found x86 wheels: ${wheels[*]}"
-            pip install --upgrade pip >/dev/null
-            pip install "${wheels[0]}"
-            python -c "import sys; print('Python:', sys.version)"
-            python - <<'PY'
-import pkgutil
-mods = {m.name for m in pkgutil.iter_modules()}
-print('aimrt present:', 'aimrt' in mods)
-PY
-          else
-            echo "No x86 wheels found to validate."
-          fi
-
-
