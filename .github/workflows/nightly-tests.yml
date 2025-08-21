@@ -1,0 +1,66 @@
+name: Nightly Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-tests-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test-linux-gcc:
+    uses: ./.github/workflows/test.yml
+    with:
+      run_platform: ${{ matrix.platform }}
+      image_name: ${{ matrix.image }}
+      tool_chain: ${{ matrix.tool_chain }}
+    strategy:
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            tool_chain: gcc-11
+            image: ros:humble-ros-core-jammy
+          - platform: ubuntu-22.04-arm
+            tool_chain: gcc-11
+            image: ros:humble-ros-core-jammy
+          - platform: ubuntu-22.04
+            tool_chain: gcc-12
+            image: ros:humble-ros-core-jammy
+          - platform: ubuntu-22.04
+            tool_chain: gcc-13
+            image: ros:humble-ros-core-jammy
+
+  test-linux-clang:
+    uses: ./.github/workflows/test.yml
+    with:
+      run_platform: ${{ matrix.platform }}
+      image_name: ${{ matrix.image }}
+      tool_chain: ${{ matrix.tool_chain }}
+    strategy:
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            tool_chain: clang-15
+            image: ros:humble-ros-core-jammy
+          - platform: ubuntu-22.04
+            tool_chain: clang-16
+            image: ros:humble-ros-core-jammy
+          - platform: ubuntu-22.04
+            tool_chain: clang-17
+            image: ros:humble-ros-core-jammy
+          - platform: ubuntu-22.04
+            tool_chain: clang-18
+            image: ros:humble-ros-core-jammy
+
+  test-windows:
+    uses: ./.github/workflows/test-windows.yml
+    with:
+      run_platform: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        include:
+          - platform: windows-2022
+
+
