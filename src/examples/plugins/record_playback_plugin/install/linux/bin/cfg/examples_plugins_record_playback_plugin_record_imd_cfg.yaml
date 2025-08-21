@@ -15,7 +15,7 @@ aimrt:
               options:
                 bag_path: ./bag
                 mode: imd # imd/signal
-                executor: record_thread # require t./shread safe!
+                executor: record_thread # require thread safe!
                 storage_policy:
                   max_bag_size_m: 2048
                   max_bag_num: 10
@@ -74,7 +74,7 @@ aimrt:
 
 NormalPublisherModule:
   topic_name: test_topic
-  channel_frq: 0.5
+  channel_frq: 100
 
 NormalSubscriberModule:
   topic_name: test_topic

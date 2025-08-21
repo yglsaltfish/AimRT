@@ -619,7 +619,6 @@ if __name__ == "__main__":
                         break
                     time.sleep(0.2)
 
-                # 读取日志与退出码
                 try:
                     stdout = conn.run(f"cat {process_info.remote_stdout_path}", hide=True, warn=True, in_stream=False).stdout
                 except Exception:
@@ -705,21 +704,57 @@ if __name__ == "__main__":
                 if not process_info.process:
                     print(f"❌ 未找到本地脚本进程: {script_path}")
                     return process_info
-                if timeout is not None:
-                    stdout, stderr = process_info.process.communicate(timeout=timeout)
+                # 若该脚本启用了 shutdown_patterns，则日志已由 watcher 实时读取。
+                # 为避免与 communicate() 竞争同一管道，改为 wait() 并仅补充读取剩余缓存。
+                try:
+                    with self._lock:
+                        scfg = self._script_configs.get(script_path)
+                    has_shutdown_watcher = bool(scfg and getattr(scfg, 'shutdown_patterns', None))
+                except Exception:
+                    has_shutdown_watcher = False
+
+                if has_shutdown_watcher:
+                    # 仅等待退出，不抢占 stdout/stderr 管道的读取权
+                    if timeout is not None:
+                        process_info.process.wait(timeout=timeout)
+                    else:
+                        process_info.process.wait()
+
+                    # 尝试补充读取剩余缓存
+                    rem_out, rem_err = "", ""
+                    try:
+                        if process_info.process.stdout:
+                            rem_out = process_info.process.stdout.read() or ""
+                    except Exception:
+                        pass
+                    try:
+                        if process_info.process.stderr:
+                            rem_err = process_info.process.stderr.read() or ""
+                    except Exception:
+                        pass
+                    # 更新进程信息（采用追加，避免覆盖实时读取的内容）
+                    process_info.end_time = datetime.now()
+                    process_info.exit_code = process_info.process.returncode
+                    if rem_out:
+                        process_info.stdout = (process_info.stdout or "") + rem_out
+                    if rem_err:
+                        process_info.stderr = (process_info.stderr or "") + rem_err
                 else:
-                    stdout, stderr = process_info.process.communicate()
+                    if timeout is not None:
+                        stdout, stderr = process_info.process.communicate(timeout=timeout)
+                    else:
+                        stdout, stderr = process_info.process.communicate()
 
-                # 更新进程信息（日志采用追加，避免被覆盖导致只剩最后一段）
-                process_info.end_time = datetime.now()
-                process_info.exit_code = process_info.process.returncode
-                process_info.stdout = (process_info.stdout or "") + (stdout or "")
-                process_info.stderr = (process_info.stderr or "") + (stderr or "")
+                    process_info.end_time = datetime.now()
+                    process_info.exit_code = process_info.process.returncode
+                    process_info.stdout = (process_info.stdout or "") + (stdout or "")
+                    process_info.stderr = (process_info.stderr or "") + (stderr or "")
 
-                # 若之前已被标记为 killed/timeout，则尊重既有状态，避免覆盖
-                if process_info.status in ["killed", "timeout"]:
+                # 若之前已被标记为 killed/timeout/completed（如由shutdown watcher设置），则尊重既有状态，避免覆盖
+                if process_info.status in ["killed", "timeout", "completed"] or process_info.shutdown_triggered:
                     label = "被终止" if process_info.status == "killed" else "执行超时"
-                    print(f"⏹️ 脚本{label}: {script_path}")
+                    if process_info.status in ["killed", "timeout"]:
+                        print(f"⏹️ 脚本{label}: {script_path}")
                 else:
                     if process_info.exit_code == 0:
                         process_info.status = "completed"
@@ -760,21 +795,6 @@ if __name__ == "__main__":
                 print(f"📊 收集到监控数据: {len(monitor_data.snapshots)} 个采样点")
             else:
                 print(f"⚠️ 未收集到监控数据: {script_path}")
-
-        try:
-            with self._lock:
-                scfg = self._script_configs.get(script_path)
-            if scfg and getattr(scfg, 'shutdown_patterns', None):
-                patterns = [p.lower() for p in (scfg.shutdown_patterns or [])]
-                combined_output = ((process_info.stdout or "") + "\n" + (process_info.stderr or "")).lower()
-                if any(pat in combined_output for pat in patterns):
-                    if process_info.status in ["failed", "timeout", "killed"]:
-                        print(f"🛎️ 事后命中shutdown_patterns，置为completed: {script_path}")
-                        process_info.status = "completed"
-                        if not process_info.end_time:
-                            process_info.end_time = datetime.now()
-        except Exception as _e:
-            pass
 
         with self._lock:
             scfg = self._script_configs.get(script_path)
@@ -828,11 +848,9 @@ if __name__ == "__main__":
                             conn.run(f"kill -TERM {mpid} || true", hide=True, warn=True, in_stream=False)
                 except Exception:
                     pass
-                # 先温和终止会话/进程组
                 group_pid = process_info.remote_group_pid or process_info.pid
                 conn.run(f"kill -TERM -{group_pid} || kill -TERM {group_pid}", hide=True, warn=True, in_stream=False)
                 time.sleep(1)
-                # 若仍存活，强制kill
                 r = conn.run(f"ps -p {process_info.pid} -o pid=", hide=True, warn=True, in_stream=False)
                 if (r.stdout or "").strip():
                     print("⚠️  远程进程未结束，执行KILL...")
@@ -852,7 +870,7 @@ if __name__ == "__main__":
                 try:
                     parent_process = psutil.Process(process_info.pid)
                     child_processes = parent_process.children(recursive=True)
-                    all_processes = [parent_process] + child_processes
+                    all_processes = child_processes
 
                 except psutil.NoSuchProcess:
                     print(f"⚠️  进程 {process_info.pid} 已经不存在")
@@ -1028,7 +1046,6 @@ if __name__ == "__main__":
                 # 等待指定的运行时间
                 time.sleep(run_time)
 
-                # 检查进程是否还在运行（本地/远程）
                 still_running = False
                 try:
                     if process_info.backend == "remote":
@@ -1109,6 +1126,7 @@ if __name__ == "__main__":
                     # 设置状态为completed（视为正常结束）
                     process_info.status = "completed"
                     process_info.end_time = datetime.now()
+                    process_info.shutdown_triggered = True
             except Exception as e:
                 print(f"❌ shutdown watcher异常: {e}")
 
