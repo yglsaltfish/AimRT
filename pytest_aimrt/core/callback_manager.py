@@ -271,12 +271,61 @@ class CallbackManager:
         """周期性回调工作线程"""
         while not stop_event.wait(callback.config.interval_sec):
             try:
-                context = context_provider()
-                result = callback.execute(context)
-                callback.add_result(result)
+                base_context = context_provider()
 
-                if not result.success:
-                    print(f"⚠️ 周期性回调失败: {callback.config.name} - {result.message}")
+                # 读取目标脚本白名单（与 execute_callbacks 对齐）
+                params = getattr(callback.config, 'params', {}) or {}
+                try:
+                    value = params.get('target_scripts', params.get('target_script', []))
+                    if isinstance(value, (list, tuple, set)):
+                        target_scripts = [str(x) for x in value]
+                    elif value:
+                        target_scripts = [str(value)]
+                    else:
+                        target_scripts = []
+                except Exception:
+                    target_scripts = []
+                target_set = set(target_scripts)
+
+                # 周期性回调按进程粒度执行，并按照 target_scripts 过滤
+                processes = (
+                    base_context.get('active_processes')
+                    or base_context.get('all_processes')
+                    or []
+                )
+
+                # 若存在进程，则为每个进程拼装上下文并执行；否则按是否限定脚本决定是否全局执行一次
+                if processes:
+                    for pinfo in processes:
+                        try:
+                            if target_set and getattr(pinfo, 'script_path', None) not in target_set:
+                                continue
+
+                            enriched_context = dict(base_context)
+                            enriched_context['process_info'] = pinfo
+                            enriched_context.setdefault('script_path', getattr(pinfo, 'script_path', None))
+                            enriched_context.setdefault('pid', getattr(pinfo, 'pid', None))
+
+                            result = callback.execute(enriched_context)
+                            callback.add_result(result)
+                            if not result.success:
+                                print(f"⚠️ 周期性回调失败: {callback.config.name} - {result.message}")
+                        except BaseException as e:
+                            error_result = CallbackResult(
+                                success=False,
+                                message=f"周期性回调异常: {e}",
+                                errors=[str(e)]
+                            )
+                            callback.add_result(error_result)
+                            print(f"❌ 周期性回调异常: {callback.config.name} - {e}")
+                else:
+                    # 没有可用进程：仅当未限定 target_scripts 时执行一次（保持旧行为的全局检查能力）
+                    if target_set:
+                        continue
+                    result = callback.execute(base_context)
+                    callback.add_result(result)
+                    if not result.success:
+                        print(f"⚠️ 周期性回调失败: {callback.config.name} - {result.message}")
 
             except BaseException as e:
                 error_result = CallbackResult(

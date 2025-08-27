@@ -112,8 +112,55 @@ def pair_scripts(subs: List[Path], pubs: List[Path]) -> List[BenchPair]:
 
 def yaml_for_pair(pair: BenchPair, cwd: str, time_sec: int) -> str:
     """生成单个 bench 的 YAML 文本。使用宽松的 shutdown_patterns。"""
+    lower_name = pair.pub_path.name.lower()
+    full_pub_path = str(pair.pub_path).lower()
+
+    m = re.search(r"plugins_([a-z0-9]+)_plugin", lower_name)
+    if not m:
+        m = re.search(r"plugins/([a-z0-9]+)_plugin", full_pub_path)
+    plugin_name = m.group(1) if m else (
+        "ros2" if "ros2" in full_pub_path else (pair.family.split("_")[0] if pair.family else "examples")
+    )
+
+    is_rpc = ("rpc" in lower_name) or ("rpc" in pair.key) or ("rpc" in pair.family)
+    type_str = "rpc" if is_rpc else "chn"
+
+    variant = None
+    low_key = pair.key.lower()
+    if "ros2" in full_pub_path or "ros2" in pair.family or "ros2" in low_key:
+        if ("besteffort" in low_key) or ("best_effort" in low_key) or ("besteffort" in lower_name):
+            variant = "besteffort"
+        elif ("reliable" in low_key) or ("reliable" in lower_name):
+            variant = "reliable"
+    if plugin_name == "mqtt" and variant is None:
+        mq = re.search(r"qos([0-2])", low_key) or re.search(r"qos([0-2])", lower_name)
+        if mq:
+            variant = f"qos{mq.group(1)}"
+
+    name_str = f"{type_str}-{plugin_name}"
+    if variant:
+        name_str = f"{name_str}-{variant}"
+
+    # 追加 marks 到 name 中（去除通用与重复项）
+    try:
+        marks = compute_marks(pair)
+        base_parts = {type_str, plugin_name}
+        if variant:
+            base_parts.add(variant)
+        # 过滤掉通用标签与与基础组件重复的标签
+        exclude = {"aimrt", "examples", "bench"}
+        if type_str == "chn":
+            exclude.add("channel")
+        if type_str == "rpc":
+            exclude.add("rpc")
+        additional = [m for m in marks if m not in exclude and m not in base_parts]
+        if additional:
+            name_str = f"{name_str}-{'-'.join(additional)}"
+    except Exception:
+        pass
+
     return f"""
-name: "{pair.family.upper()} {pair.key}"
+name: "{name_str}"
 description: "Auto-generated benchmark test for {pair.key}"
 
 config:
@@ -137,7 +184,7 @@ input:
         disk: true
       environment:
         ROLE: "server"
-      shutdown_patterns: ["Benchmark plan 2 completed"]
+      shutdown_patterns: ["Benchmark plan 0 completed"]
 
     - path: "./{pair.pub_path.name}"
       args: []
@@ -160,11 +207,24 @@ def compute_marks(pair: BenchPair) -> List[str]:
     fam = pair.family
     if fam:
         marks.append(fam)
-    # QoS 线索（若脚本名里带 qosN）
     m = re.search(r"qos([0-2])", pair.key)
     if m:
         marks.append(f"qos{m.group(1)}")
-    # channel / rpc 线索
+    low_key = pair.key.lower()
+    low_pub = pair.pub_path.name.lower()
+    # cross/local 识别
+    if re.search(r"x86[-_]?2[-_]?orin", low_key) or re.search(r"x86[-_]?2[-_]?orin", low_pub):
+        marks.append("cross")
+    if ("local" in low_key) or ("local" in low_pub):
+        marks.append("localmark")
+    # msg_size 提取
+    msz = re.search(r"msg[-_]?size[-_]?(\d+)", low_key) or re.search(r"msg[-_]?size[-_]?(\d+)", low_pub)
+    if msz:
+        marks.append(f"msg_size_{msz.group(1)}")
+    if "besteffort" in low_key or "best_effort" in low_key:
+        marks.append("besteffort")
+    if "reliable" in low_key:
+        marks.append("reliable")
     if any(x in pair.key for x in ["chn", "channel"]):
         marks.append("channel")
     if "rpc" in pair.key:
@@ -226,6 +286,12 @@ def main(argv: List[str] | None = None) -> int:
     yaml_paths: List[Path] = []
     marks_map: Dict[str, List[str]] = {}
     for pair in pairs:
+        lower_name = pair.pub_path.name.lower()
+        is_rpc = ("rpc" in lower_name) or ("rpc" in pair.key) or ("rpc" in pair.family)
+        # 暂时跳过所有 RPC 用例的生成
+        if is_rpc:
+            continue
+
         yaml_txt = yaml_for_pair(pair, cwd=args.cwd, time_sec=args.time_sec)
         yaml_name = f"bench_{pair.key}.yaml"
         yaml_path = out_dir / yaml_name
@@ -233,7 +299,6 @@ def main(argv: List[str] | None = None) -> int:
         yaml_paths.append(yaml_path)
         marks_map[yaml_name] = compute_marks(pair)
 
-    # 写入聚合测试文件
     test_py = out_dir / "test_benchmarks.py"
     write_test_hub(test_py, yaml_paths, marks_map)
 

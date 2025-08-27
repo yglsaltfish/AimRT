@@ -100,7 +100,9 @@ void BenchmarkSubscriberModule::BenchmarkSignalHandle(
           std::atomic_exchange(&run_state_, State::kEvaluating) == State::kRunning,
           "Invalid state!");
 
+      AIMRT_INFO("Benchmark plan {} Evaluate, report start.", cur_bench_plan_id_);
       Evaluate();
+      AIMRT_INFO("Benchmark plan {} Evaluate, report end.", cur_bench_plan_id_);
 
       AIMRT_CHECK_ERROR_THROW(
           std::atomic_exchange(&run_state_, State::kReadyToRun) == State::kEvaluating,
@@ -205,7 +207,7 @@ max latency: {} us
 avg latency: {} us
 p90 latency: {} us
 p99 latency: {} us
-p999 latency: {} us
+p999 latency: {} us \n
 )str",
              cur_bench_plan_id_,
              cur_bench_mode_,
@@ -223,6 +225,7 @@ p999 latency: {} us
              p90_latency / 1000.0,
              p99_latency / 1000.0,
              p999_latency / 1000.0);
+  AIMRT_INFO("Benchmark plan {} completed, report end.", cur_bench_plan_id_);
 }
 
 }  // namespace aimrt::examples::cpp::pb_chn::benchmark_subscriber_module

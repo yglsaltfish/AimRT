@@ -12,6 +12,8 @@ import threading
 import time
 import os
 import json
+import pty
+import select
 
 import psutil
 from typing import Dict, List, Optional, Any, Literal
@@ -54,6 +56,9 @@ class ProcessInfo:
     # 远端真实业务进程PID与路径，以及外层会话/进程组的PID
     remote_run_pid_path: str = ""
     remote_group_pid: int = 0
+    # 本地PTY支持
+    pty_master_fd: int = -1
+    pty_reader_started: bool = False
 
 
 class ProcessManager:
@@ -342,23 +347,27 @@ if __name__ == "__main__":
 
         if not self._is_remote(script_config):
             try:
+                master_fd, slave_fd = pty.openpty()
                 process = subprocess.Popen(
                     cmd,
                     cwd=str(cwd),
                     env=env,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    stdin=subprocess.DEVNULL,
-                    text=True,
-                    bufsize=1,
-                    universal_newlines=True
+                    stdin=slave_fd,
+                    stdout=slave_fd,
+                    stderr=slave_fd,
+                    close_fds=True
                 )
+                try:
+                    os.close(slave_fd)
+                except Exception:
+                    pass
                 process_info = ProcessInfo(
                     script_path=script_config.path,
                     pid=process.pid,
                     process=process,
                     start_time=datetime.now(),
-                    backend="local"
+                    backend="local",
+                    pty_master_fd=master_fd
                 )
 
                 with self._lock:
@@ -384,8 +393,7 @@ if __name__ == "__main__":
 
                 self.start_periodic_callbacks()
 
-                if script_config.shutdown_patterns:
-                    self._start_shutdown_pattern_watcher(process_info, script_config)
+                self._start_local_pty_reader(process_info, script_config.shutdown_patterns or [])
 
                 if script_run_time > 0:
                     self._start_run_time_control(process_info, script_run_time, script_config.kill_signal)
@@ -685,16 +693,16 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"⚠️ 读取远程监控数据失败: {e}")
 
-                if process_info.status in ["killed", "timeout"]:
-                    label = "被终止" if process_info.status == "killed" else "执行超时"
-                    print(f"⏹️ 脚本{label}(远程): {script_path}")
+                if process_info.status in ["killed", "timeout", "completed"] or process_info.shutdown_triggered:
+                    # 已经由 watcher 标记或优雅退出触发，则不覆盖为 failed
+                    if process_info.status in ["killed", "timeout"]:
+                        label = "被终止" if process_info.status == "killed" else "执行超时"
+                        print(f"⏹️ 脚本{label}(远程): {script_path}")
+                    else:
+                        print(f"✅ 远程脚本执行completed: {script_path}")
                 else:
                     if exit_code is None:
-                        # 未知退出码，依据stderr判断
-                        if process_info.shutdown_triggered:
-                            process_info.status = "completed"
-                        else:
-                            process_info.status = "completed" if not remote_running() else "failed"
+                        process_info.status = "completed" if not remote_running() else "failed"
                     else:
                         process_info.status = "completed" if exit_code == 0 else "failed"
                     status_emoji = "✅" if process_info.status == "completed" else "❌"
@@ -704,8 +712,6 @@ if __name__ == "__main__":
                 if not process_info.process:
                     print(f"❌ 未找到本地脚本进程: {script_path}")
                     return process_info
-                # 若该脚本启用了 shutdown_patterns，则日志已由 watcher 实时读取。
-                # 为避免与 communicate() 竞争同一管道，改为 wait() 并仅补充读取剩余缓存。
                 try:
                     with self._lock:
                         scfg = self._script_configs.get(script_path)
@@ -713,32 +719,16 @@ if __name__ == "__main__":
                 except Exception:
                     has_shutdown_watcher = False
 
-                if has_shutdown_watcher:
-                    # 仅等待退出，不抢占 stdout/stderr 管道的读取权
+                use_pty = getattr(process_info, 'pty_master_fd', -1) >= 0
+
+                if has_shutdown_watcher or use_pty:
                     if timeout is not None:
                         process_info.process.wait(timeout=timeout)
                     else:
                         process_info.process.wait()
 
-                    # 尝试补充读取剩余缓存
-                    rem_out, rem_err = "", ""
-                    try:
-                        if process_info.process.stdout:
-                            rem_out = process_info.process.stdout.read() or ""
-                    except Exception:
-                        pass
-                    try:
-                        if process_info.process.stderr:
-                            rem_err = process_info.process.stderr.read() or ""
-                    except Exception:
-                        pass
-                    # 更新进程信息（采用追加，避免覆盖实时读取的内容）
                     process_info.end_time = datetime.now()
                     process_info.exit_code = process_info.process.returncode
-                    if rem_out:
-                        process_info.stdout = (process_info.stdout or "") + rem_out
-                    if rem_err:
-                        process_info.stderr = (process_info.stderr or "") + rem_err
                 else:
                     if timeout is not None:
                         stdout, stderr = process_info.process.communicate(timeout=timeout)
@@ -1099,8 +1089,18 @@ if __name__ == "__main__":
                             continue
                         if key.fileobj is proc.stdout:
                             process_info.stdout += data
+                            # 打印本地实时标准输出
+                            try:
+                                print(data, end="")
+                            except Exception:
+                                pass
                         else:
                             process_info.stderr += data
+                            # 打印本地实时标准错误
+                            try:
+                                print(data, end="")
+                            except Exception:
+                                pass
                         low = data.lower()
                         for p in patterns:
                             if p in low:
@@ -1112,18 +1112,25 @@ if __name__ == "__main__":
                 if matched and proc.poll() is None:
                     print(f"🛎️ 触发shutdown_patterns，优雅终止: {process_info.script_path}")
                     try:
-                        # 先尝试温和终止
                         parent = psutil.Process(process_info.pid)
-                        for ch in parent.children(recursive=True):
+                        children = parent.children(recursive=True)
+                        if children is None:
                             try:
-                                ch.terminate()
+                                parent.terminate()
                             except psutil.NoSuchProcess:
                                 pass
-                        parent.terminate()
+                        else:
+
+                            for ch in children:
+                                try:
+                                    ch.terminate()
+                                except psutil.NoSuchProcess:
+                                    pass
+                            psutil.wait_procs(children, timeout=3)
+
                         psutil.wait_procs([parent], timeout=3)
                     except Exception:
                         pass
-                    # 设置状态为completed（视为正常结束）
                     process_info.status = "completed"
                     process_info.end_time = datetime.now()
                     process_info.shutdown_triggered = True
@@ -1132,6 +1139,101 @@ if __name__ == "__main__":
 
         t = threading.Thread(target=watcher, daemon=True, name=f"shutdown-watcher-{process_info.pid}")
         t.start()
+
+    def _start_local_pty_reader(self, process_info: ProcessInfo, shutdown_patterns: List[str]):
+        if not process_info or not process_info.process:
+            return
+        if getattr(process_info, 'pty_reader_started', False):
+            return
+        master_fd = getattr(process_info, 'pty_master_fd', -1)
+        if master_fd < 0:
+            return
+
+        patterns = [p.lower() for p in shutdown_patterns or []]
+
+        def reader():
+            try:
+                rolling_low = ""
+                while True:
+                    try:
+                        r, _, _ = select.select([master_fd], [], [], 0.2)
+                    except Exception:
+                        r = []
+                    if master_fd in r:
+                        try:
+                            chunk = os.read(master_fd, 4096)
+                        except OSError:
+                            break
+                        if not chunk:
+                            break
+                        try:
+                            text = chunk.decode(errors="ignore")
+                        except Exception:
+                            text = ""
+                        if text:
+                            process_info.stdout = (process_info.stdout or "") + text
+                            try:
+                                print(text, end="")
+                            except Exception:
+                                pass
+
+                            if patterns:
+                                rolling_low = (rolling_low + text.lower())[-8192:]
+                                matched = False
+                                for p in patterns:
+                                    if p in rolling_low:
+                                        matched = True
+                                        break
+                                if matched and process_info.process and process_info.process.poll() is None:
+                                    print(f"\U0001F6CE\ufe0f 触发shutdown_patterns，优雅终止(PTY): {process_info.script_path}")
+                                    try:
+                                        parent = psutil.Process(process_info.pid)
+                                        children = parent.children(recursive=True)
+                                        for ch in children:
+                                            try:
+                                                ch.terminate()
+                                            except psutil.NoSuchProcess:
+                                                pass
+                                        psutil.wait_procs(children, timeout=3)
+                                    except Exception:
+                                        pass
+                                    process_info.status = "completed"
+                                    process_info.end_time = datetime.now()
+                                    process_info.shutdown_triggered = True
+
+                    if process_info.process and process_info.process.poll() is not None:
+                        try:
+                            while True:
+                                try:
+                                    chunk = os.read(master_fd, 4096)
+                                except OSError:
+                                    break
+                                if not chunk:
+                                    break
+                                try:
+                                    text = chunk.decode(errors="ignore")
+                                except Exception:
+                                    text = ""
+                                if not text:
+                                    break
+                                process_info.stdout = (process_info.stdout or "") + text
+                                try:
+                                    print(text, end="")
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+                        break
+            finally:
+                try:
+                    os.close(master_fd)
+                except Exception:
+                    pass
+                process_info.pty_master_fd = -1
+
+        t = threading.Thread(target=reader, daemon=True, name=f"pty-reader-{process_info.pid}")
+        t.start()
+        process_info.pty_reader_started = True
 
     def _start_remote_shutdown_watcher(self, process_info: ProcessInfo, script_config: ScriptConfig):
         patterns = [p.lower() for p in script_config.shutdown_patterns]
@@ -1175,7 +1277,12 @@ if __name__ == "__main__":
                     print(f"🛎️ 触发远程shutdown_patterns，优雅终止: {process_info.script_path}")
                     try:
                         group_pid = process_info.remote_group_pid or process_info.pid
-                        conn.run(f"kill -TERM -{group_pid} || kill -TERM {group_pid}", hide=True, warn=True, in_stream=False)
+                        # 仅对子进程发送TERM，递归直到无子进程
+                        cmd = (
+                            f"CH=$(pgrep -P {group_pid} || true); "
+                            f"while [ -n \"$CH\" ]; do kill -TERM $CH || true; sleep 0.2; CH=$(pgrep -P {group_pid} || true); done"
+                        )
+                        conn.run(cmd, hide=True, warn=True, in_stream=False)
                     except Exception:
                         pass
                     process_info.status = "completed"

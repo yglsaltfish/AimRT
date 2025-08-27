@@ -1,4 +1,4 @@
-name: "MQTT examples_plugins_mqtt_plugin_pb_chn_benchmark_qos1"
+name: "chn-mqtt-qos1"
 description: "Auto-generated benchmark test for examples_plugins_mqtt_plugin_pb_chn_benchmark_qos1"
 
 config:
@@ -22,7 +22,7 @@ input:
         disk: true
       environment:
         ROLE: "server"
-      shutdown_patterns: ["Benchmark plan 2 completed"]
+      shutdown_patterns: ["Benchmark plan 0 completed"]
 
     - path: "./start_examples_plugins_mqtt_plugin_pb_chn_benchmark_pub_qos1.sh"
       args: []

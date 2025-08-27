@@ -180,7 +180,7 @@ class BaseAimRTTest:
                         script_enabled_map.setdefault(n, set()).add(sc.path)
 
                 # 若白名单开启但该回调未出现在任何脚本名单中，则不注册
-                if name not in script_enabled_map:
+                if name not in script_enabled_map and name not in kwargs.get('enabled_callbacks', []):
                     print(f"⏭️ 跳过注册回调: {name} (白名单启用，未在任何脚本的enabled_callbacks中)")
                     return None
                 # 注入目标脚本名单，执行阶段据此过滤
@@ -188,7 +188,6 @@ class BaseAimRTTest:
                 params = dict(kwargs.get('params', {}))
                 params['target_scripts'] = sorted(list(script_enabled_map[name]))
                 kwargs['params'] = params
-
         if self.process_manager:
             return self.process_manager.register_function_callback(name, trigger, func, **kwargs)
         else:
@@ -323,6 +322,7 @@ class BaseAimRTTest:
     def teardown_method(self, method):
         """pytest方法级别的清理"""
         self.cleanup()
+        time.sleep(1)
 
     def setup_class(self):
         """pytest类级别的设置"""

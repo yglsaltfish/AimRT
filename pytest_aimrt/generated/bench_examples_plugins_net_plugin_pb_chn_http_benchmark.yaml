@@ -1,4 +1,4 @@
-name: "PB_CHN examples_plugins_net_plugin_pb_chn_http_benchmark"
+name: "chn-net-pb_chn"
 description: "Auto-generated benchmark test for examples_plugins_net_plugin_pb_chn_http_benchmark"
 
 config:
@@ -22,7 +22,7 @@ input:
         disk: true
       environment:
         ROLE: "server"
-      shutdown_patterns: ["Benchmark plan 2 completed"]
+      shutdown_patterns: ["Benchmark plan 0 completed"]
 
     - path: "./start_examples_plugins_net_plugin_pb_chn_http_benchmark_pub.sh"
       args: []
