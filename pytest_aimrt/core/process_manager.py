@@ -65,7 +65,9 @@ class ProcessManager:
     """进程管理器"""
 
     def __init__(self, base_cwd: str = "", resource_monitor: Optional[ResourceMonitor] = None,
-                 callback_manager: Optional[CallbackManager] = None):
+                 callback_manager: Optional[CallbackManager] = None,
+                 global_shutdown_patterns: Optional[List[str]] = None,
+                 stop_all_on_shutdown: bool = False):
         """
         初始化进程管理器
 
@@ -81,6 +83,83 @@ class ProcessManager:
         self._script_configs: Dict[str, ScriptConfig] = {}
         self._lock = threading.Lock()
         self._fabric_conns: Dict[str, Any] = {}
+        # 全局关停配置
+        self._global_shutdown_patterns = [p.lower() for p in (global_shutdown_patterns or [])]
+        self._stop_all_on_shutdown = bool(stop_all_on_shutdown)
+        self._global_shutdown_initiated = threading.Event()
+
+    def _graceful_terminate_local(self, process_info: ProcessInfo):
+        try:
+            parent = psutil.Process(process_info.pid)
+            children = parent.children(recursive=True)
+            for ch in children:
+                try:
+                    ch.terminate()
+                except psutil.NoSuchProcess:
+                    pass
+            psutil.wait_procs(children, timeout=3)
+            try:
+                parent.terminate()
+            except psutil.NoSuchProcess:
+                pass
+            psutil.wait_procs([parent], timeout=3)
+        except Exception:
+            pass
+
+    def _graceful_terminate_remote(self, process_info: ProcessInfo):
+        try:
+            conn = self._fabric_conns.get(process_info.remote_conn_key)
+            if not conn:
+                with self._lock:
+                    scfg = self._script_configs.get(process_info.script_path)
+                conn = self._get_fabric_connection(scfg)
+            group_pid = process_info.remote_group_pid or process_info.pid
+            cmd = (
+                f"CH=$(pgrep -P {group_pid} || true); "
+                f"while [ -n \"$CH\" ]; do kill -TERM $CH || true; sleep 0.2; CH=$(pgrep -P {group_pid} || true); done"
+            )
+            conn.run(cmd, hide=True, warn=True, in_stream=False)
+        except Exception:
+            pass
+
+    def _trigger_global_shutdown(self, grace_sec: float = 0.0):
+        if self._global_shutdown_initiated.is_set():
+            return
+        self._global_shutdown_initiated.set()
+        try:
+            if grace_sec and grace_sec > 0:
+                print(f"🛎️ 触发全局关停，等待宽限 {grace_sec:.1f}s 再强制收尾...")
+                time.sleep(min(grace_sec, 60.0))
+        except Exception:
+            pass
+        # 终止所有仍在运行的进程
+        with self._lock:
+            targets = list(self._processes.keys())
+        for sp in targets:
+            try:
+                if self.is_process_running(sp):
+                    self.kill_process(sp)
+            except Exception:
+                pass
+
+    def _on_shutdown_pattern_matched(self, process_info: ProcessInfo, script_config: ScriptConfig, *, matched_global: bool):
+        # 标记完成并尝试优雅终止触发者
+        if process_info.backend == "remote":
+            self._graceful_terminate_remote(process_info)
+        else:
+            self._graceful_terminate_local(process_info)
+        process_info.status = "completed"
+        process_info.end_time = datetime.now()
+        process_info.shutdown_triggered = True
+
+        should_propagate = self._stop_all_on_shutdown or matched_global or bool(getattr(script_config, 'propagate_shutdown', False))
+        if should_propagate:
+            grace = 0.0
+            try:
+                grace = float(getattr(script_config, 'shutdown_grace_sec', 0.0) or 0.0)
+            except Exception:
+                grace = 0.0
+            self._trigger_global_shutdown(grace)
 
     def _start_remote_resource_monitor(self, conn: Connection, process_info: "ProcessInfo", script_config: ScriptConfig):
         """
@@ -393,7 +472,7 @@ if __name__ == "__main__":
 
                 self.start_periodic_callbacks()
 
-                self._start_local_pty_reader(process_info, script_config.shutdown_patterns or [])
+                self._start_local_pty_reader(process_info, script_config)
 
                 if script_run_time > 0:
                     self._start_run_time_control(process_info, script_run_time, script_config.kill_signal)
@@ -554,7 +633,7 @@ if __name__ == "__main__":
 
                 self.start_periodic_callbacks()
 
-                if script_config.shutdown_patterns:
+                if script_config.shutdown_patterns or self._global_shutdown_patterns:
                     self._start_remote_shutdown_watcher(process_info, script_config)
 
                 # 运行时间控制
@@ -973,7 +1052,7 @@ if __name__ == "__main__":
         # 现在所有脚本都在运行，等待它们完成或超时
         print("⏳ 等待所有脚本执行完成...")
 
-                # 等待所有进程完成
+        # 等待所有进程完成
         for script in scripts:
             script_path = script.path
             if script_path in results and results[script_path].status not in ["failed"]:
@@ -1140,7 +1219,7 @@ if __name__ == "__main__":
         t = threading.Thread(target=watcher, daemon=True, name=f"shutdown-watcher-{process_info.pid}")
         t.start()
 
-    def _start_local_pty_reader(self, process_info: ProcessInfo, shutdown_patterns: List[str]):
+    def _start_local_pty_reader(self, process_info: ProcessInfo, script_config: ScriptConfig):
         if not process_info or not process_info.process:
             return
         if getattr(process_info, 'pty_reader_started', False):
@@ -1149,7 +1228,8 @@ if __name__ == "__main__":
         if master_fd < 0:
             return
 
-        patterns = [p.lower() for p in shutdown_patterns or []]
+        patterns_local = [p.lower() for p in (script_config.shutdown_patterns or [])]
+        patterns_global = list(self._global_shutdown_patterns or [])
 
         def reader():
             try:
@@ -1177,29 +1257,23 @@ if __name__ == "__main__":
                             except Exception:
                                 pass
 
-                            if patterns:
+                            if patterns_local or patterns_global:
                                 rolling_low = (rolling_low + text.lower())[-8192:]
                                 matched = False
-                                for p in patterns:
+                                matched_global = False
+                                for p in patterns_local:
                                     if p in rolling_low:
                                         matched = True
                                         break
+                                if not matched and patterns_global:
+                                    for p in patterns_global:
+                                        if p in rolling_low:
+                                            matched = True
+                                            matched_global = True
+                                            break
                                 if matched and process_info.process and process_info.process.poll() is None:
-                                    print(f"\U0001F6CE\ufe0f 触发shutdown_patterns，优雅终止(PTY): {process_info.script_path}")
-                                    try:
-                                        parent = psutil.Process(process_info.pid)
-                                        children = parent.children(recursive=True)
-                                        for ch in children:
-                                            try:
-                                                ch.terminate()
-                                            except psutil.NoSuchProcess:
-                                                pass
-                                        psutil.wait_procs(children, timeout=3)
-                                    except Exception:
-                                        pass
-                                    process_info.status = "completed"
-                                    process_info.end_time = datetime.now()
-                                    process_info.shutdown_triggered = True
+                                    print(f"\U0001F6CE\ufe0f 触发{'全局' if matched_global else '脚本'}shutdown_patterns，优雅终止(PTY): {process_info.script_path}")
+                                    self._on_shutdown_pattern_matched(process_info, script_config, matched_global=matched_global)
 
                     if process_info.process and process_info.process.poll() is not None:
                         try:
@@ -1236,7 +1310,8 @@ if __name__ == "__main__":
         process_info.pty_reader_started = True
 
     def _start_remote_shutdown_watcher(self, process_info: ProcessInfo, script_config: ScriptConfig):
-        patterns = [p.lower() for p in script_config.shutdown_patterns]
+        patterns_local = [p.lower() for p in (script_config.shutdown_patterns or [])]
+        patterns_global = list(self._global_shutdown_patterns or [])
 
         def watcher():
             try:
@@ -1251,9 +1326,13 @@ if __name__ == "__main__":
                     return bool((r.stdout or "").strip())
 
                 matched = False
+                matched_global = False
                 while running() and not matched:
                     try:
-                        pattern_regex = "|".join(patterns)
+                        combined = patterns_local + patterns_global
+                        if not combined:
+                            break
+                        pattern_regex = "|".join(combined)
                         pattern_regex = pattern_regex.replace('"', '\\"')
                         out1 = conn.run(
                             f'grep -i -E "{pattern_regex}" {process_info.remote_stdout_path} 2>/dev/null || true',
@@ -1265,29 +1344,23 @@ if __name__ == "__main__":
                         )
                         data = (out1.stdout or "") + (out2.stdout or "")
                         low = data.lower()
-                        for p in patterns:
+                        for p in patterns_local:
                             if p in low:
                                 matched = True
                                 break
+                        if not matched and patterns_global:
+                            for p in patterns_global:
+                                if p in low:
+                                    matched = True
+                                    matched_global = True
+                                    break
                     except Exception:
                         pass
                     time.sleep(0.2)
 
                 if matched and running():
-                    print(f"🛎️ 触发远程shutdown_patterns，优雅终止: {process_info.script_path}")
-                    try:
-                        group_pid = process_info.remote_group_pid or process_info.pid
-                        # 仅对子进程发送TERM，递归直到无子进程
-                        cmd = (
-                            f"CH=$(pgrep -P {group_pid} || true); "
-                            f"while [ -n \"$CH\" ]; do kill -TERM $CH || true; sleep 0.2; CH=$(pgrep -P {group_pid} || true); done"
-                        )
-                        conn.run(cmd, hide=True, warn=True, in_stream=False)
-                    except Exception:
-                        pass
-                    process_info.status = "completed"
-                    process_info.end_time = datetime.now()
-                    process_info.shutdown_triggered = True
+                    print(f"🛎️ 触发远程{'全局' if matched_global else '脚本'}shutdown_patterns，优雅终止: {process_info.script_path}")
+                    self._on_shutdown_pattern_matched(process_info, script_config, matched_global=matched_global)
             except Exception as e:
                 print(f"❌ 远程shutdown watcher异常: {e}")
 

@@ -59,11 +59,12 @@ class BaseAimRTTest:
                 print("❌ 获取测试配置失败")
                 return False
 
-            # 初始化进程管理器
             self.process_manager = ProcessManager(
                 base_cwd=self._test_config.cwd,
                 resource_monitor=self.resource_monitor,
-                callback_manager=self.callback_manager
+                callback_manager=self.callback_manager,
+                global_shutdown_patterns=getattr(self._test_config, 'global_shutdown_patterns', []) or [],
+                stop_all_on_shutdown=bool(getattr(self._test_config, 'stop_all_on_shutdown', False))
             )
 
             print(f"✅ 测试环境设置成功: {self._test_config.name}")

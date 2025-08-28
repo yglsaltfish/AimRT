@@ -35,6 +35,10 @@ class ScriptConfig:
     environment: Dict[str, str] = field(default_factory=dict)
     cwd: str = ""
     shutdown_patterns: List[str] = field(default_factory=list)  # 匹配即请求优雅退出并记为completed
+    # 当该脚本匹配到关停模式后，是否将关停传播为“全局关停”（终止所有脚本）
+    propagate_shutdown: bool = False
+    # 触发关停后等待的宽限时间（秒），用于给业务进程做清理
+    shutdown_grace_sec: float = 0.0
     enabled_callbacks: Optional[List[str]] = None  # 若字段在YAML中出现则为列表（可为空），否则为None 表示未启用白名单
     remote_env: Dict[str, str] = field(default_factory=dict)
     host_profile: Optional[HostProfile] = None
@@ -50,6 +54,8 @@ class TestConfig:
     cwd: str = ""
     environment: Dict[str, str] = field(default_factory=dict)
     scripts: List[ScriptConfig] = field(default_factory=list)
+    global_shutdown_patterns: List[str] = field(default_factory=list)
+    stop_all_on_shutdown: bool = False
 
 
 class ConfigManager:
@@ -102,7 +108,9 @@ class ConfigManager:
             execution_count=config_data.get('execution_count', 1),
             time_sec=config_data.get('time_sec', 60),
             cwd=config_data.get('cwd', ''),
-            environment=config_data.get('environment', {})
+            environment=config_data.get('environment', {}),
+            global_shutdown_patterns=config_data.get('global_shutdown_patterns', []) or [],
+            stop_all_on_shutdown=bool(config_data.get('stop_all_on_shutdown', False))
         )
 
         input_data = data.get('input', {})
@@ -151,6 +159,8 @@ class ConfigManager:
                 environment=script_data.get('environment', {}),
                 cwd=script_data.get('cwd', config_data.get('cwd', '')),
                 shutdown_patterns=script_data.get('shutdown_patterns', []),
+                propagate_shutdown=bool(script_data.get('propagate_shutdown', False)),
+                shutdown_grace_sec=float(script_data.get('shutdown_grace_sec', 0.0) or 0.0),
                 enabled_callbacks=enabled_callbacks,
                 remote_env=merged_remote_env,
                 host_profile=host_prof

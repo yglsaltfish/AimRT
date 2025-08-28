@@ -28,6 +28,7 @@ import argparse
 import re
 import sys
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -159,6 +160,10 @@ def yaml_for_pair(pair: BenchPair, cwd: str, time_sec: int) -> str:
     except Exception:
         pass
 
+    # 针对 RPC: 注入全局关停模式，命中后判定用例完成并全局关停
+    rpc_global_shutdown = """
+  global_shutdown_patterns: ["Benchmark plan 0 completed"]""" if is_rpc else ""
+
     return f"""
 name: "{name_str}"
 description: "Auto-generated benchmark test for {pair.key}"
@@ -169,6 +174,7 @@ config:
   cwd: "{cwd}"
   environment:
     LOG_LEVEL: "info"
+{rpc_global_shutdown}
 
 input:
   scripts:
@@ -234,7 +240,8 @@ def compute_marks(pair: BenchPair) -> List[str]:
 
 def write_test_hub(py_path: Path, yaml_files: List[Path], marks_map: Dict[str, List[str]]):
     """写入一个聚合测试文件，参数化加载所有生成的 YAML。"""
-    rel_yaml = [yf.name for yf in yaml_files]
+    base_dir = py_path.parent
+    rel_yaml = [os.path.relpath(str(yf), start=str(base_dir)) for yf in yaml_files]
     # 将每个用例的 marks 以 param(marks=...) 形式注入
     lines = []
     lines.append("#!/usr/bin/env python3")
@@ -253,7 +260,7 @@ def write_test_hub(py_path: Path, yaml_files: List[Path], marks_map: Dict[str, L
     lines.append("")
     lines.append("@pytest.mark.parametrize('yaml_name', CASES)")
     lines.append("def test_generated_benchmarks(yaml_name: str, aimrt_test_runner: AimRTTestRunner):")
-    lines.append("    yaml_path = Path(__file__).parent / yaml_name")
+    lines.append("    yaml_path = (Path(__file__).parent / yaml_name).resolve()")
     lines.append("    if not yaml_path.exists():")
     lines.append("        pytest.skip(f'YAML not found: {yaml_path}')")
     lines.append("    if not aimrt_test_runner.setup_from_yaml(str(yaml_path)):")
@@ -264,10 +271,51 @@ def write_test_hub(py_path: Path, yaml_files: List[Path], marks_map: Dict[str, L
     py_path.write_text("\n".join(lines), encoding="utf-8")
 
 
+def extract_meta(pair: BenchPair) -> Tuple[str, str, str | None, str]:
+    """提取(type_str, plugin_name, variant, locality) 元信息。
+    - type_str: chn|rpc
+    - plugin_name: mqtt|ros2|pb|grpc|...
+    - variant: qos2|besteffort|reliable|None
+    - locality: local|remote
+    """
+    lower_name = pair.pub_path.name.lower()
+    full_pub_path = str(pair.pub_path).lower()
+
+    # plugin
+    m = re.search(r"plugins_([a-z0-9]+)_plugin", lower_name)
+    if not m:
+        m = re.search(r"plugins/([a-z0-9]+)_plugin", full_pub_path)
+    plugin_name = m.group(1) if m else (
+        "ros2" if "ros2" in full_pub_path else (pair.family.split("_")[0] if pair.family else "examples")
+    )
+
+    # type
+    is_rpc = ("rpc" in lower_name) or ("rpc" in pair.key) or ("rpc" in pair.family)
+    type_str = "rpc" if is_rpc else "chn"
+
+    # variant
+    variant = None
+    low_key = pair.key.lower()
+    if "ros2" in full_pub_path or "ros2" in pair.family or "ros2" in low_key:
+        if ("besteffort" in low_key) or ("best_effort" in low_key) or ("besteffort" in lower_name):
+            variant = "besteffort"
+        elif ("reliable" in low_key) or ("reliable" in lower_name):
+            variant = "reliable"
+    if plugin_name == "mqtt" and variant is None:
+        mq = re.search(r"qos([0-2])", low_key) or re.search(r"qos([0-2])", lower_name)
+        if mq:
+            variant = f"qos{mq.group(1)}"
+
+    # locality
+    locality = "local" if (("local" in low_key) or ("local" in lower_name)) else "remote"
+
+    return type_str, plugin_name, variant, locality
+
+
 def main(argv: List[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--scan-root", type=str, default="src/examples", help="扫描 examples 根目录")
-    ap.add_argument("--out-dir", type=str, default="pytest_aimrt/generated", help="输出目录")
+    ap.add_argument("--out-dir", type=str, default="pytest_aimrt/generated", help="输出目录(将自动组织 local/remote 与 chn/rpc 及 plugin 层级)")
     ap.add_argument("--cwd", type=str, default="build", help="YAML 中 config.cwd")
     ap.add_argument("--time-sec", type=int, default=60, help="每个脚本运行时间")
     args = ap.parse_args(argv)
@@ -275,6 +323,17 @@ def main(argv: List[str] | None = None) -> int:
     scan_root = Path(args.scan_root).resolve()
     out_dir = Path(args.out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
+    # 清理旧的冲突性聚合文件，避免 ImportPathMismatch
+    for old in [
+        out_dir / "test_benchmarks.py",
+        out_dir / "local" / "test_benchmarks.py",
+        out_dir / "remote" / "test_benchmarks.py",
+    ]:
+        try:
+            if old.exists():
+                old.unlink()
+        except Exception:
+            pass
 
     subs, pubs = find_benchmark_scripts(scan_root)
     pairs = pair_scripts(subs, pubs)
@@ -285,24 +344,50 @@ def main(argv: List[str] | None = None) -> int:
 
     yaml_paths: List[Path] = []
     marks_map: Dict[str, List[str]] = {}
+
+    # 依据 locality/type/plugin 组织目录：<out>/local|remote/<chn|rpc>/<plugin>/
     for pair in pairs:
-        lower_name = pair.pub_path.name.lower()
-        is_rpc = ("rpc" in lower_name) or ("rpc" in pair.key) or ("rpc" in pair.family)
-        # 暂时跳过所有 RPC 用例的生成
-        if is_rpc:
-            continue
+        type_str, plugin_name, variant, locality = extract_meta(pair)
+
+        subdir = out_dir / locality / type_str / plugin_name
+        subdir.mkdir(parents=True, exist_ok=True)
 
         yaml_txt = yaml_for_pair(pair, cwd=args.cwd, time_sec=args.time_sec)
-        yaml_name = f"bench_{pair.key}.yaml"
-        yaml_path = out_dir / yaml_name
+        suffix = f"_{variant}" if variant else ""
+        yaml_name = f"bench_{pair.key}{suffix}.yaml"
+        yaml_path = subdir / yaml_name
         yaml_path.write_text(yaml_txt, encoding="utf-8")
         yaml_paths.append(yaml_path)
         marks_map[yaml_name] = compute_marks(pair)
 
-    test_py = out_dir / "test_benchmarks.py"
-    write_test_hub(test_py, yaml_paths, marks_map)
+    # 在各层级下生成各自的聚合测试，使用唯一文件名避免 ImportPathMismatch
+    # 1) 顶层聚合
+    top_test_py = out_dir / "test_benchmarks_all.py"
+    write_test_hub(top_test_py, yaml_paths, marks_map)
 
-    print(f"✅ 生成 {len(yaml_paths)} 个 YAML 与 1 个 pytest 测试: {test_py}")
+    # 2) locality 层聚合
+    for locality in ["local", "remote"]:
+        loc_dir = out_dir / locality
+        loc_files = [p for p in yaml_paths if p.is_file() and str(p).startswith(str(loc_dir))]
+        if loc_files:
+            write_test_hub(loc_dir / f"test_benchmarks_{locality}.py", loc_files, marks_map)
+
+        # 3) type 层聚合
+        for t in ["chn", "rpc"]:
+            t_dir = loc_dir / t
+            t_files = [p for p in loc_files if p.is_file() and str(p).startswith(str(t_dir))]
+            if t_files:
+                write_test_hub(t_dir / f"test_benchmarks_{locality}_{t}.py", t_files, marks_map)
+
+            # 4) plugin 层聚合
+            if t_files:
+                for plugin_dir in sorted({p.parent for p in t_files}):
+                    p_files = [p for p in t_files if p.parent == plugin_dir]
+                    if p_files:
+                        plugin_name = plugin_dir.name
+                        write_test_hub(plugin_dir / f"test_benchmarks_{locality}_{t}_{plugin_name}.py", p_files, marks_map)
+
+    print(f"✅ 生成 {len(yaml_paths)} 个 YAML 与多级 pytest 聚合入口，根入口: {top_test_py}")
     return 0
 
 
