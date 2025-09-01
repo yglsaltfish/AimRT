@@ -15,7 +15,6 @@
     python -m pytest_aimrt.utils.generate_bench_tests \
         --scan-root src/examples \
         --out-dir pytest_aimrt/generated \
-        --cwd build \
         --time-sec 60
 
 生成后运行：
@@ -111,7 +110,7 @@ def pair_scripts(subs: List[Path], pubs: List[Path]) -> List[BenchPair]:
     return pairs
 
 
-def yaml_for_pair(pair: BenchPair, cwd: str, time_sec: int) -> str:
+def yaml_for_pair(pair: BenchPair, time_sec: int, locality: str) -> str:
     """生成单个 bench 的 YAML 文本。使用宽松的 shutdown_patterns。"""
     lower_name = pair.pub_path.name.lower()
     full_pub_path = str(pair.pub_path).lower()
@@ -164,6 +163,30 @@ def yaml_for_pair(pair: BenchPair, cwd: str, time_sec: int) -> str:
     rpc_global_shutdown = """
   global_shutdown_patterns: ["Benchmark plan 0 completed"]""" if is_rpc else ""
 
+    # remote 模式下注入 hosts 段与脚本 remote 映射
+    hosts_block = ""
+    server_remote_line = ""
+    client_remote_line = ""
+    if locality == "remote":
+        hosts_block = """
+
+hosts:
+  x86:
+    host: "${X86HOST}"
+    ssh_user: "${X86USER}"
+    ssh_password: "${X86PASS}"
+    ssh_port: "${X86PORT}"
+    remote_cwd: "${X86CWD}"
+  orin:
+    host: "${ORINHOST}"
+    ssh_user: "${ORINUSER}"
+    ssh_password: "${ORINPASS}"
+    ssh_port: "${ORINPORT}"
+    remote_cwd: "${ORINCWD}"
+""".rstrip("\n")
+        server_remote_line = "\n      remote: orin"
+        client_remote_line = "\n      remote: x86"
+
     return f"""
 name: "{name_str}"
 description: "Auto-generated benchmark test for {pair.key}"
@@ -171,10 +194,11 @@ description: "Auto-generated benchmark test for {pair.key}"
 config:
   execution_count: 1
   time_sec: {max(time_sec, 1)}
-  cwd: "{cwd}"
+  cwd: "${{CWD}}"
   environment:
     LOG_LEVEL: "info"
 {rpc_global_shutdown}
+{hosts_block}
 
 input:
   scripts:
@@ -190,6 +214,7 @@ input:
         disk: true
       environment:
         ROLE: "server"
+{server_remote_line}
       shutdown_patterns: ["Benchmark plan 0 completed"]
 
     - path: "./{pair.pub_path.name}"
@@ -204,6 +229,7 @@ input:
         disk: true
       environment:
         ROLE: "client"
+{client_remote_line}
       shutdown_patterns: ["Bench completed."]
 """.strip() + "\n"
 
@@ -316,7 +342,6 @@ def main(argv: List[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--scan-root", type=str, default="src/examples", help="扫描 examples 根目录")
     ap.add_argument("--out-dir", type=str, default="pytest_aimrt/generated", help="输出目录(将自动组织 local/remote 与 chn/rpc 及 plugin 层级)")
-    ap.add_argument("--cwd", type=str, default="build", help="YAML 中 config.cwd")
     ap.add_argument("--time-sec", type=int, default=60, help="每个脚本运行时间")
     args = ap.parse_args(argv)
 
@@ -352,7 +377,7 @@ def main(argv: List[str] | None = None) -> int:
         subdir = out_dir / locality / type_str / plugin_name
         subdir.mkdir(parents=True, exist_ok=True)
 
-        yaml_txt = yaml_for_pair(pair, cwd=args.cwd, time_sec=args.time_sec)
+        yaml_txt = yaml_for_pair(pair, time_sec=args.time_sec, locality=locality)
         suffix = f"_{variant}" if variant else ""
         yaml_name = f"bench_{pair.key}{suffix}.yaml"
         yaml_path = subdir / yaml_name

@@ -60,7 +60,7 @@ class TestRPCExamples:
 name: "MQTT Channel qos2"
 config:
   time_sec: 60
-  cwd: "build"
+
 input:
   scripts:
     - path: "./start_sub.sh"

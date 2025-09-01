@@ -114,9 +114,18 @@ class ProcessManager:
                     scfg = self._script_configs.get(process_info.script_path)
                 conn = self._get_fabric_connection(scfg)
             group_pid = process_info.remote_group_pid or process_info.pid
+            run_pid = process_info.pid
+            # 递归优雅终止整个子进程树（避免仅杀父进程）
             cmd = (
-                f"CH=$(pgrep -P {group_pid} || true); "
-                f"while [ -n \"$CH\" ]; do kill -TERM $CH || true; sleep 0.2; CH=$(pgrep -P {group_pid} || true); done"
+                "bash -lc '"
+                "kill_tree() { local p=$1; if [ -z \"$p\" ] || [ \"$p\" = \"-1\" ]; then return; fi; "
+                "for c in $(pgrep -P $p 2>/dev/null || true); do kill_tree $c; done; "
+                "kill -TERM $p 2>/dev/null || true; }; "
+                f"kill -TERM -{group_pid} 2>/dev/null || true; "
+                f"kill_tree {group_pid}; "
+                f"if [ {run_pid} -ne {group_pid} ]; then kill_tree {run_pid}; fi; "
+                "sleep 0.5; "
+                "'"
             )
             conn.run(cmd, hide=True, warn=True, in_stream=False)
         except Exception:
@@ -905,7 +914,6 @@ if __name__ == "__main__":
                     return False
 
                 print(f"🔪 强制终止远程进程及其子进程: {script_path} (PID: {process_info.pid})")
-                # 先尝试结束远程监控器
                 try:
                     if process_info.remote_monitor_pid_path:
                         mp = conn.run(f"test -s {process_info.remote_monitor_pid_path} && cat {process_info.remote_monitor_pid_path} || echo -1", hide=True, warn=True, in_stream=False)
@@ -918,13 +926,36 @@ if __name__ == "__main__":
                 except Exception:
                     pass
                 group_pid = process_info.remote_group_pid or process_info.pid
-                conn.run(f"kill -TERM -{group_pid} || kill -TERM {group_pid}", hide=True, warn=True, in_stream=False)
-                time.sleep(1)
+                run_pid = process_info.pid
+                # 递归TERM整个树与进程组
+                term_cmd = (
+                    "bash -lc '"
+                    "kill_tree() { local p=$1; if [ -z \"$p\" ] || [ \"$p\" = \"-1\" ]; then return; fi; "
+                    "for c in $(pgrep -P $p 2>/dev/null || true); do kill_tree $c; done; "
+                    "kill -TERM $p 2>/dev/null || true; }; "
+                    f"kill -TERM -{group_pid} 2>/dev/null || true; "
+                    f"kill_tree {group_pid}; "
+                    f"if [ {run_pid} -ne {group_pid} ]; then kill_tree {run_pid}; fi; "
+                    "sleep 0.8; "
+                    "'"
+                )
+                conn.run(term_cmd, hide=True, warn=True, in_stream=False)
+                time.sleep(0.5)
                 r = conn.run(f"ps -p {process_info.pid} -o pid=", hide=True, warn=True, in_stream=False)
                 if (r.stdout or "").strip():
                     print("⚠️  远程进程未结束，执行KILL...")
-                    group_pid = process_info.remote_group_pid or process_info.pid
-                    conn.run(f"kill -KILL -{group_pid} || kill -KILL {group_pid}", hide=True, warn=True, in_stream=False)
+                    kill_cmd = (
+                        "bash -lc '"
+                        "kill_tree_k() { local p=$1; if [ -z \"$p\" ] || [ \"$p\" = \"-1\" ]; then return; fi; "
+                        "for c in $(pgrep -P $p 2>/dev/null || true); do kill_tree_k $c; done; "
+                        "kill -KILL $p 2>/dev/null || true; }; "
+                        f"kill -KILL -{group_pid} 2>/dev/null || true; "
+                        f"kill_tree_k {group_pid}; "
+                        f"if [ {run_pid} -ne {group_pid} ]; then kill_tree_k {run_pid}; fi; "
+                        "sleep 0.3; "
+                        "'"
+                    )
+                    conn.run(kill_cmd, hide=True, warn=True, in_stream=False)
 
                 process_info.status = "killed"
                 process_info.end_time = datetime.now()

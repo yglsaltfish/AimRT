@@ -8,6 +8,8 @@ AimRT测试框架配置管理器
 """
 
 import yaml
+import os
+import re
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -87,6 +89,9 @@ class ConfigManager:
                 print("❌ 配置文件为空")
                 return False
 
+            # 在整个配置树上执行环境变量占位符替换
+            data = self._expand_env_placeholders(data)
+
             self._config = self._parse_config(data)
             print(f"✅ 成功加载配置: {self._config.name}")
             return True
@@ -97,6 +102,24 @@ class ConfigManager:
         except Exception as e:
             print(f"❌ 加载配置文件失败: {e}")
             return False
+
+    def _expand_env_placeholders(self, obj: Any) -> Any:
+        """递归展开字符串中的环境变量占位符，如: "${HOME}"。
+
+        仅替换存在于环境变量中的键；若未找到则保留原占位符文本。
+        """
+        pattern = re.compile(r"\$\{([^}]+)\}")
+
+        def replace_in_str(text: str) -> str:
+            return pattern.sub(lambda m: os.environ.get(m.group(1), m.group(0)), text)
+
+        if isinstance(obj, dict):
+            return {k: self._expand_env_placeholders(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self._expand_env_placeholders(v) for v in obj]
+        if isinstance(obj, str):
+            return replace_in_str(obj)
+        return obj
 
     def _parse_config(self, data: Dict[str, Any]) -> TestConfig:
         """解析配置数据"""
@@ -121,11 +144,18 @@ class ConfigManager:
         for name, prof in hosts_profiles_raw.items():
             if not isinstance(prof, dict):
                 continue
+            # 端口字段容错：可能仍为未展开的占位符或空值
+            raw_port = prof.get('ssh_port', 22)
+            try:
+                port_val = int(raw_port)
+            except Exception:
+                port_val = 22
+
             hosts_profiles[name] = HostProfile(
                 name=name,
                 host=prof.get('host', ''),
                 ssh_user=prof.get('ssh_user', ''),
-                ssh_port=int(prof.get('ssh_port', 22) or 22),
+                ssh_port=port_val,
                 ssh_password=prof.get('ssh_password', ''),
                 remote_cwd=prof.get('remote_cwd', ''),
             )
