@@ -92,7 +92,7 @@ void ZenohRpcBackend::Initialize(YAML::Node options_node) {
     client_tool_ptr_->RegisterTimeoutExecutor(timeout_executor);
     client_tool_ptr_->RegisterTimeoutHandle(
         [](auto&& client_invoke_wrapper_ptr) {
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_TIMEOUT));
         });
 
     AIMRT_TRACE("zenoh rpc backend enable the timeout function, use '{}' as timeout executor.",
@@ -499,7 +499,7 @@ bool ZenohRpcBackend::RegisterClientFunc(
         client_invoke_wrapper_ptr = std::move(*msg_recorder);
 
         if (code) [[unlikely]] {
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(code));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(code));
           return;
         }
 
@@ -520,18 +520,18 @@ bool ZenohRpcBackend::RegisterClientFunc(
 
         if (!deserialize_ret) {
           // deserialize failed
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
           return;
         }
 
-        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
+        InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
         return;
       } catch (const std::exception& e) {
         AIMRT_WARN("Handle zenoh rpc msg failed, exception info: {}", e.what());
       }
 
       if (client_invoke_wrapper_ptr)
-        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+        InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
     };
 
     zenoh_manager_ptr_->RegisterRpcNode(pattern, std::move(handle), "client", shm_enabled);
@@ -549,7 +549,7 @@ void ZenohRpcBackend::Invoke(
   try {
     if (state_.load() != State::Start) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -580,7 +580,7 @@ void ZenohRpcBackend::Invoke(
         client_invoke_wrapper_ptr->ctx_ref.GetMetaValue(AIMRT_RPC_CONTEXT_KEY_SERIALIZATION_TYPE);
 
     if (serialization_type.size() > 255) [[unlikely]] {
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
       return;
     }
 
@@ -588,7 +588,7 @@ void ZenohRpcBackend::Invoke(
     auto [meta_key_vals_array, meta_key_vals_array_len] = client_invoke_wrapper_ptr->ctx_ref.GetMetaKeyValsArray();
     if (meta_key_vals_array_len / 2 > 255) [[unlikely]] {
       AIMRT_WARN("Too much context meta, require less than 255, but actually {}.", meta_key_vals_array_len / 2);
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -605,7 +605,7 @@ void ZenohRpcBackend::Invoke(
 
     if (!ret) [[unlikely]] {
       AIMRT_ERROR("Failed to record msg.");
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -750,7 +750,7 @@ void ZenohRpcBackend::Invoke(
         *client_invoke_wrapper_ptr, serialization_type);
     if (!buffer_array_view_ptr) [[unlikely]] {
       // serialize failed
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
       return;
     }
 
