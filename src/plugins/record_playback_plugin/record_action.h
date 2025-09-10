@@ -88,7 +88,7 @@ class RecordAction {
   void AddRecord(OneRecord&& record);
 
   bool StartSignalRecord(uint64_t preparation_duration_s, uint64_t record_duration_s, std::string& filefolder);
-  void StopSignalRecord();
+  bool StopSignalRecord();
 
   void UpdateMetadata(
       std::unordered_map<std::string, std::string>&& kv_pairs);
@@ -136,6 +136,8 @@ class RecordAction {
   } mcap_options;
 
   std::string bag_base_name_;
+
+  std::filesystem::path parent_bag_path_;
   std::filesystem::path real_bag_path_;
 
   std::unordered_map<uint64_t, McapStruct> mcap_info_map_;  // use to record
