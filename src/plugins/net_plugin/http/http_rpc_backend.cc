@@ -87,7 +87,8 @@ void HttpRpcBackend::Shutdown() {
   if (std::atomic_exchange(&state_, State::kShutdown) == State::kShutdown)
     return;
 
-  http_svr_ptr_->Shutdown();
+  if (http_svr_ptr_)
+    http_svr_ptr_->Shutdown();
   http_cli_pool_ptr_->Shutdown();
 }
 
@@ -96,6 +97,11 @@ bool HttpRpcBackend::RegisterServiceFunc(
   try {
     if (state_.load() != State::kInit) {
       AIMRT_ERROR("Service func can only be registered when state is 'Init'.");
+      return false;
+    }
+
+    if (!http_svr_ptr_) {
+      AIMRT_ERROR("Failed to register service function: please set http listen IP and port in the configuration.");
       return false;
     }
 
@@ -334,7 +340,7 @@ void HttpRpcBackend::Invoke(
   try {
     if (state_.load() != State::kStart) [[unlikely]] {
       AIMRT_WARN("Method can only be called when state is 'Start'.");
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
       return;
     }
 
@@ -354,14 +360,14 @@ void HttpRpcBackend::Invoke(
         to_addr = find_itr->second;
       } else {
         AIMRT_WARN("Server url is not set for func: {}", info.func_name);
-        client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+        InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
         return;
       }
     }
 
     auto url = util::ParseUrl<std::string_view>(to_addr);
     if (!url) {
-      client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
+      InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_ADDR));
       return;
     }
 
@@ -385,7 +391,7 @@ void HttpRpcBackend::Invoke(
             auto client_ptr = co_await http_cli_pool_ptr->GetClient(cli_options);
             if (!client_ptr) [[unlikely]] {
               AIMRT_WARN("Can not get http client!");
-              client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_BACKEND_INTERNAL_ERROR));
               co_return;
             }
 
@@ -408,7 +414,7 @@ void HttpRpcBackend::Invoke(
             } else if (serialization_type == "ros2") {
               req.set(http::field::content_type, "application/ros2");
             } else {
-              client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_INVALID_SERIALIZATION_TYPE));
               co_return;
             }
 
@@ -426,7 +432,7 @@ void HttpRpcBackend::Invoke(
             auto buffer_array_view_ptr = aimrt::runtime::core::rpc::TrySerializeReqWithCache(*client_invoke_wrapper_ptr, serialization_type);
             if (!buffer_array_view_ptr) [[unlikely]] {
               // Serialization failed
-              client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_SERIALIZATION_FAILED));
               co_return;
             }
 
@@ -467,7 +473,7 @@ void HttpRpcBackend::Invoke(
             auto rsp = co_await client_ptr->HttpSendRecvCo<http::dynamic_body, http::dynamic_body>(req, timeout);
 
             if (rsp.result() != http::status::ok) [[unlikely]] {
-              client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_FOUND));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_SVR_NOT_FOUND));
               co_return;
             }
 
@@ -490,18 +496,18 @@ void HttpRpcBackend::Invoke(
 
             if (!deserialize_ret) {
               // Deserialization failed
-              client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
+              InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_DESERIALIZATION_FAILED));
               co_return;
             }
 
-            client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
+            InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_OK));
 
             co_return;
           } catch (const std::exception& e) {
             AIMRT_WARN("Http call get exception, info: {}", e.what());
           }
 
-          client_invoke_wrapper_ptr->callback(aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
+          InvokeCallBack(*client_invoke_wrapper_ptr, aimrt::rpc::Status(AIMRT_RPC_STATUS_CLI_UNKNOWN));
           co_return;
         },
         asio::detached);
