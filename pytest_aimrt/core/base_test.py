@@ -210,6 +210,15 @@ class BaseAimRTTest:
 
         # generate summary report
         summary_report = self.process_manager.generate_summary_report()
+        # 注入元信息：源YAML路径与测试名
+        try:
+            if self._test_config:
+                meta = summary_report.setdefault("meta", {})
+                meta["test_name"] = self._test_config.name
+                src = getattr(self._test_config, "source_yaml_path", "") or ""
+                meta["source_yaml_path"] = src
+        except Exception:
+            pass
         self._reports.append({
             "type": "summary",
             "timestamp": time.time(),

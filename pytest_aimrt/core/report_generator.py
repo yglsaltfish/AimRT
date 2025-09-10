@@ -607,19 +607,52 @@ class ReportGenerator:
         entries = idx.get("entries", [])
         entries = list(reversed(entries))
 
-        html = [
-            "<!DOCTYPE html>",
-            "<html lang='zh-CN'><head><meta charset='utf-8'>",
-            "<meta name='viewport' content='width=device-width, initial-scale=1.0'>",
-            "<title>AimRT 测试报告索引</title>",
-            "<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:20px} .container{max-width:1200px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1);overflow:hidden} .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:24px} .header h1{margin:0} .list{padding:20px} .card{border:1px solid #ddd;border-radius:8px;margin:12px 0;padding:12px;background:#fafafa} .meta{color:#666;font-size:12px} .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:12px;margin-left:8px} .ok{background:#d4edda;color:#155724} .warn{background:#fff3cd;color:#856404} .fail{background:#f8d7da;color:#721c24} .outp{color:#155724;background:#d4edda;padding:2px 6px;border-radius:4px} .outf{color:#721c24;background:#f8d7da;padding:2px 6px;border-radius:4px} .oute{color:#0c5460;background:#d1ecf1;padding:2px 6px;border-radius:4px} .outs{color:#856404;background:#fff3cd;padding:2px 6px;border-radius:4px}</style>",
-            "</head><body><div class='container'>",
-            "<div class='header'><h1>🗂️ AimRT 测试报告索引</h1>",
-            f"<div class='meta'>最后更新时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div></div>",
-            "<div class='list'>"
-        ]
+        # 构建多级树：按 YAML 源路径目录分组
+        from pathlib import Path as _P
 
+        def _split_group_parts(yaml_path: str) -> list[str]:
+            if not yaml_path:
+                return []
+            try:
+                repo_root = _P(__file__).resolve().parents[2]
+                rel = _P(yaml_path)
+                try:
+                    rel = rel.relative_to(repo_root)
+                except Exception:
+                    pass
+                parts = list(rel.parts)
+            except Exception:
+                try:
+                    parts = list(_P(yaml_path).parts)
+                except Exception:
+                    parts = []
+            # 去掉无关前缀（如 pytest_aimrt/generated）
+            if 'pytest_aimrt' in parts:
+                i = parts.index('pytest_aimrt')
+                parts = parts[i+1:]
+            if parts and parts[0] == 'generated':
+                parts = parts[1:]
+            # 仅目录部分（去掉文件名）
+            if parts and parts[-1].lower().endswith(('.yaml', '.yml')):
+                parts = parts[:-1]
+            return parts
+
+        # 组织为嵌套dict，叶子节点保存条目列表
+        tree: dict = {}
+        uncategorized: list = []
         for e in entries:
+            meta = e.get('meta', {}) or {}
+            yaml_path = meta.get('source_yaml_path', '') or ''
+            parts = _split_group_parts(yaml_path)
+            if parts:
+                node = tree
+                for p in parts:
+                    node = node.setdefault(p, {})
+                node.setdefault('_items', []).append(e)
+            else:
+                uncategorized.append(e)
+
+        def _render_card(e) -> list[str]:
             s = e.get("summary", {})
             total = s.get("total_processes", 0)
             completed = s.get("completed", 0)
@@ -628,10 +661,10 @@ class ReportGenerator:
             timeout = s.get("timeout", 0)
             rate = s.get("success_rate", 0)
             badge_cls = "ok" if (failed == 0) else "fail"
-            html.append("<div class='card'>")
-            html.append(f"<div><a href='{Path(e['report_path']).name}' target='_blank'>{e['test_name']}</a>"
-                        f" <span class='badge {badge_cls}'>成功率 {rate:.1f}%</span></div>")
-            # pytest 概览
+            lines = []
+            lines.append("<div class='card'>")
+            lines.append(f"<div><a href='{Path(e['report_path']).name}' target='_blank'>{e['test_name']}</a>"
+                         f" <span class='badge {badge_cls}'>成功率 {rate:.1f}%</span></div>")
             ps = e.get('pytest_summary', {}) or {}
             p_total = ps.get('total', 0)
             p_pass = ps.get('passed', 0)
@@ -642,8 +675,45 @@ class ReportGenerator:
             py_html = ""
             if p_total:
                 py_html = f" | Pytest: total {p_total} <span class='outp'>pass {p_pass}</span> <span class='outf'>fail {p_fail}</span> <span class='outs'>skip {p_skip}</span> <span class='oute'>error {p_err}</span> rate {p_rate:.1f}%"
-            html.append(f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}{py_html}</div>")
-            html.append("</div>")
+            lines.append(f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}{py_html}</div>")
+            lines.append("</div>")
+            return lines
+
+        def _render_tree(name: str, node: dict, depth: int = 0) -> list[str]:
+            lines = []
+            open_attr = " open" if depth <= 1 else ""
+            lines.append(f"<details{open_attr}><summary>{name}</summary>")
+            # 子目录
+            for sub in sorted([k for k in node.keys() if k != '_items']):
+                lines.extend(_render_tree(sub, node[sub], depth + 1))
+            # 条目
+            for e in node.get('_items', []):
+                lines.extend(_render_card(e))
+            lines.append("</details>")
+            return lines
+
+        # 生成HTML
+        html = [
+            "<!DOCTYPE html>",
+            "<html lang='zh-CN'><head><meta charset='utf-8'>",
+            "<meta name='viewport' content='width=device-width, initial-scale=1.0'>",
+            "<title>AimRT 测试报告索引</title>",
+            "<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:20px} .container{max-width:1200px;margin:0 auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1);overflow:hidden} .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:24px} .header h1{margin:0} .list{padding:20px} .card{border:1px solid #ddd;border-radius:8px;margin:12px 0;padding:12px;background:#fafafa} .meta{color:#666;font-size:12px} .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:12px;margin-left:8px} .ok{background:#d4edda;color:#155724} .warn{background:#fff3cd;color:#856404} .fail{background:#f8d7da;color:#721c24} .outp{color:#155724;background:#d4edda;padding:2px 6px;border-radius:4px} .outf{color:#721c24;background:#f8d7da;padding:2px 6px;border-radius:4px} .oute{color:#0c5460;background:#d1ecf1;padding:2px 6px;border-radius:4px} .outs{color:#856404;background:#fff3cd;padding:2px 6px;border-radius:4px} details{margin:6px 0;padding:8px 12px;border:1px dashed #ddd;border-radius:6px;background:#fcfcfc} details summary{cursor:pointer;font-weight:600;color:#333} details details{margin-left:18px}</style>",
+            "</head><body><div class='container'>",
+            "<div class='header'><h1>🗂️ AimRT 测试报告索引</h1>",
+            f"<div class='meta'>最后更新时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div></div>",
+            "<div class='list'>"
+        ]
+
+        # 渲染树
+        for root in sorted(tree.keys()):
+            html.extend(_render_tree(root, tree[root], 0))
+
+        # 未分组条目
+        if uncategorized:
+            html.append("<h3>未分组</h3>")
+            for e in uncategorized:
+                html.extend(_render_card(e))
 
         html.append("</div></div></body></html>")
         self._index_html_path().write_text("\n".join(html), encoding='utf-8')
@@ -683,11 +753,18 @@ class ReportGenerator:
         """
         idx = self._load_index()
         entries = idx.setdefault("entries", [])
-        entries.append({
+        entry = {
             "test_name": test_name,
             "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "summary": summary_data.get("summary", {}),
             "report_path": report_path,
             "pytest_summary": pytest_summary or {}
-        })
+        }
+        try:
+            meta = summary_data.get("meta", {}) if isinstance(summary_data, dict) else {}
+            if meta:
+                entry["meta"] = meta
+        except Exception:
+            pass
+        entries.append(entry)
         self._save_index(idx)

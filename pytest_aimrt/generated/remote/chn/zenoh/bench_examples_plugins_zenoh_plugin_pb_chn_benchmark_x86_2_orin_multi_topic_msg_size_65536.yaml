@@ -1,0 +1,59 @@
+name: "chn-zenoh-cross-msg_size_65536-pb_chn"
+description: "Auto-generated benchmark test for examples_plugins_zenoh_plugin_pb_chn_benchmark_x86_2_orin_multi_topic_msg_size_65536"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+  environment:
+    LOG_LEVEL: "info"
+
+
+
+hosts:
+  x86:
+    host: "${X86HOST}"
+    ssh_user: "${X86USER}"
+    ssh_password: "${X86PASS}"
+    ssh_port: "${X86PORT}"
+    remote_cwd: "${X86CWD}"
+  orin:
+    host: "${ORINHOST}"
+    ssh_user: "${ORINUSER}"
+    ssh_password: "${ORINPASS}"
+    ssh_port: "${ORINPORT}"
+    remote_cwd: "${ORINCWD}"
+
+input:
+  scripts:
+    - path: "./start_examples_plugins_zenoh_plugin_pb_chn_benchmark_sub_x86-2-orin_multi-topic_msg_size_65536.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      environment:
+        ROLE: "server"
+
+      remote: orin
+      shutdown_patterns: ["Benchmark plan 0 completed"]
+
+    - path: "./start_examples_plugins_zenoh_plugin_pb_chn_benchmark_pub_x86-2-orin_multi-topic_msg_size_65536.sh"
+      args: []
+      depends_on: ["./start_examples_plugins_zenoh_plugin_pb_chn_benchmark_sub_x86-2-orin_multi-topic_msg_size_65536.sh"]
+      delay_sec: 3
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      environment:
+        ROLE: "client"
+
+      remote: x86
+      shutdown_patterns: ["Bench completed."]

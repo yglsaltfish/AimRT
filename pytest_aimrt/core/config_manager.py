@@ -58,6 +58,8 @@ class TestConfig:
     scripts: List[ScriptConfig] = field(default_factory=list)
     global_shutdown_patterns: List[str] = field(default_factory=list)
     stop_all_on_shutdown: bool = False
+    # 源YAML绝对路径，供报告索引按目录分组
+    source_yaml_path: str = ""
 
 
 class ConfigManager:
@@ -93,6 +95,11 @@ class ConfigManager:
             data = self._expand_env_placeholders(data)
 
             self._config = self._parse_config(data)
+            # 记录源YAML绝对路径，便于报告索引分组
+            try:
+                self._config.source_yaml_path = str(config_file.resolve())
+            except Exception:
+                self._config.source_yaml_path = str(config_file)
             print(f"✅ 成功加载配置: {self._config.name}")
             return True
 

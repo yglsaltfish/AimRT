@@ -1,0 +1,43 @@
+name: "chn-iceoryx-localmark-msg_size_2048-pb_chn"
+description: "Auto-generated benchmark test for examples_plugins_iceoryx_plugin_pb_chn_benchmark_local_parallel_msg_size_2048"
+
+config:
+  execution_count: 1
+  time_sec: 60
+  cwd: "${CWD}"
+  environment:
+    LOG_LEVEL: "info"
+
+
+
+input:
+  scripts:
+    - path: "./start_examples_plugins_iceoryx_plugin_pb_chn_benchmark_sub_local_parallel_msg_size_2048.sh"
+      args: []
+      depends_on: []
+      delay_sec: 0
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      environment:
+        ROLE: "server"
+
+      shutdown_patterns: ["Benchmark plan 0 completed"]
+
+    - path: "./start_examples_plugins_iceoryx_plugin_pb_chn_benchmark_pub_local_parallel_msg_size_2048.sh"
+      args: []
+      depends_on: ["./start_examples_plugins_iceoryx_plugin_pb_chn_benchmark_sub_local_parallel_msg_size_2048.sh"]
+      delay_sec: 3
+      cwd: ""
+      time_sec: 60
+      monitor:
+        cpu: true
+        memory: true
+        disk: true
+      environment:
+        ROLE: "client"
+
+      shutdown_patterns: ["Bench completed."]
