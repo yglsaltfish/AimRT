@@ -96,6 +96,8 @@ class RecordAction {
  private:
   void AddRecordImpl(OneRecord&& record);
   void OpenNewMcapToRecord(uint64_t start_timestamp);
+  bool OpenNewFolderToRecord();
+
   void CloseRecord();
   void FlushToDisk();
 
