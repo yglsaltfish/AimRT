@@ -40,7 +40,8 @@ class ReportGenerator:
     def generate_json_report(self, test_name: str,
                            execution_results: Dict[str, ProcessInfo],
                            summary_data: Dict[str, Any],
-                           pytest_results: Dict[str, Any] | None = None) -> str:
+                           pytest_results: Dict[str, Any] | None = None,
+                           callback_results: Dict[str, Any] | None = None) -> str:
         """
         Generate JSON report
 
@@ -94,6 +95,29 @@ class ReportGenerator:
         # Attach pytest results
         if pytest_results:
             report_data["pytest"] = pytest_results
+
+        # Attach callback results (flatten for readability)
+        if callback_results:
+            try:
+                serialized: Dict[str, Any] = {}
+                for cb_name, results in (callback_results or {}).items():
+                    items = []
+                    for r in (results or []):
+                        try:
+                            items.append({
+                                "success": bool(getattr(r, 'success', False)),
+                                "message": str(getattr(r, 'message', '') or ''),
+                                "data": getattr(r, 'data', {}) or {},
+                                "warnings": getattr(r, 'warnings', []) or [],
+                                "errors": getattr(r, 'errors', []) or [],
+                                "timestamp": getattr(getattr(r, 'timestamp', None), 'isoformat', lambda: None)()
+                            })
+                        except Exception:
+                            items.append({"success": False, "message": "callback result serialization error"})
+                    serialized[cb_name] = items
+                report_data["callbacks"] = serialized
+            except Exception:
+                report_data["callbacks"] = {"_error": "failed to serialize callback results"}
 
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False)
@@ -592,7 +616,7 @@ class ReportGenerator:
         reports = {}
 
         try:
-            reports["json"] = self.generate_json_report(test_name, execution_results, summary_data, pytest_results)
+            reports["json"] = self.generate_json_report(test_name, execution_results, summary_data, pytest_results, callback_results)
         except Exception as e:
             print(f"❌ Failed to generate JSON report: {e}")
 
@@ -670,8 +694,14 @@ class ReportGenerator:
             p_failed = ps.get('failed', 0) or 0
             p_error = ps.get('error', 0) or 0
             p_passed = ps.get('passed', 0) or 0
+            meta = e.get('meta', {}) or {}
+            cb_failures = bool(meta.get('callback_failures', False))
+            cb_failed_count = int(meta.get('callback_failed_count', 0) or 0)
 
-            if (failed > 0) or (p_failed > 0) or (p_error > 0):
+            # 显示成功率：若有回调失败，则强制显示为 0%
+            display_rate = 0.0 if cb_failures else float(rate or 0)
+
+            if cb_failures or (failed > 0) or (p_failed > 0) or (p_error > 0):
                 badge_cls = "fail"
             elif (total == 0 and p_total == 0):
                 badge_cls = "warn"
@@ -682,7 +712,7 @@ class ReportGenerator:
             lines = []
             lines.append("<div class='card'>")
             lines.append(f"<div><a href='{Path(e['report_path']).name}' target='_blank'>{e['test_name']}</a>"
-                         f" <span class='badge {badge_cls}'>成功率 {rate:.1f}%</span></div>")
+                         f" <span class='badge {badge_cls}'>成功率 {display_rate:.1f}%</span></div>")
             ps = e.get('pytest_summary', {}) or {}
             p_total = ps.get('total', 0)
             p_pass = ps.get('passed', 0)
@@ -693,7 +723,8 @@ class ReportGenerator:
             py_html = ""
             if p_total:
                 py_html = f" | Pytest: total {p_total} <span class='outp'>pass {p_pass}</span> <span class='outf'>fail {p_fail}</span> <span class='outs'>skip {p_skip}</span> <span class='oute'>error {p_err}</span> rate {p_rate:.1f}%"
-            lines.append(f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}{py_html}</div>")
+            cb_html = f", 回调失败: {cb_failed_count}" if cb_failures else ""
+            lines.append(f"<div class='meta'>时间: {e.get('timestamp','')}, 总进程: {total}, 完成: {completed}, 失败: {failed}, 超时: {timeout}, 强制终止: {killed}{cb_html}{py_html}</div>")
             lines.append("</div>")
             return lines
 

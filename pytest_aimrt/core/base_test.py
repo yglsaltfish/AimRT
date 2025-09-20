@@ -97,6 +97,11 @@ class BaseAimRTTest:
                 if self._test_config.execution_count > 1:
                     print(f"\n📊 Executing run {execution + 1}/{self._test_config.execution_count}")
 
+                try:
+                    self.callback_manager.clear_callback_results()
+                except Exception:
+                    pass
+
                 # Execute script group
                 results = self.process_manager.execute_scripts_with_dependencies(
                     self._test_config.scripts
@@ -111,6 +116,45 @@ class BaseAimRTTest:
                         execution_success = False
                     else:
                         print(f"✅ Script execution succeeded: {script_path}")
+
+                # 统计回调失败（默认失败）：若任一回调结果 success=False，则判定本轮失败
+                try:
+                    cb_results = self.process_manager.get_callback_results() if self.process_manager else {}
+                    registered = {}
+                    try:
+                        registered = self.callback_manager.get_registered_callbacks() or {}
+                    except Exception:
+                        registered = {}
+                    has_callback_failure = False
+                    for name, items in (cb_results or {}).items():
+                        # soft_fail=True 的回调不影响整体成功
+                        soft = False
+                        try:
+                            cfg = registered.get(name)
+                            if cfg and getattr(cfg, 'params', None):
+                                soft = bool(cfg.params.get('soft_fail', False))
+                        except Exception:
+                            soft = False
+                        if soft:
+                            continue
+                        for r in (items or []):
+                            try:
+                                if r is not None and (not getattr(r, 'success', False)):
+                                    has_callback_failure = True
+                                    break
+                            except Exception:
+                                # 防御性：异常也视为失败
+                                has_callback_failure = True
+                                break
+                        if has_callback_failure:
+                            break
+                    if has_callback_failure:
+                        print("❌ Callback failures detected, mark this run as failed")
+                        execution_success = False
+                except Exception as e:
+                    # 回调统计异常，保守处理为失败
+                    print(f"❌ Callback evaluation error: {e}")
+                    execution_success = False
 
                 if execution_success:
                     success_count += 1
@@ -230,6 +274,22 @@ class BaseAimRTTest:
 
         if self._test_config:
             callback_results = self.process_manager.get_callback_results() if self.process_manager else {}
+            # 将回调失败统计注入 meta，供 index 聚合页使用
+            try:
+                cb_fail_cnt = 0
+                for _name, items in (callback_results or {}).items():
+                    for r in (items or []):
+                        try:
+                            if r is not None and (not getattr(r, 'success', False)):
+                                cb_fail_cnt += 1
+                        except Exception:
+                            cb_fail_cnt += 1
+                if cb_fail_cnt > 0:
+                    m = summary_report.setdefault("meta", {})
+                    m["callback_failures"] = True
+                    m["callback_failed_count"] = cb_fail_cnt
+            except Exception:
+                pass
             # Export pytest results
             try:
                 pytest_results = export_pytest_results()
