@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Pytest 结果收集与导出
+Pytest results collection and export
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ class TestCaseResult:
     nodeid: str
     outcome: str  # passed/failed/skipped/error
     duration: float
-    when: str  # setup/call/teardown (记录来源阶段)
+    when: str  # setup/call/teardown (result phase)
     longrepr: str | None = None
     keywords: List[str] = field(default_factory=list)
 
@@ -33,15 +33,15 @@ class _ResultStore:
 
     def record(self, result: TestCaseResult) -> None:
         with self._lock:
-            # 对于同一 nodeid，如已有call阶段结果，优先保留error/failed
+            # For the same nodeid, if there's an existing call-stage result, prefer error/failed
             if result.when == "call":
-                # 移除该 nodeid 之前的 call 记录
+                # Remove previous call records for this nodeid
                 self._results = [r for r in self._results if not (r.nodeid == result.nodeid and r.when == "call")]
                 self._results.append(result)
             else:
-                # 如果是 setup/teardown 的失败，将其作为 error 记录（优先级更高）
+                # If setup/teardown failed, record as error (higher priority)
                 if result.outcome in ("failed", "error"):
-                    # 移除该 nodeid 的任何已有记录，置为 error
+                    # Remove any existing records for this nodeid and set as error
                     self._results = [r for r in self._results if r.nodeid != result.nodeid]
                     self._results.append(TestCaseResult(
                         nodeid=result.nodeid,

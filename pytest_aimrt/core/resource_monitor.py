@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-AimRT测试框架资源监控器
+Resource monitor for the AimRT test framework
 
-负责监控进程的CPU、内存、磁盘使用情况，并生成详细的监控报告。
+Monitors CPU, memory, and disk usage of processes and generates detailed reports.
 """
 
 import psutil
@@ -18,11 +18,11 @@ import json
 
 @dataclass
 class ResourceSnapshot:
-    """资源使用快照"""
+    """Resource usage snapshot"""
     timestamp: datetime
     cpu_percent: float
-    memory_rss: int  # 物理内存 (bytes)
-    memory_vms: int  # 虚拟内存 (bytes)
+    memory_rss: int  # physical memory (bytes)
+    memory_vms: int  # virtual memory (bytes)
     memory_percent: float
     disk_read_bytes: int
     disk_write_bytes: int
@@ -32,7 +32,7 @@ class ResourceSnapshot:
 
 @dataclass
 class ProcessMonitorData:
-    """进程监控数据"""
+    """Process monitoring data"""
     pid: int
     name: str
     start_time: datetime
@@ -40,57 +40,57 @@ class ProcessMonitorData:
     snapshots: List[ResourceSnapshot] = field(default_factory=list)
     status: str = "running"
     exit_code: Optional[int] = None
-    children: List[int] = field(default_factory=list)  # 子进程PID列表
-    children_info: List[Dict[str, Any]] = field(default_factory=list)  # 子进程详细信息
-    total_cpu_percent: float = 0.0  # 包括子进程的总CPU使用率
-    total_memory_rss: int = 0  # 包括子进程的总内存使用量
-    total_memory_percent: float = 0.0  # 包括子进程的总内存百分比
+    children: List[int] = field(default_factory=list)  # child process PIDs
+    children_info: List[Dict[str, Any]] = field(default_factory=list)  # child process details
+    total_cpu_percent: float = 0.0  # total CPU percent including children
+    total_memory_rss: int = 0  # total memory RSS including children
+    total_memory_percent: float = 0.0  # total memory percent including children
 
 
 class ResourceMonitor:
-    """资源监控器"""
+    """Resource monitor"""
 
     def __init__(self, sample_interval: float = 1.0):
         """
-        初始化资源监控器
+        Initialize the resource monitor
 
         Args:
-            sample_interval: 采样间隔（秒）
+            sample_interval: sampling interval in seconds
         """
         self.sample_interval = sample_interval
         self._monitors: Dict[int, ProcessMonitorData] = {}
         self._monitor_threads: Dict[int, threading.Thread] = {}
         self._stop_events: Dict[int, threading.Event] = {}
         self._lock = threading.Lock()
-        # 缓存psutil.Process对象，避免每次采样首次cpu_percent恒为0的问题
+        # Cache psutil.Process objects to avoid the issue where the first cpu_percent is always 0
         self._proc_cache: Dict[int, psutil.Process] = {}
-        # 标记已完成cpu_percent预热的pid（首次调用返回0，需要预热一次）
+        # Marked PIDs that have completed cpu_percent priming (first call returns 0, needs priming once)
         self._cpu_primed: set[int] = set()
 
     def start_monitoring(self, pid: int, name: str) -> bool:
         """
-        开始监控指定进程
+        Start monitoring the specified process
 
         Args:
-            pid: 进程ID
-            name: 进程名称
+            pid: process ID
+            name: process name
 
         Returns:
-            bool: 成功开始监控返回True
+            bool: True if monitoring started
         """
         try:
-            # 检查进程是否存在
+            # Check whether the process exists
             process = psutil.Process(pid)
             if not process.is_running():
-                print(f"❌ 进程 {pid} ({name}) 不在运行")
+                print(f"❌ Process {pid} ({name}) is not running")
                 return False
 
             with self._lock:
                 if pid in self._monitors:
-                    print(f"⚠️ 进程 {pid} ({name}) 已在监控中")
+                    print(f"⚠️ Process {pid} ({name}) is already being monitored")
                     return True
 
-                # 缓存并预热cpu_percent，下一轮采样即可获得非零值
+                # Cache and prime cpu_percent so next sample gets non-zero value
                 self._proc_cache[pid] = process
                 try:
                     process.cpu_percent(None)
@@ -98,7 +98,7 @@ class ResourceMonitor:
                     pass
                 self._cpu_primed.add(pid)
 
-                # 创建监控数据
+                # Create monitor data holder
                 monitor_data = ProcessMonitorData(
                     pid=pid,
                     name=name,
@@ -106,11 +106,11 @@ class ResourceMonitor:
                 )
                 self._monitors[pid] = monitor_data
 
-                # 创建停止事件
+                # Create stop event
                 stop_event = threading.Event()
                 self._stop_events[pid] = stop_event
 
-                # 启动监控线程
+                # Launch monitoring thread
                 monitor_thread = threading.Thread(
                     target=self._monitor_process,
                     args=(pid, stop_event),
@@ -119,31 +119,31 @@ class ResourceMonitor:
                 self._monitor_threads[pid] = monitor_thread
                 monitor_thread.start()
 
-                print(f"🔍 开始监控进程 {pid} ({name})")
+                print(f"🔍 Start monitoring process {pid} ({name})")
                 return True
 
         except psutil.NoSuchProcess:
-            print(f"❌ 进程 {pid} 不存在")
+            print(f"❌ Process {pid} does not exist")
             return False
         except Exception as e:
-            print(f"❌ 启动监控失败: {e}")
+            print(f"❌ Failed to start monitoring: {e}")
             return False
 
     def stop_monitoring(self, pid: int) -> Optional[ProcessMonitorData]:
         """
-        停止监控指定进程
+        Stop monitoring the specified process
 
         Args:
-            pid: 进程ID
+            pid: process ID
 
         Returns:
-            ProcessMonitorData: 监控数据，如果进程未被监控则返回None
+            ProcessMonitorData: monitor data, or None if the process was not monitored
         """
         with self._lock:
             if pid not in self._monitors:
                 return None
 
-            # 停止监控线程
+            # Stop monitoring thread
             if pid in self._stop_events:
                 self._stop_events[pid].set()
 
@@ -154,11 +154,11 @@ class ResourceMonitor:
             if pid in self._stop_events:
                 del self._stop_events[pid]
 
-            # 获取监控数据
+            # Get monitor data
             monitor_data = self._monitors.pop(pid)
             monitor_data.end_time = datetime.now()
 
-            # 获取最终状态
+            # Get final status
             try:
                 process = psutil.Process(pid)
                 if process.is_running():
@@ -169,15 +169,15 @@ class ResourceMonitor:
             except psutil.NoSuchProcess:
                 monitor_data.status = "terminated"
 
-            print(f"⏹️ 停止监控进程 {pid} ({monitor_data.name})")
+            print(f"⏹️ Stop monitoring process {pid} ({monitor_data.name})")
             return monitor_data
 
     def stop_all_monitoring(self) -> Dict[int, ProcessMonitorData]:
         """
-        停止所有监控
+        Stop all monitoring
 
         Returns:
-            Dict[int, ProcessMonitorData]: 所有监控数据
+            Dict[int, ProcessMonitorData]: all collected monitor data
         """
         all_data = {}
         pids = list(self._monitors.keys())
@@ -190,9 +190,9 @@ class ResourceMonitor:
         return all_data
 
     def _monitor_process(self, pid: int, stop_event: threading.Event):
-        """监控进程及其子进程的资源使用情况"""
+        """Monitor resource usage for a process and its child processes"""
         try:
-            # 复用已缓存的psutil.Process对象，避免每轮新建导致cpu_percent恒为0
+            # Reuse cached psutil.Process to avoid first-sample cpu_percent being 0
             process = self._proc_cache.get(pid)
             if process is None:
                 process = psutil.Process(pid)
@@ -200,14 +200,14 @@ class ResourceMonitor:
 
             while not stop_event.is_set():
                 try:
-                    # 检查进程是否还在运行
+                    # Check process is still running
                     if not process.is_running():
                         break
 
-                    # 获取进程及其所有子进程
+                    # Get process and all of its children
                     all_processes = self._get_process_tree(pid)
 
-                    # 计算总资源使用情况
+                    # Compute total resource usage
                     total_cpu_percent = 0.0
                     total_memory_rss = 0
                     total_memory_percent = 0.0
@@ -216,7 +216,7 @@ class ResourceMonitor:
                     total_disk_read_count = 0
                     total_disk_write_count = 0
 
-                    # 获取主进程资源（带预热逻辑）
+                    # Get main process resources (with priming logic)
                     if pid in self._cpu_primed:
                         cpu_percent = process.cpu_percent(None)
                     else:
@@ -230,7 +230,7 @@ class ResourceMonitor:
                     total_memory_rss += memory_info.rss
                     total_memory_percent += memory_percent
 
-                    # 获取主进程磁盘I/O
+                    # Get main process disk I/O
                     try:
                         io_counters = process.io_counters()
                         disk_read_bytes = io_counters.read_bytes
@@ -247,11 +247,11 @@ class ResourceMonitor:
                         disk_read_count = 0
                         disk_write_count = 0
 
-                    # 获取子进程资源
+                    # Get child processes resources
                     child_pids = []
                     child_cpu_map: Dict[int, float] = {}
                     for child_pid in all_processes:
-                        if child_pid != pid:  # 跳过主进程
+                        if child_pid != pid:  # skip main process
                             try:
                                 child_process = self._proc_cache.get(child_pid)
                                 if child_process is None:
@@ -260,7 +260,7 @@ class ResourceMonitor:
                                 if child_process.is_running():
                                     child_pids.append(child_pid)
 
-                                    # 子进程CPU使用率（带预热）
+                                    # Child CPU usage (with priming)
                                     if child_pid in self._cpu_primed:
                                         child_cpu = child_process.cpu_percent(None)
                                     else:
@@ -270,13 +270,13 @@ class ResourceMonitor:
                                     total_cpu_percent += child_cpu
                                     child_cpu_map[child_pid] = child_cpu
 
-                                    # 子进程内存使用情况
+                                    # Child memory usage
                                     child_memory = child_process.memory_info()
                                     child_memory_percent = child_process.memory_percent()
                                     total_memory_rss += child_memory.rss
                                     total_memory_percent += child_memory_percent
 
-                                    # 子进程磁盘I/O
+                                    # Child disk I/O
                                     try:
                                         child_io = child_process.io_counters()
                                         total_disk_read_bytes += child_io.read_bytes
@@ -289,13 +289,13 @@ class ResourceMonitor:
                             except (psutil.NoSuchProcess, psutil.AccessDenied):
                                 continue
 
-                    # 创建快照（包含总资源使用情况）
+                    # Create snapshot (total resource usage)
                     snapshot = ResourceSnapshot(
                         timestamp=datetime.now(),
-                        cpu_percent=total_cpu_percent,  # 使用总CPU使用率
-                        memory_rss=total_memory_rss,    # 使用总内存使用量
-                        memory_vms=memory_info.vms,     # 主进程虚拟内存
-                        memory_percent=total_memory_percent,  # 使用总内存百分比
+                        cpu_percent=total_cpu_percent,  # total CPU percent
+                        memory_rss=total_memory_rss,    # total memory RSS
+                        memory_vms=memory_info.vms,     # main process virtual memory
+                        memory_percent=total_memory_percent,  # total memory percent
                         disk_read_bytes=total_disk_read_bytes,
                         disk_write_bytes=total_disk_write_bytes,
                         disk_read_count=total_disk_read_count,
@@ -303,7 +303,7 @@ class ResourceMonitor:
                     )
 
 
-                    # 更新监控数据
+                    # Update monitor data
                     with self._lock:
                         if pid in self._monitors:
                             monitor_data = self._monitors[pid]
@@ -314,36 +314,36 @@ class ResourceMonitor:
                             monitor_data.total_memory_rss = total_memory_rss
                             monitor_data.total_memory_percent = total_memory_percent
 
-                    # 等待下次采样
+                    # Wait for next sample
                     stop_event.wait(self.sample_interval)
 
                 except psutil.NoSuchProcess:
                     break
                 except psutil.AccessDenied:
-                    print(f"⚠️ 无权限访问进程 {pid} 的资源信息")
+                    print(f"⚠️ No permission to access resource info of process {pid}")
                     break
                 except Exception as e:
-                    print(f"⚠️ 监控进程 {pid} 时出错: {e}")
+                    print(f"⚠️ Error monitoring process {pid}: {e}")
                     time.sleep(self.sample_interval)
 
         except Exception as e:
-            print(f"❌ 监控线程异常: {e}")
+            print(f"❌ Monitoring thread exception: {e}")
 
     def _get_process_tree(self, pid: int) -> List[int]:
         """
-        获取进程及其所有子进程的PID列表
+        Get PIDs for the process and all of its descendants
 
         Args:
-            pid: 主进程PID
+            pid: root process PID
 
         Returns:
-            List[int]: 包含主进程和所有子进程的PID列表
+            List[int]: list containing the root and all child PIDs
         """
         try:
-            # 直接返回PID本身以及其递归子进程PID列表
-            all_pids = [pid]  # 包含主进程
+            # Return the PID itself and its recursive children PIDs
+            all_pids = [pid]  # include main process
 
-            # 递归获取所有子进程
+            # Recursively collect all children
             def get_children(parent_pid: int):
                 try:
                     parent = psutil.Process(parent_pid)
@@ -360,59 +360,59 @@ class ResourceMonitor:
             return [pid]
 
     def get_monitor_data(self, pid: int) -> Optional[ProcessMonitorData]:
-        """获取指定进程的监控数据"""
+        """Get monitor data for a given PID"""
         with self._lock:
             return self._monitors.get(pid)
 
     def get_all_monitor_data(self) -> Dict[int, ProcessMonitorData]:
-        """获取所有监控数据"""
+        """Get all monitor data"""
         with self._lock:
             return self._monitors.copy()
 
     def get_children_info(self, pid: int) -> List[Dict[str, Any]]:
         """
-        获取指定进程的子进程详细信息
+        Get child process details for the specified PID
 
         Args:
-            pid: 主进程PID
+            pid: root process PID
 
         Returns:
-            List[Dict[str, Any]]: 子进程信息列表
+            List[Dict[str, Any]]: list of child process info
         """
         with self._lock:
             monitor_data = self._monitors.get(pid)
             if not monitor_data:
                 return []
 
-        # 返回保存的子进程详细信息
+        # Return stored child details
         return monitor_data.children_info
 
     def generate_report(self, monitor_data: ProcessMonitorData) -> Dict[str, Any]:
         """
-        生成监控报告
+        Generate a monitoring report
 
         Args:
-            monitor_data: 监控数据
+            monitor_data: monitor data
 
         Returns:
-            Dict[str, Any]: 详细的监控报告
+            Dict[str, Any]: detailed monitoring report
         """
         if not monitor_data.snapshots:
             return {
                 "pid": monitor_data.pid,
                 "name": monitor_data.name,
                 "status": "no_data",
-                "message": "没有收集到监控数据"
+                "message": "No monitoring data was collected"
             }
 
         snapshots = monitor_data.snapshots
 
-        # 计算统计信息
+        # Compute stats
         cpu_values = [s.cpu_percent for s in snapshots]
         memory_rss_values = [s.memory_rss for s in snapshots]
         memory_percent_values = [s.memory_percent for s in snapshots]
 
-        # 计算磁盘I/O增量（第一个快照作为基准）
+        # Compute disk I/O deltas (first snapshot as baseline)
         if len(snapshots) > 1:
             disk_read_delta = snapshots[-1].disk_read_bytes - snapshots[0].disk_read_bytes
             disk_write_delta = snapshots[-1].disk_write_bytes - snapshots[0].disk_write_bytes
@@ -424,7 +424,7 @@ class ResourceMonitor:
             disk_read_count_delta = 0
             disk_write_count_delta = 0
 
-        # 计算运行时间
+        # Compute duration
         end_time = monitor_data.end_time or datetime.now()
         duration = (end_time - monitor_data.start_time).total_seconds()
 
@@ -442,7 +442,7 @@ class ResourceMonitor:
                 "max_percent": max(cpu_values),
                 "avg_percent": sum(cpu_values) / len(cpu_values),
                 "final_percent": cpu_values[-1],
-                "total_percent": monitor_data.total_cpu_percent  # 包括子进程的总CPU使用率
+                "total_percent": monitor_data.total_cpu_percent  # total CPU percent including children
             },
             "memory": {
                 "min_rss_mb": min(memory_rss_values) / 1024 / 1024,
@@ -453,8 +453,8 @@ class ResourceMonitor:
                 "max_percent": max(memory_percent_values),
                 "avg_percent": sum(memory_percent_values) / len(memory_percent_values),
                 "final_percent": memory_percent_values[-1],
-                "total_rss_mb": monitor_data.total_memory_rss / 1024 / 1024,  # 包括子进程的总内存
-                "total_percent": monitor_data.total_memory_percent  # 包括子进程的总内存百分比
+                "total_rss_mb": monitor_data.total_memory_rss / 1024 / 1024,  # total memory including children
+                "total_percent": monitor_data.total_memory_percent  # total memory percent including children
             },
             "disk": {
                 "total_read_mb": disk_read_delta / 1024 / 1024,
@@ -470,14 +470,14 @@ class ResourceMonitor:
 
     def export_detailed_data(self, monitor_data: ProcessMonitorData, format: str = "json") -> str:
         """
-        导出详细的监控数据
+        Export detailed monitoring data
 
         Args:
-            monitor_data: 监控数据
-            format: 导出格式 ("json" 或 "csv")
+            monitor_data: monitor data
+            format: export format ("json" or "csv")
 
         Returns:
-            str: 导出的数据字符串
+            str: exported data string
         """
         if format == "json":
             data = {
@@ -525,4 +525,4 @@ class ResourceMonitor:
             return "\n".join(lines)
 
         else:
-            raise ValueError(f"不支持的导出格式: {format}")
+            raise ValueError(f"Unsupported export format: {format}")

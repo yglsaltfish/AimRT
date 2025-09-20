@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-AimRT 测试框架
+AimRT test framework
 
-基于pytest的AimRT测试框架，支持YAML配置、资源监控和进程管理。
+Pytest-based AimRT test framework supporting YAML configuration, resource monitoring, and process management.
 """
 
 __version__ = "0.1.0"

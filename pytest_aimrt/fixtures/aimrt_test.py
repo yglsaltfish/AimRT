@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-AimRT测试框架Pytest Fixtures
+Pytest fixtures for the AimRT test framework
 
-提供pytest兼容的测试fixtures，避免继承基类导致的pytest收集问题。
+Provide pytest-compatible fixtures, avoiding collection issues caused by inheriting base classes.
 """
 
 import pytest
@@ -15,51 +15,51 @@ from ..core.pytest_results import record_report, reset_results
 
 
 class AimRTTestRunner:
-    """AimRT测试运行器，封装BaseAimRTTest功能供pytest使用"""
+    """AimRT test runner that wraps BaseAimRTTest for pytest usage"""
 
     def __init__(self):
         self._base_test = BaseAimRTTest()
         self._initialized = False
 
     def setup_from_yaml(self, yaml_path: str) -> bool:
-        """从YAML配置文件设置测试环境"""
+        """Set up test environment from YAML"""
         result = self._base_test.setup_from_yaml(yaml_path)
         if result:
             self._initialized = True
         return result
 
     def run_test(self) -> bool:
-        """执行测试"""
+        """Run the test"""
         if not self._initialized:
-            raise RuntimeError("测试环境未初始化，请先调用setup_from_yaml")
+            raise RuntimeError("Test environment not initialized. Call setup_from_yaml first.")
         return self._base_test.run_test()
 
     def get_process_status(self) -> Dict[str, str]:
-        """获取进程状态"""
+        """Get process status"""
         return self._base_test.get_process_status()
 
     def get_execution_results(self):
-        """获取执行结果"""
+        """Get execution results"""
         return self._base_test.get_execution_results()
 
     def get_reports(self):
-        """获取所有报告"""
+        """Get all reports"""
         return self._base_test.get_reports()
 
     def register_callback(self, callback):
-        """注册自定义回调"""
+        """Register a custom callback"""
         return self._base_test.register_callback(callback)
 
     def register_function_callback(self, name: str, trigger, func, **kwargs):
-        """注册函数回调"""
+        """Register a function callback"""
         return self._base_test.register_function_callback(name, trigger, func, **kwargs)
 
     def get_callback_results(self, callback_name=None):
-        """获取回调执行结果"""
+        """Get callback results"""
         return self._base_test.get_callback_results(callback_name)
 
     def cleanup(self):
-        """清理测试环境"""
+        """Clean up the test environment"""
         self._base_test.cleanup()
         self._initialized = False
 
@@ -67,9 +67,9 @@ class AimRTTestRunner:
 @pytest.fixture(scope="function")
 def aimrt_test_runner():
     """
-    AimRT测试运行器fixture
+    AimRT test runner fixture
 
-    提供AimRT测试功能，自动处理清理工作。
+    Provides AimRT testing capability with automatic cleanup.
 
     Usage:
         def test_my_aimrt_feature(aimrt_test_runner):
@@ -82,17 +82,17 @@ def aimrt_test_runner():
     try:
         yield runner
     finally:
-        # 自动清理
+        # Auto cleanup
         runner.cleanup()
 
 
 @pytest.fixture(scope="session")
 def aimrt_test_runner_session():
     """
-    会话级别的AimRT测试运行器fixture
+    Session-scoped AimRT test runner fixture
 
-    在整个测试会话中重用同一个实例，适用于需要跨多个测试的场景。
-    注意：需要手动管理清理。
+    Reuses the same instance across the test session, suitable for scenarios spanning multiple tests.
+    Note: manual cleanup is required.
     """
     runner = AimRTTestRunner()
 
@@ -103,8 +103,8 @@ def aimrt_test_runner_session():
 
 
 def pytest_configure(config):
-    """Pytest配置钩子"""
-    # 注册自定义标记
+    """Pytest configure hook"""
+    # Register custom markers
     config.addinivalue_line(
         "markers", "aimrt: mark test as AimRT framework test"
     )
@@ -115,7 +115,7 @@ def pytest_configure(config):
         "markers", "integration: mark test as integration test"
     )
 
-    # 重置一次结果收集
+    # Reset result collection once
     try:
         reset_results()
     except Exception:
@@ -123,9 +123,9 @@ def pytest_configure(config):
 
 
 def pytest_runtest_logreport(report):
-    """收集每个用例阶段的测试结果（聚合为最终报告）。"""
+    """Collect results for each test phase (aggregated for final report)."""
     try:
-        # 仅记录 call 阶段，若 setup/teardown 失败也会以 error 形式覆盖
+        # Record only the call phase; setup/teardown failures will override as error
         longrepr = None
         if hasattr(report, 'longrepr') and report.longrepr:
             try:

@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-AimRT测试框架配置管理器
+Configuration manager for the AimRT test framework
 
-负责加载和解析YAML测试配置文件，提供测试执行所需的配置信息。
+Loads and parses YAML test configuration files and provides configuration
+information required by the test execution.
 """
 
 import yaml
@@ -16,7 +17,7 @@ from pathlib import Path
 
 @dataclass
 class HostProfile:
-    """远端主机档案"""
+    """Remote host profile"""
     name: str = ""
     host: str = ""
     ssh_user: str = ""
@@ -26,94 +27,95 @@ class HostProfile:
 
 @dataclass
 class ScriptConfig:
-    """脚本配置类"""
+    """Script configuration"""
     path: str
     args: List[str] = field(default_factory=list)
     depends_on: List[str] = field(default_factory=list)
     delay_sec: int = 0
-    time_sec: int = 60  # 运行时间（秒）
-    kill_signal: int = 15  # 结束信号 (15=SIGTERM, 2=SIGINT)
+    time_sec: int = 60  # run time (seconds)
+    kill_signal: int = 15  # termination signal (15=SIGTERM, 2=SIGINT)
     monitor: Dict[str, bool] = field(default_factory=lambda: {"cpu": True, "memory": True, "disk": True})
     environment: Dict[str, str] = field(default_factory=dict)
     cwd: str = ""
-    shutdown_patterns: List[str] = field(default_factory=list)  # 匹配即请求优雅退出并记为completed
-    # 当该脚本匹配到关停模式后，是否将关停传播为“全局关停”（终止所有脚本）
+    shutdown_patterns: List[str] = field(default_factory=list)  # on match request graceful exit and mark completed
+    # Whether to propagate shutdown as a "global shutdown" (terminate all scripts)
     propagate_shutdown: bool = False
-    # 触发关停后等待的宽限时间（秒），用于给业务进程做清理
+    # Grace period after triggering shutdown (seconds) for cleanup
     shutdown_grace_sec: float = 0.0
-    enabled_callbacks: Optional[List[str]] = None  # 若字段在YAML中出现则为列表（可为空），否则为None 表示未启用白名单
+    enabled_callbacks: Optional[List[str]] = None  # if present in YAML: list (possibly empty); None means no allowlist
     remote_env: Dict[str, str] = field(default_factory=dict)
     host_profile: Optional[HostProfile] = None
 
 
 @dataclass
 class TestConfig:
-    """测试配置类"""
+    """Test configuration"""
     name: str
     description: str = ""
     execution_count: int = 1
-    time_sec: int = 60  # 总运行时间（秒）、
+    time_sec: int = 60  # total run time (seconds)
     cwd: str = ""
     environment: Dict[str, str] = field(default_factory=dict)
     scripts: List[ScriptConfig] = field(default_factory=list)
     global_shutdown_patterns: List[str] = field(default_factory=list)
     stop_all_on_shutdown: bool = False
-    # 源YAML绝对路径，供报告索引按目录分组
+    # Absolute source YAML path, used by report index grouping
     source_yaml_path: str = ""
 
 
 class ConfigManager:
-    """配置管理器"""
+    """Configuration manager"""
 
     def __init__(self):
         self._config: Optional[TestConfig] = None
 
     def load_config(self, config_path: str) -> bool:
         """
-        加载YAML配置文件
+        Load a YAML configuration file
 
         Args:
-            config_path: 配置文件路径
+            config_path: path to the configuration file
 
         Returns:
-            bool: 加载成功返回True，失败返回False
+            bool: True on success, False otherwise
         """
         try:
             config_file = Path(config_path)
             if not config_file.exists():
-                print(f"❌ 配置文件不存在: {config_path}")
+                print(f"❌ Configuration file does not exist: {config_path}")
                 return False
 
             with open(config_file, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f)
 
             if not data:
-                print("❌ 配置文件为空")
+                print("❌ Configuration file is empty")
                 return False
 
-            # 在整个配置树上执行环境变量占位符替换
+            # Expand environment placeholders across the whole config tree
             data = self._expand_env_placeholders(data)
 
             self._config = self._parse_config(data)
-            # 记录源YAML绝对路径，便于报告索引分组
+            # Record the absolute path of the source YAML for report index grouping
             try:
                 self._config.source_yaml_path = str(config_file.resolve())
             except Exception:
                 self._config.source_yaml_path = str(config_file)
-            print(f"✅ 成功加载配置: {self._config.name}")
+            print(f"✅ Configuration loaded: {self._config.name}")
             return True
 
         except yaml.YAMLError as e:
-            print(f"❌ YAML解析错误: {e}")
+            print(f"❌ YAML parsing error: {e}")
             return False
         except Exception as e:
-            print(f"❌ 加载配置文件失败: {e}")
+            print(f"❌ Failed to load configuration file: {e}")
             return False
 
     def _expand_env_placeholders(self, obj: Any) -> Any:
-        """递归展开字符串中的环境变量占位符，如: "${HOME}"。
+        """Recursively expand environment placeholders in strings, e.g., "${HOME}".
 
-        仅替换存在于环境变量中的键；若未找到则保留原占位符文本。
+        Only replace keys that exist in the environment; otherwise keep the
+        original placeholder text.
         """
         pattern = re.compile(r"\$\{([^}]+)\}")
 
@@ -129,7 +131,7 @@ class ConfigManager:
         return obj
 
     def _parse_config(self, data: Dict[str, Any]) -> TestConfig:
-        """解析配置数据"""
+        """Parse configuration data"""
         config_data = data.get('config', {})
 
         test_config = TestConfig(
@@ -151,7 +153,7 @@ class ConfigManager:
         for name, prof in hosts_profiles_raw.items():
             if not isinstance(prof, dict):
                 continue
-            # 端口字段容错：可能仍为未展开的占位符或空值
+            # Port field robustness: may still be an unexpanded placeholder or empty
             raw_port = prof.get('ssh_port', 22)
             try:
                 port_val = int(raw_port)
@@ -207,34 +209,34 @@ class ConfigManager:
         return test_config
 
     def get_config(self) -> Optional[TestConfig]:
-        """获取当前配置"""
+        """Get the current configuration"""
         return self._config
 
     def validate_config(self) -> bool:
-        """验证配置的有效性"""
+        """Validate the configuration"""
         if not self._config:
             return False
 
         for script in self._config.scripts:
             if not script.path:
-                print("❌ 脚本路径为空")
+                print("❌ Script path is empty")
                 return False
 
         script_paths = {script.path for script in self._config.scripts}
         for script in self._config.scripts:
             for dep in script.depends_on:
                 if dep not in script_paths:
-                    print(f"❌ 脚本 {script.path} 依赖的脚本 {dep} 不存在")
+                    print(f"❌ Script {script.path} depends on missing script {dep}")
                     return False
 
         return True
 
     def get_execution_order(self) -> List[List[str]]:
         """
-        根据依赖关系计算脚本执行顺序
+        Compute execution order based on dependencies
 
         Returns:
-            List[List[str]]: 每个子列表包含可以并行执行的脚本路径
+            List[List[str]]: each sub-list contains script paths that can run in parallel
         """
         if not self._config:
             return []
@@ -252,7 +254,7 @@ class ConfigManager:
 
             if not ready:
                 remaining = set(scripts.keys()) - resolved
-                raise ValueError(f"检测到循环依赖: {remaining}")
+                raise ValueError(f"Circular dependency detected: {remaining}")
 
             order.append(ready)
             resolved.update(ready)

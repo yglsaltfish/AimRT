@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-AimRT测试框架Fixtures模块
+Fixtures module for the AimRT test framework
 """
 
 from .aimrt_test import aimrt_test_runner

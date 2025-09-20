@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-AimRT测试框架进程管理器
+AimRT Test Framework Process Manager
 
-负责执行脚本、管理进程依赖关系、处理超时控制，并集成资源监控功能。
+Responsible for executing scripts, managing process dependencies, handling timeout control, and integrating resource monitoring functionality.
 """
 
 import subprocess
@@ -29,7 +29,7 @@ from .callback_manager import CallbackManager, CallbackTrigger
 
 @dataclass
 class ProcessInfo:
-    """进程信息"""
+    """Process information"""
     script_path: str
     pid: int
     process: subprocess.Popen
@@ -49,32 +49,32 @@ class ProcessInfo:
     remote_exit_code_path: str = ""
     remote_conn_key: str = ""
     shutdown_triggered: bool = False
-    # 远程资源监控文件路径
+    # Remote resource monitoring file path
     remote_monitor_script: str = ""
     remote_monitor_output: str = ""
     remote_monitor_pid_path: str = ""
-    # 远端真实业务进程PID与路径，以及外层会话/进程组的PID
+    # Remote real business process PID and path, and outer session/process group PID
     remote_run_pid_path: str = ""
     remote_group_pid: int = 0
-    # 本地PTY支持
+    # Local PTY support
     pty_master_fd: int = -1
     pty_reader_started: bool = False
 
 
 class ProcessManager:
-    """进程管理器"""
+    """Process manager"""
 
     def __init__(self, base_cwd: str = "", resource_monitor: Optional[ResourceMonitor] = None,
                  callback_manager: Optional[CallbackManager] = None,
                  global_shutdown_patterns: Optional[List[str]] = None,
                  stop_all_on_shutdown: bool = False):
         """
-        初始化进程管理器
+        Initialize process manager
 
         Args:
-            base_cwd: 基础工作目录
-            resource_monitor: 资源监控器实例
-            callback_manager: 回调管理器实例
+            base_cwd: base working directory
+            resource_monitor: resource monitor instance
+            callback_manager: callback manager instance
         """
         self.base_cwd = Path(base_cwd) if base_cwd else Path.cwd()
         self.resource_monitor = resource_monitor or ResourceMonitor()
@@ -83,7 +83,7 @@ class ProcessManager:
         self._script_configs: Dict[str, ScriptConfig] = {}
         self._lock = threading.Lock()
         self._fabric_conns: Dict[str, Any] = {}
-        # 全局关停配置
+        # Global shutdown configuration
         self._global_shutdown_patterns = [p.lower() for p in (global_shutdown_patterns or [])]
         self._stop_all_on_shutdown = bool(stop_all_on_shutdown)
         self._global_shutdown_initiated = threading.Event()
@@ -115,7 +115,7 @@ class ProcessManager:
                 conn = self._get_fabric_connection(scfg)
             group_pid = process_info.remote_group_pid or process_info.pid
             run_pid = process_info.pid
-            # 递归优雅终止整个子进程树（避免仅杀父进程）
+            # Recursively graceful terminate the entire child process tree (avoid killing only the parent process)
             cmd = (
                 "bash -lc '"
                 "kill_tree() { local p=$1; if [ -z \"$p\" ] || [ \"$p\" = \"-1\" ]; then return; fi; "
@@ -137,11 +137,11 @@ class ProcessManager:
         self._global_shutdown_initiated.set()
         try:
             if grace_sec and grace_sec > 0:
-                print(f"🛎️ 触发全局关停，等待宽限 {grace_sec:.1f}s 再强制收尾...")
+                print(f"🛎️ Trigger global shutdown, wait for {grace_sec:.1f}s grace period...")
                 time.sleep(min(grace_sec, 60.0))
         except Exception:
             pass
-        # 终止所有仍在运行的进程
+        # Terminate all still running processes
         with self._lock:
             targets = list(self._processes.keys())
         for sp in targets:
@@ -152,7 +152,7 @@ class ProcessManager:
                 pass
 
     def _on_shutdown_pattern_matched(self, process_info: ProcessInfo, script_config: ScriptConfig, *, matched_global: bool):
-        # 标记完成并尝试优雅终止触发者
+        # Mark completed and try graceful terminate the trigger
         if process_info.backend == "remote":
             self._graceful_terminate_remote(process_info)
         else:
@@ -172,13 +172,13 @@ class ProcessManager:
 
     def _start_remote_resource_monitor(self, conn: Connection, process_info: "ProcessInfo", script_config: ScriptConfig):
         """
-        在远端启动资源监控器（基于psutil），将采样数据写入JSONL文件。
+        Start resource monitor on remote (based on psutil), write sampled data to JSONL file.
         """
         try:
             remote_python = "python3"
             chk = conn.run(f"{remote_python} -c 'import psutil,sys; sys.stdout.write(psutil.__version__)'", hide=True, warn=True, in_stream=False)
             if not chk.ok or not (chk.stdout or "").strip():
-                print("⚠️  远端未安装psutil，跳过远程资源监控")
+                print("⚠️  Remote psutil not installed, skip remote resource monitor")
                 return
 
             remote_dir = process_info.remote_dir
@@ -186,7 +186,7 @@ class ProcessManager:
             monitor_output_path = f"{remote_dir}/monitor.jsonl"
             monitor_pid_path = f"{remote_dir}/monitor_pid"
 
-            # 写入监控脚本
+            # Write monitor script
             monitor_py = r'''#!/usr/bin/env python3
 import argparse
 import json
@@ -326,7 +326,7 @@ if __name__ == "__main__":
             conn.run(f"cat > {monitor_script_path} <<'PY'\n{monitor_py}\nPY", hide=True, warn=True, in_stream=False)
             conn.run(f"chmod +x {monitor_script_path}", hide=True, warn=True, in_stream=False)
 
-            # 启动监控器：优先监控真实业务进程PID
+            # Start monitor: prioritize monitoring real business process PID
             pid_to_monitor = process_info.pid
             try:
                 if process_info.remote_run_pid_path:
@@ -349,9 +349,9 @@ if __name__ == "__main__":
             process_info.remote_monitor_script = monitor_script_path
             process_info.remote_monitor_output = monitor_output_path
             process_info.remote_monitor_pid_path = monitor_pid_path
-            print(f"✅ 远程资源监控已启动: {monitor_output_path}")
+            print(f"✅ Remote resource monitor started: {monitor_output_path}")
         except Exception as e:
-            print(f"⚠️ 启动远程资源监控失败: {e}")
+            print(f"⚠️  Start remote resource monitor failed: {e}")
             return
 
     def _is_remote(self, script_config: ScriptConfig) -> bool:
@@ -397,41 +397,41 @@ if __name__ == "__main__":
         try:
             conn.open()
         except Exception as e:
-            raise RuntimeError(f"无法连接远端 {key}: {e}")
+            raise RuntimeError(f"Cannot connect to remote {key}: {e}")
 
         self._fabric_conns[key] = conn
         return conn
 
     def execute_script(self, script_config: ScriptConfig, run_time: Optional[int] = None) -> ProcessInfo:
         """
-        执行单个脚本
+        Execute a single script
 
         Args:
-            script_config: 脚本配置
-            run_time: 运行时间（秒），如果为None则使用脚本配置中的运行时间
+            script_config: script configuration
+            run_time: run time (seconds), if None use script configuration
 
         Returns:
-            ProcessInfo: 进程信息
+            ProcessInfo: process information
         """
         script_run_time = run_time or script_config.time_sec
 
-        # 准备执行环境
+        # Prepare execution environment
         env = os.environ.copy()
         env.update(script_config.environment)
 
-        # 确定工作目录
+        # Determine working directory
         if script_config.cwd:
             cwd = self.base_cwd / script_config.cwd
         else:
             cwd = self.base_cwd
 
-        # 构建命令
+        # Build command
         cmd = [script_config.path] + script_config.args
 
-        print(f"🚀 执行脚本: {script_config.path}")
-        print(f"   工作目录: {cwd}")
-        print(f"   运行时间: {script_run_time}秒")
-        print(f"   环境变量: {script_config.environment}")
+        print(f"🚀 Execute script: {script_config.path}")
+        print(f"    Working directory: {cwd}")
+        print(f"    Run time: {script_run_time} seconds")
+        print(f"    Environment variables: {script_config.environment}")
 
         if not self._is_remote(script_config):
             try:
@@ -463,15 +463,15 @@ if __name__ == "__main__":
                     self._script_configs[script_config.path] = script_config
 
                 monitor_enabled = any(script_config.monitor.values())
-                print(f"📊 监控配置: {script_config.monitor}, 启用监控: {monitor_enabled}")
+                print(f"📊 Monitor configuration: {script_config.monitor}, monitor enabled: {monitor_enabled}")
                 if monitor_enabled:
                     success = self.resource_monitor.start_monitoring(process.pid, script_config.path)
                     if success:
-                        print(f"✅ 资源监控已启动: {script_config.path} (PID: {process.pid})")
+                        print(f"✅ Resource monitor started: {script_config.path} (PID: {process.pid})")
                     else:
-                        print(f"❌ 资源监控启动失败: {script_config.path} (PID: {process.pid})")
+                        print(f"❌ Resource monitor start failed: {script_config.path} (PID: {process.pid})")
 
-                print(f"✅ 脚本启动成功，PID: {process.pid}")
+                print(f"✅ Script started successfully, PID: {process.pid}")
 
                 context = {
                     'process_info': process_info,
@@ -489,7 +489,7 @@ if __name__ == "__main__":
                 return process_info
 
             except Exception as e:
-                print(f"❌ 启动脚本失败: {e}")
+                print(f"❌ Start script failed: {e}")
                 process_info = ProcessInfo(
                     script_path=script_config.path,
                     pid=-1,
@@ -502,7 +502,7 @@ if __name__ == "__main__":
                 )
                 return process_info
         else:
-            # 远程执行
+            # Remote execution
             try:
                 from uuid import uuid4
                 conn = self._get_fabric_connection(script_config)
@@ -518,8 +518,8 @@ if __name__ == "__main__":
 
                 stdout_path = f"{remote_dir}/stdout.log"
                 stderr_path = f"{remote_dir}/stderr.log"
-                pid_path = f"{remote_dir}/pid"  # 外层bash（会话/进程组）的PID
-                run_pid_path = f"{remote_dir}/run_pid"  # 真实业务进程PID
+                pid_path = f"{remote_dir}/pid"  # Outer bash (session/process group) PID
+                run_pid_path = f"{remote_dir}/run_pid"  # Real business process PID
                 exit_path = f"{remote_dir}/exit_code"
 
                 remote_shell_cmd = (
@@ -536,12 +536,12 @@ if __name__ == "__main__":
                     f"' > {stdout_path} 2> {stderr_path} < /dev/null & echo $! > {pid_path}"
                 )
                 port = int(getattr(script_config.host_profile, 'ssh_port', 22) or 22)
-                print(f"🌐 远程执行: {script_config.host_profile.host}:{port}")
-                print(f"   远端工作目录: {remote_cwd}")
+                print(f"🌐 Remote execution: {script_config.host_profile.host}:{port}")
+                print(f"    Remote working directory: {remote_cwd}")
                 if remote_env:
-                    print(f"   远端环境变量: {remote_env}")
-                print(f"   命令: {joined_cmd}")
-                print(f"   环境转储: {remote_dir}/env.log")
+                    print(f"    Remote environment variables: {remote_env}")
+                print(f"    Command: {joined_cmd}")
+                print(f"    Environment dump: {remote_dir}/env.log")
                 res = conn.run(remote_shell_cmd, hide=True, warn=True, pty=False, in_stream=False)
                 pid_out = conn.run(f"test -s {pid_path} && cat {pid_path} || echo -1", hide=True, warn=True, in_stream=False)
                 try:
@@ -562,11 +562,11 @@ if __name__ == "__main__":
                         time.sleep(0.05)
 
                 if pid <= 0:
-                    msg_parts = ["远程启动失败"]
+                    msg_parts = ["Remote start failed"]
                     try:
                         chk = conn.run(f"test -d {remote_cwd}", hide=True, warn=True, in_stream=False)
                         if not chk.ok:
-                            msg_parts.append(f"目录不存在: {remote_cwd}")
+                            msg_parts.append(f"Directory not exists: {remote_cwd}")
                     except Exception:
                         pass
                     try:
@@ -632,7 +632,7 @@ if __name__ == "__main__":
                 if monitor_enabled:
                     self._start_remote_resource_monitor(conn, process_info, script_config)
 
-                print(f"✅ 远程脚本已启动，PID: {pid}，远端目录: {remote_dir}")
+                print(f"✅ Remote script started, PID: {pid}, remote directory: {remote_dir}")
 
                 context = {
                     'process_info': process_info,
@@ -645,14 +645,14 @@ if __name__ == "__main__":
                 if script_config.shutdown_patterns or self._global_shutdown_patterns:
                     self._start_remote_shutdown_watcher(process_info, script_config)
 
-                # 运行时间控制
+                # Run time control
                 if script_run_time > 0:
                     self._start_run_time_control(process_info, script_run_time, script_config.kill_signal)
 
                 return process_info
 
             except Exception as e:
-                print(f"❌ 启动远程脚本失败: {e}")
+                print(f"❌ Start remote script failed: {e}")
                 process_info = ProcessInfo(
                     script_path=script_config.path,
                     pid=-1,
@@ -668,36 +668,36 @@ if __name__ == "__main__":
 
     def wait_for_process(self, script_path: str, timeout: Optional[int] = None) -> ProcessInfo:
         """
-        等待进程完成
+        Wait for process to complete
 
         Args:
-            script_path: 脚本路径
-            timeout: 超时时间（秒），None表示无超时等待
+            script_path: script path
+            timeout: timeout (seconds), None means no timeout wait
 
         Returns:
-            ProcessInfo: 更新后的进程信息
+            ProcessInfo: updated process information
         """
         with self._lock:
             process_info = self._processes.get(script_path)
 
         if not process_info:
-            print(f"❌ 未找到脚本进程: {script_path}")
+            print(f"❌ Script process not found: {script_path}")
             return process_info
 
-        print(f"⏳ 等待脚本执行完成: {script_path}")
+        print(f"⏳ Wait for script to complete: {script_path}")
 
         try:
             if process_info.backend == "remote":
-                # 远程等待逻辑
+                # Remote wait logic
                 try:
                     conn = self._fabric_conns.get(process_info.remote_conn_key)
                     if not conn:
-                        # 尝试恢复连接
+                        # Try to restore connection
                         with self._lock:
                             scfg = self._script_configs.get(script_path)
                         conn = self._get_fabric_connection(scfg)
                 except Exception as e:
-                    raise RuntimeError(f"远程连接丢失: {e}")
+                    raise RuntimeError(f"Remote connection lost: {e}")
 
                 def remote_running() -> bool:
                     r = conn.run(f"ps -p {process_info.pid} -o pid=", hide=True, warn=True, in_stream=False)
@@ -708,7 +708,7 @@ if __name__ == "__main__":
                     if not remote_running():
                         break
                     if timeout is not None and (time.time() - start_wait) > timeout:
-                        print(f"⏰ 脚本执行超时(远程): {script_path}")
+                        print(f"⏰ Script execution timeout (remote): {script_path}")
                         process_info.status = "timeout"
                         process_info.end_time = datetime.now()
                         self.kill_process(script_path)
@@ -777,17 +777,17 @@ if __name__ == "__main__":
                                 pm.total_memory_rss = last.memory_rss
                                 pm.total_memory_percent = last.memory_percent
                             process_info.monitor_data = pm
-                            print(f"📊 收集到远程监控数据: {len(pm.snapshots)} 个采样点")
+                            print(f"📊 Collected remote monitor data: {len(pm.snapshots)} samples")
                 except Exception as e:
-                    print(f"⚠️ 读取远程监控数据失败: {e}")
+                    print(f"⚠️ Read remote monitor data failed: {e}")
 
                 if process_info.status in ["killed", "timeout", "completed"] or process_info.shutdown_triggered:
-                    # 已经由 watcher 标记或优雅退出触发，则不覆盖为 failed
+                    # Already marked by watcher or graceful exit triggered, do not overwrite to failed
                     if process_info.status in ["killed", "timeout"]:
                         label = "被终止" if process_info.status == "killed" else "执行超时"
                         print(f"⏹️ 脚本{label}(远程): {script_path}")
                     else:
-                        print(f"✅ 远程脚本执行completed: {script_path}")
+                        print(f"✅ Remote script execution completed: {script_path}")
                 else:
                     if exit_code is None:
                         process_info.status = "completed" if not remote_running() else "failed"
@@ -798,7 +798,7 @@ if __name__ == "__main__":
 
             else:
                 if not process_info.process:
-                    print(f"❌ 未找到本地脚本进程: {script_path}")
+                    print(f"❌ Local script process not found: {script_path}")
                     return process_info
                 try:
                     with self._lock:
@@ -828,7 +828,7 @@ if __name__ == "__main__":
                     process_info.stdout = (process_info.stdout or "") + (stdout or "")
                     process_info.stderr = (process_info.stderr or "") + (stderr or "")
 
-                # 若之前已被标记为 killed/timeout/completed（如由shutdown watcher设置），则尊重既有状态，避免覆盖
+                # If previously marked as killed/timeout/completed (e.g. set by shutdown watcher), respect the existing state, avoid overwriting
                 if process_info.status in ["killed", "timeout", "completed"] or process_info.shutdown_triggered:
                     label = "被终止" if process_info.status == "killed" else "执行超时"
                     if process_info.status in ["killed", "timeout"]:
@@ -836,20 +836,20 @@ if __name__ == "__main__":
                 else:
                     if process_info.exit_code == 0:
                         process_info.status = "completed"
-                        print(f"✅ 脚本执行成功: {script_path}")
+                        print(f"✅ Script execution successful: {script_path}")
                     else:
                         process_info.status = "failed"
-                        print(f"❌ 脚本执行失败: {script_path}, 退出码: {process_info.exit_code}")
+                        print(f"❌ Script execution failed: {script_path}, exit code: {process_info.exit_code}")
 
         except subprocess.TimeoutExpired:
-            print(f"⏰ 脚本执行超时: {script_path}")
+            print(f"⏰ Script execution timeout: {script_path}")
             process_info.status = "timeout"
             process_info.end_time = datetime.now()
 
-            # 终止进程
+            # Terminate process
             self.kill_process(script_path)
 
-            # 超时后尽量收集剩余日志
+            # Collect remaining logs after timeout
             try:
                 if process_info.process:
                     stdout, stderr = process_info.process.communicate(timeout=1)
@@ -859,20 +859,20 @@ if __name__ == "__main__":
                 pass
 
         except Exception as e:
-            print(f"❌ 等待脚本时发生错误: {e}")
+            print(f"❌ Error waiting for script: {e}")
             process_info.status = "failed"
             process_info.end_time = datetime.now()
             process_info.stderr = str(e)
 
-        # 停止资源监控
+        # Stop resource monitor
         if process_info.pid > 0 and process_info.backend == "local":
-            print(f"🛑 停止资源监控: {script_path} (PID: {process_info.pid})")
+            print(f"🛑 Stop resource monitor: {script_path} (PID: {process_info.pid})")
             monitor_data = self.resource_monitor.stop_monitoring(process_info.pid)
             if monitor_data:
                 process_info.monitor_data = monitor_data
-                print(f"📊 收集到监控数据: {len(monitor_data.snapshots)} 个采样点")
+                print(f"📊 Collected monitor data: {len(monitor_data.snapshots)} samples")
             else:
-                print(f"⚠️ 未收集到监控数据: {script_path}")
+                print(f"⚠️ No monitor data collected: {script_path}")
 
         with self._lock:
             scfg = self._script_configs.get(script_path)
@@ -887,13 +887,13 @@ if __name__ == "__main__":
 
     def kill_process(self, script_path: str) -> bool:
         """
-        强制终止进程及其所有子进程
+        Force terminate process and all its child processes
 
         Args:
-            script_path: 脚本路径
+            script_path: script path
 
         Returns:
-            bool: 成功终止返回True
+            bool: True on success
         """
         with self._lock:
             process_info = self._processes.get(script_path)
@@ -910,10 +910,10 @@ if __name__ == "__main__":
                             scfg = self._script_configs.get(script_path)
                         conn = self._get_fabric_connection(scfg)
                 except Exception as e:
-                    print(f"❌ 远程连接不可用，无法终止: {e}")
+                    print(f"❌ Remote connection unavailable, cannot terminate: {e}")
                     return False
 
-                print(f"🔪 强制终止远程进程及其子进程: {script_path} (PID: {process_info.pid})")
+                print(f"🔪 Force terminate remote process and its child processes: {script_path} (PID: {process_info.pid})")
                 try:
                     if process_info.remote_monitor_pid_path:
                         mp = conn.run(f"test -s {process_info.remote_monitor_pid_path} && cat {process_info.remote_monitor_pid_path} || echo -1", hide=True, warn=True, in_stream=False)
@@ -927,7 +927,7 @@ if __name__ == "__main__":
                     pass
                 group_pid = process_info.remote_group_pid or process_info.pid
                 run_pid = process_info.pid
-                # 递归TERM整个树与进程组
+                # Recursively TERM the entire tree and process group
                 term_cmd = (
                     "bash -lc '"
                     "kill_tree() { local p=$1; if [ -z \"$p\" ] || [ \"$p\" = \"-1\" ]; then return; fi; "
@@ -943,7 +943,7 @@ if __name__ == "__main__":
                 time.sleep(0.5)
                 r = conn.run(f"ps -p {process_info.pid} -o pid=", hide=True, warn=True, in_stream=False)
                 if (r.stdout or "").strip():
-                    print("⚠️  远程进程未结束，执行KILL...")
+                    print("⚠️  Remote process not terminated, execute KILL...")
                     kill_cmd = (
                         "bash -lc '"
                         "kill_tree_k() { local p=$1; if [ -z \"$p\" ] || [ \"$p\" = \"-1\" ]; then return; fi; "
@@ -965,7 +965,7 @@ if __name__ == "__main__":
                 if not process_info.process:
                     return False
 
-                print(f"🔪 强制终止进程及其子进程: {script_path} (PID: {process_info.pid})")
+                print(f"🔪 Force terminate process and its child processes: {script_path} (PID: {process_info.pid})")
 
                 try:
                     parent_process = psutil.Process(process_info.pid)
@@ -973,7 +973,7 @@ if __name__ == "__main__":
                     all_processes = child_processes
 
                 except psutil.NoSuchProcess:
-                    print(f"⚠️  进程 {process_info.pid} 已经不存在")
+                    print(f"⚠️  Process {process_info.pid} does not exist")
                     process_info.status = "killed"
                     process_info.end_time = datetime.now()
                     process_info.terminated_by_framework = True
@@ -988,7 +988,7 @@ if __name__ == "__main__":
                 _, alive = psutil.wait_procs(all_processes, timeout=5)
 
                 if alive:
-                    print(f"⚠️  有 {len(alive)} 个进程未能温和终止，强制杀死...")
+                    print(f"⚠️  {len(alive)} processes cannot be terminated gracefully, force kill...")
                     for proc in alive:
                         try:
                             proc.kill()
@@ -1007,36 +1007,35 @@ if __name__ == "__main__":
                 return True
 
         except Exception as e:
-            print(f"❌ 终止进程失败: {e}")
+            print(f"❌ Terminate process failed: {e}")
             return False
 
     def execute_scripts_with_dependencies(self, scripts: List[ScriptConfig]) -> Dict[str, ProcessInfo]:
         """
-        执行逻辑：
-        - 每个脚本是独立的，不需要等待前一个完全结束
-        - 只要依赖的进程启动了，就可以根据delay时间启动下一个
-        - 支持真正的并行执行
+        Execution logic:
+        - Each script is independent, does not need to wait for the previous one to complete
+        - As long as the dependent process is started, the next one can be started according to the delay time
 
         Args:
-            scripts: 脚本配置列表
+            scripts: script configuration list
 
         Returns:
-            Dict[str, ProcessInfo]: 所有进程的执行结果
+            Dict[str, ProcessInfo]: execution results of all processes
         """
-        print("🎯 开始并行执行脚本组")
+        print("🎯 Start parallel execution of script group")
 
-        # 构建脚本映射（用于依赖检查）
+        # Build script mapping (for dependency check)
         results = {}
-        started_scripts = set()  # 已启动的脚本
+        started_scripts = set()  # Started scripts
 
-        # 启动线程来处理脚本启动
+        # Start threads to handle script startup
         import threading
 
         def start_script_when_ready(script_config: ScriptConfig):
-            """当依赖满足时启动脚本"""
+            """Start script when dependencies are satisfied"""
             script_path = script_config.path
 
-            # 等待依赖的脚本启动
+            # Wait for dependent scripts to start
             while True:
                 dependencies_satisfied = True
                 for dep_path in script_config.depends_on:
@@ -1047,23 +1046,23 @@ if __name__ == "__main__":
                 if dependencies_satisfied:
                     break
 
-                # 短暂等待后重新检查
+                # Wait briefly and then check again
                 time.sleep(0.5)
 
-            # 等待延迟时间
+            # Wait for delay time
             if script_config.delay_sec > 0:
-                print(f"⏱️ 等待 {script_config.delay_sec} 秒后启动: {script_path}")
+                print(f"⏱️ Wait {script_config.delay_sec} seconds before starting: {script_path}")
                 time.sleep(script_config.delay_sec)
 
-            # 启动脚本
-            print(f"🚀 启动脚本: {script_path}")
+            # Start script
+            print(f"🚀 Start script: {script_path}")
             process_info = self.execute_script(script_config)
             results[script_path] = process_info
 
-            # 标记为已启动（即使启动失败也要标记，避免阻塞其他脚本）
+            # Mark as started (even if startup fails, mark it to avoid blocking other scripts)
             started_scripts.add(script_path)
 
-        # 为每个脚本启动监控线程
+        # Start monitor thread for each script
         threads = []
         for script in scripts:
             thread = threading.Thread(
@@ -1074,45 +1073,45 @@ if __name__ == "__main__":
             threads.append(thread)
             thread.start()
 
-        # 等待所有脚本启动完成
+        # Wait for all scripts to start
         for thread in threads:
             thread.join()
 
-        print(f"✅ 所有脚本已启动，共 {len(started_scripts)} 个")
+        print(f"✅ All scripts have started, {len(started_scripts)} in total")
 
         # 现在所有脚本都在运行，等待它们完成或超时
-        print("⏳ 等待所有脚本执行完成...")
+        print("⏳ Wait for all scripts to complete...")
 
         # 等待所有进程完成
         for script in scripts:
             script_path = script.path
             if script_path in results and results[script_path].status not in ["failed"]:
-                # 等待进程自然结束（由运行时间控制线程管理）
+                # Wait for process to end naturally (managed by run time control thread)
                 process_info = self.wait_for_process(script_path, None)
                 results[script_path] = process_info
 
                 status_emoji = "✅" if process_info.status == "completed" else "❌"
-                print(f"{status_emoji} 脚本 {script_path} 执行{process_info.status}")
+                print(f"{status_emoji} Script {script_path} execution {process_info.status}")
 
         return results
 
     def register_callback(self, callback):
-        """注册自定义回调"""
+        """Register custom callback"""
         self.callback_manager.register_callback(callback)
 
     def register_function_callback(self, name: str, trigger: CallbackTrigger,
                                  func, **kwargs):
-        """注册函数回调"""
+        """Register function callback"""
         return self.callback_manager.register_function_callback(name, trigger, func, **kwargs)
 
     def get_callback_results(self, callback_name: Optional[str] = None):
-        """获取回调执行结果"""
+        """Get callback execution results"""
         return self.callback_manager.get_callback_results(callback_name)
 
     def start_periodic_callbacks(self):
-        """启动周期性回调"""
+        """Start periodic callbacks"""
         def context_provider():
-            # 提供当前所有进程的上下文
+            # Provide context for all processes
             with self._lock:
                 processes = list(self._processes.values())
 
@@ -1124,26 +1123,26 @@ if __name__ == "__main__":
         self.callback_manager.start_periodic_callbacks(context_provider)
 
     def stop_periodic_callbacks(self):
-        """停止周期性回调"""
+        """Stop periodic callbacks"""
         self.callback_manager.stop_periodic_callbacks()
 
     def _register_script_callbacks(self, script_config: ScriptConfig):
-        """已禁用：YAML回调注册（仅保留函数回调API）。"""
+        """Disabled: YAML callback registration (only keep function callback API)."""
         return
 
     def _start_run_time_control(self, process_info: ProcessInfo, run_time: int, kill_signal: int):
         """
-        启动运行时间控制线程
+        Start run time control thread
 
         Args:
-            process_info: 进程信息
-            run_time: 运行时间（秒）
-            kill_signal: 终止信号
+            process_info: process information
+            run_time: run time (seconds)
+            kill_signal: termination signal
         """
         def run_time_controller():
-            """运行时间控制器"""
+            """Run time controller"""
             try:
-                # 等待指定的运行时间
+                # Wait for specified run time
                 time.sleep(run_time)
 
                 still_running = False
@@ -1163,13 +1162,13 @@ if __name__ == "__main__":
                     pass
 
                 if still_running:
-                    print(f"⏰ 脚本 {process_info.script_path} 运行时间到期 ({run_time}秒)，关闭进程")
+                    print(f"⏰ Script {process_info.script_path} run time expired ({run_time} seconds), close process")
                     self.kill_process(process_info.script_path)
 
             except Exception as e:
-                print(f"❌ 运行时间控制线程异常: {e}")
+                print(f"❌ Run time control thread exception: {e}")
 
-        # 启动控制线程
+        # Start control thread
         control_thread = threading.Thread(
             target=run_time_controller,
             daemon=True
@@ -1199,14 +1198,14 @@ if __name__ == "__main__":
                             continue
                         if key.fileobj is proc.stdout:
                             process_info.stdout += data
-                            # 打印本地实时标准输出
+                            # Print local real-time standard output
                             try:
                                 print(data, end="")
                             except Exception:
                                 pass
                         else:
                             process_info.stderr += data
-                            # 打印本地实时标准错误
+                            # Print local real-time standard error
                             try:
                                 print(data, end="")
                             except Exception:
@@ -1220,7 +1219,7 @@ if __name__ == "__main__":
                             break
 
                 if matched and proc.poll() is None:
-                    print(f"🛎️ 触发shutdown_patterns，优雅终止: {process_info.script_path}")
+                    print(f"🛎️ Trigger shutdown_patterns, graceful terminate: {process_info.script_path}")
                     try:
                         parent = psutil.Process(process_info.pid)
                         children = parent.children(recursive=True)
@@ -1245,7 +1244,7 @@ if __name__ == "__main__":
                     process_info.end_time = datetime.now()
                     process_info.shutdown_triggered = True
             except Exception as e:
-                print(f"❌ shutdown watcher异常: {e}")
+                print(f"❌ shutdown watcher exception: {e}")
 
         t = threading.Thread(target=watcher, daemon=True, name=f"shutdown-watcher-{process_info.pid}")
         t.start()
@@ -1303,7 +1302,7 @@ if __name__ == "__main__":
                                             matched_global = True
                                             break
                                 if matched and process_info.process and process_info.process.poll() is None:
-                                    print(f"\U0001F6CE\ufe0f 触发{'全局' if matched_global else '脚本'}shutdown_patterns，优雅终止(PTY): {process_info.script_path}")
+                                    print(f"\U0001F6CE\ufe0f Trigger {'global' if matched_global else 'script'}shutdown_patterns, graceful terminate (PTY): {process_info.script_path}")
                                     self._on_shutdown_pattern_matched(process_info, script_config, matched_global=matched_global)
 
                     if process_info.process and process_info.process.poll() is not None:
@@ -1390,26 +1389,26 @@ if __name__ == "__main__":
                     time.sleep(0.2)
 
                 if matched and running():
-                    print(f"🛎️ 触发远程{'全局' if matched_global else '脚本'}shutdown_patterns，优雅终止: {process_info.script_path}")
+                    print(f"🛎️ Trigger remote {'global' if matched_global else 'script'}shutdown_patterns, graceful terminate: {process_info.script_path}")
                     self._on_shutdown_pattern_matched(process_info, script_config, matched_global=matched_global)
             except Exception as e:
-                print(f"❌ 远程shutdown watcher异常: {e}")
+                print(f"❌ Remote shutdown watcher exception: {e}")
 
         t = threading.Thread(target=watcher, daemon=True, name=f"remote-shutdown-watcher-{process_info.pid}")
         t.start()
 
     def get_process_info(self, script_path: str) -> Optional[ProcessInfo]:
-        """获取进程信息"""
+        """Get process information"""
         with self._lock:
             return self._processes.get(script_path)
 
     def get_all_processes(self) -> Dict[str, ProcessInfo]:
-        """获取所有进程信息"""
+        """Get all process information"""
         with self._lock:
             return self._processes.copy()
 
     def is_process_running(self, script_path: str) -> bool:
-        """检查进程是否在运行"""
+        """Check if process is running"""
         process_info = self.get_process_info(script_path)
         if not process_info:
             return False
@@ -1431,24 +1430,24 @@ if __name__ == "__main__":
             return False
 
     def cleanup(self):
-        """清理所有进程"""
-        print("🧹 清理所有进程...")
+        """Clean up all processes"""
+        print("🧹 Clean up all processes...")
 
         with self._lock:
             script_paths = list(self._processes.keys())
 
-        # 终止所有运行中的进程
+        # Terminate all running processes
         for script_path in script_paths:
             if self.is_process_running(script_path):
                 self.kill_process(script_path)
 
-        # 停止所有资源监控
+        # Stop all resource monitoring
         self.resource_monitor.stop_all_monitoring()
 
-        print("✅ 进程清理完成")
+        print("✅ Process cleanup completed")
 
     def generate_summary_report(self) -> Dict[str, Any]:
-        """生成执行总结报告"""
+        """Generate execution summary report"""
         processes = self.get_all_processes()
 
         total_count = len(processes)
@@ -1457,7 +1456,7 @@ if __name__ == "__main__":
         timeout_count = sum(1 for p in processes.values() if p.status == "timeout")
         killed_count = sum(1 for p in processes.values() if p.status == "killed")
 
-        # 计算总执行时间
+        # Calculate total execution time
         start_times = [p.start_time for p in processes.values()]
         end_times = [p.end_time for p in processes.values() if p.end_time]
 
@@ -1479,7 +1478,7 @@ if __name__ == "__main__":
             "processes": {}
         }
 
-        # 添加每个进程的详细信息
+        # Add detailed information for each process
         for script_path, process_info in processes.items():
             process_report = {
                 "script_path": script_path,
@@ -1497,7 +1496,7 @@ if __name__ == "__main__":
                 "has_errors": bool(process_info.stderr.strip())
             }
 
-            # 添加资源监控报告
+            # Add resource monitoring report
             if process_info.monitor_data:
                 process_report["resource_usage"] = self.resource_monitor.generate_report(
                     process_info.monitor_data

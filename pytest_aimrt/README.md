@@ -1,26 +1,26 @@
-## AimRT 测试框架使用指南（pytest_aimrt）
+## AimRT Test Framework Guide (pytest_aimrt)
 
-### 概述
-- 基于 Pytest 的测试框架，支持 YAML 配置驱动用例、进程编排、资源监控、远程执行与回调校验。
-- 主要入口：`pytest_aimrt/fixtures/aimrt_test.py` 提供 `AimRTTestRunner` fixture。
+### Overview
+- A Pytest-based test framework supporting YAML-driven test cases, process orchestration, resource monitoring, remote execution, and callback validations.
+- Main entry: `pytest_aimrt/fixtures/aimrt_test.py` provides the `AimRTTestRunner` fixture.
 
-### 环境要求
+### Requirements
 - Python 3.10+
-- 本机和远端均需可用 `python3`
-- 可选：远端安装 `psutil` 才能启用远程资源监控
+- `python3` available on both local and remote hosts
+- Optional: install `psutil` on remote hosts to enable remote resource monitoring
 
-### 目录与主要模块
+### Directory and Key Modules
 - `pytest_aimrt/core/`
-  - `config_manager.py`：解析 YAML
-  - `process_manager.py`：进程启动、远程执行、资源监控
-  - `callback_manager.py`：回调注册/执行
-  - `base_test.py`：高层测试流程
-  - `report_generator.py`：报告生成（HTML/JSON）
-  - `pytest_results.py`：聚合 pytest 原生结果
-- `pytest_aimrt/fixtures/aimrt_test.py`：Pytest fixtures（推荐使用）
+  - `config_manager.py`: Parse YAML
+  - `process_manager.py`: Process launching, remote execution, resource monitoring
+  - `callback_manager.py`: Callback registration/execution
+  - `base_test.py`: High-level test flow
+  - `report_generator.py`: Report generation (HTML/JSON)
+  - `pytest_results.py`: Aggregate native pytest results
+- `pytest_aimrt/fixtures/aimrt_test.py`: Pytest fixtures (recommended)
 
-### 快速开始
-1) 写测试（示例）
+### Quick Start
+1) Write a test (example)
 ```python
 # pytest_aimrt/examples/channel_remote/test_mqtt.py
 import pytest
@@ -32,10 +32,10 @@ from pytest_aimrt.core.callback_manager import CallbackTrigger, CallbackResult
 def my_log_check(context: Dict[str, Any]) -> CallbackResult:
     p = context.get('process_info')
     if not p:
-        return CallbackResult(False, "缺少进程信息")
+        return CallbackResult(False, "Missing process info")
     if "Bench completed." not in (p.stdout or ""):
-        return CallbackResult(False, "未找到预期日志")
-    return CallbackResult(True, "检测到有正确的日志输出")
+        return CallbackResult(False, "Expected log not found")
+    return CallbackResult(True, "Detected expected log output")
 
 class TestRPCExamples:
     @pytest.mark.aimrt
@@ -44,7 +44,7 @@ class TestRPCExamples:
         assert yaml_config_path.exists()
         assert aimrt_test_runner.setup_from_yaml(str(yaml_config_path))
 
-        # 注册回调（受 enabled_callbacks 白名单控制）
+        # Register callback (controlled by enabled_callbacks allowlist)
         aimrt_test_runner.register_function_callback(
             name="log_check",
             trigger=CallbackTrigger.PROCESS_END,
@@ -54,9 +54,9 @@ class TestRPCExamples:
         assert aimrt_test_runner.run_test()
 ```
 
-2) 写 YAML（本地/远程均可）
+2) Write YAML (local/remote supported)
 ```yaml
-# 本地示例（无 remote 字段 → 本地执行）
+# Local example (no 'remote' field → run locally)
 name: "MQTT Channel qos2"
 config:
   time_sec: 60
@@ -75,7 +75,7 @@ input:
 ```
 
 ```yaml
-# 远程示例（有 hosts + 每个脚本的 remote = 主机档案名）
+# Remote example (define hosts and set each script's 'remote' to a host profile name)
 name: "MQTT Channel qos2 remote"
 config:
   time_sec: 90
@@ -99,7 +99,7 @@ input:
       time_sec: 60
       monitor: { cpu: true, memory: true, disk: true }
       shutdown_patterns: ["Benchmark plan 2 completed"]
-      # 若出现该字段（可为空），即开启全局白名单模式
+      # Presence of this field (even empty) enables global allowlist mode
       # enabled_callbacks: []
     - remote: x86
       path: "./start_pub.sh"
@@ -111,40 +111,40 @@ input:
       #   - log_check
 ```
 
-3) 运行
+3) Run
 ```bash
-# 运行该目录下所有用例
+# Run all cases under this directory
 pytest pytest_aimrt/examples/channel_remote -v
 
-# 按关键字过滤
+# Filter by keyword
 pytest -k mqtt -q
 ```
 
-### 运行机制与要点
-- **本地/远程**
-  - 未配置 `remote` 字段的脚本，一律作为本地执行。
-  - 配置了 `remote: <host_profile_name>` 的脚本，将通过 SSH（Fabric）在远端执行。
-  - 远端目录结构：框架会在 `/tmp/aimrt/<随机>` 下生成 `stdout.log`、`stderr.log`、`env.log` 等文件。
-- **资源监控**
-  - 本地：直接使用 `psutil` 采样。
-  - 远程：仅当远端安装 `psutil` 时启用，采样写入 `monitor.jsonl` 并汇总到报告。
-- **运行时控制**
-  - `time_sec` 控制脚本最长运行时间，超时将发起终止流程。
-  - `shutdown_patterns` 命中后优雅终止并视为 completed。
-- **回调（校验/提取信息）**
-  - 使用 `aimrt_test_runner.register_function_callback(name, trigger, func, **kwargs)` 注册。
-  - 支持触发器：`PROCESS_START`、`PROCESS_END`、`PERIODIC`（周期回调需传 `interval_sec` 等参数）。
-  - `func(context) -> CallbackResult`，其中 `context` 会包含 `process_info`、`script_path` 等。
-- **回调白名单（enabled_callbacks）**
-  - 只要 YAML 中任意脚本出现了 `enabled_callbacks` 字段（即使为空），就开启“白名单模式”。
-  - 白名单开启后，仅出现在某脚本 `enabled_callbacks` 中的回调名才会被注册，并且只对列出的脚本生效。
-  - 如果某脚本写 `enabled_callbacks: []`，表示该脚本不允许任何回调。
-  - 若完全不出现该字段，默认放行所有已注册回调。
-- **输入输出与捕获**
-  - 框架会收集 `stdout/stderr` 并合并到进程结果，用于回调和报告。
+### Runtime Model and Notes
+- **Local/Remote**
+  - Scripts without a `remote` field are executed locally.
+  - Scripts with `remote: <host_profile_name>` run on remote hosts via SSH (Fabric).
+  - Remote working directory: the framework creates `/tmp/aimrt/<random>` with `stdout.log`, `stderr.log`, `env.log`, etc.
+- **Resource Monitoring**
+  - Local: sample with `psutil`.
+  - Remote: enabled only if remote has `psutil`; samples are written to `monitor.jsonl` and aggregated into the report.
+- **Runtime Control**
+  - `time_sec` defines the maximum run time; timeout triggers termination.
+  - On `shutdown_patterns` match, terminate gracefully and mark as completed.
+- **Callbacks (validation/extraction)**
+  - Register via `aimrt_test_runner.register_function_callback(name, trigger, func, **kwargs)`.
+  - Supported triggers: `PROCESS_START`, `PROCESS_END`, `PERIODIC` (periodic callbacks require `interval_sec`, etc.).
+  - `func(context) -> CallbackResult`, where `context` includes `process_info`, `script_path`, etc.
+- **Callback Allowlist (`enabled_callbacks`)**
+  - If any script in YAML contains `enabled_callbacks` (even empty), allowlist mode is ON.
+  - In allowlist mode, only callbacks listed in a script's `enabled_callbacks` are registered and effective for that script.
+  - `enabled_callbacks: []` on a script means no callbacks allowed for that script.
+  - If the field never appears, all registered callbacks are allowed by default.
+- **I/O and Capturing**
+  - The framework collects `stdout/stderr` and includes them in process results for callbacks and reports.
 
-### 报告
-- 生成位置：`test_reports/`
-  - HTML：`test_reports/html/<测试名>_<时间>_report.html`
-  - JSON：`test_reports/json/<测试名>_<时间>_report.json`
-- 报告内容包括整体统计、各脚本状态、资源使用（如可用）、回调结果和 pytest 原生结果摘要。
+### Reports
+- Output location: `test_reports/`
+  - HTML: `test_reports/html/<test_name>_<time>_report.html`
+  - JSON: `test_reports/json/<test_name>_<time>_report.json`
+- The report includes overall statistics, per-script status, resource usage (if available), callback results, and a summary of native pytest results.

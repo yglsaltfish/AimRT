@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-AimRT测试框架pytest配置文件
+Pytest configuration for the AimRT test framework
 
-提供全局的pytest配置和fixtures。
+Provides global pytest configuration and fixtures.
 """
 
 import sys

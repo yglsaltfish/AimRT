@@ -10,14 +10,14 @@ from enum import Enum
 
 
 class CallbackTrigger(Enum):
-    """回调触发时机"""
-    PROCESS_START = "process_start"      # 进程启动时
-    PROCESS_END = "process_end"          # 进程结束时
-    PERIODIC = "periodic"                # 周期性检查
+    """Callback trigger timing"""
+    PROCESS_START = "process_start"      # when a process starts
+    PROCESS_END = "process_end"          # when a process ends
+    PERIODIC = "periodic"                # periodic check
 
 @dataclass
 class CallbackResult:
-    """回调执行结果"""
+    """Callback execution result"""
     success: bool
     message: str
     data: Dict[str, Any] = field(default_factory=dict)
@@ -28,17 +28,17 @@ class CallbackResult:
 
 @dataclass
 class CallbackConfig:
-    """回调配置"""
+    """Callback configuration"""
     name: str
     trigger: CallbackTrigger
-    interval_sec: float = 1.0  # 周期性检查的间隔（秒）
-    timeout_sec: float = 10.0  # 回调执行超时时间
+    interval_sec: float = 1.0  # interval seconds for periodic checks
+    timeout_sec: float = 10.0  # callback execution timeout seconds
     retry_count: int = 0
     params: Dict[str, Any] = field(default_factory=dict)
 
 
 class BaseCallback(ABC):
-    """回调基础类"""
+    """Base callback type"""
 
     def __init__(self, config: CallbackConfig):
         self.config = config
@@ -48,54 +48,54 @@ class BaseCallback(ABC):
     @abstractmethod
     def execute(self, context: Dict[str, Any]) -> CallbackResult:
         """
-        执行回调逻辑
+        Execute callback logic
 
         Args:
-            context: 执行上下文，包含进程信息、监控数据等
+            context: execution context, includes process info, monitor data, etc.
 
         Returns:
-            CallbackResult: 执行结果
+            CallbackResult: execution result
         """
         pass
 
     def get_results(self) -> List[CallbackResult]:
-        """获取所有执行结果"""
+        """Get all results"""
         with self._lock:
             return self.results.copy()
 
     def add_result(self, result: CallbackResult):
-        """添加执行结果"""
+        """Append a result"""
         with self._lock:
             self.results.append(result)
 
     def clear_results(self):
-        """清空执行结果"""
+        """Clear results"""
         with self._lock:
             self.results.clear()
 
 
 
 class CustomFunctionCallback(BaseCallback):
-    """自定义函数回调"""
+    """Custom function-based callback"""
 
     def __init__(self, config: CallbackConfig, func: Callable[[Dict[str, Any]], CallbackResult]):
         super().__init__(config)
         self.func = func
 
     def execute(self, context: Dict[str, Any]) -> CallbackResult:
-        """执行自定义函数"""
+        """Execute the custom function"""
         try:
             return self.func(context)
         except Exception as e:
             return CallbackResult(
                 success=False,
-                message=f"自定义函数执行异常: {e}",
+                message=f"Exception while executing custom function: {e}",
                 errors=[str(e)]
             )
 
 
 class CallbackManager:
-    """回调管理器"""
+    """Callback manager"""
 
     def __init__(self):
         self._callbacks: Dict[str, BaseCallback] = {}
@@ -104,22 +104,22 @@ class CallbackManager:
         self._lock = threading.Lock()
 
     def register_callback(self, callback: BaseCallback):
-        """注册回调"""
+        """Register a callback"""
         with self._lock:
             self._callbacks[callback.config.name] = callback
-            print(f"✅ 注册回调: {callback.config.name} ({callback.config.trigger.value})")
+            print(f"✅ Registered callback: {callback.config.name} ({callback.config.trigger.value})")
 
     def register_function_callback(self, name: str, trigger: CallbackTrigger,
                                  func: Callable[[Dict[str, Any]], CallbackResult],
                                  **kwargs) -> BaseCallback:
-        """注册函数回调"""
+        """Register a function callback"""
         config = CallbackConfig(name=name, trigger=trigger, **kwargs)
         callback = CustomFunctionCallback(config, func)
         self.register_callback(callback)
         return callback
 
     def unregister_callback(self, name: str):
-        """取消注册回调"""
+        """Unregister a callback"""
         with self._lock:
             if name in self._callbacks:
                 if name in self._periodic_threads:
@@ -129,10 +129,10 @@ class CallbackManager:
                     del self._stop_events[name]
 
                 del self._callbacks[name]
-                print(f"🗑️ 取消注册回调: {name}")
+                print(f"🗑️ Unregistered callback: {name}")
 
     def start_periodic_callbacks(self, context_provider: Callable[[], Dict[str, Any]]):
-        """启动周期性回调"""
+        """Start periodic callbacks"""
         with self._lock:
             for name, callback in self._callbacks.items():
                 if (callback.config.trigger == CallbackTrigger.PERIODIC and
@@ -149,23 +149,23 @@ class CallbackManager:
                     )
                     self._periodic_threads[name] = thread
                     thread.start()
-                    print(f"🔄 启动周期性回调: {name}")
+                    print(f"🔄 Started periodic callback: {name}")
 
     def stop_periodic_callbacks(self):
-        """停止所有周期性回调"""
+        """Stop all periodic callbacks"""
         with self._lock:
             for name, stop_event in self._stop_events.items():
                 stop_event.set()
 
             for name, thread in self._periodic_threads.items():
                 thread.join(timeout=1)
-                print(f"⏹️ 停止周期性回调: {name}")
+                print(f"⏹️ Stopped periodic callback: {name}")
 
             self._periodic_threads.clear()
             self._stop_events.clear()
 
     def execute_callbacks(self, trigger: CallbackTrigger, context: Dict[str, Any]) -> Dict[str, CallbackResult]:
-        """执行指定触发时机的回调"""
+        """Execute callbacks for the specified trigger"""
         results = {}
 
         with self._lock:
@@ -176,7 +176,7 @@ class CallbackManager:
 
         for name, callback in callbacks_to_execute:
             try:
-                print(f"🔍 执行回调: {name}")
+                print(f"🔍 Executing callback: {name}")
                 enriched_context = dict(context)
                 pinfo = context.get('process_info')
                 if pinfo:
@@ -213,7 +213,7 @@ class CallbackManager:
                 results[name] = result
 
                 if result.success:
-                    print(f"✅ 回调成功: {name} - {result.message}")
+                        print(f"✅ Callback succeeded: {name} - {result.message}")
                 else:
                     soft_fail = False
                     try:
@@ -221,13 +221,13 @@ class CallbackManager:
                     except Exception:
                         soft_fail = False
                     if soft_fail:
-                        print(f"⚠️ 回调软失败: {name} - {result.message}")
+                        print(f"⚠️ Callback soft-failed: {name} - {result.message}")
                     else:
-                        print(f"❌ 回调失败: {name} - {result.message}")
+                        print(f"❌ Callback failed: {name} - {result.message}")
 
                 if result.warnings:
                     for warning in result.warnings:
-                        print(f"⚠️ 警告: {warning}")
+                        print(f"⚠️ Warning: {warning}")
 
             except BaseException as e:
                 error_result = CallbackResult(
@@ -237,12 +237,12 @@ class CallbackManager:
                 )
                 callback.add_result(error_result)
                 results[name] = error_result
-                print(f"❌ 回调异常: {name} - {e}")
+                print(f"❌ Callback exception: {name} - {e}")
 
         return results
 
     def get_callback_results(self, callback_name: Optional[str] = None) -> Dict[str, List[CallbackResult]]:
-        """获取回调执行结果"""
+        """Get callback results"""
         results = {}
 
         with self._lock:
@@ -256,7 +256,7 @@ class CallbackManager:
         return results
 
     def clear_callback_results(self, callback_name: Optional[str] = None):
-        """清空回调执行结果"""
+        """Clear callback results"""
         with self._lock:
             if callback_name:
                 if callback_name in self._callbacks:
@@ -268,12 +268,12 @@ class CallbackManager:
     def _periodic_callback_worker(self, callback: BaseCallback,
                                 context_provider: Callable[[], Dict[str, Any]],
                                 stop_event: threading.Event):
-        """周期性回调工作线程"""
+        """Worker for periodic callbacks"""
         while not stop_event.wait(callback.config.interval_sec):
             try:
                 base_context = context_provider()
 
-                # 读取目标脚本白名单（与 execute_callbacks 对齐）
+                # Read target script allowlist (aligned with execute_callbacks)
                 params = getattr(callback.config, 'params', {}) or {}
                 try:
                     value = params.get('target_scripts', params.get('target_script', []))
@@ -287,14 +287,14 @@ class CallbackManager:
                     target_scripts = []
                 target_set = set(target_scripts)
 
-                # 周期性回调按进程粒度执行，并按照 target_scripts 过滤
+                # Execute periodic callbacks per process, filtered by target_scripts
                 processes = (
                     base_context.get('active_processes')
                     or base_context.get('all_processes')
                     or []
                 )
 
-                # 若存在进程，则为每个进程拼装上下文并执行；否则按是否限定脚本决定是否全局执行一次
+                # If processes exist, execute per process; otherwise execute once only when no target_scripts limit
                 if processes:
                     for pinfo in processes:
                         try:
@@ -309,7 +309,7 @@ class CallbackManager:
                             result = callback.execute(enriched_context)
                             callback.add_result(result)
                             if not result.success:
-                                print(f"⚠️ 周期性回调失败: {callback.config.name} - {result.message}")
+                                print(f"⚠️ Periodic callback failed: {callback.config.name} - {result.message}")
                         except BaseException as e:
                             error_result = CallbackResult(
                                 success=False,
@@ -317,15 +317,15 @@ class CallbackManager:
                                 errors=[str(e)]
                             )
                             callback.add_result(error_result)
-                            print(f"❌ 周期性回调异常: {callback.config.name} - {e}")
+                            print(f"❌ Periodic callback exception: {callback.config.name} - {e}")
                 else:
-                    # 没有可用进程：仅当未限定 target_scripts 时执行一次（保持旧行为的全局检查能力）
+                    # No processes: execute once only when no target_scripts limit (backward compatible global checks)
                     if target_set:
                         continue
                     result = callback.execute(base_context)
                     callback.add_result(result)
                     if not result.success:
-                        print(f"⚠️ 周期性回调失败: {callback.config.name} - {result.message}")
+                        print(f"⚠️ Periodic callback failed: {callback.config.name} - {result.message}")
 
             except BaseException as e:
                 error_result = CallbackResult(
@@ -334,9 +334,9 @@ class CallbackManager:
                     errors=[str(e)]
                 )
                 callback.add_result(error_result)
-                print(f"❌ 周期性回调异常: {callback.config.name} - {e}")
+                print(f"❌ Periodic callback exception: {callback.config.name} - {e}")
 
     def get_registered_callbacks(self) -> Dict[str, CallbackConfig]:
-        """获取已注册的回调配置"""
+        """Get registered callback configurations"""
         with self._lock:
             return {name: callback.config for name, callback in self._callbacks.items()}

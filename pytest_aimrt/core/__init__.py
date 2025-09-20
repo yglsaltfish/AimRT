@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-AimRT测试框架核心模块
+Core modules of the AimRT test framework
 
-提供测试配置管理、进程管理、资源监控、自定义回调和报告生成功能。
+Provides configuration management, process management, resource monitoring, custom callbacks, and report generation.
 """
 
 from .config_manager import ConfigManager, TestConfig, ScriptConfig
