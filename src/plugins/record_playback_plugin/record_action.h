@@ -54,6 +54,7 @@ class RecordAction {
 
     uint64_t max_preparation_duration_s = 0;
     std::string executor;
+    bool record_enabled = true;
 
     std::vector<TopicMeta> topic_meta_list;
   };

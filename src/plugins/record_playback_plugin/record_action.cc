@@ -47,6 +47,8 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     node["max_preparation_duration_s"] = rhs.max_preparation_duration_s;
     node["executor"] = rhs.executor;
 
+    node["record_enabled"] = rhs.record_enabled;
+
     node["topic_meta_list"] = YAML::Node();
     for (const auto& topic_meta : rhs.topic_meta_list) {
       Node topic_meta_node;
@@ -115,6 +117,10 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     if (node["extra_attributes"] && node["extra_attributes"].IsMap()) {
       rhs.extra_attributes = node["extra_attributes"];
     }
+
+    if (node["record_enabled"])
+      rhs.record_enabled = node["record_enabled"].as<bool>();
+
     if (node["max_preparation_duration_s"])
       rhs.max_preparation_duration_s = node["max_preparation_duration_s"].as<uint64_t>();
 
@@ -343,7 +349,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
   auto& runtime_info = topic_runtime_map_[record.topic_index];
 
   // skip record if record is not enabled
-  if (!runtime_info.record_enabled) {
+  if (!options_.record_enabled || !runtime_info.record_enabled) {
     return;
   }
 
@@ -518,11 +524,10 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
 
 void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list) {
   util::DynamicLatch latch;
-
-  // Suppressing cpp:S3584: The lambda is moved into a Task object which properly
-  // manages its lifetime. Memory is deallocated when the task completes execution
-  // in the executor thread, guaranteed by latch.CloseAndWait() below.
-  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list)]() {  // NOSONAR cpp:S3584
+  if (!latch.TryAdd()) {
+    return;
+  }
+  executor_.Execute([this, move_topic_meta_list = std::move(topic_meta_list), &latch]() mutable {
     for (auto& topic_meta : move_topic_meta_list) {
       runtime::core::util::TopicMetaKey key{
           .topic_name = topic_meta.topic_name,
@@ -534,6 +539,41 @@ void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_lis
       }
       topic_runtime_map_[itr->second.id].record_enabled = topic_meta.record_enabled;
     }
+    latch.CountDown();
+  });
+  latch.CloseAndWait();  // NOSONAR cpp:S3584
+}
+
+void RecordAction::UpdateRecordEnabled(bool record_enabled) {
+  util::DynamicLatch latch;
+  if (!latch.TryAdd()) {
+    return;
+  }
+  executor_.Execute([this, record_enabled, &latch]() {
+    options_.record_enabled = record_enabled;
+    latch.CountDown();
+  });
+  latch.CloseAndWait();  // NOSONAR cpp:S3584
+}
+
+void RecordAction::GetAppliedActionMeta(bool& action_record_enabled, std::vector<TopicMeta>& topic_metas) {
+  util::DynamicLatch latch;
+  if (!latch.TryAdd()) {
+    return;
+  }
+  executor_.Execute([this, &action_record_enabled, &topic_metas, &latch]() {
+    action_record_enabled = options_.record_enabled;
+    topic_metas.clear();
+    topic_metas.reserve(topic_meta_map_.size());
+    for (const auto& [key, meta] : topic_meta_map_) {
+      TopicMeta copy = meta;
+      auto runtime_itr = topic_runtime_map_.find(meta.id);
+      if (runtime_itr != topic_runtime_map_.end()) {
+        copy.record_enabled = runtime_itr->second.record_enabled;
+      }
+      topic_metas.emplace_back(std::move(copy));
+    }
+    latch.CountDown();
   });
   latch.CloseAndWait();  // NOSONAR cpp:S3584
 }

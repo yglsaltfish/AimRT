@@ -2,9 +2,7 @@
 // All rights reserved.
 
 #include "record_playback_plugin/service.h"
-#include "aimrt_module_protobuf_interface/util/protobuf_tools.h"
 #include "co/task.h"
-#include "record_playback_plugin/global.h"
 #include "record_playback_plugin/topic_meta.h"
 
 namespace aimrt::plugins::record_playback_plugin {
@@ -148,24 +146,57 @@ aimrt::co::Task<aimrt::rpc::Status> RecordPlaybackServiceImpl::UpdateRecordActio
     aimrt::rpc::ContextRef ctx_ref,
     const ::aimrt::protocols::record_playback_plugin::UpdateRecordActionReq& req,
     ::aimrt::protocols::record_playback_plugin::UpdateRecordActionRsp& rsp) {
-  auto finditr = record_action_map_ptr_->find(req.action_name());
+  bool all_success = true;
+  for (const auto& action_meta : req.action_metas()) {
+    auto* action_rsp = rsp.add_action_rsps();
+    action_rsp->set_action_name(action_meta.action_name());
+    auto* action_common_rsp = action_rsp->mutable_common_rsp();
+
+    auto finditr = record_action_map_ptr_->find(action_meta.action_name());
+    if (finditr == record_action_map_ptr_->end()) {
+      SetErrorCode(ErrorCode::kInvalidActionName, *action_common_rsp);
+      all_success = false;
+      continue;
+    }
+
+    auto& action_wrapper = *(finditr->second);
+
+    // 更新动作级别的 record_enabled
+    action_wrapper.UpdateRecordEnabled(action_meta.record_enabled());
+
+    // 更新主题级别的 record_enabled
+    std::vector<TopicMeta> topic_metas;
+    topic_metas.reserve(static_cast<size_t>(action_meta.topic_metas_size()));
+    for (const auto& topic_meta : action_meta.topic_metas()) {
+      topic_metas.emplace_back(TopicMeta{
+          .topic_name = topic_meta.topic_name(),
+          .msg_type = topic_meta.msg_type(),
+          .record_enabled = topic_meta.record_enabled()});
+    }
+    if (!topic_metas.empty()) {
+      action_wrapper.UpdateTopicMetaRecord(std::move(topic_metas));
+    }
+
+    // 填充已应用的元信息
+    bool applied_action_record_enabled = false;
+    std::vector<TopicMeta> applied_topic_metas;
+    action_wrapper.GetAppliedActionMeta(applied_action_record_enabled, applied_topic_metas);
+
+    auto* applied_meta = action_rsp->mutable_applied_action_meta();
+    applied_meta->set_action_name(std::string(action_meta.action_name()));
+    applied_meta->set_record_enabled(applied_action_record_enabled);
+    for (const auto& meta : applied_topic_metas) {
+      auto* out_meta = applied_meta->add_topic_metas();
+      out_meta->set_topic_name(meta.topic_name);
+      out_meta->set_msg_type(meta.msg_type);
+      out_meta->set_record_enabled(meta.record_enabled);
+    }
+
+    SetErrorCode(ErrorCode::kSuc, *action_common_rsp);
+  }
+
   auto common_rsp = rsp.mutable_common_rsp();
-  if (finditr == record_action_map_ptr_->end()) {
-    SetErrorCode(ErrorCode::kInvalidActionName, *common_rsp);
-    co_return aimrt::rpc::Status();
-  }
-
-  auto& action_wrapper = *(finditr->second);
-  std::vector<TopicMeta> topic_metas;
-  for (const auto& topic_meta : req.topic_metas()) {
-    topic_metas.emplace_back(TopicMeta{
-        .topic_name = topic_meta.topic_name(),
-        .msg_type = topic_meta.msg_type(),
-        .record_enabled = topic_meta.record_enabled()});
-  }
-
-  action_wrapper.UpdateTopicMetaRecord(std::move(topic_metas));
-  SetErrorCode(ErrorCode::kSuc, *common_rsp);
+  SetErrorCode(all_success ? ErrorCode::kSuc : ErrorCode::kInvalidActionName, *common_rsp);
   co_return aimrt::rpc::Status();
 }
 

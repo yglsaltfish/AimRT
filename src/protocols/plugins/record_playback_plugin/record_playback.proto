@@ -46,13 +46,25 @@ message TopicMeta {
   bool record_enabled = 3;
 }
 
-message UpdateRecordActionReq {
+message ActionMeta {
   string action_name = 1;
-  repeated TopicMeta topic_metas = 2;
+  bool record_enabled = 2;
+  repeated TopicMeta topic_metas = 3;
+}
+
+message ActionUpdateRsp {
+  string action_name = 1;
+  CommonRsp common_rsp = 2;
+  ActionMeta applied_action_meta = 3;
+}
+
+message UpdateRecordActionReq {
+  repeated ActionMeta action_metas = 1;
 }
 
 message UpdateRecordActionRsp {
   CommonRsp common_rsp = 1;
+  repeated ActionUpdateRsp action_rsps = 2;
 }
 
 service RecordPlaybackService {
