@@ -47,6 +47,7 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
     node["max_preparation_duration_s"] = rhs.max_preparation_duration_s;
     node["executor"] = rhs.executor;
 
+    node["record_enabled"] = rhs.record_enabled;
     node["topic_meta_list"] = YAML::Node();
     for (const auto& topic_meta : rhs.topic_meta_list) {
       Node topic_meta_node;
@@ -119,6 +120,9 @@ struct convert<aimrt::plugins::record_playback_plugin::RecordAction::Options> {
       rhs.max_preparation_duration_s = node["max_preparation_duration_s"].as<uint64_t>();
 
     rhs.executor = node["executor"].as<std::string>();
+
+    if (node["record_enabled"])
+      rhs.record_enabled = node["record_enabled"].as<bool>();
 
     if (node["topic_meta_list"] && node["topic_meta_list"].IsSequence()) {
       for (const auto& topic_meta_node : node["topic_meta_list"]) {
@@ -343,7 +347,7 @@ void RecordAction::AddRecord(OneRecord&& record) {
   auto& runtime_info = topic_runtime_map_[record.topic_index];
 
   // skip record if record is not enabled
-  if (!runtime_info.record_enabled) {
+  if (!record_enabled_ || !runtime_info.record_enabled) {
     return;
   }
 
@@ -516,13 +520,14 @@ void RecordAction::UpdateMetadata(std::unordered_map<std::string, std::string>&&
   ofs.close(); });
 }
 
-void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list) {
+void RecordAction::UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list, bool record_enabled) {
   util::DynamicLatch latch;
 
   // Suppressing cpp:S3584: The lambda is moved into a Task object which properly
   // manages its lifetime. Memory is deallocated when the task completes execution
   // in the executor thread, guaranteed by latch.CloseAndWait() below.
-  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list)]() {  // NOSONAR cpp:S3584
+  executor_.TryExecute(latch, [this, move_topic_meta_list = std::move(topic_meta_list), &record_enabled]() {  // NOSONAR cpp:S3584
+    record_enabled_ = record_enabled;
     for (auto& topic_meta : move_topic_meta_list) {
       runtime::core::util::TopicMetaKey key{
           .topic_name = topic_meta.topic_name,

@@ -49,6 +49,7 @@ message TopicMeta {
 message UpdateRecordActionReq {
   string action_name = 1;
   repeated TopicMeta topic_metas = 2;
+  bool record_enabled = 3;  // enable or disable recording for the action
 }
 
 message UpdateRecordActionRsp {

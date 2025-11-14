@@ -55,6 +55,8 @@ class RecordAction {
     uint64_t max_preparation_duration_s = 0;
     std::string executor;
 
+    bool record_enabled = true;
+
     std::vector<TopicMeta> topic_meta_list;
   };
 
@@ -94,7 +96,7 @@ class RecordAction {
   void UpdateMetadata(
       std::unordered_map<std::string, std::string>&& kv_pairs);
 
-  void UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list);
+  void UpdateTopicMetaRecord(std::vector<TopicMeta>&& topic_meta_list, bool record_enabled = true);
 
  private:
   void AddRecordImpl(OneRecord&& record);
@@ -155,6 +157,7 @@ class RecordAction {
 
   std::unordered_map<uint64_t, McapStruct> mcap_info_map_;  // use to record
 
+  bool record_enabled_ = true;
   std::unordered_map<uint64_t, TopicRuntimeInfo> topic_runtime_map_;
 
   std::string file_path_;
