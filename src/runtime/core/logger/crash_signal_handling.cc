@@ -21,9 +21,7 @@ namespace aimrt::runtime::core::logger {
 
 #if defined(_WIN32)
 
-namespace {
-
-static void PrintStacktrace(CONTEXT* ctx, int skip_frames = 0) {
+static void CrashSignalHandling::PrintStacktrace(CONTEXT* ctx, int skip_frames = 0) {
   backward::Printer printer;
 
   backward::StackTrace st;
@@ -47,7 +45,7 @@ static void PrintStacktrace(CONTEXT* ctx, int skip_frames = 0) {
   if (real_thd) CloseHandle(real_thd);
 }
 
-static LONG WINAPI AimrtUnhandledExceptionFilter(EXCEPTION_POINTERS* info) {
+static LONG WINAPI CrashSignalHandling::UnhandledExceptionFilter(EXCEPTION_POINTERS* info) {
   if (info && info->ExceptionRecord) {
     AIMRT_ERROR("CRASH SIGNAL HANDLING EXCEPTION CODE: 0x{:08X}", static_cast<uint32_t>(info->ExceptionRecord->ExceptionCode));
   } else {
@@ -62,7 +60,7 @@ static LONG WINAPI AimrtUnhandledExceptionFilter(EXCEPTION_POINTERS* info) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-static void AimrtAbortHandler(int) {
+static void CrashSignalHandling::AbortHandler(int) {
   CONTEXT ctx;
   RtlCaptureContext(&ctx);
   AIMRT_ERROR("CRASH SIGNAL HANDLING: SIGABRT");
@@ -70,22 +68,26 @@ static void AimrtAbortHandler(int) {
   std::abort();
 }
 
-}  // namespace
-
-void CrashSignalHandling::FreeDeleter::operator()(char*) const noexcept {}
-
 CrashSignalHandling::CrashSignalHandling() {
-  SetUnhandledExceptionFilter(&AimrtUnhandledExceptionFilter);
-  std::signal(SIGABRT, &AimrtAbortHandler);
+  SetUnhandledExceptionFilter(&UnhandledExceptionFilter);
+  std::signal(SIGABRT, &AbortHandler);
 }
 
-#else  // !_WIN32
+#else
 
 std::vector<int> DefaultSignals() {
   return backward::SignalHandling::make_default_signals();
 }
 
-void CrashSignalHandling::FreeDeleter::operator()(char* p) const noexcept {}
+void CrashSignalHandling::FreeDeleter::operator()(char* p) const noexcept {
+  // [Intentional Leak]
+  // This memory is registered via sigaltstack() as the alternative signal stack.
+  // The kernel retains this address independent of this object's lifecycle.
+  //
+  // Freeing this memory poses a critical risk: if a signal occurs after destruction,
+  // the kernel will write to the freed memory, causing heap corruption.
+  // This memory must remain valid for the entire process lifetime.
+}
 
 CrashSignalHandling::CrashSignalHandling() { InstallHandlers(DefaultSignals()); }
 

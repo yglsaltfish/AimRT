@@ -26,7 +26,11 @@ class CrashSignalHandling {
     void operator()(char* p) const noexcept;
   };
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+  static void SetUnhandledExceptionFilter(LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter);
+  static LONG WINAPI AimrtUnhandledExceptionFilter(EXCEPTION_POINTERS* info);
+  static void AimrtAbortHandler(int);
+#else
   static void HandleSignal(int signo, siginfo_t* info, void* _ctx);
   static void SigHandler(int signo, siginfo_t* info, void* _ctx);
   void EnsureAltStack();
